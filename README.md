@@ -4,7 +4,7 @@ Combinators on async key-value stores.
 
 ## Maven
 
-Current version is `0.1.0`. groupid=`"com.twitter"` artifact=`storehaus_2.9.2"`.
+Current version is `0.0.1`. groupid=`"com.twitter"` artifact=`storehaus_2.9.2"`.
 
 ## Authors
 
