@@ -20,15 +20,9 @@ import com.twitter.util.Future
 
 /**
  * Concrete empty store implementation.
- * calling - or + on this store is a no-op.
  */
 
 class EmptyReadableStore[K, V] extends ReadableStore[K, V] {
   override def get(k: K) = Future.None
   override def multiGet(ks: Set[K]) = Future.value(Map.empty[K, V])
-}
-
-class EmptyStore[K, V] extends EmptyReadableStore[K, V] with Store[EmptyStore[K, V], K, V] {
-  override def -(k: K) = Future.value(this)
-  override def +(pair: (K,V)) = Future.value(this)
 }

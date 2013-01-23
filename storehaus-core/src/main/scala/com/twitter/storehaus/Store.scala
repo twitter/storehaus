@@ -49,8 +49,6 @@ trait ReadableStore[K,V] extends Closeable { self =>
 // Store is immutable by default.
 
 object Store {
-  def empty[K,V]: Store[EmptyStore[K, V], K, V] = new EmptyStore[K, V]
-
   // TODO: Move to some collection util.
   def zipWith[K,V](keys: Set[K])(lookup: (K) => Option[V]): Map[K,V] =
     keys.foldLeft(Map.empty[K,V]) { (m,k) =>
@@ -68,7 +66,6 @@ trait Store[Self <: Store[Self,K,V], K, V] extends ReadableStore[K, V] {
         .getOrElse(this - k)
     }
   }
-
 }
 
 object KeysetStore {
