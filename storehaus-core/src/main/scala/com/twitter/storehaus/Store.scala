@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 Twitter Inc.
+ * Copyright 2013 Twitter Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -52,6 +52,8 @@ trait ReadableStore[K,V] extends Closeable { self =>
 // Store is immutable by default.
 
 object Store {
+  def empty[K,V]: Store[EmptyStore[K, V], K, V] = new EmptyStore[K, V]
+
   // TODO: Move to some collection util.
   def zipWith[K,V](keys: Set[K])(lookup: (K) => Option[V]): Map[K,V] =
     keys.foldLeft(Map.empty[K,V]) { (m,k) =>
