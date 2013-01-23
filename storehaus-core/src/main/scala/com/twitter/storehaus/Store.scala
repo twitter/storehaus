@@ -20,11 +20,7 @@ import com.twitter.util.Future
 import java.io.Closeable
 
 object ReadableStore {
-  def empty[K,V]: ReadableStore[K,V] =
-    new ReadableStore[K,V] {
-      override def get(k: K) = Future.None
-      override def multiGet(ks: Set[K]) = Future.value(Map.empty[K, V])
-    }
+  def empty[K,V]: ReadableStore[K,V] = new EmptyReadableStore[K, V]
 }
 
 trait ReadableStore[K,V] extends Closeable { self =>
@@ -46,14 +42,13 @@ trait ReadableStore[K,V] extends Closeable { self =>
       override def get(k: K) = self.get(k) or other.get(k)
       override def multiGet(ks: Set[K]) = self.multiGet(ks) or other.multiGet(ks)
     }
+
   override def close { }
 }
 
 // Store is immutable by default.
 
 object Store {
-  def empty[K,V]: Store[EmptyStore[K, V], K, V] = new EmptyStore[K, V]
-
   // TODO: Move to some collection util.
   def zipWith[K,V](keys: Set[K])(lookup: (K) => Option[V]): Map[K,V] =
     keys.foldLeft(Map.empty[K,V]) { (m,k) =>
@@ -71,7 +66,6 @@ trait Store[Self <: Store[Self,K,V], K, V] extends ReadableStore[K, V] {
         .getOrElse(this - k)
     }
   }
-
 }
 
 object KeysetStore {
