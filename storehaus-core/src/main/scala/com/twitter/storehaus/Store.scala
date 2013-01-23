@@ -16,16 +16,11 @@
 
 package com.twitter.storehaus
 
-import com.twitter.algebird.Monoid
 import com.twitter.util.Future
 import java.io.Closeable
 
 object ReadableStore {
-  def empty[K,V]: ReadableStore[K,V] =
-    new ReadableStore[K,V] {
-      override def get(k: K) = Future.None
-      override def multiGet(ks: Set[K]) = Future.value(Map.empty[K, V])
-    }
+  def empty[K,V]: ReadableStore[K,V] = new EmptyReadableStore[K, V]
 }
 
 trait ReadableStore[K,V] extends Closeable { self =>
@@ -48,14 +43,6 @@ trait ReadableStore[K,V] extends Closeable { self =>
       override def multiGet(ks: Set[K]) = self.multiGet(ks) or other.multiGet(ks)
     }
 
-  def +(other: ReadableStore[K,V])(implicit monoid: Monoid[V]): ReadableStore[K,V] =
-    new ReadableStore[K,V] {
-      private def add[T: Monoid](a: Future[T], b: Future[T]) =
-        a.join(b).map { case (t1, t2) => Monoid.plus(t1, t2) }
-
-      override def get(k: K) = add(self.get(k), other.get(k))
-      override def multiGet(ks: Set[K]) = add(self.multiGet(ks), other.multiGet(ks))
-    }
   override def close { }
 }
 

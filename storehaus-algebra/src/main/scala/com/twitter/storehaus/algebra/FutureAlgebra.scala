@@ -14,21 +14,27 @@
  * limitations under the License.
  */
 
-package com.twitter.storehaus
+package com.twitter.storehaus.algebra
 
+import com.twitter.algebird.{ Semigroup, Monoid }
 import com.twitter.util.Future
 
 /**
- * Concrete empty store implementation.
- * calling - or + on this store is a no-op.
+ * Monoid and Semigroup on util.Future.
+ *
+ * @author Sam Ritchie
  */
 
-class EmptyReadableStore[K, V] extends ReadableStore[K, V] {
-  override def get(k: K) = Future.None
-  override def multiGet(ks: Set[K]) = Future.value(Map.empty[K, V])
+object FutureAlgebra {
+  implicit def semigroup[T: Semigroup] = new FutureSemigroup[T]
+  implicit def monoid[T: Monoid] = new FutureMonoid[T]
 }
 
-class EmptyStore[K, V] extends EmptyReadableStore[K, V] with Store[EmptyStore[K, V], K, V] {
-  override def -(k: K) = Future.value(this)
-  override def +(pair: (K,V)) = Future.value(this)
+class FutureSemigroup[T: Semigroup] extends Semigroup[Future[T]] {
+  override def plus(l: Future[T], r: Future[T]): Future[T] =
+    l.join(r).map { case (l, r) => Semigroup.plus(l, r) }
+}
+
+class FutureMonoid[T: Monoid] extends FutureSemigroup[T] with Monoid[Future[T]] {
+  override def zero = Future.value(Monoid.zero)
 }
