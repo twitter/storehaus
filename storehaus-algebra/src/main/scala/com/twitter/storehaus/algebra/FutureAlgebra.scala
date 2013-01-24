@@ -16,15 +16,17 @@
 
 package com.twitter.storehaus.algebra
 
-import com.twitter.algebird.{ Semigroup, Monoid }
+import com.twitter.algebird.{ Semigroup, Monoid, Group, Ring, Field }
 import com.twitter.util.Future
 
 /**
  * Monoid and Semigroup on util.Future.
  *
  * @author Sam Ritchie
+ * @author Oscar Boykin
  */
 
+@deprecated("Use import Algebras._", "0.0.1")
 object FutureAlgebra {
   implicit def semigroup[T: Semigroup] = new FutureSemigroup[T]
   implicit def monoid[T: Monoid] = new FutureMonoid[T]
@@ -32,9 +34,27 @@ object FutureAlgebra {
 
 class FutureSemigroup[T: Semigroup] extends Semigroup[Future[T]] {
   override def plus(l: Future[T], r: Future[T]): Future[T] =
-    l.join(r).map { case (l, r) => Semigroup.plus(l, r) }
+    for(lv <- l; rv <- r) yield Semigroup.plus(lv, rv)
 }
 
 class FutureMonoid[T: Monoid] extends FutureSemigroup[T] with Monoid[Future[T]] {
   override def zero = Future.value(Monoid.zero)
+}
+
+class FutureGroup[T: Group] extends FutureMonoid[T] with Group[Future[T]] {
+  override def negate(v: Future[T]): Future[T] = v.map { implicitly[Group[T]].negate(_) }
+  override def minus(l: Future[T], r: Future[T]): Future[T] =
+    for(lv <- l; rv <- r) yield Group.minus(lv, rv)
+}
+
+class FutureRing[T: Ring] extends FutureGroup[T] with Ring[Future[T]] {
+  override def one = Future.value(Ring.one)
+  override def times(l : Future[T], r: Future[T]) =
+    for(lv <- l; rv <- r) yield Ring.times(lv, rv)
+}
+
+class FutureField[T: Field] extends FutureRing[T] with Field[Future[T]] {
+  override def inverse(v: Future[T]) = v.map { implicitly[Field[T]].inverse(_) }
+  override def div(l : Future[T], r: Future[T]) =
+    for(lv <- l; rv <- r) yield Field.div(lv, rv)
 }
