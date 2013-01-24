@@ -26,12 +26,6 @@ import com.twitter.util.Future
  * @author Oscar Boykin
  */
 
-@deprecated("Use import Algebras._", "0.0.1")
-object FutureAlgebra {
-  implicit def semigroup[T: Semigroup] = new FutureSemigroup[T]
-  implicit def monoid[T: Monoid] = new FutureMonoid[T]
-}
-
 class FutureSemigroup[T: Semigroup] extends Semigroup[Future[T]] {
   override def plus(l: Future[T], r: Future[T]): Future[T] =
     for(lv <- l; rv <- r) yield Semigroup.plus(lv, rv)
