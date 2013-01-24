@@ -40,6 +40,18 @@ object StoreProperties extends Properties("Store") {
       }._2
     }
 
+  property("multiGet returns Some(None) for missing keys") =
+    forAll { (m: Map[String, Int]) =>
+      val keys = m.keySet
+      val expanded: Set[String] = keys ++ (keys map { _ + "suffix!" })
+      val ms = new MapStore(m)
+      (ms.multiGet(expanded) map { retM: Map[String, Option[Int]] =>
+        expanded forall { s: String =>
+          retM.get(s) == Some(m.get(s))
+        }
+      }).get
+    }
+
   property("Map wraps store works") = forAll { (m: Map[String, Int]) =>
     val ms = new MapStore(m)
     (ms.keySet == m.keySet) &&
