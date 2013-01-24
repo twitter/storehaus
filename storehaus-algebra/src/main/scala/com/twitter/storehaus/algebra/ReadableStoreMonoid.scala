@@ -25,7 +25,7 @@ object ReadableStoreMonoid {
 }
 
 class ReadableStoreMonoid[K, V: Semigroup] extends Monoid[ReadableStore[K, V]] {
-  import FutureAlgebra._
+  import Algebras._
 
   override def zero: ReadableStore[K, V] = ReadableStore.empty[K, V]
   override def plus(l: ReadableStore[K, V], r: ReadableStore[K,V]): ReadableStore[K,V] =
@@ -34,3 +34,4 @@ class ReadableStoreMonoid[K, V: Semigroup] extends Monoid[ReadableStore[K, V]] {
       override def multiGet(ks: Set[K]) = Semigroup.plus(l.multiGet(ks), r.multiGet(ks))
     }
 }
+// TODO we should add Group/Ring as well
