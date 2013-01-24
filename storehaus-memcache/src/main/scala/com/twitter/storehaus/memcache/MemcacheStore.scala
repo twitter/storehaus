@@ -116,8 +116,10 @@ extends ConcurrentMutableStore[MemcacheStore[Key,Value],Key,Value] {
     val encMap = (encodedKs zip ks).toMap
 
     client flatMap { c =>
-      c.get(encodedKs.toIterable) map { m =>
-        m map { case (k,v) => encMap(k) -> Some(vBijection.invert(v)) }
+      c.get(encodedKs.toIterable) map { retMap =>
+        encMap map { case(encK, k) =>
+          k -> (retMap.get(encK) map { vBijection.invert(_) })
+        }
       }
     }
   }

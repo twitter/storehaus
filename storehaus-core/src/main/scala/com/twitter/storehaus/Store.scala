@@ -34,8 +34,11 @@ trait ReadableStore[K,V] extends Closeable { self =>
    */
   def multiGet(ks: Set[K]): Future[Map[K,Option[V]]] = {
     val keySeq = ks.toSeq
-    val futures: Seq[Future[Option[V]]] = keySeq map { k => get(k) }
-    Future.collect(futures) map { vals => (keySeq zip vals).toMap } // Seq[Option[K,V]]
+    val futures: Seq[Future[(K, Option[V])]] =
+      keySeq
+        .map { k => get(k) map { (k, _) } }
+        .filter { _.isReturn }
+    Future.collect(futures) map { _.toMap }
   }
 
   /**
