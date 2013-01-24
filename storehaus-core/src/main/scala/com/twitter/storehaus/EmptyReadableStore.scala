@@ -24,5 +24,5 @@ import com.twitter.util.Future
 
 class EmptyReadableStore[K, V] extends ReadableStore[K, V] {
   override def get(k: K) = Future.None
-  override def multiGet(ks: Set[K]) = Future.value(Map.empty[K, V])
+  override def multiGet(ks: Set[K]) = Future.value(Map.empty[K, Option[V]])
 }

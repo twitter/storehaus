@@ -24,12 +24,21 @@ object ReadableStore {
 }
 
 trait ReadableStore[K,V] extends Closeable { self =>
-  def get(k: K): Future[Option[V]] = multiGet(Set(k)) map { _.get(k) }
+  def get(k: K): Future[Option[V]] = multiGet(Set(k)) map { _.get(k).flatten.headOption }
 
-  def multiGet(ks: Set[K]): Future[Map[K,V]] = {
-    val futures: Seq[Future[Option[(K,V)]]] =
-      ks.toSeq map { k => get(k) map { _ map { (k,_) } } }
-    Future.collect(futures) map { _.flatten.toMap }
+  /**
+   * A definitely present value is signaled by Some(v), while a missing
+   * value is signaled by None. If a particular value is not known for
+   * some reason (for example: store failure, cache miss within the store,
+   * timeout, etc) the value will be missing from the map.
+   */
+  def multiGet(ks: Set[K]): Future[Map[K,Option[V]]] = {
+    val keySeq = ks.toSeq
+    val futures: Seq[Future[(K, Option[V])]] =
+      keySeq
+        .map { k => get(k) map { (k, _) } }
+        .filter { _.isReturn }
+    Future.collect(futures) map { _.toMap }
   }
 
   /**
@@ -50,10 +59,8 @@ trait ReadableStore[K,V] extends Closeable { self =>
 
 object Store {
   // TODO: Move to some collection util.
-  def zipWith[K,V](keys: Set[K])(lookup: (K) => Option[V]): Map[K,V] =
-    keys.foldLeft(Map.empty[K,V]) { (m,k) =>
-      lookup(k) map { v => m + (k -> v) } getOrElse m
-    }
+  def zipWith[K, V](keys: Set[K])(lookup: K => V): Map[K, V] =
+    keys.foldLeft(Map.empty[K, V]) { (m, k) => m + (k -> lookup(k)) }
 }
 
 trait Store[Self <: Store[Self,K,V], K, V] extends ReadableStore[K, V] {

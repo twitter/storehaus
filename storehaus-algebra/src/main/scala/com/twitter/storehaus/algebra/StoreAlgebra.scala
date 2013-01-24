@@ -48,7 +48,7 @@ class AlgebraicReadableStore[K, V](store: ReadableStore[K, V]) {
   def summed[T](implicit ev: V <:< TraversableOnce[T], monoid: Monoid[T]): ReadableStore[K, T] =
     new ReadableStore[K, T] {
       override def get(k: K) = store.get(k) map { _ map { Monoid.sum(_) } }
-      override def multiGet(ks: Set[K]) = store.multiGet(ks) map { _ mapValues { Monoid.sum(_) } }
+      override def multiGet(ks: Set[K]) = store.multiGet(ks) map { _ mapValues { _ map { Monoid.sum(_) } } }
     }
 }
 
