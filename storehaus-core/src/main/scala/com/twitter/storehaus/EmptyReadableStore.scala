@@ -16,20 +16,13 @@
 
 package com.twitter.storehaus
 
-import java.util.{ LinkedHashMap => JLinkedHashMap, Map => JMap }
+import com.twitter.util.Future
 
 /**
- *  @author Oscar Boykin
- *  @author Sam Ritchie
+ * Concrete empty store implementation.
  */
 
-object LRUStore {
-  def apply[K,V](maxSize: Int = 1000) = new LRUStore[K,V](maxSize)
-}
-class LRUStore[K,V](maxSize: Int) extends JMapStore[LRUStore[K,V],K,V] {
-  // create a java linked hashmap with access-ordering (LRU)
-  protected lazy override val jstore = new JLinkedHashMap[K,Option[V]](maxSize + 1, 0.75f, true) {
-    override protected def removeEldestEntry(eldest : JMap.Entry[K, Option[V]]) =
-      super.size > maxSize
-  }
+class EmptyReadableStore[K, V] extends ReadableStore[K, V] {
+  override def get(k: K) = Future.None
+  override def multiGet(ks: Set[K]) = Future.value(Map.empty[K, Option[V]])
 }

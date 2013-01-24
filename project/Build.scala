@@ -4,7 +4,7 @@ import Keys._
 object StorehausBuild extends Build {
   val sharedSettings = Project.defaultSettings ++ Seq(
     organization := "com.twitter",
-    version := "0.0.1",
+    version := "0.0.2",
     scalaVersion := "2.9.2",
     libraryDependencies ++= Seq(
       "org.scalacheck" %% "scalacheck" % "1.10.0" % "test" withSources(),
@@ -77,6 +77,7 @@ object StorehausBuild extends Build {
     publish := { }, // skip publishing for this root project.
     publishLocal := { }
   ).aggregate(storehausCore,
+              storehausAlgebra,
               storehausMemcache)
 
   lazy val storehausCore = Project(
@@ -87,6 +88,18 @@ object StorehausBuild extends Build {
     name := "storehaus-core",
     libraryDependencies += "com.twitter" % "util-core" % "5.3.15"
   )
+
+  lazy val storehausAlgebra = Project(
+    id = "storehaus-algebra",
+    base = file("storehaus-algebra"),
+    settings = sharedSettings
+  ).settings(
+    name := "storehaus-algebra",
+    libraryDependencies ++= Seq(
+      "com.twitter" %% "algebird" % "0.1.6",
+      "com.twitter" %% "bijection-core" % "0.2.0"
+    )
+  ).dependsOn(storehausCore % "test->test;compile->compile")
 
   lazy val storehausMemcache = Project(
     id = "storehaus-memcache",

@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 Twitter Inc.
+ * Copyright 2013 Twitter Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -33,7 +33,7 @@ abstract class JMapStore[S <: JMapStore[S,K,V],K,V] extends MutableStore[S,K,V] 
       None
   }
   override def get(k: K): Future[Option[V]] = Future.value(storeGet(k))
-  override def multiGet(ks: Set[K]): Future[Map[K,V]] =
+  override def multiGet(ks: Set[K]): Future[Map[K, Option[V]]] =
     Future.value(Store.zipWith(ks) { storeGet(_) })
 
   override def -(k: K): Future[S] = {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 Twitter Inc.
+ * Copyright 2013 Twitter Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -111,13 +111,15 @@ extends ConcurrentMutableStore[MemcacheStore[Key,Value],Key,Value] {
       }
     }
 
-  override def multiGet(ks: Set[Key]): Future[Map[Key,Value]] = {
+  override def multiGet(ks: Set[Key]): Future[Map[Key, Option[Value]]] = {
     val encodedKs = ks map { enc(_) }
     val encMap = (encodedKs zip ks).toMap
 
     client flatMap { c =>
-      c.get(encodedKs.toIterable) map { m =>
-        m map { case (k,v) => encMap(k) -> vBijection.invert(v) }
+      c.get(encodedKs.toIterable) map { retMap =>
+        encMap map { case(encK, k) =>
+          k -> (retMap.get(encK) map { vBijection.invert(_) })
+        }
       }
     }
   }
