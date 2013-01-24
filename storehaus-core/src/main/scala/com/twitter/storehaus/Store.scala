@@ -29,8 +29,8 @@ trait ReadableStore[K,V] extends Closeable { self =>
   /**
    * A definitely present value is signaled by Some(v), while a missing
    * value is signaled by None. If a particular value is not known for
-   * some reason, the value will be missing from the map.
-   * reason,
+   * some reason (for example: store failure, cache miss within the store,
+   * timeout, etc) the value will be missing from the map.
    */
   def multiGet(ks: Set[K]): Future[Map[K,Option[V]]] = {
     val keySeq = ks.toSeq
