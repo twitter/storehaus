@@ -43,7 +43,7 @@ object StoreProperties extends Properties("Store") {
   property("Map wraps store works") = forAll { (m: Map[String, Int]) =>
     val ms = new MapStore(m)
     (ms.keySet == m.keySet) &&
-      (ms.multiGet(m.keySet).map { _ == m }.get) &&
+      (ms.multiGet(m.keySet).map { _ == (m mapValues { Some(_) }) }.get) &&
       (m.keySet.map { k => (ms.get(k).get == m.get(k)) }.forall { x => x })
   }
 
