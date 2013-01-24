@@ -111,13 +111,13 @@ extends ConcurrentMutableStore[MemcacheStore[Key,Value],Key,Value] {
       }
     }
 
-  override def multiGet(ks: Set[Key]): Future[Map[Key,Value]] = {
+  override def multiGet(ks: Set[Key]): Future[Map[Key, Option[Value]]] = {
     val encodedKs = ks map { enc(_) }
     val encMap = (encodedKs zip ks).toMap
 
     client flatMap { c =>
       c.get(encodedKs.toIterable) map { m =>
-        m map { case (k,v) => encMap(k) -> vBijection.invert(v) }
+        m map { case (k,v) => encMap(k) -> Some(vBijection.invert(v)) }
       }
     }
   }
