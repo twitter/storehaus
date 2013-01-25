@@ -17,38 +17,40 @@
 package com.twitter.storehaus.algebra
 
 import com.twitter.algebird.{ Semigroup, Monoid, Group, Ring, Field }
-import com.twitter.util.Future
+import com.twitter.util.{Try, Return, Throw}
 
 /**
- * Monoid and Semigroup on util.Future.
+ * Monoid and Semigroup on util.Try.
  *
  * @author Sam Ritchie
  * @author Oscar Boykin
  */
 
-class FutureSemigroup[T: Semigroup] extends Semigroup[Future[T]] {
-  override def plus(l: Future[T], r: Future[T]): Future[T] =
+// Clearly all these are generalizations of a Monad pattern with a single value:
+
+class TrySemigroup[T: Semigroup] extends Semigroup[Try[T]] {
+  override def plus(l: Try[T], r: Try[T]): Try[T] =
     for(lv <- l; rv <- r) yield Semigroup.plus(lv, rv)
 }
 
-class FutureMonoid[T: Monoid] extends FutureSemigroup[T] with Monoid[Future[T]] {
-  override def zero = Future.value(Monoid.zero)
+class TryMonoid[T: Monoid] extends TrySemigroup[T] with Monoid[Try[T]] {
+  override def zero = Return(Monoid.zero)
 }
 
-class FutureGroup[T: Group] extends FutureMonoid[T] with Group[Future[T]] {
-  override def negate(v: Future[T]): Future[T] = v.map { implicitly[Group[T]].negate(_) }
-  override def minus(l: Future[T], r: Future[T]): Future[T] =
+class TryGroup[T: Group] extends TryMonoid[T] with Group[Try[T]] {
+  override def negate(v: Try[T]): Try[T] = v.map { implicitly[Group[T]].negate(_) }
+  override def minus(l: Try[T], r: Try[T]): Try[T] =
     for(lv <- l; rv <- r) yield Group.minus(lv, rv)
 }
 
-class FutureRing[T: Ring] extends FutureGroup[T] with Ring[Future[T]] {
-  override def one = Future.value(Ring.one)
-  override def times(l : Future[T], r: Future[T]) =
+class TryRing[T: Ring] extends TryGroup[T] with Ring[Try[T]] {
+  override def one = Return(Ring.one)
+  override def times(l : Try[T], r: Try[T]) =
     for(lv <- l; rv <- r) yield Ring.times(lv, rv)
 }
 
-class FutureField[T: Field] extends FutureRing[T] with Field[Future[T]] {
-  override def inverse(v: Future[T]) = v.map { implicitly[Field[T]].inverse(_) }
-  override def div(l : Future[T], r: Future[T]) =
+class TryField[T: Field] extends TryRing[T] with Field[Try[T]] {
+  override def inverse(v: Try[T]) = v.map { implicitly[Field[T]].inverse(_) }
+  override def div(l : Try[T], r: Try[T]) =
     for(lv <- l; rv <- r) yield Field.div(lv, rv)
 }
