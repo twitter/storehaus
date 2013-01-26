@@ -26,9 +26,9 @@ import org.jboss.netty.buffer.{ChannelBuffer, ChannelBuffers}
 class ChannelBufferBijection extends Bijection[ChannelBuffer, Array[Byte]] {
   override def apply(cb: ChannelBuffer) = {
     val dup = cb.duplicate
-    val result = Array[Byte](dup.readableBytes)
+    val result = new Array[Byte](dup.readableBytes)
     dup.readBytes(result)
     result
   }
-  override def invert(ary: Array[Byte]) = ChannelBuffers.wrappedBuffer(arg)
+  override def invert(ary: Array[Byte]) = ChannelBuffers.wrappedBuffer(ary)
 }

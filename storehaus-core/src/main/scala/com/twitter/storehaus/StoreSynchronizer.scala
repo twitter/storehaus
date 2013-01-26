@@ -66,8 +66,8 @@ class StoreSynchronizer[K,V](interval: Long, toStore: MutableStore[_ <: MutableS
 
         // Swap the immutable backing store reference at every key
         // increment.
-        case kv: KeysetStore[_,K,V] => {
-          next = kv
+        case kv: KeysetStore[_,_,_] => {
+          next = kv.asInstanceOf[KeysetStore[_,K,V]]
         }
       }
     }

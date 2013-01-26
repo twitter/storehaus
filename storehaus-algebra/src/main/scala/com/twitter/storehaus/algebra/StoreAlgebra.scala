@@ -45,10 +45,15 @@ class AlgebraicReadableStore[K, V](store: ReadableStore[K, V]) {
    * If V is TraversableOnce[T], returns a new store that sums V down into a single T
    * before returning.
    */
-  def summed[T](implicit ev: V <:< TraversableOnce[T], monoid: Monoid[T]): ReadableStore[K, T] =
+  def summed[T](implicit ev: V <:< TraversableOnce[T], sg: Semigroup[T]): ReadableStore[K, T] =
     new ReadableStore[K, T] {
-      override def get(k: K) = store.get(k) map { _ map { Monoid.sum(_) } }
-      override def multiGet(ks: Set[K]) = store.multiGet(ks) map { _ mapValues { _ map { Monoid.sum(_) } } }
+      override def get(k: K) = store.get(k) map { _ flatMap { Semigroup.sumOption(_) } }
+      override def multiGet(ks: Set[K]) =
+        store.multiGet(ks) map { kv =>
+          kv.mapValues { fs: Future[Option[V]] =>
+            fs.map { opt => opt.flatMap { ts => Semigroup.sumOption(ev(ts)) } }
+          }
+        }
     }
 }
 
