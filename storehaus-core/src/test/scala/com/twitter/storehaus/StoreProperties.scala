@@ -16,6 +16,8 @@
 
 package com.twitter.storehaus
 
+import com.twitter.util.Future
+
 import org.scalacheck.Arbitrary
 import org.scalacheck.Properties
 import org.scalacheck.Prop.forAll
@@ -40,14 +42,17 @@ object StoreProperties extends Properties("Store") {
       }._2
     }
 
-  property("multiGet returns Some(None) for missing keys") =
+  property("multiGet returns Some(Future(None)) for missing keys") =
     forAll { (m: Map[String, Int]) =>
       val keys = m.keySet
       val expanded: Set[String] = keys ++ (keys map { _ + "suffix!" })
       val ms = new MapStore(m)
-      (ms.multiGet(expanded) map { retM: Map[String, Option[Int]] =>
+      (ms.multiGet(expanded) map { retM: Map[String, Future[Option[Int]]] =>
         expanded forall { s: String =>
-          retM.get(s) == Some(m.get(s))
+          retM.get(s) match {
+            case None => m.contains(s) == false
+            case Some(f) => f.get == m.get(s)
+          }
         }
       }).get
     }
@@ -55,7 +60,7 @@ object StoreProperties extends Properties("Store") {
   property("Map wraps store works") = forAll { (m: Map[String, Int]) =>
     val ms = new MapStore(m)
     (ms.keySet == m.keySet) &&
-      (ms.multiGet(m.keySet).map { _ == (m mapValues { Some(_) }) }.get) &&
+      (ms.multiGet(m.keySet).map { kv => (kv.mapValues { _.get }) == (m mapValues { Some(_) }) }.get) &&
       (m.keySet.map { k => (ms.get(k).get == m.get(k)) }.forall { x => x })
   }
 

@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus
 
-import com.twitter.util.Future
+import com.twitter.util.{Future, Throw, Return}
 import java.io.Closeable
 
 object ReadableStore {
@@ -24,33 +24,26 @@ object ReadableStore {
 }
 
 trait ReadableStore[K,V] extends Closeable { self =>
-  def get(k: K): Future[Option[V]] = multiGet(Set(k)) map { _.get(k).flatten.headOption }
+  def get(k: K): Future[Option[V]] = multiGet(Set(k)).flatMap { _.apply(k) }
 
   /**
-   * A definitely present value is signaled by Some(v), while a missing
-   * value is signaled by None. If a particular value is not known for
-   * some reason (for example: store failure, cache miss within the store,
-   * timeout, etc) the value will be missing from the map.
+   * all keys in the set are in the resulting map
    */
-  def multiGet(ks: Set[K]): Future[Map[K,Option[V]]] = {
-    val keySeq = ks.toSeq
-    val futures: Seq[Future[(K, Option[V])]] =
-      keySeq
-        .map { k => get(k) map { (k, _) } }
-        .filter { _.isReturn }
-    Future.collect(futures) map { _.toMap }
-  }
+  def multiGet(ks: Set[K]): Future[Map[K,Future[Option[V]]]] =
+    Future(ks.map { k => (k, get(k)) }.toMap)
 
   /**
    * Returns a new ReadableStore[K, V] that queries both this and the other
    * ReadableStore[K,V] for get and multiGet and returns the first
    * future to succeed (following com.twitter.util.Future's "or" logic).
    */
-  def or(other: ReadableStore[K,V]) =
+  def or(other: ReadableStore[K,V]) = {
+    import Store.{selectFirstSuccessfulTrial => selectFirst}
     new ReadableStore[K,V] {
-      override def get(k: K) = self.get(k) or other.get(k)
-      override def multiGet(ks: Set[K]) = self.multiGet(ks) or other.multiGet(ks)
+      override def get(k: K) = selectFirst(Seq(self.get(k), other.get(k)))
+      override def multiGet(ks: Set[K]) = selectFirst(Seq(self.multiGet(ks), other.multiGet(ks)))
     }
+  }
 
   override def close { }
 }
@@ -61,6 +54,22 @@ object Store {
   // TODO: Move to some collection util.
   def zipWith[K, V](keys: Set[K])(lookup: K => V): Map[K, V] =
     keys.foldLeft(Map.empty[K, V]) { (m, k) => m + (k -> lookup(k)) }
+
+  def selectFirstSuccessfulTrial[T](futures: Seq[Future[T]]): Future[T] = {
+    Future.select(futures).flatMap(entry => {
+      val (completedTry, otherFutures) = entry
+      completedTry match {
+        case Throw(e) => {
+          if (otherFutures.isEmpty) {
+            Future.exception(e)
+          } else {
+            selectFirstSuccessfulTrial(otherFutures)
+          }
+        }
+        case Return(similarUsers) => Future.value(similarUsers)
+      }
+    })
+  }
 }
 
 trait Store[Self <: Store[Self,K,V], K, V] extends ReadableStore[K, V] {
