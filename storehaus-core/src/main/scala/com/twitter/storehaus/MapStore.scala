@@ -28,7 +28,8 @@ class MapStore[K,V](val backingStore: Map[K,V] = Map[K,V]()) extends KeysetStore
   override def keySet = backingStore.keySet
   override def size = backingStore.size
   override def get(k: K) = Future.value(backingStore.get(k))
-  override def multiGet(ks: Set[K]) = Future.value(Store.zipWith(ks) { backingStore.get(_) })
+  override def multiGet(ks: Set[K]) =
+    Future.value(ks.map { k => (k, Future.value(backingStore.get(k))) }.toMap)
   override def -(k: K) = Future.value(new MapStore(backingStore - k))
   override def +(pair: (K, V)) = Future.value(new MapStore(backingStore + pair))
 }
