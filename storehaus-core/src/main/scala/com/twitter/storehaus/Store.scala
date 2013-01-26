@@ -18,12 +18,35 @@ package com.twitter.storehaus
 
 import com.twitter.util.{Future, Throw, Return}
 import java.io.Closeable
+import com.twitter.bijection.{Bijection, AbstractBijection}
+
 
 object ReadableStore {
   def empty[K,V]: ReadableStore[K,V] = new EmptyReadableStore[K, V]
+
+  implicit def bijection[K1,V1,K2,V2](implicit bik: Bijection[K1,K2], biv: Bijection[V1,V2]):
+    Bijection[ReadableStore[K1,V1],ReadableStore[K2,V2]] =
+      new AbstractBijection[ReadableStore[K1, V1], ReadableStore[K2, V2]] {
+        override def apply(r1: ReadableStore[K1,V1]) = new BijectedReadableStore[K1,V1,K2,V2](r1)
+        override def invert(r2: ReadableStore[K2,V2]) = new BijectedReadableStore[K2,V2,K1,V1](r2)
+      }
+
+  /**
+   * Returns a new ReadableStore[K, V] that queries both this and the other
+   * ReadableStore[K,V] for get and multiGet and returns the first
+   * future to succeed (following com.twitter.util.Future's "or" logic).
+   */
+  def select[K,V](stores: Seq[ReadableStore[K,V]]) = {
+    import Store.{selectFirstSuccessfulTrial => selectFirst}
+    new AbstractReadableStore[K,V] {
+      override def get(k: K) = selectFirst(stores.map { _.get(k) })
+      override def multiGet(ks: Set[K]) = selectFirst(stores.map { _.multiGet(ks) })
+      override def close = stores.foreach { _.close }
+    }
+  }
 }
 
-trait ReadableStore[K,V] extends Closeable { self =>
+trait ReadableStore[K,+V] extends Closeable { self =>
   def get(k: K): Future[Option[V]] = multiGet(Set(k)).flatMap { _.apply(k) }
 
   /**
@@ -32,21 +55,14 @@ trait ReadableStore[K,V] extends Closeable { self =>
   def multiGet(ks: Set[K]): Future[Map[K,Future[Option[V]]]] =
     Future(ks.map { k => (k, get(k)) }.toMap)
 
-  /**
-   * Returns a new ReadableStore[K, V] that queries both this and the other
-   * ReadableStore[K,V] for get and multiGet and returns the first
-   * future to succeed (following com.twitter.util.Future's "or" logic).
-   */
-  def or(other: ReadableStore[K,V]) = {
-    import Store.{selectFirstSuccessfulTrial => selectFirst}
-    new ReadableStore[K,V] {
-      override def get(k: K) = selectFirst(Seq(self.get(k), other.get(k)))
-      override def multiGet(ks: Set[K]) = selectFirst(Seq(self.multiGet(ks), other.multiGet(ks)))
-    }
-  }
-
   override def close { }
 }
+
+/** For java and for anonymous instances.
+ * See: http://blog.duh.org/2011/11/scala-pitfalls-trait-bloat.html
+ * using this reduces the compiled code size dramatically.
+ */
+abstract class AbstractReadableStore[K,+V] extends ReadableStore[K,V]
 
 // Store is immutable by default.
 

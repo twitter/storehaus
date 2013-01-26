@@ -17,6 +17,7 @@
 package com.twitter.storehaus
 
 import com.twitter.util.Future
+import com.twitter.bijection.AbstractBijection
 
 import org.scalacheck.Arbitrary
 import org.scalacheck.Properties
@@ -67,6 +68,15 @@ object StoreProperties extends Properties("Store") {
   property("MapStore test") =
     storeTest[MapStore[String,Int],String,Int](new MapStore[String,Int]())
 
+  implicit val dangerousStringBijection = new AbstractBijection[Int,String] {
+    override def apply(i: Int) = i.toString
+    override def invert(s: String) = s.toInt
+  }
+
+  property("BijectedMapStore test") =
+    storeTest[BijectedStore[MapStore[String,String],String,String,Int,Int],Int,Int](
+      new BijectedStore[MapStore[String,String],String,String,Int,Int](new MapStore[String,String]()))
+
   property("ConcurrentHashMapStore test") =
     storeTest[ConcurrentHashMapStore[String,Int],String,Int](
       new ConcurrentHashMapStore[String,Int]())
@@ -75,7 +85,7 @@ object StoreProperties extends Properties("Store") {
     storeTest[LRUStore[String,Int],String,Int](LRUStore[String,Int](100000))
 
   property("Or works as expected") = forAll { (m1: Map[String, Int], m2: Map[String, Int]) =>
-    val orRO = (new MapStore(m1)) or (new MapStore(m2))
+    val orRO = ReadableStore.select(Seq(new MapStore(m1), new MapStore(m2)))
    (m1.keySet ++ m2.keySet).forall { k =>
      (orRO.get(k).get == m1.get(k)) ||
        (orRO.get(k).get == m2.get(k))
