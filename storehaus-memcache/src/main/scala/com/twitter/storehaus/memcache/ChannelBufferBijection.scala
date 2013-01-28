@@ -14,15 +14,21 @@
  * limitations under the License.
  */
 
-package com.twitter.storehaus
+package com.twitter.storehaus.memcache
 
-import com.twitter.util.Future
+import com.twitter.bijection.Bijection
 
-/**
- * Concrete empty store implementation.
+import org.jboss.netty.buffer.{ChannelBuffer, ChannelBuffers}
+
+/** Reads from the current position to the end into an array without changing
+ * the given ChannelBuffer
  */
-
-class EmptyReadableStore[K, V] extends ReadableStore[K, V] {
-  override def get(k: K) = Future.None
-  override def multiGet(ks: Set[K]) = Future.value(Map.empty[K, Future[Option[V]]])
+class ChannelBufferBijection extends Bijection[ChannelBuffer, Array[Byte]] {
+  override def apply(cb: ChannelBuffer) = {
+    val dup = cb.duplicate
+    val result = new Array[Byte](dup.readableBytes)
+    dup.readBytes(result)
+    result
+  }
+  override def invert(ary: Array[Byte]) = ChannelBuffers.wrappedBuffer(ary)
 }
