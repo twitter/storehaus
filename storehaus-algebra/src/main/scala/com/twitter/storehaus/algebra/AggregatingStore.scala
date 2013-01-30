@@ -42,9 +42,6 @@ extends Store[AggregatingStore[StoreType, K, V], K, V] {
   override def get(k: K) = store.get(k)
   override def multiGet(ks: Set[K]) = store.multiGet(ks)
 
-  override def -(k: K): Future[AggregatingStore[StoreType, K, V]] =
-    (store - k) map { new AggregatingStore(_, queue) }
-
   protected def update(s: StoreType, pair: (K, V)): Future[StoreType] = {
     val (k, v) = pair
     store.get(k) flatMap { oldV: Option[V] =>
@@ -54,15 +51,21 @@ extends Store[AggregatingStore[StoreType, K, V], K, V] {
     }
   }
 
-  override def +(pair: (K, V)): Future[AggregatingStore[StoreType, K, V]] = {
+  protected def submit(optM: Option[Map[K, V]]): Future[StoreType] = {
     val storeFuture = Future.value(store)
-    queue(Map(pair))
-      .map { _.foldLeft(storeFuture) { (s, pair) => s.flatMap { update(_, pair) } } }
+    optM.map { _.foldLeft(storeFuture) { (s, pair) => s.flatMap { update(_, pair) } } }
       .getOrElse(storeFuture)
-      .map { new AggregatingStore(_, queue) }
   }
 
-  override def update(k: K)(fn: Option[V] => Option[V]): Future[AggregatingStore[StoreType, K, V]] = {
-    store.update(k)(fn) map { new AggregatingStore(_, queue) }
-  }
+  override def -(k: K): Future[AggregatingStore[StoreType, K, V]] =
+    submit(queue.flush)
+      .flatMap { s => (s - k).map { new AggregatingStore(_, queue) } }
+
+  override def +(pair: (K, V)): Future[AggregatingStore[StoreType, K, V]] =
+    submit(queue(Map(pair)))
+      .map { new AggregatingStore(_, queue) }
+
+  override def update(k: K)(fn: Option[V] => Option[V]): Future[AggregatingStore[StoreType, K, V]] =
+    submit(queue.flush)
+      .flatMap { _.update(k)(fn).map { new AggregatingStore(_, queue) } }
 }
