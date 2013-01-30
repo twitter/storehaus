@@ -96,7 +96,7 @@ object StorehausBuild extends Build {
   ).settings(
     name := "storehaus-algebra",
     libraryDependencies ++= Seq(
-      "com.twitter" %% "algebird" % "0.1.6",
+      "com.twitter" %% "algebird" % "0.1.7",
       "com.twitter" %% "bijection-core" % "0.2.0"
     )
   ).dependsOn(storehausCore % "test->test;compile->compile")

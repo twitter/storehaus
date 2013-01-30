@@ -58,32 +58,6 @@ class AlgebraicReadableStore[K, V](store: ReadableStore[K, V]) {
 }
 
 class AlgebraicStore[StoreType <: Store[StoreType, K, V], K, V](store: StoreType) {
-  def aggregating(implicit sg: Monoid[V]): AggregatingStore[StoreType, K, V] = new AggregatingStore(store)
-}
-
-/**
- * Store which aggregates values added with + into the existing value in the store.
- * If addition ever results in a zero value, the key is deleted from the store.
- */
-class AggregatingStore[StoreType <: Store[StoreType, K, V], K, V: Monoid](store: StoreType)
-extends Store[AggregatingStore[StoreType, K, V], K, V] {
-  override def get(k: K) = store.get(k)
-  override def multiGet(ks: Set[K]) = store.multiGet(ks)
-
-  override def -(k: K): Future[AggregatingStore[StoreType, K, V]] =
-    (store - k) map { new AggregatingStore(_) }
-
-  override def +(pair: (K,V)): Future[AggregatingStore[StoreType, K, V]] = {
-    val (k, v) = pair
-    store.get(k) flatMap { oldV: Option[V] =>
-      Monoid.nonZeroOption(oldV.map { Monoid.plus(_, v) } getOrElse v)
-        .map { newV => store + (k -> newV) }
-        .getOrElse(store - k)
-        .map { new AggregatingStore(_) }
-    }
-  }
-
-  override def update(k: K)(fn: Option[V] => Option[V]): Future[AggregatingStore[StoreType, K, V]] = {
-    store.update(k)(fn) map { new AggregatingStore(_) }
-  }
+  def aggregating(capacity: Int = 0)(implicit sg: Monoid[V]): AggregatingStore[StoreType, K, V] =
+    AggregatingStore(store, capacity)
 }
