@@ -3,7 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
- * a copy of the License at
+b * a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -39,8 +39,8 @@ object AggregatingStore {
 class AggregatingStore[StoreType <: Store[StoreType, K, V], K, V: Monoid](store: StoreType,
                                                                           queue: SummingQueue[Map[K, V]])
 extends Store[AggregatingStore[StoreType, K, V], K, V] {
-  override def get(k: K) = store.get(k)
-  override def multiGet(ks: Set[K]) = store.multiGet(ks)
+  override def get(k: K) = submit(queue.flush).flatMap { _.get(k) }
+  override def multiGet(ks: Set[K]) = submit(queue.flush).flatMap { _.multiGet(ks) }
 
   protected def update(s: StoreType, pair: (K, V)): Future[StoreType] = {
     val (k, v) = pair

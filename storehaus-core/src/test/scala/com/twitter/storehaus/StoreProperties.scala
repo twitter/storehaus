@@ -24,23 +24,7 @@ import org.scalacheck.Prop.forAll
 import org.scalacheck.Gen.choose
 import org.scalacheck.Prop._
 
-object StoreProperties extends Properties("Store") {
-
-  // Adds a bunch of items and removes them and sees if they are absent
-  def storeTest[StoreType<:Store[StoreType,K,V],K,V](store: StoreType)
-    (implicit arbk: Arbitrary[K], arbv: Arbitrary[V]) =
-    forAll { (examples: List[(K,V)]) =>
-      val adds = examples.foldLeft((store, true)) { (old, kv) =>
-        val next = (old._1 + (kv)).get
-        val nextGood = (next.get(kv._1).get.get == kv._2)
-        (next, nextGood && old._2)
-      }
-      examples.foldLeft(adds) { (old, kv) =>
-        val next = (old._1 - (kv._1)).get
-        val nextGood = (next.get(kv._1).get == None)
-        (next, nextGood && old._2)
-      }._2
-    }
+object StoreProperties extends Properties("Store") with BaseProperties {
 
   property("multiGet returns Some(Future(None)) for missing keys") =
     forAll { (m: Map[String, Int]) =>
