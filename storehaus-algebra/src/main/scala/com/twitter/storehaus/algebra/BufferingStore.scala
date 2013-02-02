@@ -21,6 +21,8 @@ import com.twitter.util.Future
 import com.twitter.storehaus.Store
 
 /**
+ * Store that buffers updates until the supplied capacity have been submitted.
+ *
  * @author Sam Ritchie
  */
 
@@ -32,8 +34,6 @@ object BufferingStore {
 class BufferingStore[StoreType <: Store[StoreType, K, V], K, V: Monoid]
 (store: StoreType, queue: SummingQueue[Map[K, Option[V] => Option[V]]])
 extends Store[BufferingStore[StoreType, K, V], K, V] {
-  override def get(k: K) = submit(queue.flush).flatMap { _.get(k) }
-  override def multiGet(ks: Set[K]) = submit(queue.flush).flatMap { _.multiGet(ks) }
 
   protected def submit(optM: Option[Map[K, Option[V] => Option[V]]]): Future[StoreType] = {
     val storeFuture = Future.value(store)
@@ -41,9 +41,12 @@ extends Store[BufferingStore[StoreType, K, V], K, V] {
       .getOrElse(storeFuture)
   }
 
+  override def get(k: K) = submit(queue.flush).flatMap { _.get(k) }
+  override def multiGet(ks: Set[K]) = submit(queue.flush).flatMap { _.multiGet(ks) }
+
   override def -(k: K): Future[BufferingStore[StoreType, K, V]] =
-    submit(queue.flush)
-      .flatMap { s => (s - k).map { new BufferingStore(_, queue) } }
+    submit(queue(Map(k -> { _ => None })))
+      .map { new BufferingStore(_, queue) }
 
   override def +(pair: (K, V)): Future[BufferingStore[StoreType, K, V]] = {
     val (k, v) = pair
@@ -52,6 +55,6 @@ extends Store[BufferingStore[StoreType, K, V], K, V] {
   }
 
   override def update(k: K)(fn: Option[V] => Option[V]): Future[BufferingStore[StoreType, K, V]] =
-    submit(queue.flush)
-      .flatMap { _.update(k)(fn).map { new BufferingStore(_, queue) } }
+    submit(queue(Map(k -> fn)))
+      .map { new BufferingStore(_, queue) }
 }

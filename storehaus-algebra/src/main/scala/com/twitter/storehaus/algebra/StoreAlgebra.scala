@@ -27,7 +27,8 @@ object StoreAlgebra {
   implicit def enrichReadableStore[K, V](store: ReadableStore[K, V]): AlgebraicReadableStore[K, V] =
     new AlgebraicReadableStore[K, V](store)
 
-  implicit def enrichStore[StoreType <: Store[StoreType, K, V], K, V](store: StoreType): AlgebraicStore[StoreType, K, V] =
+  implicit def enrichStore[StoreType <: Store[StoreType, K, V], K, V: Monoid]
+  (store: StoreType): AlgebraicStore[StoreType, K, V] =
     new AlgebraicStore[StoreType, K, V](store)
 }
 
@@ -57,7 +58,7 @@ class AlgebraicReadableStore[K, V](store: ReadableStore[K, V]) {
     }
 }
 
-class AlgebraicStore[StoreType <: Store[StoreType, K, V], K, V](store: StoreType) {
-  def aggregating(capacity: Int = 0)(implicit sg: Monoid[V]): AggregatingStore[StoreType, K, V] =
-    AggregatingStore(store, capacity)
+class AlgebraicStore[StoreType <: Store[StoreType, K, V], K, V: Monoid](store: StoreType) {
+  def buffering(capacity: Int = 0): BufferingStore[StoreType, K, V] = BufferingStore(store)
+  lazy val aggregating: AggregatingStore[StoreType, K, V] = AggregatingStore(store)
 }
