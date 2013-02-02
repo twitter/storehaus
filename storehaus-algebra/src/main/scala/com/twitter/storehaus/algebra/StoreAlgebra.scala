@@ -83,7 +83,7 @@ extends Store[AggregatingStore[StoreType, K, V], K, V] {
     }
   }
 
-  override def update(k: K)(fn: Option[V] => Option[V]): Future[AggregatingStore[StoreType, K, V]] = {
+  override def update(k: K)(fn: Option[V] => Future[Option[V]]): Future[AggregatingStore[StoreType, K, V]] = {
     store.update(k)(fn) map { new AggregatingStore(_) }
   }
 }
