@@ -75,10 +75,10 @@ object Store {
       case other => f.within(other)
     }
 
-  def bestEffortCollect[T](futureOpts: Seq[Future[Option[T]]], timeout: Duration)
-  (implicit timer: Timer): Future[Seq[Option[T]]] =
+  def bestEffortCollect[T](futureSeq: Seq[Future[T]], timeout: Duration)
+  (implicit timer: Timer): Future[Seq[T]] =
     Future.collect {
-      futureOpts.map { f: Future[Option[T]] =>
+      futureSeq.map { f: Future[T] =>
         assignTimeout(f, timeout)
           .map { Some(_) }
           .handle { case _ => None }
@@ -88,22 +88,25 @@ object Store {
 
 
 trait Store[Self <: Store[Self,K,V], K, V] extends ReadableStore[K, V] {
-  def -(k: K): Future[Self] = this.update(k) { _ => Future.None }
-  def +(pair: (K,V)): Future[Self] =  this.update(pair._1) { _ => Future.value(Some(pair._2)) }
+  def +(pair: (K, V)): Future[Self] =  set(pair)
+  def -(k: K): Future[Self] = remove(k)
 
-  // Alias for "+".
-  def set(pair: (K,V)): Future[Self] = this + pair
+  def set(pair: (K, V)): Future[Self] = this.update(pair._1) { _ => Future.value(Some(pair._2)) }
+  def multiSet(m: Map[K, Future[Option[V]]]): Future[Self] = multiUpdate(m.mapValues { v => { _ => v } })
 
-  def multiSet(m: Map[K, Future[Option[V]]]): Future[Self] =
-    multiUpdate(m.mapValues { v => { _ => v } })
-
-  private def submit(k: K, optV: Option[V]): Future[Self] =
-    optV.map { v => this + (k -> v) }.getOrElse(this - k)
+  def remove(k: K): Future[Self] = this.update(k) { _ => Future.None }
+  def multiRemove(k: Set[K]): Future[Self] =
+    this.multiUpdate {
+      (k zip Stream.continually { _: Option[V] => Future.None }).toMap
+    }
 
   def update(k: K)(fn: Option[V] => Future[Option[V]]): Future[Self] =
     for (opt <- get(k);
          nextOpt <- fn(opt);
-         result <- submit(k, nextOpt))
+         result <- nextOpt match {
+           case Some(v) => set(k -> v)
+           case None => remove(k)
+         })
     yield result
 
   def multiUpdate(m: Map[K, Option[V] => Future[Option[V]]]): Future[Self] =
