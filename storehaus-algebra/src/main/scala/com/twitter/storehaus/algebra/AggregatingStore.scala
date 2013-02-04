@@ -43,7 +43,8 @@ extends Store[AggregatingStore[StoreType, K, V], K, V] {
   override def +(pair: (K,V)): Future[AggregatingStore[StoreType, K, V]] = {
     val (k, v) = pair
     store.get(k) flatMap { oldV: Option[V] =>
-      Monoid.nonZeroOption(oldV.map { Monoid.plus(_, v) } getOrElse v)
+      Monoid.plus(oldV, Some(v))
+        .flatMap { Monoid.nonZeroOption(_) }
         .map { newV => store + (k -> newV) }
         .getOrElse(store - k)
         .map { new AggregatingStore(_) }
