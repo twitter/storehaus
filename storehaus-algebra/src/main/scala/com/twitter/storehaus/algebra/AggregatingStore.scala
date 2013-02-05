@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus.algebra
 
-import com.twitter.algebird.{ Monoid, SummingQueue }
+import com.twitter.algebird.{ Monoid, Semigroup, SummingQueue }
 import com.twitter.util.Future
 import com.twitter.storehaus.Store
 
@@ -28,11 +28,11 @@ import com.twitter.storehaus.Store
  */
 
 object AggregatingStore {
-  def apply[StoreType <: Store[StoreType, K, V], K, V: Monoid](store: StoreType) =
+  def apply[StoreType <: Store[StoreType, K, V], K, V: Semigroup](store: StoreType) =
     new AggregatingStore[StoreType, K, V](store)
 }
 
-class AggregatingStore[StoreType <: Store[StoreType, K, V], K, V: Monoid](store: StoreType)
+class AggregatingStore[StoreType <: Store[StoreType, K, V], K, V](store: StoreType)(implicit sg: Semigroup[V])
 extends Store[AggregatingStore[StoreType, K, V], K, V] {
   override def get(k: K) = store.get(k)
   override def multiGet(ks: Set[K]) = store.multiGet(ks)
@@ -44,7 +44,7 @@ extends Store[AggregatingStore[StoreType, K, V], K, V] {
     val (k, v) = pair
     store.get(k) flatMap { oldV: Option[V] =>
       Monoid.plus(oldV, Some(v))
-        .flatMap { Monoid.nonZeroOption(_) }
+        .filter { sg.isNonZero(_) }
         .map { newV => store + (k -> newV) }
         .getOrElse(store - k)
         .map { new AggregatingStore(_) }
