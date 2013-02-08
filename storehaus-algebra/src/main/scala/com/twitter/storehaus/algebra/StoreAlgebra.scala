@@ -65,7 +65,7 @@ class AlgebraicStore[StoreType <: Store[StoreType, K, V], K, V](store: StoreType
  * Store which aggregates values added with + into the existing value in the store.
  * If addition ever results in a zero value, the key is deleted from the store.
  */
-class AggregatingStore[StoreType <: Store[StoreType, K, V], K, V: Monoid](store: StoreType)
+class AggregatingStore[StoreType <: Store[StoreType, K, V], K, V: Monoid](store: Store[StoreType, K, V])
 extends Store[AggregatingStore[StoreType, K, V], K, V] {
   override def get(k: K) = store.get(k)
   override def multiGet(ks: Set[K]) = store.multiGet(ks)

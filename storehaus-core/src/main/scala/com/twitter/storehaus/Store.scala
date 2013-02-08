@@ -72,14 +72,29 @@ object Store {
   }
 }
 
-trait Store[Self <: Store[Self,K,V], K, V] extends ReadableStore[K, V] {
-  def -(k: K): Future[Self]
-  def +(pair: (K,V)): Future[Self]
-  def update(k: K)(fn: Option[V] => Option[V]): Future[Self] = {
+trait Store[Self <: Store[Self,K,V], K, V] extends ReadableStore[K, V] { self =>
+  def -(k: K): Future[Store[Self,K,V]]
+  def +(pair: (K,V)): Future[Store[Self,K,V]]
+  def update(k: K)(fn: Option[V] => Option[V]): Future[Store[Self,K,V]] = {
     get(k) flatMap { opt: Option[V] =>
       fn(opt)
         .map { v => this + (k -> v) }
         .getOrElse(this - k)
+    }
+  }
+
+  /**
+   * Replicates writes to both stores, and uses the "or" logic defined on ReadableStore to replicate reads.
+   */
+  def combinedWith(other: Store[Self, K, V]): Store[Self, K,  V] = {
+    new Store[Self, K, V] { combined =>
+      lazy val readableStore = this.or(other)
+      override def get(k: K) = readableStore.get(k)
+      override def multiGet(ks: Set[K]) = readableStore.multiGet(ks)
+      override def update(k: K)(fn: Option[V] => Option[V]) =
+        self.update(k)(fn).join(other.update(k)(fn)).map { _ => combined }
+      override def -(k: K) = (self - k).join(other - k).map { _ => combined}
+      override def +(pair: (K,V)) = (self + pair).join(other + pair).map { _ => combined}
     }
   }
 }
