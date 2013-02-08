@@ -70,28 +70,12 @@ object Store {
       }
     })
   }
-
-  /**
-   * Replicates writes to all stores, and takes the first successful read.
-   */
-  def replicate[Self <: Store[Self, K, V], K, V](stores: Seq[Store[Self, K, V]]): Store[Self, K, V] = {
-    import Store.{selectFirstSuccessfulTrial => selectFirst}
-    new Store[Self, K, V] { combined =>
-      override def get(k: K) = selectFirst(stores.map { _.get(k) })
-      override def multiGet(ks: Set[K]) = selectFirst(stores.map { _.multiGet(ks) })
-      override def update(k: K)(fn: Option[V] => Option[V]) =
-        Future.collect(stores.map { _.update(k)(fn) }).map { _ => combined }
-      override def -(k: K) = Future.collect(stores.map { _ - k }).map { _ => combined }
-      override def +(pair: (K,V)) = Future.collect(stores.map { _ + pair }).map { _ => combined }
-    }
-  }
-
 }
 
 trait Store[Self <: Store[Self,K,V], K, V] extends ReadableStore[K, V] {
-  def -(k: K): Future[Store[Self,K,V]]
-  def +(pair: (K,V)): Future[Store[Self,K,V]]
-  def update(k: K)(fn: Option[V] => Option[V]): Future[Store[Self,K,V]] = {
+  def -(k: K): Future[Self]
+  def +(pair: (K,V)): Future[Self]
+  def update(k: K)(fn: Option[V] => Option[V]): Future[Self] = {
     get(k) flatMap { opt: Option[V] =>
       fn(opt)
         .map { v => this + (k -> v) }
