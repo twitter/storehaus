@@ -88,7 +88,7 @@ object Store {
 
 }
 
-trait Store[Self <: Store[Self,K,V], K, V] extends ReadableStore[K, V] { self =>
+trait Store[Self <: Store[Self,K,V], K, V] extends ReadableStore[K, V] {
   def -(k: K): Future[Store[Self,K,V]]
   def +(pair: (K,V)): Future[Store[Self,K,V]]
   def update(k: K)(fn: Option[V] => Option[V]): Future[Store[Self,K,V]] = {
