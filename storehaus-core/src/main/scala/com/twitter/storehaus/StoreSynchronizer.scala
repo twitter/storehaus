@@ -34,7 +34,8 @@ import scala.actors.{ Actor, TIMEOUT }
  * reference to the StoreSynchronizer on every write.
  */
 
-class StoreSynchronizer[K,V](interval: Long, toStore: MutableStore[_ <: MutableStore[_,K,V],K,V]) extends Actor {
+class StoreSynchronizer[K,V](interval: Long, toStore: MutableStore[_ <: MutableStore[_,K,V],K,V])
+(implicit collect: FutureCollector[Option[(K, Option[V])]]) extends Actor {
   def act {
     var stop = false
     var nextTime = nowPlusInterval
@@ -109,7 +110,7 @@ class StoreSynchronizer[K,V](interval: Long, toStore: MutableStore[_ <: MutableS
                 None
             }
         }
-      TFuture.collect(futureSeq) map { _.flatten }
+      collect(futureSeq) map { _.flatten }
     }
 
     val futureStore = processStoreFuture[MS](futurePairs, cast[MS](toStore))
