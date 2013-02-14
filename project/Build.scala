@@ -81,7 +81,8 @@ object StorehausBuild extends Build {
     settings = sharedSettings
   ).settings(
     name := "storehaus-core",
-    libraryDependencies += "com.twitter" % "util-core" % "5.3.15"
+    libraryDependencies ++= Seq("com.twitter" % "util-core" % "5.3.15",
+      "com.twitter" %% "bijection-core" % "0.2.0")
   )
 
   lazy val storehausAlgebra = Project(
