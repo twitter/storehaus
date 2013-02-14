@@ -31,9 +31,9 @@ object StorehausBuild extends Build {
     publishTo <<= version { (v: String) =>
       val nexus = "http://artifactory.local.twitter.com/"
       if (v.trim.endsWith("SNAPSHOT"))
-        Some("snapshots" at nexus + "libs-snapshots-local")
+        Some("artifactory-snapshots" at nexus + "libs-snapshots-local")
       else
-        Some("releases"  at nexus + "libs-releases-local")
+        Some("artifactory-releases"  at nexus + "libs-releases-local")
     },
 
     pomExtra := (
