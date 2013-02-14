@@ -32,15 +32,6 @@ object StoreAlgebra {
 }
 
 class AlgebraicReadableStore[K, V](store: ReadableStore[K, V]) {
-  import ReadableStoreMonoid.apply
-
-  /**
-   * Returns a new store that queries this store and the supplied other store
-   * and returns an option of both values summed together.
-   */
-  def +(other: ReadableStore[K, V])(implicit sg: Semigroup[V]): ReadableStore[K, V] =
-    Monoid.plus(store, other)
-
   /**
    * If V is TraversableOnce[T], returns a new store that sums V down into a single T
    * before returning.

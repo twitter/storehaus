@@ -8,7 +8,7 @@ object StorehausBuild extends Build {
     scalaVersion := "2.9.2",
     libraryDependencies ++= Seq(
       "org.scalacheck" %% "scalacheck" % "1.10.0" % "test" withSources(),
-      "org.scala-tools.testing" % "specs_2.9.1" % "1.6.9" % "test" withSources()
+      "org.scala-tools.testing" %% "specs" % "1.6.9" % "test" withSources()
     ),
 
     resolvers ++= Seq(
@@ -31,9 +31,9 @@ object StorehausBuild extends Build {
     publishTo <<= version { (v: String) =>
       val nexus = "http://artifactory.local.twitter.com/"
       if (v.trim.endsWith("SNAPSHOT"))
-        Some("sonatype-snapshots" at nexus + "libs-snapshots-local")
+        Some("artifactory-snapshots" at nexus + "libs-snapshots-local")
       else
-        Some("sonatype-releases"  at nexus + "libs-releases-local")
+        Some("artifactory-releases"  at nexus + "libs-releases-local")
     },
 
     pomExtra := (
@@ -55,11 +55,6 @@ object StorehausBuild extends Build {
           <id>oscar</id>
           <name>Oscar Boykin</name>
           <url>http://twitter.com/posco</url>
-        </developer>
-        <developer>
-          <id>oscar</id>
-          <name>Marius Eriksen</name>
-          <url>http://twitter.com/marius</url>
         </developer>
         <developer>
           <id>sritchie</id>
@@ -96,7 +91,7 @@ object StorehausBuild extends Build {
   ).settings(
     name := "storehaus-algebra",
     libraryDependencies ++= Seq(
-      "com.twitter" %% "algebird" % "0.1.6",
+      "com.twitter" %% "algebird-core" % "0.1.8",
       "com.twitter" %% "bijection-core" % "0.2.0"
     )
   ).dependsOn(storehausCore % "test->test;compile->compile")
