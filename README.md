@@ -2,9 +2,11 @@
 
 Combinators on async key-value stores.
 
+See the [current API documentation](http://twitter.github.com/storehaus) for more information.
+
 ## Maven
 
-Current version is `0.0.3`. groupid=`"com.twitter"` artifact=`storehaus_2.9.2"`.
+Current version is `0.0.4`. groupid=`"com.twitter"` artifact=`storehaus_2.9.2"`.
 
 ## Authors
 
