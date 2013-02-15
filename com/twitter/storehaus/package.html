@@ -1,0 +1,340 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html>
+        <head>
+          <title>com.twitter.storehaus</title>
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link type="text/css" media="screen" rel="stylesheet" href="../../../lib/template.css" />
+      <script type="text/javascript" src="../../../lib/jquery.js"></script>
+      <script type="text/javascript" src="../../../lib/jquery-ui.js"></script>
+      <script type="text/javascript" src="../../../lib/template.js"></script>
+      <script type="text/javascript" src="../../../lib/tools.tooltip.js"></script>
+    
+        </head>
+        <body onload="sh_highlightDocument('../lib/', '.min.js');" class="value">
+      <div id="definition">
+        <img src="../../../lib/package_big.png" />
+        <p id="owner"><a name="com" class="extype" href="../../package.html">com</a>.<a name="com.twitter" class="extype" href="../package.html">twitter</a></p>
+        <h1>storehaus</h1>
+      </div>
+
+      <h4 class="signature" id="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <span class="name">storehaus</span>
+      </span>
+      </h4>
+      
+      <div class="fullcommenttop" id="comment"></div>
+    
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input accesskey="/" type="text" /></span><span class="post"></span></div>
+        
+        
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
+
+      <div id="template">
+        <div id="allMembers">
+        
+
+        <div class="types members" id="types">
+              <h3>Type Members</h3>
+              <ol><li visbl="pub" name="com.twitter.storehaus.ConcurrentHashMapStore" data-isabs="false">
+      <a id="ConcurrentHashMapStore:ConcurrentHashMapStore[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="ConcurrentHashMapStore.html"><span class="name">ConcurrentHashMapStore</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends JMapStore[ConcurrentHashMapStore[K, V], K, V] with ConcurrentMutableStore[ConcurrentHashMapStore[K, V], K, V]</span>
+      </span>
+      </h4>
+      <p class="comment cmt"></p>
+    </li><li visbl="pub" name="com.twitter.storehaus.ConcurrentMutableStore" data-isabs="true">
+      <a id="ConcurrentMutableStore:ConcurrentMutableStore[Self, K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="ConcurrentMutableStore.html"><span class="name">ConcurrentMutableStore</span></a><span class="tparams">[<span name="Self">Self &lt;: ConcurrentMutableStore[Self, K, V]</span>, <span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends MutableStore[Self, K, V]</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.EmptyReadableStore" data-isabs="false">
+      <a id="EmptyReadableStore:EmptyReadableStore[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="EmptyReadableStore.html"><span class="name">EmptyReadableStore</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends ReadableStore[K, V]</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Concrete empty store implementation.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.FutureCollector" data-isabs="true">
+      <a id="FutureCollector:FutureCollector[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="FutureCollector.html"><span class="name">FutureCollector</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="result"> extends (Seq[Future[T]]) ⇒ Future[Seq[T]]</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.JMapStore" data-isabs="true">
+      <a id="JMapStore:JMapStore[S, K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="JMapStore.html"><span class="name">JMapStore</span></a><span class="tparams">[<span name="S">S &lt;: JMapStore[S, K, V]</span>, <span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends MutableStore[S, K, V]</span>
+      </span>
+      </h4>
+      <p class="comment cmt"></p>
+    </li><li visbl="pub" name="com.twitter.storehaus.KeysetStore" data-isabs="true">
+      <a id="KeysetStore:KeysetStore[Self, K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="KeysetStore.html"><span class="name">KeysetStore</span></a><span class="tparams">[<span name="Self">Self &lt;: KeysetStore[Self, K, V]</span>, <span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends Store[Self, K, V]</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.LRUStore" data-isabs="false">
+      <a id="LRUStore:LRUStore[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="LRUStore.html"><span class="name">LRUStore</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends JMapStore[LRUStore[K, V], K, V]</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.MapStore" data-isabs="false">
+      <a id="MapStore:MapStore[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="MapStore.html"><span class="name">MapStore</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends KeysetStore[MapStore[K, V], K, V]</span>
+      </span>
+      </h4>
+      <p class="comment cmt"></p>
+    </li><li visbl="pub" name="com.twitter.storehaus.MutableStore" data-isabs="true">
+      <a id="MutableStore:MutableStore[Self, K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="MutableStore.html"><span class="name">MutableStore</span></a><span class="tparams">[<span name="Self">Self &lt;: MutableStore[Self, K, V]</span>, <span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends Store[Self, K, V]</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.ReadableStore" data-isabs="true">
+      <a id="ReadableStore:ReadableStore[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="ReadableStore.html"><span class="name">ReadableStore</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends Closeable</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.ReplicatedStore" data-isabs="false">
+      <a id="ReplicatedStore:ReplicatedStore[StoreType, K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="ReplicatedStore.html"><span class="name">ReplicatedStore</span></a><span class="tparams">[<span name="StoreType">StoreType &lt;: Store[StoreType, K, V]</span>, <span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends Store[ReplicatedStore[StoreType, K, V], K, V]</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Replicates writes to all stores, and takes the first successful read.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.Store" data-isabs="true">
+      <a id="Store:Store[Self, K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="Store.html"><span class="name">Store</span></a><span class="tparams">[<span name="Self">Self &lt;: Store[Self, K, V]</span>, <span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends ReadableStore[K, V]</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.StoreSynchronizer" data-isabs="false">
+      <a id="StoreSynchronizer:StoreSynchronizer[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="StoreSynchronizer.html"><span class="name">StoreSynchronizer</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends Actor</span>
+      </span>
+      </h4>
+      <p class="comment cmt"></p>
+    </li><li visbl="pub" name="com.twitter.storehaus.SynchronizingStore" data-isabs="false">
+      <a id="SynchronizingStore:SynchronizingStore[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="SynchronizingStore.html"><span class="name">SynchronizingStore</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends KeysetStore[SynchronizingStore[K, V], K, V]</span>
+      </span>
+      </h4>
+      
+    </li></ol>
+            </div>
+
+        
+
+        <div class="values members" id="values">
+              <h3>Value Members</h3>
+              <ol><li visbl="pub" name="com.twitter.storehaus.FutureCollector" data-isabs="false">
+      <a id="FutureCollector:FutureCollector"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="FutureCollector$.html"><span class="name">FutureCollector</span></a><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.KeysetStore" data-isabs="false">
+      <a id="KeysetStore:KeysetStore"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="KeysetStore$.html"><span class="name">KeysetStore</span></a><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.LRUStore" data-isabs="false">
+      <a id="LRUStore:LRUStore"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="LRUStore$.html"><span class="name">LRUStore</span></a><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <p class="comment cmt"></p>
+    </li><li visbl="pub" name="com.twitter.storehaus.ReadableStore" data-isabs="false">
+      <a id="ReadableStore:ReadableStore"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="ReadableStore$.html"><span class="name">ReadableStore</span></a><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.Store" data-isabs="false">
+      <a id="Store:Store"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Store$.html"><span class="name">Store</span></a><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.SynchronizingStore" data-isabs="false">
+      <a id="SynchronizingStore:SynchronizingStore"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="SynchronizingStore$.html"><span class="name">SynchronizingStore</span></a><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <p class="comment cmt"></p>
+    </li><li visbl="pub" name="com.twitter.storehaus.algebra" data-isabs="false">
+      <a id="algebra:algebra"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="algebra/package.html"><span class="name">algebra</span></a>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.memcache" data-isabs="false">
+      <a id="memcache:memcache"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="memcache/package.html"><span class="name">memcache</span></a>
+      </span>
+      </h4>
+      
+    </li></ol>
+            </div>
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        
+        </div>
+
+      </div>
+
+      <div id="tooltip"></div>
+
+      <div id="footer">  </div>
+
+
+    </body>
+      </html>

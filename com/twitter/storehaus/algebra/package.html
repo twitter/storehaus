@@ -1,0 +1,280 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html>
+        <head>
+          <title>com.twitter.storehaus.algebra</title>
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link type="text/css" media="screen" rel="stylesheet" href="../../../../lib/template.css" />
+      <script type="text/javascript" src="../../../../lib/jquery.js"></script>
+      <script type="text/javascript" src="../../../../lib/jquery-ui.js"></script>
+      <script type="text/javascript" src="../../../../lib/template.js"></script>
+      <script type="text/javascript" src="../../../../lib/tools.tooltip.js"></script>
+    
+        </head>
+        <body onload="sh_highlightDocument('../lib/', '.min.js');" class="value">
+      <div id="definition">
+        <img src="../../../../lib/package_big.png" />
+        <p id="owner"><a name="com" class="extype" href="../../../package.html">com</a>.<a name="com.twitter" class="extype" href="../../package.html">twitter</a>.<a name="com.twitter.storehaus" class="extype" href="../package.html">storehaus</a></p>
+        <h1>algebra</h1>
+      </div>
+
+      <h4 class="signature" id="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <span class="name">algebra</span>
+      </span>
+      </h4>
+      
+      <div class="fullcommenttop" id="comment"></div>
+    
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input accesskey="/" type="text" /></span><span class="post"></span></div>
+        
+        
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
+
+      <div id="template">
+        <div id="allMembers">
+        
+
+        <div class="types members" id="types">
+              <h3>Type Members</h3>
+              <ol><li visbl="pub" name="com.twitter.storehaus.algebra.AggregatingStore" data-isabs="false">
+      <a id="AggregatingStore:AggregatingStore[StoreType, K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="AggregatingStore.html"><span class="name">AggregatingStore</span></a><span class="tparams">[<span name="StoreType">StoreType &lt;: Store[StoreType, K, V]</span>, <span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends Store[AggregatingStore[StoreType, K, V], K, V]</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Store which aggregates values added with + into the existing value in the store.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.algebra.AlgebraicReadableStore" data-isabs="false">
+      <a id="AlgebraicReadableStore:AlgebraicReadableStore[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="AlgebraicReadableStore.html"><span class="name">AlgebraicReadableStore</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.algebra.AlgebraicStore" data-isabs="false">
+      <a id="AlgebraicStore:AlgebraicStore[StoreType, K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="AlgebraicStore.html"><span class="name">AlgebraicStore</span></a><span class="tparams">[<span name="StoreType">StoreType &lt;: Store[StoreType, K, V]</span>, <span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.algebra.FutureField" data-isabs="false">
+      <a id="FutureField:FutureField[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="FutureField.html"><span class="name">FutureField</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="result"> extends FutureRing[T] with Field[Future[T]]</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.algebra.FutureGroup" data-isabs="false">
+      <a id="FutureGroup:FutureGroup[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="FutureGroup.html"><span class="name">FutureGroup</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="result"> extends FutureMonoid[T] with Group[Future[T]]</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.algebra.FutureMonoid" data-isabs="false">
+      <a id="FutureMonoid:FutureMonoid[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="FutureMonoid.html"><span class="name">FutureMonoid</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="result"> extends FutureSemigroup[T] with Monoid[Future[T]]</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.algebra.FutureRing" data-isabs="false">
+      <a id="FutureRing:FutureRing[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="FutureRing.html"><span class="name">FutureRing</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="result"> extends FutureGroup[T] with Ring[Future[T]]</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.algebra.FutureSemigroup" data-isabs="false">
+      <a id="FutureSemigroup:FutureSemigroup[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="FutureSemigroup.html"><span class="name">FutureSemigroup</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="result"> extends Semigroup[Future[T]]</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Monoid and Semigroup on util.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.algebra.ReadableStoreMonoid" data-isabs="false">
+      <a id="ReadableStoreMonoid:ReadableStoreMonoid[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="ReadableStoreMonoid.html"><span class="name">ReadableStoreMonoid</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends Monoid[ReadableStore[K, V]]</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.algebra.TryField" data-isabs="false">
+      <a id="TryField:TryField[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="TryField.html"><span class="name">TryField</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="result"> extends TryRing[T] with Field[Try[T]]</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.algebra.TryGroup" data-isabs="false">
+      <a id="TryGroup:TryGroup[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="TryGroup.html"><span class="name">TryGroup</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="result"> extends TryMonoid[T] with Group[Try[T]]</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.algebra.TryMonoid" data-isabs="false">
+      <a id="TryMonoid:TryMonoid[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="TryMonoid.html"><span class="name">TryMonoid</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="result"> extends TrySemigroup[T] with Monoid[Try[T]]</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.algebra.TryRing" data-isabs="false">
+      <a id="TryRing:TryRing[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="TryRing.html"><span class="name">TryRing</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="result"> extends TryGroup[T] with Ring[Try[T]]</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.algebra.TrySemigroup" data-isabs="false">
+      <a id="TrySemigroup:TrySemigroup[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="TrySemigroup.html"><span class="name">TrySemigroup</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="result"> extends Semigroup[Try[T]]</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Monoid and Semigroup on util.</p>
+    </li></ol>
+            </div>
+
+        
+
+        <div class="values members" id="values">
+              <h3>Value Members</h3>
+              <ol><li visbl="pub" name="com.twitter.storehaus.algebra.Algebras" data-isabs="false">
+      <a id="Algebras:Algebras"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Algebras$.html"><span class="name">Algebras</span></a><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.algebra.ReadableStoreMonoid" data-isabs="false">
+      <a id="ReadableStoreMonoid:ReadableStoreMonoid"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="ReadableStoreMonoid$.html"><span class="name">ReadableStoreMonoid</span></a><span class="result"> extends Serializable</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.algebra.StoreAlgebra" data-isabs="false">
+      <a id="StoreAlgebra:StoreAlgebra"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="StoreAlgebra$.html"><span class="name">StoreAlgebra</span></a><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <p class="comment cmt">import StoreAlgebra.</p>
+    </li></ol>
+            </div>
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        
+        </div>
+
+      </div>
+
+      <div id="tooltip"></div>
+
+      <div id="footer">  </div>
+
+
+    </body>
+      </html>
