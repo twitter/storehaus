@@ -20,7 +20,10 @@ import com.twitter.util.{Future, Throw, Return}
 import java.io.Closeable
 
 object ReadableStore {
+  type MultiGetResult[K, V] = Map[K, Future[Option[V]]]
+
   def empty[K,V]: ReadableStore[K,V] = new EmptyReadableStore[K, V]
+  def emptyResult[K,V]: MultiGetResult[K,V] = Map.empty[K, Future[Option[V]]]
 }
 
 trait ReadableStore[K,V] extends Closeable { self =>
@@ -29,7 +32,7 @@ trait ReadableStore[K,V] extends Closeable { self =>
   /**
    * all keys in the set are in the resulting map
    */
-  def multiGet(ks: Set[K]): Future[Map[K,Future[Option[V]]]] =
+  def multiGet(ks: Set[K]): Future[ReadableStore.MultiGetResult[K, V]] =
     Future(ks.map { k => (k, get(k)) }.toMap)
 
   /**

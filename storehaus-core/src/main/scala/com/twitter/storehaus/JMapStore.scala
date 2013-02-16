@@ -24,6 +24,8 @@ import com.twitter.util.Future
  */
 
 abstract class JMapStore[S <: JMapStore[S,K,V],K,V] extends MutableStore[S,K,V] {
+  import ReadableStore.MultiGetResult
+
   protected val jstore: java.util.Map[K,Option[V]]
   def storeGet(k: K): Option[V] = {
     val stored = jstore.get(k)
@@ -33,7 +35,7 @@ abstract class JMapStore[S <: JMapStore[S,K,V],K,V] extends MutableStore[S,K,V] 
       None
   }
   override def get(k: K): Future[Option[V]] = Future.value(storeGet(k))
-  override def multiGet(ks: Set[K]): Future[Map[K, Future[Option[V]]]] =
+  override def multiGet(ks: Set[K]): Future[MultiGetResult[K, V]] =
     Future.value(Store.zipWith(ks) { k => Future.value(storeGet(k)) })
 
   override def -(k: K): Future[S] = {
