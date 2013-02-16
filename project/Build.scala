@@ -4,8 +4,9 @@ import Keys._
 object StorehausBuild extends Build {
   val sharedSettings = Project.defaultSettings ++ Seq(
     organization := "com.twitter",
-    version := "0.0.5-SNAPSHOT",
+    version := "0.1.0-SNAPSHOT",
     scalaVersion := "2.9.2",
+    crossScalaVersions := Seq("2.9.2", "2.10.0"),
     libraryDependencies ++= Seq(
       "org.scalacheck" %% "scalacheck" % "1.10.0" % "test" withSources(),
       "org.scala-tools.testing" %% "specs" % "1.6.9" % "test" withSources()
@@ -81,7 +82,7 @@ object StorehausBuild extends Build {
     settings = sharedSettings
   ).settings(
     name := "storehaus-core",
-    libraryDependencies += "com.twitter" % "util-core" % "5.3.15"
+    libraryDependencies += "com.twitter" %% "util-core" % "6.2.0"
   )
 
   lazy val storehausAlgebra = Project(
@@ -91,8 +92,8 @@ object StorehausBuild extends Build {
   ).settings(
     name := "storehaus-algebra",
     libraryDependencies ++= Seq(
-      "com.twitter" %% "algebird-core" % "0.1.8",
-      "com.twitter" %% "bijection-core" % "0.2.0"
+      "com.twitter" %% "algebird-core" % "0.1.9",
+      "com.twitter" %% "bijection-core" % "0.3.0"
     )
   ).dependsOn(storehausCore % "test->test;compile->compile")
 
@@ -104,7 +105,7 @@ object StorehausBuild extends Build {
     name := "storehaus-memcache",
     libraryDependencies ++= Seq(
       "com.twitter" %% "bijection-core" % "0.2.0",
-      "com.twitter" % "finagle-memcached" % "5.3.23"
+      "com.twitter" %% "finagle-memcached" % "6.1.1"
     )
   ).dependsOn(storehausCore % "test->test;compile->compile")
 }
