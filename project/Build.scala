@@ -1,8 +1,11 @@
+package storehaus
+
 import sbt._
 import Keys._
+import sbtgitflow.ReleasePlugin._
 
 object StorehausBuild extends Build {
-  val sharedSettings = Project.defaultSettings ++ Seq(
+  val sharedSettings = Project.defaultSettings ++ releaseSettings ++ Seq(
     organization := "com.twitter",
     version := "0.0.5-SNAPSHOT",
     scalaVersion := "2.9.2",
@@ -66,7 +69,8 @@ object StorehausBuild extends Build {
 
   lazy val storehaus = Project(
     id = "storehaus",
-    base = file(".")
+    base = file("."),
+    settings = sharedSettings ++ DocGen.publishSettings
     ).settings(
     test := { },
     publish := { }, // skip publishing for this root project.
