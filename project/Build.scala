@@ -90,10 +90,7 @@ object StorehausBuild extends Build {
     settings = sharedSettings
   ).settings(
     name := "storehaus-algebra",
-    libraryDependencies ++= Seq(
-      "com.twitter" %% "algebird-core" % "0.1.8",
-      "com.twitter" %% "bijection-core" % "0.2.0"
-    )
+    libraryDependencies += "com.twitter" %% "algebird-core" % "0.1.8"
   ).dependsOn(storehausCore % "test->test;compile->compile")
 
   lazy val storehausMemcache = Project(

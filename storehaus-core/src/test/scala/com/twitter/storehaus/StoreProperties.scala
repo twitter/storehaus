@@ -25,6 +25,7 @@ import org.scalacheck.Gen.choose
 import org.scalacheck.Prop._
 
 object StoreProperties extends Properties("Store") {
+  import ReadableStore.MultiGetResult
 
   // Adds a bunch of items and removes them and sees if they are absent
   def storeTest[StoreType<:Store[StoreType,K,V],K,V](store: StoreType)
@@ -47,7 +48,7 @@ object StoreProperties extends Properties("Store") {
       val keys = m.keySet
       val expanded: Set[String] = keys ++ (keys map { _ + "suffix!" })
       val ms = new MapStore(m)
-      (ms.multiGet(expanded) map { retM: Map[String, Future[Option[Int]]] =>
+      (ms.multiGet(expanded) map { retM: MultiGetResult[String, Int] =>
         expanded forall { s: String =>
           retM.get(s) match {
             case None => m.contains(s) == false
