@@ -16,21 +16,21 @@
 
 package com.twitter.storehaus
 
-import java.util.{ LinkedHashMap => JLinkedHashMap, Map => JMap }
-import com.twitter.algebird.Semigroup
+import com.twitter.util.{Future, Throw, Return}
 
-/**
- *  @author Oscar Boykin
- *  @author Sam Ritchie
- */
+import com.twitter.algebird.{Semigroup}
 
-object LRUStore {
-  def apply[K,V:Semigroup](maxSize: Int = 1000) = new LRUStore[K,V](maxSize)
+trait MergeableStore[K, V] extends ReadableStore[K, V] {
+  def semigroup: Semigroup[V]
+  /** Returns the value just BEFORE this operation
+   * the return value is Future(vbefore)
+   * the final stored value is: semigroup.plus(vbefore, kv._1)
+   */
+  def add(kv: (K,V)): Future[V] = multiAdd(Map(kv)).apply(kv._1)
+  // May be more efficient version of the above
+  def multiAdd(kvs: Map[K,V]): Map[K,Future[V]] = kvs.map { kv => (kv._1, add(kv)) }
 }
-class LRUStore[K,V](maxSize: Int)(implicit override val semigroup: Semigroup[V]) extends JMapStore[K,V] {
-  // create a java linked hashmap with access-ordering (LRU)
-  protected lazy override val jstore = new JLinkedHashMap[K,V](maxSize + 1, 0.75f, true) {
-    override protected def removeEldestEntry(eldest : JMap.Entry[K, V]) =
-      super.size > maxSize
-  }
+
+object MergeableStore {
+  // Combinators:
 }

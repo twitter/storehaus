@@ -16,21 +16,15 @@
 
 package com.twitter.storehaus
 
-import java.util.{ LinkedHashMap => JLinkedHashMap, Map => JMap }
-import com.twitter.algebird.Semigroup
+import scala.math.Equiv
+import com.twitter.util.Future
 
-/**
- *  @author Oscar Boykin
- *  @author Sam Ritchie
- */
-
-object LRUStore {
-  def apply[K,V:Semigroup](maxSize: Int = 1000) = new LRUStore[K,V](maxSize)
-}
-class LRUStore[K,V](maxSize: Int)(implicit override val semigroup: Semigroup[V]) extends JMapStore[K,V] {
-  // create a java linked hashmap with access-ordering (LRU)
-  protected lazy override val jstore = new JLinkedHashMap[K,V](maxSize + 1, 0.75f, true) {
-    override protected def removeEldestEntry(eldest : JMap.Entry[K, V]) =
-      super.size > maxSize
-  }
+trait SettableStore[K, V] extends ReadableStore[K, V] {
+  def equiv: Equiv[V]
+  // Returns the value before this set
+  def set(kv: (K,V)): Future[V]
+  def multiSet(kvs: Map[K,V]): Future[Map[K,V]]
+  // if the value is the first, set, otherwise do nothing. return initial value
+  // TODO: def compareAndSet(kv: (K,(V,V))): Future[V]
+  // TODO: def multiCompareAndSet(kvs: Map[K,(V,V)]): Future[Map[K,V]]
 }

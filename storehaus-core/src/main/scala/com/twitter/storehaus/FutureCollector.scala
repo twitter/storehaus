@@ -17,6 +17,7 @@
 package com.twitter.storehaus
 
 import com.twitter.util.Future
+import com.twitter.algebird.Monoid
 
 trait FutureCollector[T] extends (Seq[Future[T]] => Future[Seq[T]])
 
@@ -39,4 +40,7 @@ object FutureCollector {
       }
     }.map { _.flatten }
   }
+
+  def mapCollect[K,V](results: Seq[Map[K,Future[V]]])(implicit coll: FutureCollector[V]): Map[K,Future[Seq[V]]] =
+    Store.sequenceMap(results).mapValues { coll(_) }
 }

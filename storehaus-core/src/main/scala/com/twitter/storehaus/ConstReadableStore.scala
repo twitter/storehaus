@@ -19,10 +19,10 @@ package com.twitter.storehaus
 import com.twitter.util.Future
 
 /**
- * Concrete empty store implementation.
+ * Concrete const store implementation.
  */
 
-class EmptyReadableStore[K, V] extends ReadableStore[K, V] {
-  override def get(k: K) = Future.None
-  override def multiGet(ks: Set[K]) = Future.value(ReadableStore.emptyResult[K, V])
+class ConstReadableStore[K, V](v: V) extends ReadableStore[K, V] {
+  private val result = Future.value(v)
+  override def get(k: K) = result
 }

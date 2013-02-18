@@ -17,33 +17,30 @@
 package com.twitter.storehaus
 
 import com.twitter.util.Future
-
+import com.twitter.algebird.Semigroup
 /**
  *  @author Oscar Boykin
  *  @author Sam Ritchie
  */
 
-abstract class JMapStore[S <: JMapStore[S,K,V],K,V] extends MutableStore[S,K,V] {
-  import ReadableStore.MultiGetResult
+object JMapStore {
+  def apply[K,V](jmap: java.util.Map[K,V])(implicit sg: Semigroup[V]): MergeableStore[K,V] =
+    new JMapStore[K,V] {
+      override val jstore = jmap
+      override val semigroup = sg
+    }
 
-  protected val jstore: java.util.Map[K,Option[V]]
-  def storeGet(k: K): Option[V] = {
-    val stored = jstore.get(k)
-    if (stored != null)
-      stored
-    else
-      None
-  }
-  override def get(k: K): Future[Option[V]] = Future.value(storeGet(k))
-  override def multiGet(ks: Set[K]): Future[MultiGetResult[K, V]] =
-    Future.value(Store.zipWith(ks) { k => Future.value(storeGet(k)) })
+  def empty[K,V](implicit sg: Semigroup[V]) = apply(new java.util.HashMap[K,V]())(sg)
+}
 
-  override def -(k: K): Future[S] = {
-    jstore.remove(k)
-    Future.value(this.asInstanceOf[S])
-  }
-  override def +(pair: (K,V)): Future[S] = {
-    jstore.put(pair._1, Some(pair._2))
-    Future.value(this.asInstanceOf[S])
+abstract class JMapStore[K,V] extends MergeableStore[K,V] {
+  protected val jstore: java.util.Map[K,V]
+
+  override def get(k: K): Future[V] = Future.value(jstore.get(k))
+  override def add(kv: (K,V)): Future[V] = {
+    val (k,v) = kv
+    val orig = jstore.get(k)
+    jstore.put(k, semigroup.plus(orig, v))
+    Future.value(orig)
   }
 }

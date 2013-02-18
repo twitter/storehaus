@@ -17,14 +17,12 @@
 package com.twitter.storehaus
 
 import java.util.concurrent.{ ConcurrentHashMap => JConcurrentHashMap }
-
+import com.twitter.algebird.Semigroup
 /**
  *  @author Oscar Boykin
  *  @author Sam Ritchie
  */
 
-class ConcurrentHashMapStore[K,V]
-extends JMapStore[ConcurrentHashMapStore[K,V],K,V]
-with ConcurrentMutableStore[ConcurrentHashMapStore[K,V],K,V] {
-  protected lazy override val jstore = new JConcurrentHashMap[K,Option[V]]
+class ConcurrentHashMapStore[K,V](implicit override val semigroup: Semigroup[V]) extends JMapStore[K,V] {
+  protected lazy override val jstore = new JConcurrentHashMap[K,V]
 }
