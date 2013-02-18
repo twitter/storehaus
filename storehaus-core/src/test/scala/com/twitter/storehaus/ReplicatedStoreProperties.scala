@@ -22,6 +22,6 @@ object ReplicatedStoreProperties extends Properties("ReplicatedStore") {
   import StoreProperties.storeTest
 
   property("ReplicatedStore test") =
-    storeTest[ReplicatedStore[MapStore[String, Int], String, Int], String, Int](new ReplicatedStore(
-        Stream.continually(new MapStore[String, Int]()).take(100).toSeq))
+    storeTest[ReplicatedStore[String, Int], String, Int](new ReplicatedStore(
+        Stream.continually(JMapStore.empty[String, Int]()).take(100).toSeq))
 }

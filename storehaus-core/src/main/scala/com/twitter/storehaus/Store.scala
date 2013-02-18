@@ -17,41 +17,8 @@
 package com.twitter.storehaus
 
 import com.twitter.util.{Future, Throw, Return}
+import com.twitter.algebird.Monoid
 import java.io.Closeable
-
-object ReadableStore {
-  type MultiGetResult[K, V] = Map[K, Future[Option[V]]]
-
-  def empty[K,V]: ReadableStore[K,V] = new EmptyReadableStore[K, V]
-  def emptyResult[K,V]: MultiGetResult[K,V] = Map.empty[K, Future[Option[V]]]
-}
-
-trait ReadableStore[K,V] extends Closeable { self =>
-  def get(k: K): Future[Option[V]] = multiGet(Set(k)).flatMap { _.apply(k) }
-
-  /**
-   * all keys in the set are in the resulting map
-   */
-  def multiGet(ks: Set[K]): Future[ReadableStore.MultiGetResult[K, V]] =
-    Future(ks.map { k => (k, get(k)) }.toMap)
-
-  /**
-   * Returns a new ReadableStore[K, V] that queries both this and the other
-   * ReadableStore[K,V] for get and multiGet and returns the first
-   * future to succeed (following com.twitter.util.Future's "or" logic).
-   */
-  def or(other: ReadableStore[K,V]) = {
-    import Store.{selectFirstSuccessfulTrial => selectFirst}
-    new ReadableStore[K,V] {
-      override def get(k: K) = selectFirst(Seq(self.get(k), other.get(k)))
-      override def multiGet(ks: Set[K]) = selectFirst(Seq(self.multiGet(ks), other.multiGet(ks)))
-    }
-  }
-
-  override def close { }
-}
-
-// Store is immutable by default.
 
 object Store {
   // TODO: Move to some collection util.
@@ -73,31 +40,9 @@ object Store {
       }
     })
   }
-}
 
-trait Store[Self <: Store[Self,K,V], K, V] extends ReadableStore[K, V] {
-  def -(k: K): Future[Self]
-  def +(pair: (K,V)): Future[Self]
-  def update(k: K)(fn: Option[V] => Option[V]): Future[Self] = {
-    get(k) flatMap { opt: Option[V] =>
-      fn(opt)
-        .map { v => this + (k -> v) }
-        .getOrElse(this - k)
-    }
+  def sequenceMap[K,V](maps: Seq[Map[K, V]]): Map[K, Seq[V]] = {
+    val asSeqMapSeq: Seq[Map[K,Seq[V]]] = maps.map { m => m.mapValues { Seq(_) } }
+    Monoid.sum(asSeqMapSeq)
   }
 }
-
-object KeysetStore {
-  def fromMap[K,V](m: Map[K,V]): KeysetStore[MapStore[K,V],K,V] = new MapStore(m)
-}
-
-trait KeysetStore[Self <: KeysetStore[Self,K,V],K,V] extends Store[Self,K,V] {
-  def keySet: Set[K]
-  def size: Int
-}
-
-// Used as a constraint annotation.
-trait MutableStore[Self <: MutableStore[Self,K,V],K,V] extends Store[Self,K,V]
-
-// Used as a constraint annotation.
-trait ConcurrentMutableStore[Self <: ConcurrentMutableStore[Self,K,V],K,V] extends MutableStore[Self,K,V]

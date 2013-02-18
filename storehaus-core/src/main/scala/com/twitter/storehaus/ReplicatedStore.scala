@@ -17,20 +17,31 @@
 package com.twitter.storehaus
 
 import com.twitter.util.Future
+import com.twitter.algebird.{Monoid, Semigroup}
 
 import Store.{selectFirstSuccessfulTrial => selectFirst}
 
 /**
  * Replicates writes to all stores, and takes the first successful read.
  */
-class ReplicatedStore[StoreType <: Store[StoreType, K, V], K, V](stores: Seq[StoreType])(implicit collect: FutureCollector[StoreType])
-extends Store[ReplicatedStore[StoreType, K, V], K, V] {
+class ReplicatedStore[K, V](stores: Seq[MergeableStore[K,V]])
+  (implicit collect: FutureCollector[V], override val semigroup: Semigroup[V])
+extends MergeableStore[K, V] {
+
   override def get(k: K) = selectFirst(stores.map { _.get(k) })
-  override def multiGet(ks: Set[K]) = selectFirst(stores.map { _.multiGet(ks) })
-  override def update(k: K)(fn: Option[V] => Option[V]) =
-    collect(stores.map { _.update(k)(fn) }).map { new ReplicatedStore(_) }
-  override def -(k: K) =
-    collect(stores.map { _ - k }).map { new ReplicatedStore(_) }
-  override def +(pair: (K,V)) =
-    collect(stores.map { _ + pair }).map { new ReplicatedStore(_) }
+  override def multiGet(ks: Set[K]) = {
+    Store.sequenceMap(stores.map { _.multiGet(ks) })
+      .mapValues { selectFirst(_) }
+  }
+
+  protected def selector(res: Seq[V]): V = {
+    // How do return a value here? several strategies.
+    // TODO
+    res.head
+  }
+  override def add(kv: (K,V)) = collect(stores.map { _.add(kv) }).map { selector(_) }
+  override def multiAdd(kvs: Map[K,V]) ={
+    val res: Map[K,Future[Seq[V]]] = FutureCollector.mapCollect(stores.map { _.multiAdd(kvs) })
+    res.mapValues { f => f.map { selector(_) } }
+  }
 }
