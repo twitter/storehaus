@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus
 
-import com.twitter.util.{Future, Throw, Return}
+import com.twitter.util.{Duration, Future, Throw, Return, Timer}
 import java.io.Closeable
 
 object ReadableStore {
@@ -58,9 +58,8 @@ object Store {
   def zipWith[K, V](keys: Set[K])(lookup: K => V): Map[K, V] =
     keys.foldLeft(Map.empty[K, V]) { (m, k) => m + (k -> lookup(k)) }
 
-  def selectFirstSuccessfulTrial[T](futures: Seq[Future[T]]): Future[T] = {
-    Future.select(futures).flatMap(entry => {
-      val (completedTry, otherFutures) = entry
+  def selectFirstSuccessfulTrial[T](futures: Seq[Future[T]]): Future[T] =
+    Future.select(futures).flatMap { case (completedTry, otherFutures) =>
       completedTry match {
         case Throw(e) => {
           if (otherFutures.isEmpty) {
@@ -71,20 +70,52 @@ object Store {
         }
         case Return(similarUsers) => Future.value(similarUsers)
       }
-    })
-  }
+    }
+
+  protected def assignTimeout[T](f: Future[T], timeout: Duration)(implicit timer: Timer): Future[T] =
+    timeout match {
+      case Duration.forever => f
+      case other => f.within(other)
+    }
+
+  def bestEffortCollect[T](futureSeq: Seq[Future[T]], timeout: Duration)
+  (implicit timer: Timer): Future[Seq[T]] =
+    Future.collect {
+      futureSeq.map { f: Future[T] =>
+        assignTimeout(f, timeout)
+          .map { Some(_) }
+          .handle { case _ => None }
+      }
+    }.map { _.flatten }
 }
 
+
 trait Store[Self <: Store[Self,K,V], K, V] extends ReadableStore[K, V] {
-  def -(k: K): Future[Self]
-  def +(pair: (K,V)): Future[Self]
-  def update(k: K)(fn: Option[V] => Option[V]): Future[Self] = {
-    get(k) flatMap { opt: Option[V] =>
-      fn(opt)
-        .map { v => this + (k -> v) }
-        .getOrElse(this - k)
+  def +(pair: (K, V)): Future[Self] =  set(pair)
+  def -(k: K): Future[Self] = remove(k)
+
+  def set(pair: (K, V)): Future[Self] = this.update(pair._1) { _ => Future.value(Some(pair._2)) }
+  def multiSet(m: Map[K, Future[Option[V]]]): Future[Self] = multiUpdate(m.mapValues { v => { _ => v } })
+
+  def remove(k: K): Future[Self] = this.update(k) { _ => Future.None }
+  def multiRemove(k: Set[K]): Future[Self] =
+    this.multiUpdate {
+      (k zip Stream.continually { _: Option[V] => Future.None }).toMap
     }
-  }
+
+  def update(k: K)(fn: Option[V] => Future[Option[V]]): Future[Self] =
+    for (opt <- get(k);
+         nextOpt <- fn(opt);
+         result <- nextOpt match {
+           case Some(v) => set(k -> v)
+           case None => remove(k)
+         })
+    yield result
+
+  def multiUpdate(m: Map[K, Option[V] => Future[Option[V]]]): Future[Self] =
+    m.foldLeft(Future.value(this.asInstanceOf[Self])) { case (futureStore, (k, optFn)) =>
+      futureStore.flatMap { _.update(k)(optFn) }
+    }
 }
 
 object KeysetStore {
