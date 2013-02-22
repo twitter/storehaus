@@ -17,22 +17,25 @@
 package com.twitter.storehaus.algebra
 
 import com.twitter.algebird.{ Semigroup, Monoid, Group, Ring, Field }
-import com.twitter.storehaus.ReadableStore
-import com.twitter.util.{Future, Try}
+import com.twitter.algebird.util.UtilAlgebras
+import com.twitter.storehaus.{ReadableStore, AbstractReadableStore}
+import com.twitter.util.Future
+
+import UtilAlgebras._
 
 object Algebras {
-  implicit def futureSemigroup[T:Semigroup]: Semigroup[Future[T]] = new FutureSemigroup[T]
-  implicit def futureMonoid[T:Monoid]: Monoid[Future[T]] = new FutureMonoid[T]
-  implicit def futureGroup[T:Group]: Group[Future[T]] = new FutureGroup[T]
-  implicit def futureRing[T:Ring]: Ring[Future[T]] = new FutureRing[T]
-  implicit def futureField[T:Field]: Field[Future[T]] = new FutureField[T]
+  implicit def semigroup[K, V: Semigroup]: Semigroup[ReadableStore[K, V]] = new ReadableStoreSemigroup[K, V]
+  implicit def monoid[K, V: Monoid]: Monoid[ReadableStore[K, V]] = new ReadableStoreMonoid[K, V]
+}
 
-  implicit def trySemigroup[T:Semigroup]: Semigroup[Try[T]] = new TrySemigroup[T]
-  implicit def tryMonoid[T:Monoid]: Monoid[Try[T]] = new TryMonoid[T]
-  implicit def tryGroup[T:Group]: Group[Try[T]] = new TryGroup[T]
-  implicit def tryRing[T:Ring]: Ring[Try[T]] = new TryRing[T]
-  implicit def tryField[T:Field]: Field[Try[T]] = new TryField[T]
+class ReadableStoreSemigroup[K, V: Semigroup] extends Semigroup[ReadableStore[K, V]] {
+  override def plus(l: ReadableStore[K, V], r: ReadableStore[K,V]) =
+    new AbstractReadableStore[K,V] {
+      override def get(k: K) = Semigroup.plus(l.get(k), r.get(k))
+      override def multiGet[K1<:K](ks: Set[K1]) = Semigroup.plus(l.multiGet(ks), r.multiGet(ks))
+    }
+}
 
-  implicit def readableStoreMonoid[K, V: Semigroup]: Monoid[ReadableStore[K, V]] =
-    new ReadableStoreMonoid[K, V]
+class ReadableStoreMonoid[K, V: Monoid] extends ReadableStoreSemigroup[K, V] with Monoid[ReadableStore[K, V]] {
+  override def zero = ReadableStore.const(Monoid.zero[V])
 }
