@@ -22,7 +22,6 @@ import com.twitter.util.Future
  * Concrete empty store implementation.
  */
 
-class EmptyReadableStore[K, V] extends ReadableStore[K, V] {
-  override def get(k: K) = Future.None
-  override def multiGet(ks: Set[K]) = Future.value(ReadableStore.emptyResult[K, V])
+object EmptyReadableStore extends ReadableStore[Any, Nothing] {
+  override def get(k: Any) = Future.None
 }

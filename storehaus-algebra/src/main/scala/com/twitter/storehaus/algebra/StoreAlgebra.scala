@@ -18,7 +18,7 @@ package com.twitter.storehaus.algebra
 
 import com.twitter.algebird.{ Monoid, Semigroup }
 import com.twitter.util.Future
-import com.twitter.storehaus.{ ReadableStore, Store }
+import com.twitter.storehaus.{ AbstractReadableStore, ReadableStore, Store }
 
 /**
  * import StoreAlgebra.enrich to obtain enrichments.
@@ -26,55 +26,20 @@ import com.twitter.storehaus.{ ReadableStore, Store }
 object StoreAlgebra {
   implicit def enrichReadableStore[K, V](store: ReadableStore[K, V]): AlgebraicReadableStore[K, V] =
     new AlgebraicReadableStore[K, V](store)
-
-  implicit def enrichStore[StoreType <: Store[StoreType, K, V], K, V](store: StoreType): AlgebraicStore[StoreType, K, V] =
-    new AlgebraicStore[StoreType, K, V](store)
 }
 
 class AlgebraicReadableStore[K, V](store: ReadableStore[K, V]) {
   /**
    * If V is TraversableOnce[T], returns a new store that sums V down into a single T
-   * before returning.
+   * before returning. We require a Monoid to distinguish empty keys from keys with empty
+   * Traversable values.
    */
-  def summed[T](implicit ev: V <:< TraversableOnce[T], sg: Semigroup[T]): ReadableStore[K, T] =
-    new ReadableStore[K, T] {
-      override def get(k: K) = store.get(k) map { _ flatMap { Semigroup.sumOption(_) } }
-      override def multiGet(ks: Set[K]) =
-        store.multiGet(ks) map { kv =>
-          kv.mapValues { fs: Future[Option[V]] =>
-            fs.map { opt => opt.flatMap { ts => Semigroup.sumOption(ev(ts)) } }
-          }
+  def summed[T](implicit ev: V <:< TraversableOnce[T], mon: Monoid[T]): ReadableStore[K, T] =
+    new AbstractReadableStore[K, T] {
+      override def get(k: K) = store.get(k) map { _ map { mon.sum(_) } }
+      override def multiGet[K1<:K](ks: Set[K1]) =
+        store.multiGet(ks).mapValues { fv : Future[Option[V]] =>
+          fv.map { optV => optV.map { ts => mon.sum(ev(ts)) } }
         }
     }
-}
-
-class AlgebraicStore[StoreType <: Store[StoreType, K, V], K, V](store: StoreType) {
-  def aggregating(implicit sg: Monoid[V]): AggregatingStore[StoreType, K, V] = new AggregatingStore(store)
-}
-
-/**
- * Store which aggregates values added with + into the existing value in the store.
- * If addition ever results in a zero value, the key is deleted from the store.
- */
-class AggregatingStore[StoreType <: Store[StoreType, K, V], K, V: Monoid](store: StoreType)
-extends Store[AggregatingStore[StoreType, K, V], K, V] {
-  override def get(k: K) = store.get(k)
-  override def multiGet(ks: Set[K]) = store.multiGet(ks)
-
-  override def -(k: K): Future[AggregatingStore[StoreType, K, V]] =
-    (store - k) map { new AggregatingStore(_) }
-
-  override def +(pair: (K,V)): Future[AggregatingStore[StoreType, K, V]] = {
-    val (k, v) = pair
-    store.get(k) flatMap { oldV: Option[V] =>
-      Monoid.nonZeroOption(oldV.map { Monoid.plus(_, v) } getOrElse v)
-        .map { newV => store + (k -> newV) }
-        .getOrElse(store - k)
-        .map { new AggregatingStore(_) }
-    }
-  }
-
-  override def update(k: K)(fn: Option[V] => Option[V]): Future[AggregatingStore[StoreType, K, V]] = {
-    store.update(k)(fn) map { new AggregatingStore(_) }
-  }
 }
