@@ -22,7 +22,7 @@ import com.twitter.util.{ Duration, Encoder, Future, FuturePool, Time }
 import com.twitter.finagle.builder.ClientBuilder
 import com.twitter.finagle.memcached.protocol.text.Memcached
 import com.twitter.finagle.memcached.{ Client, KetamaClientBuilder }
-import com.twitter.storehaus.ConcurrentMutableStore
+import com.twitter.storehaus.Store
 
 import Bijection.connect
 
@@ -58,9 +58,10 @@ object MemcacheStore {
   def apply[Key,Value](hosts: Seq[HostConfig],
                        retries: Int = 2,
                        timeout: Duration = 1.seconds,
-                       ttl: Time = DEFAULT_TTL)
+                       ttl: Time = DEFAULT_TTL,
+                       hostConnectionLimit: Int = 1)
   (implicit kb: Bijection[Key,Array[Byte]], vb: Bijection[Value,Array[Byte]]) =
-    new MemcacheStore[Key,Value](hosts, kb, vb, retries, timeout, ttl)
+    new MemcacheStore[Key,Value](hosts, kb, vb, retries, timeout, ttl, hostConnectionLimit)
 }
 
 class MemcacheStore[Key,Value](hosts: Seq[HostConfig],
@@ -68,8 +69,9 @@ class MemcacheStore[Key,Value](hosts: Seq[HostConfig],
                                vBijection: Bijection[Value, Array[Byte]],
                                retries: Int,
                                timeout: Duration,
-                               ttl: Time)
-extends ConcurrentMutableStore[MemcacheStore[Key,Value],Key,Value] {
+                               ttl: Time,
+                               hostConnectionLimit: Int)
+extends Store[Key,Value] {
 
   lazy val enc =
     kBijection
@@ -95,7 +97,7 @@ extends ConcurrentMutableStore[MemcacheStore[Key,Value],Key,Value] {
 
   lazy val client = FuturePool.unboundedPool {
     val builder = clientBuilder("memcache_client", retries, timeout)
-      .hostConnectionLimit(1)
+      .hostConnectionLimit(hostConnectionLimit)
       .codec(Memcached())
     KetamaClientBuilder()
       .clientBuilder(builder)
@@ -111,27 +113,25 @@ extends ConcurrentMutableStore[MemcacheStore[Key,Value],Key,Value] {
       }
     }
 
-  override def multiGet(ks: Set[Key]): Future[Map[Key, Future[Option[Value]]]] = {
-    val encodedKs = ks map { enc(_) }
-    val encMap = (encodedKs zip ks).toMap
+  override def multiGet[K1<:Key](ks: Set[K1]): Map[K1, Future[Option[Value]]] = {
+    val encMap = ks.map { k => (enc(k), k) }.toMap
 
-    client flatMap { c =>
-      c.get(encodedKs.toIterable) map { retMap =>
-      // TODO: use getResult here
-        encMap map { case(encK, k) =>
-          k -> Future(retMap.get(encK) map { bytes => vBijection.invert(bytes) })
-        }
-      }
+    val retMapFuture = client flatMap { c => c.get(encMap.keys) }
+    encMap map { case(encK, k) =>
+      k -> retMapFuture.map { _.get(encK) map { bytes => vBijection.invert(bytes) } }
     }
   }
-
-  override def -(k: Key) = client flatMap { _.delete(enc(k)) map { _ => this } }
-  override def +(pair: (Key, Value)) = set(pair._1, pair._2) map { _ => this }
 
   protected def set(k: Key, v: Value) = {
     val valBytes = vBijection(v)
     client flatMap { _.set(enc(k), MEMCACHE_FLAG, ttl, valBytes) }
   }
+
+  override def put(kv: (Key,Option[Value])): Future[Unit] =
+    kv match {
+      case (key, Some(value)) => client.flatMap { _.set(enc(key), MEMCACHE_FLAG, ttl, vBijection(value)) }
+      case (key, None) => client.flatMap { _.delete(enc(key)) }.unit
+    }
 
   override def close { client foreach { _.release } }
 }
