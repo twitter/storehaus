@@ -32,10 +32,10 @@ import com.twitter.storehaus.ReadableStore
 class UnpivotedReadableStore[K, OuterK, InnerK, V](store: ReadableStore[OuterK, Map[InnerK, V]])(split: K => (OuterK, InnerK))
   extends ReadableStore[K, V] {
   override def get(k: K) =
-    UnpivotGetters.get(k)(split) { store.get(_) }
+    PivotOps.get(k)(split) { store.get(_) }
 
   override def multiGet[T <: K](ks: Set[T]): Map[T, Future[Option[V]]] =
-    UnpivotGetters.multiGet(ks)(split) { store.multiGet(_) }
+    PivotOps.multiGet(ks)(split) { store.multiGet(_) }
 
   override def close { store.close }
 }

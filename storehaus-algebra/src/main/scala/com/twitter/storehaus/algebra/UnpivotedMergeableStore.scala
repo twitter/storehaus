@@ -38,7 +38,8 @@ class UnpivotedMergeableStore[K, OuterK, InnerK, V](store: MergeableStore[OuterK
   }
 
   override def multiMerge[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Unit]] = {
-    val pivoted: Map[OuterK, Map[InnerK, V]] = MapPivotEncoder[K, K1, OuterK, InnerK, V](kvs)(split)
+    val pivoted: Map[OuterK, Map[InnerK, V]] =
+      MapPivotEncoder[K1, OuterK, InnerK, V](kvs)(split)
     val ret: Map[OuterK, Future[Unit]] = store.multiMerge(pivoted)
     kvs.flatMap {
       case (k, _) =>

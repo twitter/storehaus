@@ -24,8 +24,8 @@ package com.twitter.storehaus.algebra
  */
 
 object MapPivotEncoder {
-  def apply[K, K1 <: K, OuterK, InnerK, V](pairs: Map[K1, V])(split: K => (OuterK, InnerK)): Map[OuterK, Map[InnerK, V]] =
-    pairs.map {
+  def apply[K, OuterK, InnerK, V](pairs: Map[K, V])(split: K => (OuterK, InnerK)): Map[OuterK, Map[InnerK, V]] =
+    pairs.toList.map {
       case (k, v) =>
         val (outerK, innerK) = split(k)
         (outerK -> (innerK -> v))
