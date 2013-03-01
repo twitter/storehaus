@@ -41,7 +41,7 @@ class BufferingStore[K, V](store: MergeableStore[K, V], summer: StatefulSummer[M
       store.get(k).map { v => selectAndSum((k, v), flushed) }
     }
 
-  override def multiGet(ks: Set[K]): Map[K, Future[Option[V]]] =
+  override def multiGet[K1 <: K](ks: Set[K1]): Map[K1, Future[Option[V]]] =
     flushBy { flushed =>
       store.multiGet(ks).map { case (k, futureV) =>
           k -> futureV.map { v => selectAndSum((k, v), flushed) }
@@ -52,7 +52,7 @@ class BufferingStore[K, V](store: MergeableStore[K, V], summer: StatefulSummer[M
 
   override def multiMerge[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Unit]] =
     // Doesn't work right now, as Map is invariant in K.
-    summer.put(kvs)
-      .map { store.multiMerge(_) }
+    summer.put(kvs.asInstanceOf[Map[K, V]])
+      .map { store.multiMerge(_).asInstanceOf[Map[K1, Future[Unit]]] }
       .getOrElse(kvs mapValues { _ => Future.Unit })
 }
