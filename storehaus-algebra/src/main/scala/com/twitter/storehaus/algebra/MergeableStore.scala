@@ -49,10 +49,35 @@ trait MergeableStore[-K, V] extends Mergeable[K,V] with Store[K, V] {
         oldV = vOpt.getOrElse(monoid.zero);
         newV = monoid.plus(oldV, kv._2);
         finalUnit <- put((kv._1, monoid.nonZeroOption(newV)))) yield finalUnit
-  // TODO: implement multiMerge in terms of multiGet/Put
+
+  override def multiMerge[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Unit]] =
+    MergeableStore.multiMergeFromMultiSet(this, kvs)(
+      FutureCollector.default[(K1, Option[V])], monoid
+    )
 }
 
 object MergeableStore {
+  /**
+    * Implements multiMerge functionality in terms of an underlying
+    * store's multiGet and multiSet.
+    */
+  def multiMergeFromMultiSet[K, V](store: Store[K, V], kvs: Map[K, V])
+    (implicit collect: FutureCollector[(K, Option[V])], monoid: Monoid[V]): Map[K, Future[Unit]] = {
+    val keySet = kvs.keySet
+    val collected: Future[Map[K, Future[Unit]]] =
+      collect {
+        store.multiGet(keySet).map {
+          case (k, futureOptV) =>
+            futureOptV.map { v =>
+              k -> Semigroup.plus(v, kvs.get(k)).flatMap { Monoid.nonZeroOption(_) }
+            }
+        }.toSeq
+      }.map { pairs: Seq[(K, Option[V])] => store.multiPut(pairs.toMap) }
+    keySet.map { k =>
+      k -> collected.flatMap { _.apply(k) }
+    }.toMap
+  }
+
   def fromStore[K,V:Monoid](store: Store[K,V]): MergeableStore[K,V] = new MergeableStore[K,V] {
     val monoid = implicitly[Monoid[V]]
     override def get(k: K) = store.get(k)
