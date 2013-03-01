@@ -51,7 +51,6 @@ class BufferingStore[K, V](store: MergeableStore[K, V], summer: StatefulSummer[M
   override def merge(pair: (K, V)): Future[Unit] = multiMerge(Map(pair))(pair._1)
 
   override def multiMerge[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Unit]] =
-    // Doesn't work right now, as Map is invariant in K.
     summer.put(kvs.asInstanceOf[Map[K, V]])
       .map { store.multiMerge(_).asInstanceOf[Map[K1, Future[Unit]]] }
       .getOrElse(kvs mapValues { _ => Future.Unit })
