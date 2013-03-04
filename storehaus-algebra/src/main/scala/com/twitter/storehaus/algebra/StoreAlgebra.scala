@@ -1,3 +1,4 @@
+
 /*
  * Copyright 2013 Twitter Inc.
  *
@@ -26,6 +27,12 @@ import com.twitter.storehaus.{ AbstractReadableStore, ReadableStore, Store }
 object StoreAlgebra {
   implicit def enrichReadableStore[K, V](store: ReadableStore[K, V]): AlgebraicReadableStore[K, V] =
     new AlgebraicReadableStore[K, V](store)
+
+  implicit def enrichStore[K, V](store: Store[K, V]): AlgebraicStore[K, V] =
+    new AlgebraicStore[K, V](store)
+
+  implicit def enrichMergeableStore[K, V](store: MergeableStore[K, V]): AlgebraicMergeableStore[K, V] =
+    new AlgebraicMergeableStore[K, V](store)
 }
 
 class AlgebraicReadableStore[K, V](store: ReadableStore[K, V]) {
@@ -42,4 +49,27 @@ class AlgebraicReadableStore[K, V](store: ReadableStore[K, V]) {
           fv.map { optV => optV.map { ts => mon.sum(ev(ts)) } }
         }
     }
+
+  def unpivot[CombinedK, InnerK, InnerV](split: CombinedK => (K, InnerK))
+    (implicit ev: V <:< Map[InnerK, InnerV]): ReadableStore[CombinedK, InnerV] =
+    new UnpivotedReadableStore[CombinedK, K, InnerK, InnerV](
+      store.asInstanceOf[ReadableStore[K, Map[InnerK, InnerV]]]
+    )(split)
+}
+
+
+class AlgebraicStore[K, V](store: Store[K, V]) {
+  def unpivot[CombinedK, InnerK, InnerV](split: CombinedK => (K, InnerK))
+    (implicit ev: V <:< Map[InnerK, InnerV]): Store[CombinedK, InnerV] =
+    new UnpivotedStore[CombinedK, K, InnerK, InnerV](
+      store.asInstanceOf[Store[K, Map[InnerK, InnerV]]]
+    )(split)
+}
+
+class AlgebraicMergeableStore[K, V](store: MergeableStore[K, V]) {
+  def unpivot[CombinedK, InnerK, InnerV](split: CombinedK => (K, InnerK))
+    (implicit ev: V <:< Map[InnerK, InnerV], monoid: Monoid[InnerV]): MergeableStore[CombinedK, InnerV] =
+    new UnpivotedMergeableStore[CombinedK, K, InnerK, InnerV](
+      store.asInstanceOf[MergeableStore[K, Map[InnerK, InnerV]]]
+    )(split)
 }
