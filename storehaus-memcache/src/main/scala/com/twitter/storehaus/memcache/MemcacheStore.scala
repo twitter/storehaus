@@ -18,7 +18,7 @@ package com.twitter.storehaus.memcache
 
 import com.twitter.conversions.time._
 import com.twitter.util.{ Future, Time }
-import com.twitter.finagle.memcached.Client
+import com.twitter.finagle.memcached.{ GetResult, Client }
 import com.twitter.storehaus.Store
 import org.jboss.netty.buffer.ChannelBuffer
 
@@ -45,10 +45,13 @@ class MemcacheStore(client: Client, ttl: Time, flag: Int) extends Store[String, 
   override def get(k: String): Future[Option[ChannelBuffer]] = client.get(k)
 
   override def multiGet[K1 <: String](ks: Set[K1]): Map[K1, Future[Option[ChannelBuffer]]] = {
-    val ret: Future[Map[String, ChannelBuffer]] = client.get(ks)
-    ks.map { k =>
-      k -> ret.map { m => m.get(k) }
-    }.toMap
+    val memcacheResult: Future[Map[String, Future[Option[ChannelBuffer]]]] =
+      client.getResult(ks).map { result =>
+        Store.zipWith(result.misses) { k => Future.None } ++
+        result.hits.mapValues { v => Future.value(Some(v.value)) } ++
+        result.failures.mapValues { Future.exception(_) }
+      }
+    ks.map { k => k -> memcacheResult.flatMap { _.apply(k) } }.toMap
   }
 
   protected def set(k: String, v: ChannelBuffer) = client.set(k, flag, ttl, v)
