@@ -107,9 +107,6 @@ object StorehausBuild extends Build {
     settings = sharedSettings
   ).settings(
     name := "storehaus-memcache",
-    libraryDependencies ++= Seq(
-      "com.twitter" %% "bijection-core" % bijectionVersion,
-      "com.twitter" %% "finagle-memcached" % "6.2.0"
-    )
+    libraryDependencies += "com.twitter" %% "finagle-memcached" % "6.2.0"
   ).dependsOn(storehausCore % "test->test;compile->compile")
 }

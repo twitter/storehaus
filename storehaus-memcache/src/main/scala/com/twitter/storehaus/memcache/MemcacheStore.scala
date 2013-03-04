@@ -47,8 +47,8 @@ class MemcacheStore(client: Client, ttl: Time, flag: Int) extends Store[String, 
   override def multiGet[K1 <: String](ks: Set[K1]): Map[K1, Future[Option[ChannelBuffer]]] = {
     val memcacheResult: Future[Map[String, Future[Option[ChannelBuffer]]]] =
       client.getResult(ks).map { result =>
-        Store.zipWith(result.misses) { k => Future.None } ++
         result.hits.mapValues { v => Future.value(Some(v.value)) } ++
+        Store.zipWith(result.misses) { k => Future.None } ++
         result.failures.mapValues { Future.exception(_) }
       }
     ks.map { k => k -> memcacheResult.flatMap { _.apply(k) } }.toMap
