@@ -20,7 +20,7 @@ import com.twitter.algebird.Monoid
 import com.twitter.algebird.util.UtilAlgebras._
 import com.twitter.bijection.Pivot
 import com.twitter.util.Future
-import com.twitter.storehaus.{ FutureCollector, Store }
+import com.twitter.storehaus.{ FutureCollector, ReadableStore, Store }
 
 /**
  * Methods used in the various unpivot stores.
@@ -29,28 +29,13 @@ import com.twitter.storehaus.{ FutureCollector, Store }
  */
 
 object PivotOps {
-  def get[K, OuterK, InnerK, V](k: K)(split: K => (OuterK, InnerK))(fn: OuterK => Future[Option[Map[InnerK, V]]]) = {
-    val (outerK, innerK) = split(k)
-    fn(outerK).map { _.flatMap { _.get(innerK) } }
-  }
-
-  def multiGet[K, OuterK, InnerK, V](ks: Set[K])(split: K => (OuterK, InnerK))(fn: Set[OuterK] => Map[OuterK, Future[Option[Map[InnerK, V]]]]) = {
-    val pivot = Pivot.encoder[K, OuterK, InnerK](split)
-    val ret: Map[OuterK, Future[Option[Map[InnerK, V]]]] = fn(pivot(ks).keySet)
-    ks.map { k =>
-      val (outerK, innerK) = split(k)
-      k -> ret(outerK).map { optM: Option[Map[InnerK, V]] =>
-        optM.flatMap { _.get(innerK) }
-      }
-    }.toMap
-  }
     /**
     * Queries the underlying store with a multiGet and transforms the
     * underlying map by filtering out all (innerK -> v) pairs that a)
     * contain None as the value or 2) in combination with the paired
     * outerK don't pass the input filter.
     */
-  def multiGetFiltered[OuterK, InnerK, V](store: Store[OuterK, Map[InnerK, V]], ks: Set[OuterK])
+  def multiGetFiltered[OuterK, InnerK, V](store: ReadableStore[OuterK, Map[InnerK, V]], ks: Set[OuterK])
     (pred: (OuterK, InnerK) => Boolean)
       : Map[OuterK, Future[Option[List[(InnerK, V)]]]] =
     store.multiGet(ks)

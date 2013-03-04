@@ -23,7 +23,7 @@ import Store.mapCollect
 
 import com.twitter.algebird.util.UtilAlgebras._
 
-import com.twitter.util.{Future}
+import com.twitter.util.Future
 
 // Needed for the monoid on Future[V]
 import com.twitter.algebird.util.UtilAlgebras._

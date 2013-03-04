@@ -26,11 +26,9 @@ import com.twitter.storehaus.{ FutureCollector, Store }
  * @author Sam Ritchie
  */
 
-class UnpivotedStore[K, OuterK, InnerK, V](store: Store[OuterK, Map[InnerK, V]])(split: K => (OuterK, InnerK)) extends Store[K, V] {
-  override def get(k: K) = PivotOps.get(k)(split) { store.get(_) }
-
-  override def multiGet[T <: K](ks: Set[T]) =
-    PivotOps.multiGet(ks)(split) { store.multiGet(_) }
+class UnpivotedStore[-K, OuterK, InnerK, V](store: Store[OuterK, Map[InnerK, V]])(split: K => (OuterK, InnerK))
+  extends UnpivotedReadableStore[K, OuterK, InnerK, V](store)(split)
+  with Store[K, V] {
 
   override def put(pair: (K, Option[V])) = {
     val (k, optV) = pair

@@ -29,13 +29,23 @@ import com.twitter.storehaus.ReadableStore
  * @author Sam Ritchie
  */
 
-class UnpivotedReadableStore[K, OuterK, InnerK, V](store: ReadableStore[OuterK, Map[InnerK, V]])(split: K => (OuterK, InnerK))
+class UnpivotedReadableStore[-K, OuterK, InnerK, +V](store: ReadableStore[OuterK, Map[InnerK, V]])(split: K => (OuterK, InnerK))
   extends ReadableStore[K, V] {
-  override def get(k: K) =
-    PivotOps.get(k)(split) { store.get(_) }
 
-  override def multiGet[T <: K](ks: Set[T]): Map[T, Future[Option[V]]] =
-    PivotOps.multiGet(ks)(split) { store.multiGet(_) }
+  override def get(k: K) = {
+    val (outerK, innerK) = split(k)
+    store.get(outerK).map { _.flatMap { _.get(innerK) } }
+  }
 
+  override def multiGet[T <: K](ks: Set[T]): Map[T, Future[Option[V]]] = {
+    val pivot = Pivot.encoder[K, OuterK, InnerK](split)
+    val ret: Map[OuterK, Future[Option[Map[InnerK, V]]]] = store.multiGet(pivot(ks).keySet)
+    ks.map { k =>
+      val (outerK, innerK) = split(k)
+      k -> ret(outerK).map { optM: Option[Map[InnerK, V]] =>
+        optM.flatMap { _.get(innerK) }
+      }
+    }.toMap
+  }
   override def close { store.close }
 }

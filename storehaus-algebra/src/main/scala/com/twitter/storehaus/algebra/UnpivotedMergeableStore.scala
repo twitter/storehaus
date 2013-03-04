@@ -26,7 +26,7 @@ import com.twitter.util.Future
   * @author Sam Ritchie
   */
 
-class UnpivotedMergeableStore[K, OuterK, InnerK, V](store: MergeableStore[OuterK, Map[InnerK, V]])(split: K => (OuterK, InnerK))
+class UnpivotedMergeableStore[-K, OuterK, InnerK, V](store: MergeableStore[OuterK, Map[InnerK, V]])(split: K => (OuterK, InnerK))
   (override implicit val monoid: Monoid[V])
     extends UnpivotedStore[K, OuterK, InnerK, V](store)(split)
     with MergeableStore[K, V] {
