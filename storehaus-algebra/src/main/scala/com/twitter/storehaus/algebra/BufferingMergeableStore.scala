@@ -19,7 +19,7 @@ package com.twitter.storehaus.algebra
 import com.twitter.algebird.{ Monoid, Semigroup, StatefulSummer }
 import com.twitter.util.Future
 
-class BufferingStore[K, V](store: MergeableStore[K, V], summer: StatefulSummer[Map[K, V]]) extends MergeableStore[K, V] {
+class BufferingStore[-K, V](store: MergeableStore[K, V], summer: StatefulSummer[Map[K, V]]) extends MergeableStore[K, V] {
   override implicit def monoid: Monoid[V] = store.monoid
 
   protected def flushBy[T](fn: Option[Map[K, V]] => T): T = {
