@@ -7,8 +7,7 @@ import sbtgitflow.ReleasePlugin._
 object StorehausBuild extends Build {
   val sharedSettings = Project.defaultSettings ++ releaseSettings ++ Seq(
     organization := "com.twitter",
-    version := "0.0.5-SNAPSHOT",
-    scalaVersion := "2.9.2",
+    crossScalaVersions := Seq("2.9.2", "2.10.0"),
     libraryDependencies ++= Seq(
       "org.scalacheck" %% "scalacheck" % "1.10.0" % "test" withSources(),
       "org.scala-tools.testing" %% "specs" % "1.6.9" % "test" withSources()
@@ -67,6 +66,9 @@ object StorehausBuild extends Build {
       </developers>)
   )
 
+  val algebirdVersion = "0.1.9"
+  val bijectionVersion = "0.3.0"
+
   lazy val storehaus = Project(
     id = "storehaus",
     base = file("."),
@@ -85,7 +87,7 @@ object StorehausBuild extends Build {
     settings = sharedSettings
   ).settings(
     name := "storehaus-core",
-    libraryDependencies += "com.twitter" % "util-core" % "5.3.15"
+    libraryDependencies += "com.twitter" %% "util-core" % "6.2.0"
   )
 
   lazy val storehausAlgebra = Project(
@@ -94,9 +96,9 @@ object StorehausBuild extends Build {
     settings = sharedSettings
   ).settings(
     name := "storehaus-algebra",
-    libraryDependencies += "com.twitter" %% "algebird-core" % "0.1.9",
-    libraryDependencies += "com.twitter" %% "algebird-util" % "0.1.9",
-    libraryDependencies += "com.twitter" %% "bijection-core" % "0.3.0"
+    libraryDependencies += "com.twitter" %% "algebird-core" % algebirdVersion,
+    libraryDependencies += "com.twitter" %% "algebird-util" % algebirdVersion,
+    libraryDependencies += "com.twitter" %% "bijection-core" % bijectionVersion
   ).dependsOn(storehausCore % "test->test;compile->compile")
 
   lazy val storehausMemcache = Project(
@@ -105,9 +107,6 @@ object StorehausBuild extends Build {
     settings = sharedSettings
   ).settings(
     name := "storehaus-memcache",
-    libraryDependencies ++= Seq(
-      "com.twitter" %% "bijection-core" % "0.2.0",
-      "com.twitter" % "finagle-memcached" % "5.3.23"
-    )
+    libraryDependencies += "com.twitter" %% "finagle-memcached" % "6.2.0"
   ).dependsOn(storehausCore % "test->test;compile->compile")
 }
