@@ -43,13 +43,7 @@ object Store {
     fc(m.toSeq.map { case (k,fv) => fv.map { v => (k,v) } }).map { _.toMap }
 }
 
-trait Store[-K, V] extends Closeable { self =>
-  def get(k: K): Future[Option[V]] = multiGet(Set(k)).apply(k)
-  /**
-   * all keys in the set are in the resulting map
-   */
-  def multiGet[K1<:K](ks: Set[K1]): Map[K1, Future[Option[V]]] =
-    ks.map { k => (k, self.get(k)) }.toMap
+trait Store[-K, V] extends ReadableStore[K, V] with Closeable { self =>
 
   /** replace a value
    * Delete is the same as put((k,None))
@@ -57,12 +51,6 @@ trait Store[-K, V] extends Closeable { self =>
   def put(kv: (K,Option[V])): Future[Unit] = multiPut(Map(kv)).apply(kv._1)
   def multiPut[K1<:K](kvs: Map[K1,Option[V]]): Map[K1, Future[Unit]] =
     kvs.map { kv => (kv._1, put(kv)) }
-
-  // due to variance, this cannot extend ReadableStore
-  lazy val toReadable: ReadableStore[K, V] = new ReadableStore[K, V] {
-    override def get(k: K) = self.get(k)
-    override def multiGet[K1<:K](ks: Set[K1]) = self.multiGet(ks)
-  }
 
   override def close { }
 }
