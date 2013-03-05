@@ -17,6 +17,7 @@
 package com.twitter.storehaus.algebra
 
 import com.twitter.algebird.{ MapAlgebra, Monoid }
+import com.twitter.bijection.Injection
 import org.scalacheck.{ Arbitrary, Properties }
 import org.scalacheck.Prop._
 import org.scalacheck.Properties
@@ -69,6 +70,12 @@ object MergeableStoreProperties extends Properties("MergeableStore") {
   def newStore[K, V: Monoid]: MergeableStore[K, V] =
     MergeableStore.fromStore(new JMapStore[K, V])
 
+  def newConvertedStore[K,V1,V2](implicit inj: Injection[V2,V1], monoid: Monoid[V2]): MergeableStore[K,V2] = {
+    val store = new JMapStore[K, V1]
+    val cstore = new ConvertedStore[K,K,V1,V2](store)(identity[K])
+    MergeableStore.fromStore(cstore)
+  }
+
   property("MergeableStore from JMapStore works with single merge") =
     mergeableStoreTest(newStore[Int, Map[Int, Int]]) { (s, pairs) =>
       pairs.foreach { s.merge(_).get }
@@ -79,6 +86,40 @@ object MergeableStoreProperties extends Properties("MergeableStore") {
       val input = MapAlgebra.sumByKey(pairs)
       s.multiMerge(input).foreach { case (_, v) => v.get }
     }
+
+  property("MergeableStore from Converted JMapStore works with single merge") =
+    mergeableStoreTest(newConvertedStore[Int, String, Int]) { (s, pairs) =>
+      pairs.foreach { s.merge(_).get }
+    }
+
+  property("MergeableStore from Converted JMapStore works with multi merge") =
+    mergeableStoreTest(newConvertedStore[Int, String, Int]) { (s, pairs) =>
+      pairs.foreach { s.merge(_).get }
+    }
+
+  property("Converted MergeableStore works") = {
+    // We are using a weird monoid on Int here:
+    import com.twitter.bijection.algebird.AlgebirdBijections._
+    import com.twitter.bijection.Conversion.asMethod
+    implicit val monoid : Monoid[Int] = implicitly[Monoid[(Short,Short)]].as[Monoid[Int]]
+
+    val store = new ConvertedMergeableStore[Int,Int,(Short,Short),Int](newStore[Int,(Short,Short)])(identity[Int])
+    mergeableStoreTest(store) { (s, pairs) =>
+      pairs.foreach { s.merge(_).get }
+    }
+  }
+  property("Converted MergeableStore works with multiMerge") = {
+    val store = new ConvertedMergeableStore[Int,Int,(Short,Short),Int](newStore[Int,(Short,Short)])(identity[Int])
+    // We are using a weird monoid on Int here:
+    import com.twitter.bijection.algebird.AlgebirdBijections._
+    import com.twitter.bijection.Conversion.asMethod
+    implicit val monoid : Monoid[Int] = implicitly[Monoid[(Short,Short)]].as[Monoid[Int]]
+
+    mergeableStoreTest(store) { (s, pairs) =>
+      val input = MapAlgebra.sumByKey(pairs)
+      s.multiMerge(input).foreach { case (_, v) => v.get }
+    }
+  }
 
   property("UnpivotedMergeableStore from JMapStore works with single merge") = {
     val store = newStore[String, Map[Int, Int]].unpivot[(String, Int), Int, Int](identity)

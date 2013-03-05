@@ -98,7 +98,8 @@ object StorehausBuild extends Build {
     name := "storehaus-algebra",
     libraryDependencies += "com.twitter" %% "algebird-core" % algebirdVersion,
     libraryDependencies += "com.twitter" %% "algebird-util" % algebirdVersion,
-    libraryDependencies += "com.twitter" %% "bijection-core" % bijectionVersion
+    libraryDependencies += "com.twitter" %% "bijection-core" % bijectionVersion,
+    libraryDependencies += "com.twitter" %% "bijection-algebird" % bijectionVersion
   ).dependsOn(storehausCore % "test->test;compile->compile")
 
   lazy val storehausMemcache = Project(
