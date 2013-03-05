@@ -28,8 +28,8 @@ object ReadableStore {
    * Returns a new ReadableStore[K, V] that queries all of the stores
    * and returns the first values that are not exceptions.
    */
-  def first[K,V](stores: Seq[ReadableStore[K, V]]): ReadableStore[K, V]
-    = new ReplicatedReadableStore(stores)
+  def first[K,V](stores: Seq[ReadableStore[K, V]]): ReadableStore[K, V] =
+    new ReplicatedReadableStore(stores)
 
   // This should go somewhere else, but it is needed for many combinators on stores
   def combineMaps[K,V](m: Seq[Map[K,V]]): Map[K,Seq[V]] =
@@ -56,8 +56,10 @@ trait ReadableStore[-K,+V] extends Closeable { self =>
   */
   def andThen[V2,V3>:V](rs: ReadableStore[V3,V2])(implicit fc: FutureCollector[V3]): ReadableStore[K,V2] =
     new AbstractReadableStore[K,V2] {
-      override def get(k: K) = for(optV <- self.get(k);
-        v2 <- optV.map { v => rs.get(v) }.getOrElse(Future.None)) yield v2
+      override def get(k: K) =
+        for(optV <- self.get(k);
+            v2 <- optV.map { v => rs.get(v) }.getOrElse(Future.None))
+        yield v2
 
       override def multiGet[K1<:K](ks: Set[K1]) = {
         val mapFV: Map[K1,Future[Option[V]]] = self.multiGet(ks)
