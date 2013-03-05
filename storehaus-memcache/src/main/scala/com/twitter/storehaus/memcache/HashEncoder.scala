@@ -31,8 +31,6 @@ import com.twitter.util.Encoder
 // See this reference for other algorithm names:
 // http://docs.oracle.com/javase/1.4.2/docs/guide/security/CryptoSpec.html#AppA
 
-// TODO: Convert this to use the new Hasher trait.
-
 class HashEncoder(hashFunc: String = "SHA-256") extends Encoder[Array[Byte],Array[Byte]] {
   def encode(bytes: Array[Byte]): Array[Byte] = {
     val md = java.security.MessageDigest.getInstance(hashFunc)
