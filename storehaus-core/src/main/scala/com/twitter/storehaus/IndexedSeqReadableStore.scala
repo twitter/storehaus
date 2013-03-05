@@ -15,6 +15,7 @@
  */
 
 package com.twitter.storehaus
+
 import com.twitter.util.Future
 
 class IndexedSeqReadableStore[V](iseq: IndexedSeq[V]) extends ReadableStore[Int,V] {
