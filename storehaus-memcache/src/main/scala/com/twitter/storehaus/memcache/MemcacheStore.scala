@@ -50,7 +50,8 @@ class MemcacheStore(client: Client, ttl: Time, flag: Int) extends Store[String, 
         result.hits.mapValues { v => Future.value(Some(v.value)) } ++
         result.failures.mapValues { Future.exception(_) }
       }
-    ks.map { k => k -> memcacheResult.flatMap { _.getOrElse(k, Future.None) } }.toMap
+    Store.liftValues(ks, memcacheResult, { (k: K1) => Future.value(Future.None) })
+      .mapValues { _.flatten }
   }
 
   protected def set(k: String, v: ChannelBuffer) = client.set(k, flag, ttl, v)

@@ -50,10 +50,12 @@ trait MergeableStore[-K, V] extends Mergeable[K,V] with Store[K, V] {
         newV = monoid.plus(oldV, kv._2);
         finalUnit <- put((kv._1, monoid.nonZeroOption(newV)))) yield finalUnit
 
-  override def multiMerge[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Unit]] =
-    MergeableStore.multiMergeFromMultiSet(this, kvs)(
-      FutureCollector.default[(K1, Option[V])], monoid
-    )
+  protected def futureCollector[K1 <: K]: FutureCollector[(K1,Option[V])] =
+    FutureCollector.default[(K1,Option[V])]
+
+  override def multiMerge[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Unit]] = {
+    MergeableStore.multiMergeFromMultiSet(this, kvs)(futureCollector[K1], monoid)
+  }
 }
 
 object MergeableStore {
@@ -78,11 +80,15 @@ object MergeableStore {
     }.toMap
   }
 
-  def fromStore[K,V:Monoid](store: Store[K,V]): MergeableStore[K,V] = new MergeableStore[K,V] {
-    val monoid = implicitly[Monoid[V]]
-    override def get(k: K) = store.get(k)
-    override def multiGet[K1<:K](ks: Set[K1]) = store.multiGet(ks)
-    override def put(kv: (K,Option[V])) = store.put(kv)
-    override def multiPut[K1<:K](kvs: Map[K1,Option[V]]) = store.multiPut(kvs)
-  }
+  def fromStore[K,V](store: Store[K,V])(implicit mon: Monoid[V], fc: FutureCollector[(K,Option[V])]): MergeableStore[K,V] =
+    new MergeableStore[K,V] {
+      val monoid = mon
+      // FutureCollector is invariant, but clearly it will accept K1 <: K
+      // and the contract is that it should not change K1 at all.
+      override def futureCollector[K1] = fc.asInstanceOf[FutureCollector[(K1,Option[V])]]
+      override def get(k: K) = store.get(k)
+      override def multiGet[K1<:K](ks: Set[K1]) = store.multiGet(ks)
+      override def put(kv: (K,Option[V])) = store.put(kv)
+      override def multiPut[K1<:K](kvs: Map[K1,Option[V]]) = store.multiPut(kvs)
+    }
 }

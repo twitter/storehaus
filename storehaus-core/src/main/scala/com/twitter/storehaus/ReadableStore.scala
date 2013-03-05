@@ -50,7 +50,60 @@ trait ReadableStore[-K,+V] extends Closeable { self =>
     ks.map { k => (k, self.get(k)) }.toMap
 
   override def close { }
+
+  // These methods are defined in terms of the above:
+  /** Look-up the V, and then use that as the key into the next store
+  */
+  def andThen[V2,V3>:V](rs: ReadableStore[V3,V2])(implicit fc: FutureCollector[V3]): ReadableStore[K,V2] =
+    new AbstractReadableStore[K,V2] {
+      override def get(k: K) = for(optV <- self.get(k);
+        v2 <- optV.map { v => rs.get(v) }.getOrElse(Future.None)) yield v2
+
+      override def multiGet[K1<:K](ks: Set[K1]) = {
+        val mapFV: Map[K1,Future[Option[V]]] = self.multiGet(ks)
+        val fkVals: Future[Map[K1,Option[V]]] = Store.mapCollect(mapFV)
+
+        val fmapf: Future[Map[K1,Future[Option[V2]]]] = fkVals.map { k1vMap =>
+          val vSet: Set[V] = k1vMap.view.flatMap { _._2 }.toSet
+          val v2s: Map[V,Future[Option[V2]]] = rs.multiGet(vSet)
+          k1vMap.mapValues { optV => optV.map { v2s(_) }.getOrElse(Future.None) }
+        }
+        Store.liftValues(ks, fmapf).mapValues { _.flatten }
+      }
+      override def close { self.close; rs.close }
+    }
+
+  /** convert K1 to K then lookup K in this store
+   */
+  def composeKeyMapping[K1](fn: (K1) => K): ReadableStore[K1,V] =
+    new ConvertedReadableStore(self, fn, {(v: V) => Future.value(v)})
+
+  /** apply an async function on all the values
+   */
+  def flatMapValues[V2](fn: (V) => Future[V2]): ReadableStore[K,V2] =
+    new ConvertedReadableStore(self, identity[K] _, fn)
+  /** Apply a non-blocking function on all the values. If this function throws, it will be caught in
+   * the Future
+   */
+  def mapValues[V2](fn: (V) => V2): ReadableStore[K,V2] =
+    flatMapValues(fn.andThen { Future.value(_) })
 }
 
 // For teh Java
 abstract class AbstractReadableStore[-K,+V] extends ReadableStore[K,V]
+
+/**
+ * Value conversion returns a Future because V1 => V2 may fail, and we are going to convert to a
+ * future anyway (so, a Try is kind of a Future that is not async). Thus we might as well add the
+ * flexibility of accepting a V1 => Future[V2], though in practice Future.value/exception will
+ * generally be used
+ */
+class ConvertedReadableStore[K1,-K2,V1,+V2](rs: ReadableStore[K1,V1], kfn: K2 => K1, vfn: V1 => Future[V2]) extends
+  ReadableStore[K2,V2] {
+  override def get(k2: K2) = Store.flatMapValue(rs.get(kfn(k2)))(vfn)
+  override def multiGet[K3<:K2](s: Set[K3]) = {
+    val k1ToV2 = rs.multiGet(s.map(kfn)).mapValues(Store.flatMapValue(_)(vfn))
+    s.map { k3 => (k3, k1ToV2(kfn(k3))) }.toMap
+  }
+  override def close { rs.close }
+}
