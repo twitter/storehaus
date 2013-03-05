@@ -48,10 +48,9 @@ class MemcacheStore(client: Client, ttl: Time, flag: Int) extends Store[String, 
     val memcacheResult: Future[Map[String, Future[Option[ChannelBuffer]]]] =
       client.getResult(ks).map { result =>
         result.hits.mapValues { v => Future.value(Some(v.value)) } ++
-        Store.zipWith(result.misses) { k => Future.None } ++
         result.failures.mapValues { Future.exception(_) }
       }
-    ks.map { k => k -> memcacheResult.flatMap { _.apply(k) } }.toMap
+    ks.map { k => k -> memcacheResult.flatMap { _.getOrElse(k, Future.None) } }.toMap
   }
 
   protected def set(k: String, v: ChannelBuffer) = client.set(k, flag, ttl, v)
