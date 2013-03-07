@@ -35,7 +35,7 @@ object Store {
     }
 
   // TODO: Move to some collection util.
-  def zipWith[K, V](keys: Set[K])(lookup: K => V): Map[K, V] =
+  def zipWith[K, V](keys: Iterable[K])(lookup: K => V): Map[K, V] =
     keys.foldLeft(Map.empty[K, V]) { (m, k) => m + (k -> lookup(k)) }
 
   def selectFirstSuccessfulTrial[T](futures: Seq[Future[T]]): Future[T] = {
