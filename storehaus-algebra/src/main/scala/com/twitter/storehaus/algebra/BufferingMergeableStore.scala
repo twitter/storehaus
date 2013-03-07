@@ -19,6 +19,18 @@ package com.twitter.storehaus.algebra
 import com.twitter.algebird.{ Monoid, Semigroup, StatefulSummer }
 import com.twitter.util.Future
 
+class BufferingMergeable[-K, V](wrapped: Mergeable[K, V], summer: StatefulSummer[Map[K, V]]) extends Mergeable[K, V] {
+  override implicit def monoid: Monoid[V] = wrapped.monoid
+
+  override def merge(pair: (K, V)): Future[Unit] = multiMerge(Map(pair))(pair._1)
+
+  override def multiMerge[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Unit]] =
+    summer.put(kvs.asInstanceOf[Map[K, V]])
+      .map { wrapped.multiMerge(_).asInstanceOf[Map[K1, Future[Unit]]] }
+      .getOrElse(kvs mapValues { _ => Future.Unit })
+
+}
+
 class BufferingStore[-K, V](store: MergeableStore[K, V], summer: StatefulSummer[Map[K, V]]) extends MergeableStore[K, V] {
   override implicit def monoid: Monoid[V] = store.monoid
 
@@ -47,6 +59,9 @@ class BufferingStore[-K, V](store: MergeableStore[K, V], summer: StatefulSummer[
           k -> futureV.map { v => selectAndSum((k, v), flushed) }
       }
     }
+
+  override def put(pair: (K, Option[V])) = flushBy { _ => store.put(pair) }
+  override def multiPut[K1 <: K](kvs: Map[K1, Option[V]]) = { _ =>
 
   override def merge(pair: (K, V)): Future[Unit] = multiMerge(Map(pair))(pair._1)
 
