@@ -51,7 +51,7 @@ abstract class ShardedReadableStore[-K1, -K2, +V, +S <: ReadableStore[K2, V]] ex
   override def multiGet[T<:(K1,K2)](ks: Set[T]): Map[T, Future[Option[V]]] = {
     // Do the lookup:
     val ksMap: Map[K1, Map[K2, Future[Option[V]]]] = ks.groupBy { _._1 }
-      .mapValues { sett =>
+      .mapValues { sett: Set[T] =>
         val k1 = sett.head._1 // sett is never empty
         getRoute(k1) match {
           // There is some store for this:
@@ -73,22 +73,30 @@ object ShardedStore {
     }
 }
 
+/** This is only thrown when a shard is expected but somehow absent.
+ * For instance, in the combinators, we expect all the underlying gets to behave correctly
+ * this exception put into a Future when a user tries to put to an invalid shard
+ */
+class MissingShardException[K](val key: K)
+    extends RuntimeException("Missing shard for prefix " + key)
+
+
 /** combines a mapping of Stores into one Store that internally routes
  * Note: if a K1 is absent from the routes, any put will give a Future.exception
  */
 abstract class ShardedStore[-K1,-K2,V, +S <: Store[K2,V]] extends ShardedReadableStore[K1,K2,V,S] with Store[(K1,K2), V] {
   override def put(kv: ((K1,K2), Option[V])): Future[Unit] = {
-    val (k1, k2) = kv._1
+    val ((k1, k2), optv) = kv
     getRoute(k1) match {
-      case Some(store) => store.put(k2, kv._2)
-      case None => Future.exception(new MissingValueException(k1))
+      case Some(store) => store.put(k2, optv)
+      case None => Future.exception(new MissingShardException(k1))
     }
   }
   override def multiPut[T<:(K1,K2)](kvs: Map[T, Option[V]]): Map[T, Future[Unit]] = {
     // Do the lookup:
-    val ks = kvs.keys
-    val fuMap: Map[K1, Map[K2, Future[Unit]]] = ks.groupBy { _._1 }
-      .mapValues { sett =>
+    val ks = kvs.keySet
+    val shardMap: Map[K1, Map[K2, Future[Unit]]] = ks.groupBy { _._1 }
+      .mapValues { sett: Set[T] =>
         val k1 = sett.head._1 // sett is never empty
         getRoute(k1) match {
           // There is some store for this:
@@ -97,11 +105,11 @@ abstract class ShardedStore[-K1,-K2,V, +S <: Store[K2,V]] extends ShardedReadabl
             store.multiPut(subMap)
           // This whole key subspace is missing:
           case None =>
-            val ex = Future.exception(new MissingValueException(k1))
+            val ex = Future.exception(new MissingShardException(k1))
             sett.map { t => (t._2, ex) }.toMap
         }
       }
     // Now construct the result map:
-    Store.zipWith(ks) { t => fuMap(t._1)(t._2) }
+    Store.zipWith(ks) { t => shardMap(t._1)(t._2) }
   }
 }

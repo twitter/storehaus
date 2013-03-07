@@ -29,14 +29,17 @@ object FunctionStore {
   /** Treat a Function1 like a ReadableStore
    */
   def apply[K,V](getfn: (K) => Option[V]): ReadableStore[K,V] = new AbstractReadableStore[K,V] {
-    override def get(k: K) = Future.value(getfn(k))
+    override def get(k: K) = // I know Future(getfn(k)) looks similar, we've seen some high costs with that
+      try { Future.value(getfn(k)) }
+      catch { case e: Throwable => Future.exception(e) }
   }
 
   /** Treat a PartialFunction like a ReadableStore
    */
   def partial[K,V](getfn: PartialFunction[K,V]): ReadableStore[K,V] = new AbstractReadableStore[K,V] {
     override def get(k: K) = if(getfn.isDefinedAt(k)) {
-      Future.value(Some(getfn(k)))
+      try { Future.value(Some(getfn(k))) }
+      catch { case e: Throwable => Future.exception(e) }
     } else Future.None
   }
   /** Treat a function returning a Future[Option[V]] as the get method of a ReadableStore
