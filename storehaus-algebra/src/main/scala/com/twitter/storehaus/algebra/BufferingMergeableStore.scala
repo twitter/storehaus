@@ -17,56 +17,79 @@
 package com.twitter.storehaus.algebra
 
 import com.twitter.algebird.{ Monoid, Semigroup, StatefulSummer }
-import com.twitter.util.Future
+import com.twitter.util.{ Future, Promise }
+import scala.collection.mutable.{ Map => MMap }
 
 class BufferingMergeable[-K, V](wrapped: Mergeable[K, V], summer: StatefulSummer[Map[K, V]]) extends Mergeable[K, V] {
   override implicit def monoid: Monoid[V] = wrapped.monoid
 
+  private def promiseMap[K1 <: K] = MMap[K1, Promise[Unit]]()
+  private def fuse[T](promise: Promise[T], future: Future[T]): Promise[T] = {
+    promise.become(future)
+    promise
+  }
+
   override def merge(pair: (K, V)): Future[Unit] = multiMerge(Map(pair))(pair._1)
 
-  override def multiMerge[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Unit]] =
+  override def multiMerge[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Unit]] = {
     summer.put(kvs.asInstanceOf[Map[K, V]])
-      .map { wrapped.multiMerge(_).asInstanceOf[Map[K1, Future[Unit]]] }
-      .getOrElse(kvs mapValues { _ => Future.Unit })
-
+      .map { m =>
+        try {
+          wrapped.multiMerge(m).map {
+            case (k, futureUnit) =>
+              k -> fuse(promiseMap(k), futureUnit)
+          }.asInstanceOf[Map[K1, Future[Unit]]]
+        } finally {
+          promiseMap[K1].clear
+        }
+      }
+      .getOrElse {
+        kvs.map {
+          case (k, _) =>
+            val newPromise = new Promise[Unit]
+            val ret = promiseMap.get(k) match {
+              case Some(promise) => fuse(promise, newPromise)
+              case None => newPromise
+            }
+            promiseMap.update(k, ret)
+            k -> ret
+        }
+      }
+  }
 }
 
-class BufferingStore[-K, V](store: MergeableStore[K, V], summer: StatefulSummer[Map[K, V]]) extends MergeableStore[K, V] {
-  override implicit def monoid: Monoid[V] = store.monoid
+class BufferingStore[-K, V](store: MergeableStore[K, V], summer: StatefulSummer[Map[K, V]])
+  extends BufferingMergeable[K, V](store, summer)
+  with MergeableStore[K, V] {
 
-  protected def flushBy[T](fn: Option[Map[K, V]] => T): T = {
+  protected def flush = summer.flush.foreach { store.multiMerge(_) }
+
+  protected def selectAndSum[K1 <: K](pair: (K1, Option[V]), m: Option[Map[K1, V]]): Option[V] =
+    m.flatMap { partials =>
+      Semigroup.plus(pair._2, partials.get(pair._1))
+    }
+
+  override def get(k: K): Future[Option[V]] = {
     val flushed = summer.flush
     try {
-      fn(flushed)
+      store.get(k).map { v => selectAndSum((k, v), flushed) }
+    } finally {
+      flushed.foreach { store.multiMerge(_) }
+    }
+
+  }
+  override def multiGet[K1 <: K](ks: Set[K1]): Map[K1, Future[Option[V]]] = {
+    val flushed = summer.flush
+    try {
+      store.multiGet(ks).map {
+        case (k, futureV) =>
+          k -> futureV.map { v => selectAndSum((k, v), flushed) }
+      }
     } finally {
       flushed.foreach { store.multiMerge(_) }
     }
   }
 
-  protected def selectAndSum(pair: (K, Option[V]), m: Option[Map[K, V]]): Option[V] =
-    m.flatMap { partials =>
-      Semigroup.plus(pair._2, partials.get(pair._1))
-    }
-
-  override def get(k: K): Future[Option[V]] =
-    flushBy { flushed =>
-      store.get(k).map { v => selectAndSum((k, v), flushed) }
-    }
-
-  override def multiGet[K1 <: K](ks: Set[K1]): Map[K1, Future[Option[V]]] =
-    flushBy { flushed =>
-      store.multiGet(ks).map { case (k, futureV) =>
-          k -> futureV.map { v => selectAndSum((k, v), flushed) }
-      }
-    }
-
-  override def put(pair: (K, Option[V])) = flushBy { _ => store.put(pair) }
-  override def multiPut[K1 <: K](kvs: Map[K1, Option[V]]) = { _ =>
-
-  override def merge(pair: (K, V)): Future[Unit] = multiMerge(Map(pair))(pair._1)
-
-  override def multiMerge[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Unit]] =
-    summer.put(kvs.asInstanceOf[Map[K, V]])
-      .map { store.multiMerge(_).asInstanceOf[Map[K1, Future[Unit]]] }
-      .getOrElse(kvs mapValues { _ => Future.Unit })
+  override def put(pair: (K, Option[V])) = { flush; store.put(pair) }
+  override def multiPut[K1 <: K](kvs: Map[K1, Option[V]]) = { flush; store.multiPut(kvs) }
 }
