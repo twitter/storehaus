@@ -19,7 +19,7 @@ package com.twitter.storehaus.algebra
 import com.twitter.algebird.{ Monoid, Semigroup, StatefulSummer }
 import com.twitter.util.{ Future, Promise }
 import scala.collection.mutable.{ Map => MMap }
-import com.twitter.storehaus.{ FutureCollector, Store }
+import com.twitter.storehaus.{ FutureOps, FutureCollector, Store }
 
 class BufferingMergeable[-K, V](wrapped: Mergeable[K, V], summer: StatefulSummer[Map[K, V]]) extends Mergeable[K, V] {
   override implicit def monoid: Monoid[V] = wrapped.monoid
@@ -28,7 +28,7 @@ class BufferingMergeable[-K, V](wrapped: Mergeable[K, V], summer: StatefulSummer
 
   def flush(implicit collect: FutureCollector[(Any, Unit)]): Future[Unit] =
     summer.flush
-      .map { m => Store.mapCollect(wrapped.multiMerge(m)).unit }
+      .map { m => FutureOps.mapCollect(wrapped.multiMerge(m)).unit }
       .getOrElse(Future.Unit)
 
   protected def multiPromise[K1 <: K](ks: Set[K1]): Map[K1, Promise[Unit]] = {
@@ -67,14 +67,14 @@ class BufferingStore[-K, V](store: MergeableStore[K, V], summer: StatefulSummer[
   override def multiGet[K1 <: K](ks: Set[K1]): Map[K1, Future[Option[V]]] = {
     val writeComputation: Future[Unit] =
       summer.flush.map { m =>
-        Store.mapCollect {
+        FutureOps.mapCollect {
           mergeAndFulfill(m).filterKeys(ks.toSet[K])
         }.unit
       }.getOrElse(Future.Unit)
-    Store.liftFutureValues(ks, writeComputation.map { _ => store.multiGet(ks) })
+    FutureOps.liftFutureValues(ks, writeComputation.map { _ => store.multiGet(ks) })
   }
   override def put(pair: (K, Option[V])) = flush.flatMap { _ => store.put(pair) }
 
   override def multiPut[K1 <: K](kvs: Map[K1, Option[V]]) =
-    Store.liftFutureValues(kvs.keySet, flush.map { _ => store.multiPut(kvs) })
+    FutureOps.liftFutureValues(kvs.keySet, flush.map { _ => store.multiPut(kvs) })
 }

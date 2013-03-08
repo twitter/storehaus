@@ -42,7 +42,7 @@ object StoreProperties extends Properties("Store") {
     forAll { (m: Map[String, Int]) =>
       val keys = m.keySet
       val expanded: Set[String] = keys ++ (keys map { _ + "suffix!" })
-      val ms = new MapStore(m)
+      val ms = ReadableStore.fromMap(m)
       val retM = ms.multiGet(expanded)
       expanded forall { s: String =>
         ms.get(s).get == retM(s).get
@@ -50,7 +50,7 @@ object StoreProperties extends Properties("Store") {
     }
 
   property("Map wraps store works") = forAll { (m: Map[String, Int]) =>
-    val ms = new MapStore(m)
+    val ms = ReadableStore.fromMap(m)
     val retM = ms.multiGet(m.keySet)
     (retM.forall { kv: (String, Future[Option[Int]]) =>
         (ms.get(kv._1).get == kv._2.get) && (m.get(kv._1) == kv._2.get)
@@ -59,10 +59,10 @@ object StoreProperties extends Properties("Store") {
 
   property("ConcurrentHashMapStore test") = storeTest(new ConcurrentHashMapStore[String,Int]())
 
-  property("LRUStore test") = storeTest(LRUStore[String,Int](100000))
+  property("LRUStore test") = storeTest(Store.lru[String,Int](100000))
 
   property("Or works as expected") = forAll { (m1: Map[String, Int], m2: Map[String, Int]) =>
-    val orRO = ReadableStore.first(Seq(new MapStore(m1), new MapStore(m2)))
+    val orRO = ReadableStore.first(Seq(ReadableStore.fromMap(m1), ReadableStore.fromMap(m2)))
    (m1.keySet ++ m2.keySet).forall { k =>
      (orRO.get(k).get == m1.get(k)) ||
        (orRO.get(k).get == m2.get(k))

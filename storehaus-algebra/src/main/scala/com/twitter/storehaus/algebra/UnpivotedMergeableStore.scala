@@ -18,6 +18,7 @@ package com.twitter.storehaus.algebra
 
 import com.twitter.algebird.Monoid
 import com.twitter.util.Future
+import com.twitter.storehaus.CollectionOps
 
 /**
   * MergeableStore enrichment which presents a MergeableStore[K, V]
@@ -38,7 +39,7 @@ class UnpivotedMergeable[-K, OuterK, InnerK, V](wrapped: Mergeable[OuterK, Map[I
 
   override def multiMerge[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Unit]] = {
     val pivoted: Map[OuterK, Map[InnerK, V]] =
-      MapPivotEncoder[K1, OuterK, InnerK, V](kvs)(split)
+      CollectionOps.pivotMap[K1, OuterK, InnerK, V](kvs)(split)
     val ret: Map[OuterK, Future[Unit]] = wrapped.multiMerge(pivoted)
     kvs.flatMap {
       case (k, _) =>
