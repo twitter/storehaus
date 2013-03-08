@@ -22,7 +22,7 @@ import org.scalacheck.Properties
 object UnpivotedStoreProperties extends Properties("UnpivotedStore") {
   import StoreProperties.storeTest
   import MergeableStoreProperties.{ newStore, mergeableStoreTest }
-  import StoreAlgebra._
+  import MergeableStoreAlgebra._
 
   property("UnpivotedStore obeys the store properties") = storeTest {
     val mergeableStore = MergeableStore.fromStore(new JMapStore[String, Map[Int, String]])
