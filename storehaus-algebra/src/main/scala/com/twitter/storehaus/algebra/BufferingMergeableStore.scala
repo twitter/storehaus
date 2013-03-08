@@ -26,7 +26,7 @@ class BufferingMergeable[-K, V](wrapped: Mergeable[K, V], summer: StatefulSummer
 
   private val promiseMap = MMap[Any, Promise[Unit]]()
 
-  def flush[K1 <: K](implicit collect: FutureCollector[(K1, Unit)]): Future[Unit] =
+  def flush(implicit collect: FutureCollector[(Any, Unit)]): Future[Unit] =
     summer.flush
       .map { m => Store.mapCollect(wrapped.multiMerge(m)).unit }
       .getOrElse(Future.Unit)
@@ -37,7 +37,7 @@ class BufferingMergeable[-K, V](wrapped: Mergeable[K, V], summer: StatefulSummer
     }.toMap
   }
 
-  protected def multiFulfill[K1 <: K](m: Map[K1, Future[Unit]]) = {
+  protected def multiFulfill[K1 <: K](m: Map[K1, Future[Unit]]): Map[K1, Future[Unit]] = {
     m.foreach { case (k, futureUnit) => promiseMap(k).become(futureUnit) }
     promiseMap --= m.keySet
     m
@@ -56,7 +56,7 @@ class BufferingMergeable[-K, V](wrapped: Mergeable[K, V], summer: StatefulSummer
 class BufferingStore[-K, V](store: MergeableStore[K, V], summer: StatefulSummer[Map[K, V]])
   extends BufferingMergeable[K, V](store, summer)
   with MergeableStore[K, V] {
-  protected implicit val collector = FutureCollector.bestEffort[(K, Unit)]
+  protected implicit val collector = FutureCollector.bestEffort[(Any, Unit)]
 
   override def get(k: K): Future[Option[V]] =
     summer.flush
