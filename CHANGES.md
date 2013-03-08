@@ -1,5 +1,10 @@
 # storehaus #
 
+### Version 0.0.4 ###
+
+* Break `Store` into `Store` and `MergeableStore`.
+* Massive API cleanup.
+
 ### Version 0.0.3 ###
 
 * Change up `Store` interface's multiGet.
