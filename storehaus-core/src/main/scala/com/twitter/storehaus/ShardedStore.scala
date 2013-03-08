@@ -23,13 +23,12 @@ import com.twitter.util.Future
  */
 
 object ShardedReadableStore {
-  def fromMap[K1,K2,V](m: Map[K1, ReadableStore[K2, V]]): ReadableStore[(K1,K2), V] =
-    new ShardedReadableStore[K1, K2, V, ReadableStore[K2, V]] {
-      def getRoute(k1: K1) = m.get(k1)
+  def fromMap[K1,K2,V](m: Map[K1, ReadableStore[K2, V]]): ReadableStore[(K1,K2), V] = {
+    val routes = new MapStore(m)
+    new ShardedReadableStore[K1, K2, V, ReadableStore[K2, V]](routes) {
       override def close { m.values.foreach { _.close } }
     }
-  // You can imagine a version that takes a routing function that might
-  // even be dynamic in time, but this is unimplemented for now
+  }
 }
 
 /** combines a mapping of ReadableStores into one ReadableStore that internally routes
@@ -37,40 +36,40 @@ object ShardedReadableStore {
  * you may want to combine this with ReadableStore.composeKeyMapping the change (K => (K1,K2))
  *
  */
-abstract class ShardedReadableStore[-K1, -K2, +V, +S <: ReadableStore[K2, V]] extends ReadableStore[(K1,K2), V] {
-  def getRoute(k1: K1): Option[S]
+class ShardedReadableStore[-K1, -K2, +V, +S <: ReadableStore[K2, V]](routes: ReadableStore[K1,S]) extends
+  ReadableStore[(K1,K2), V] {
 
   override def get(k: (K1,K2)): Future[Option[V]] = {
     val (k1, k2) = k
-    getRoute(k1) match {
-      case Some(rs) => rs.get(k2)
-      case None => Future.None
-    }
+    Store.combineFOFn[K1,S,V](routes.get _, _.get(k2))(k1)
   }
 
   override def multiGet[T<:(K1,K2)](ks: Set[T]): Map[T, Future[Option[V]]] = {
-    // Do the lookup:
-    val ksMap: Map[K1, Map[K2, Future[Option[V]]]] = ks.groupBy { _._1 }
-      .mapValues { sett: Set[T] =>
-        val k1 = sett.head._1 // sett is never empty
-        getRoute(k1) match {
-          // There is some store for this:
-          case Some(rs) => rs.multiGet(sett.map { _._2 })
-          // This whole key subspace is missing:
-          case None => sett.map { t => (t._2, Future.None) }.toMap
+    val prefixMap: Map[K1,Set[K2]] = ks.groupBy { _._1 }.mapValues { _.map { t => t._2 } }
+    val shards: Map[K1, Future[Option[S]]] = routes.multiGet(prefixMap.keySet)
+    val ksMap: Map[K1, Future[Map[K2, Future[Option[V]]]]] = shards.map { case (k1, fos) =>
+      val innerm = fos.map { opts =>
+        opts match {
+          case None => Map.empty[K2,Future[Option[V]]]
+          case Some(s) => s.multiGet(prefixMap(k1))
         }
       }
+      (k1, innerm)
+    }.toMap
     // Now construct the result map:
-    Store.zipWith(ks) { t => ksMap(t._1)(t._2) }
+    Store.zipWith(ks) { t =>
+      ksMap(t._1).flatMap { m2 => m2(t._2) }
+    }
   }
 }
 
 object ShardedStore {
-  def fromMap[K1,K2,V](m: Map[K1, Store[K2, V]]): Store[(K1,K2), V] =
-    new ShardedStore[K1, K2, V, Store[K2, V]] {
-      def getRoute(k1: K1) = m.get(k1)
+  def fromMap[K1,K2,V](m: Map[K1, Store[K2, V]]): Store[(K1,K2), V] = {
+    val routes = new MapStore(m)
+    new ShardedStore[K1, K2, V, Store[K2, V]](routes) {
       override def close { m.values.foreach { _.close } }
     }
+  }
 }
 
 /** This is only thrown when a shard is expected but somehow absent.
@@ -84,32 +83,39 @@ class MissingShardException[K](val key: K)
 /** combines a mapping of Stores into one Store that internally routes
  * Note: if a K1 is absent from the routes, any put will give a Future.exception
  */
-abstract class ShardedStore[-K1,-K2,V, +S <: Store[K2,V]] extends ShardedReadableStore[K1,K2,V,S] with Store[(K1,K2), V] {
+class ShardedStore[-K1,-K2,V, +S <: Store[K2,V]](routes: ReadableStore[K1, S]) extends ShardedReadableStore[K1,K2,V,S](routes)
+  with Store[(K1,K2), V] {
   override def put(kv: ((K1,K2), Option[V])): Future[Unit] = {
     val ((k1, k2), optv) = kv
-    getRoute(k1) match {
-      case Some(store) => store.put(k2, optv)
-      case None => Future.exception(new MissingShardException(k1))
+    routes.get(k1).flatMap { _ match {
+        case Some(s) => Future.value(s)
+        case None => Future.exception(new MissingShardException(k1))
+      }
     }
+    .flatMap { _.put(k2, optv) }
   }
   override def multiPut[T<:(K1,K2)](kvs: Map[T, Option[V]]): Map[T, Future[Unit]] = {
-    // Do the lookup:
-    val ks = kvs.keySet
-    val shardMap: Map[K1, Map[K2, Future[Unit]]] = ks.groupBy { _._1 }
-      .mapValues { sett: Set[T] =>
-        val k1 = sett.head._1 // sett is never empty
-        getRoute(k1) match {
-          // There is some store for this:
-          case Some(store) =>
-            val subMap = sett.map { t => (t._2, kvs(t)) }.toMap
-            store.multiPut(subMap)
-          // This whole key subspace is missing:
+    val pivoted: Map[K1,Map[K2, Option[V]]] =
+      kvs.groupBy { _._1 }
+        .mapValues { maptv => maptv.map { case (t,v) => (t._2, v) } }
+        .map { case (t, m) => (t._1, m) }
+        .toMap
+
+    val shards: Map[K1, Future[Option[S]]] = routes.multiGet(pivoted.keySet)
+    val shardMap: Map[K1, Future[Map[K2, Future[Unit]]]] = shards.map { case (k1, fos) =>
+      val innerm = fos.map { opts =>
+        opts match {
           case None =>
-            val ex = Future.exception(new MissingShardException(k1))
-            sett.map { t => (t._2, ex) }.toMap
+            val error = Future.exception(new MissingShardException(k1))
+            pivoted(k1).mapValues { _ => error }
+          case Some(s) => s.multiPut(pivoted(k1))
         }
       }
-    // Now construct the result map:
-    Store.zipWith(ks) { t => shardMap(t._1)(t._2) }
+      (k1, innerm)
+    }
+    // Do the lookup:
+    Store.zipWith(kvs.keySet) { t =>
+      shardMap(t._1).flatMap { m2 => m2(t._2) }
+    }
   }
 }
