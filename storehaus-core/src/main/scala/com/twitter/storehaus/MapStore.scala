@@ -24,6 +24,6 @@ import com.twitter.util.Future
  */
 
 // MapStore is an immutable store.
-class MapStore[K,V](val backingStore: Map[K,V] = Map[K,V]()) extends ReadableStore[K,V] {
+class MapStore[K, V](val backingStore: Map[K, V] = Map[K, V]()) extends ReadableStore[K, V] {
   override def get(k: K) = Future.value(backingStore.get(k))
 }

@@ -22,7 +22,7 @@ import com.twitter.bijection.Injection
 import org.scalacheck.{ Arbitrary, Properties }
 import org.scalacheck.Prop._
 import org.scalacheck.Properties
-import com.twitter.storehaus.{ Store, JMapStore }
+import com.twitter.storehaus.{ Store, JMapStore, FutureOps }
 
 object MergeableStoreProperties extends Properties("MergeableStore") {
   def rightContainsLeft[K,V: Equiv](l: Map[K, V], r: Map[K, V]): Boolean =
@@ -54,7 +54,7 @@ object MergeableStoreProperties extends Properties("MergeableStore") {
   def baseTest[K: Arbitrary, V: Arbitrary: Monoid: Equiv](store: MergeableStore[K, V])(put: (MergeableStore[K, V], List[(K, V)]) => Unit) =
     forAll { examples: List[(K, V)] =>
       val inputMap = MapAlgebra.sumByKey(examples).mapValues { Monoid.nonZeroOption(_) }
-      val preResult = Store.mapCollect(store.multiGet(inputMap.keySet)).get
+      val preResult = FutureOps.mapCollect(store.multiGet(inputMap.keySet)).get
       val expectedResult = Monoid.plus(inputMap, preResult)
         .mapValues { _.flatMap { Monoid.nonZeroOption(_) } }
 
@@ -62,7 +62,7 @@ object MergeableStoreProperties extends Properties("MergeableStore") {
 
       Equiv[Map[K, Option[V]]].equiv(
         expectedResult,
-        Store.mapCollect(store.multiGet(expectedResult.keySet)).get
+        FutureOps.mapCollect(store.multiGet(expectedResult.keySet)).get
       )
     }
 
@@ -76,14 +76,10 @@ object MergeableStoreProperties extends Properties("MergeableStore") {
   }
 
   def singleMergeableStoreTest[K: Arbitrary, V: Arbitrary: Monoid: Equiv](store: MergeableStore[K, V]) =
-    baseTest(store) { (s, pairs) =>
-      pairs.foreach { s.merge(_) }
-    }
+    baseTest(store) { (s, pairs) => pairs.foreach { s.merge(_) } }
 
   def multiMergeableStoreTest[K: Arbitrary, V: Arbitrary: Monoid: Equiv](store: MergeableStore[K, V]) =
-    baseTest(store) { (s, pairs) =>
-      s.multiMerge(MapAlgebra.sumByKey(pairs))
-    }
+    baseTest(store) { (s, pairs) => s.multiMerge(MapAlgebra.sumByKey(pairs)) }
 
   def mergeableStoreTest[K: Arbitrary, V: Arbitrary: Monoid: Equiv](store: MergeableStore[K, V]) =
     singleMergeableStoreTest(store) && multiMergeableStoreTest(store)

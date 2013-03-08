@@ -22,6 +22,6 @@ import com.twitter.util.Future
  * Concrete empty store implementation.
  */
 
-object EmptyReadableStore extends ReadableStore[Any, Nothing] {
+object EmptyReadableStore extends AbstractReadableStore[Any, Nothing] {
   override def get(k: Any) = Future.None
 }

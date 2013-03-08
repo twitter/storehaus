@@ -21,6 +21,11 @@ import com.twitter.util.Future
 trait FutureCollector[T] extends (Seq[Future[T]] => Future[Seq[T]])
 
 object FutureCollector {
+  def fromFn[T](fn: Seq[Future[T]] => Future[Seq[T]]): FutureCollector[T] =
+    new FutureCollector[T] {
+      override def apply(seq: Seq[Future[T]]) = fn(seq)
+    }
+
   /**
    * If any future fails, the remaining future fails.
    */
@@ -35,8 +40,8 @@ object FutureCollector {
     override def apply(futureSeq: Seq[Future[T]]) =
       Future.collect {
         futureSeq.map { f: Future[T] =>
-        f.map { Some(_) }.handle { case _ => None }
-      }
-    }.map { _.flatten }
+          f.map { Some(_) }.handle { case _ => None }
+        }
+      }.map { _.flatten }
   }
 }

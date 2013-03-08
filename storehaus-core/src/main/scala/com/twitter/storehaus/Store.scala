@@ -16,77 +16,33 @@
 
 package com.twitter.storehaus
 
-import com.twitter.util.{Future, Throw, Return}
+import com.twitter.util.Future
 import java.io.Closeable
-
-/** This is only thrown when a value is expected but somehow absent.
- * For instance, in the combinators, we expect all the underlying gets to behave correctly
- * this exception is used when a dependent store is not returning correct data
- */
-class MissingValueException[K](val key: K)
-    extends RuntimeException("Missing value for " + key)
+import java.util.{ Map => JMap }
 
 object Store {
-  // Kleisli operator for Future[Option[_]] Monad.  I knew it would come to this.
-  def combineFOFn[A,B,C](f1: A => Future[Option[B]], f2: B => Future[Option[C]])(a:A): Future[Option[C]] = {
-    f1(a).flatMap { optB =>
-      optB match {
-        case None => Future.None
-        case Some(b) => f2(b)
-      }
-    }
+  def fromJMap[K, V](m: JMap[K, Option[V]]): Store[K, V] = new JMapStore[K, V] {
+    override val jstore = m
   }
-  def flatMapValue[V,V2](f: Future[Option[V]])(fn: V => Future[V2]): Future[Option[V2]] =
-    f.flatMap { _ match {
-        case Some(v) => fn(v).map { v2 => Some(v2) }
-        case None => Future.None
-      }
-    }
 
-  // TODO: Move to some collection util.
-  def zipWith[K, V](keys: Set[K])(lookup: K => V): Map[K, V] =
-    keys.foldLeft(Map.empty[K, V]) { (m, k) => m + (k -> lookup(k)) }
+  def lru[K, V](maxSize: Int = 1000): Store[K, V] = new LRUStore(maxSize)
 
-  def selectFirstSuccessfulTrial[T](futures: Seq[Future[T]]): Future[T] = {
-    Future.select(futures).flatMap(entry => {
-      val (completedTry, otherFutures) = entry
-      completedTry match {
-        case Throw(e) => {
-          if (otherFutures.isEmpty) {
-            Future.exception(e)
-          } else {
-            selectFirstSuccessfulTrial(otherFutures)
-          }
-        }
-        case Return(similarUsers) => Future.value(similarUsers)
-      }
-    })
-  }
-  def mapCollect[K, V](m: Map[K, Future[V]])(implicit fc: FutureCollector[(K,V)]): Future[Map[K,V]] =
-    fc(m.view.map { case (k,fv) => fv.map { v => (k,v) } }.toSeq).map { _.toMap }
-
-  def missingValueFor[K](k: K) = Future.exception(new MissingValueException(k))
-
-  def liftValues[K,K1<:K,V](ks: Set[K1], result: Future[Map[K, V]],
-    missingfn: (K1) => Future[V] = missingValueFor _): Map[K1, Future[V]] =
-    ks.view.map { k1 =>
-      k1 -> result.flatMap { _.get(k1).map { Future.value(_) }.getOrElse(missingfn(k1)) }
-    }.toMap
-
-  def liftFutureValues[K,K1<:K,V](ks: Set[K1], result: Future[Map[K, Future[V]]],
-    missingfn: (K1) => Future[V] = missingValueFor _): Map[K1, Future[V]] =
-    ks.view.map { k1 =>
-      k1 -> result.flatMap { _.get(k1).getOrElse(missingfn(k1)) }
-    }.toMap
+  /**
+   * Returns a new Store[K, V] that queries all of the stores on read
+   * and returns the first values that are not exceptions. Writes are
+   * routed to every store in the supplied sequence.
+   */
+  def first[K, V](stores: Seq[Store[K, V]])(implicit collect: FutureCollector[Unit]): Store[K, V] =
+    new ReplicatedStore(stores)
 }
 
 trait Store[-K, V] extends ReadableStore[K, V] with Closeable { self =>
-
-  /** replace a value
+  /**
+   * replace a value
    * Delete is the same as put((k,None))
    */
-  def put(kv: (K,Option[V])): Future[Unit] = multiPut(Map(kv)).apply(kv._1)
-  def multiPut[K1<:K](kvs: Map[K1,Option[V]]): Map[K1, Future[Unit]] =
+  def put(kv: (K, Option[V])): Future[Unit] = multiPut(Map(kv)).apply(kv._1)
+  def multiPut[K1 <: K](kvs: Map[K1, Option[V]]): Map[K1, Future[Unit]] =
     kvs.map { kv => (kv._1, put(kv)) }
 
   override def close { }
