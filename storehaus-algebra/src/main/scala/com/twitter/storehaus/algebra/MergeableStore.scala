@@ -40,7 +40,9 @@ trait Mergeable[-K, V] extends java.io.Serializable {
 /** a Store
  * None is indistinguishable from monoid.zero
  */
-trait MergeableStore[-K, V] extends Mergeable[K,V] with Store[K, V] {
+trait MergeableStore[-K, V] extends Mergeable[K,V] with Store[K, V]
+
+abstract class AbstractMergeableStore[-K, V] extends MergeableStore[K, V]  {
   /** sets to monoid.plus(get(kv._1).get.getOrElse(monoid.zero), kv._2)
    * but maybe more efficient implementations
    */
@@ -53,9 +55,8 @@ trait MergeableStore[-K, V] extends Mergeable[K,V] with Store[K, V] {
   protected def futureCollector[K1 <: K]: FutureCollector[(K1,Option[V])] =
     FutureCollector.default[(K1,Option[V])]
 
-  override def multiMerge[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Unit]] = {
+  override def multiMerge[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Unit]] =
     MergeableStore.multiMergeFromMultiSet(this, kvs)(futureCollector[K1], monoid)
-  }
 }
 
 object MergeableStore {
@@ -81,7 +82,7 @@ object MergeableStore {
   }
 
   def fromStore[K,V](store: Store[K,V])(implicit mon: Monoid[V], fc: FutureCollector[(K,Option[V])]): MergeableStore[K,V] =
-    new MergeableStore[K,V] {
+    new AbstractMergeableStore[K,V] {
       val monoid = mon
       // FutureCollector is invariant, but clearly it will accept K1 <: K
       // and the contract is that it should not change K1 at all.
