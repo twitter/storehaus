@@ -6,7 +6,7 @@ See the [current API documentation](http://twitter.github.com/storehaus) for mor
 
 ## Maven
 
-Current version is `0.0.4`. groupid=`"com.twitter"` artifact=`storehaus_2.9.2"`.
+Current version is `0.1.0`. groupid=`"com.twitter"` artifact=`storehaus_2.9.2"`.
 
 ## Authors
 
