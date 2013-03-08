@@ -42,7 +42,7 @@ object ReadableStoreAlgebra {
         }
     }
 
-  def unpivoted[K, OuterK, InnerK, V](store: ReadableStore[OuterK, Map[InnerK, V]])
+  def unpivot[K, OuterK, InnerK, V](store: ReadableStore[OuterK, Map[InnerK, V]])
     (split: K => (OuterK, InnerK)): ReadableStore[K, V] =
     new UnpivotedReadableStore(store)(split)
 }
@@ -54,7 +54,7 @@ class AlgebraicReadableStore[K, V](store: ReadableStore[K, V]) {
   def unpivot[CombinedK, InnerK, InnerV](split: CombinedK => (K, InnerK))
     (implicit ev: V <:< Map[InnerK, InnerV])
       : ReadableStore[CombinedK, InnerV] =
-    ReadableStoreAlgebra.unpivoted(store.asInstanceOf[ReadableStore[K, Map[InnerK, InnerV]]])(split)
+    ReadableStoreAlgebra.unpivot(store.asInstanceOf[ReadableStore[K, Map[InnerK, InnerV]]])(split)
 
   /**
    * convert K1 to K then lookup K in this store

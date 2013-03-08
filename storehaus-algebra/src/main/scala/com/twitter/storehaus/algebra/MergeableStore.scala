@@ -16,26 +16,12 @@
 
 package com.twitter.storehaus.algebra
 
-import com.twitter.algebird.{Monoid, MapMonoid, Semigroup, MapAlgebra}
-import com.twitter.storehaus._
-
-import FutureOps.mapCollect
-
-import com.twitter.algebird.util.UtilAlgebras._
-
+import com.twitter.algebird.{ Monoid, Semigroup }
+import com.twitter.storehaus.{ FutureCollector, Store }
 import com.twitter.util.Future
 
 // Needed for the monoid on Future[V]
 import com.twitter.algebird.util.UtilAlgebras._
-
-trait Mergeable[-K, V] extends java.io.Serializable {
-  def monoid: Monoid[V]
-  def merge(kv: (K, V)): Future[Unit] =
-    multiMerge(Map(kv)).apply(kv._1)
-
-  def multiMerge[K1<:K](kvs: Map[K1,V]): Map[K1, Future[Unit]] =
-    kvs.map { kv => (kv._1, merge(kv)) }
-}
 
 /** a Store
  * None is indistinguishable from monoid.zero

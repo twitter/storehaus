@@ -27,7 +27,7 @@ object MergeableStoreAlgebra {
   implicit def enrichMergeableStore[K, V](store: MergeableStore[K, V]): AlgebraicMergeableStore[K, V] =
     new AlgebraicMergeableStore[K, V](store)
 
-  def unpivoted[K, OuterK, InnerK, V: Monoid](store: MergeableStore[OuterK, Map[InnerK, V]])
+  def unpivot[K, OuterK, InnerK, V: Monoid](store: MergeableStore[OuterK, Map[InnerK, V]])
     (split: K => (OuterK, InnerK)): MergeableStore[K, V] =
     new UnpivotedMergeableStore(store)(split)
 
@@ -46,7 +46,7 @@ class AlgebraicMergeableStore[K, V](store: MergeableStore[K, V]) {
   def unpivot[CombinedK, InnerK, InnerV](split: CombinedK => (K, InnerK))
     (implicit ev: V <:< Map[InnerK, InnerV], monoid: Monoid[InnerV])
       : MergeableStore[CombinedK, InnerV] =
-    MergeableStoreAlgebra.unpivoted(store.asInstanceOf[MergeableStore[K, Map[InnerK, InnerV]]])(split)
+    MergeableStoreAlgebra.unpivot(store.asInstanceOf[MergeableStore[K, Map[InnerK, InnerV]]])(split)
 
   def composeKeyMapping[K1](fn: K1 => K): MergeableStore[K1, V] =
     MergeableStoreAlgebra.convert(store)(fn)
