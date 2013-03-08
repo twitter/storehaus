@@ -16,19 +16,20 @@
 
 package com.twitter.storehaus.algebra
 
-import com.twitter.algebird.{ Monoid, Semigroup }
+import com.twitter.algebird.{ Monoid, Semigroup, StatefulSummer }
+import com.twitter.bijection.ImplicitBijection
 import com.twitter.storehaus.{ FutureCollector, Store }
 import com.twitter.util.Future
 
-// Needed for the monoid on Future[V]
-import com.twitter.algebird.util.UtilAlgebras._
-
-/** a Store
+/**
  * None is indistinguishable from monoid.zero
  */
 trait MergeableStore[-K, V] extends Mergeable[K,V] with Store[K, V]
 
 abstract class AbstractMergeableStore[-K, V] extends MergeableStore[K, V]  {
+  // Needed for the monoid on Future[V]
+  import com.twitter.algebird.util.UtilAlgebras._
+
   /** sets to monoid.plus(get(kv._1).get.getOrElse(monoid.zero), kv._2)
    * but maybe more efficient implementations
    */
@@ -78,4 +79,15 @@ object MergeableStore {
       override def put(kv: (K,Option[V])) = store.put(kv)
       override def multiPut[K1<:K](kvs: Map[K1,Option[V]]) = store.multiPut(kvs)
     }
+
+  def unpivot[K, OuterK, InnerK, V: Monoid](store: MergeableStore[OuterK, Map[InnerK, V]])
+    (split: K => (OuterK, InnerK)): MergeableStore[K, V] =
+    new UnpivotedMergeableStore(store)(split)
+
+  def withSummer[K, V](store: MergeableStore[K, V], summer: StatefulSummer[Map[K, V]]): MergeableStore[K, V] =
+    new BufferingStore(store, summer)
+
+  def convert[K1, K2, V1, V2](store: MergeableStore[K1, V1])(kfn: K2 => K1)
+    (implicit bij: ImplicitBijection[V2, V1]): MergeableStore[K2, V2] =
+    new ConvertedMergeableStore(store)(kfn)
 }

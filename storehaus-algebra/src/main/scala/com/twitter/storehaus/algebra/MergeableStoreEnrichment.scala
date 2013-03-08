@@ -19,41 +19,26 @@ package com.twitter.storehaus.algebra
 import com.twitter.algebird.{ Monoid, StatefulSummer }
 import com.twitter.bijection.ImplicitBijection
 
-/**
-  * Enrichments on MergeableStore.
-  */
-
-object MergeableStoreAlgebra {
-  implicit def enrichMergeableStore[K, V](store: MergeableStore[K, V]): AlgebraicMergeableStore[K, V] =
-    new AlgebraicMergeableStore[K, V](store)
-
-  def unpivot[K, OuterK, InnerK, V: Monoid](store: MergeableStore[OuterK, Map[InnerK, V]])
-    (split: K => (OuterK, InnerK)): MergeableStore[K, V] =
-    new UnpivotedMergeableStore(store)(split)
-
-  def withSummer[K, V](store: MergeableStore[K, V], summer: StatefulSummer[Map[K, V]]): MergeableStore[K, V] =
-    new BufferingStore(store, summer)
-
-  def convert[K1, K2, V1, V2](store: MergeableStore[K1, V1])(kfn: K2 => K1)
-    (implicit bij: ImplicitBijection[V2, V1]): MergeableStore[K2, V2] =
-    new ConvertedMergeableStore(store)(kfn)
+object MergeableStoreEnrichment {
+  implicit def enrich[K, V](store: MergeableStore[K, V]): EnrichedMergeableStore[K, V] =
+    new EnrichedMergeableStore[K, V](store)
 }
 
-class AlgebraicMergeableStore[K, V](store: MergeableStore[K, V]) {
+class EnrichedMergeableStore[K, V](store: MergeableStore[K, V]) {
   def withSummer(summer: StatefulSummer[Map[K, V]]): MergeableStore[K, V] =
-    MergeableStoreAlgebra.withSummer(store, summer)
+    MergeableStore.withSummer(store, summer)
 
   def unpivot[CombinedK, InnerK, InnerV](split: CombinedK => (K, InnerK))
     (implicit ev: V <:< Map[InnerK, InnerV], monoid: Monoid[InnerV])
       : MergeableStore[CombinedK, InnerV] =
-    MergeableStoreAlgebra.unpivot(store.asInstanceOf[MergeableStore[K, Map[InnerK, InnerV]]])(split)
+    MergeableStore.unpivot(store.asInstanceOf[MergeableStore[K, Map[InnerK, InnerV]]])(split)
 
   def composeKeyMapping[K1](fn: K1 => K): MergeableStore[K1, V] =
-    MergeableStoreAlgebra.convert(store)(fn)
+    MergeableStore.convert(store)(fn)
 
   def mapValues[V1](implicit bij: ImplicitBijection[V1, V]): MergeableStore[K, V1] =
-    MergeableStoreAlgebra.convert(store)(identity[K])
+    MergeableStore.convert(store)(identity[K])
 
   def convert[K1, V1](fn: K1 => K)(implicit bij: ImplicitBijection[V1, V]): MergeableStore[K1, V1] =
-    MergeableStoreAlgebra.convert(store)(fn)
+    MergeableStore.convert(store)(fn)
 }

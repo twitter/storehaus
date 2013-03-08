@@ -16,8 +16,9 @@
 
 package com.twitter.storehaus.algebra
 
+import com.twitter.algebird.Monoid
 import com.twitter.bijection.Injection
-import com.twitter.storehaus.Store
+import com.twitter.storehaus.{ FutureCollector, Store }
 import com.twitter.util.Future
 
 /**
@@ -35,6 +36,9 @@ object StoreAlgebra {
 }
 
 class AlgebraicStore[K, V](store: Store[K, V]) {
+  def toMergeable(implicit mon: Monoid[V], fc: FutureCollector[(K, Option[V])]): MergeableStore[K, V] =
+    MergeableStore.fromStore(store)
+
   def unpivot[CombinedK, InnerK, InnerV](split: CombinedK => (K, InnerK))(implicit ev: V <:< Map[InnerK, InnerV]): Store[CombinedK, InnerV] =
     StoreAlgebra.unpivot(store.asInstanceOf[Store[K, Map[InnerK, InnerV]]])(split)
 
