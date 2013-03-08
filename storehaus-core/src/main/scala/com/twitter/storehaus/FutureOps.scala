@@ -34,6 +34,16 @@ class MissingValueException[K](val key: K) extends RuntimeException("Missing val
 object FutureOps {
   def missingValueFor[K](k: K) = Future.exception(new MissingValueException(k))
 
+  // Kleisli operator for Future[Option[_]] Monad.  I knew it would come to this.
+  def combineFOFn[A, B, C](f1: A => Future[Option[B]], f2: B => Future[Option[C]])(a: A): Future[Option[C]] = {
+    f1(a).flatMap { optB =>
+      optB match {
+        case None => Future.None
+        case Some(b) => f2(b)
+      }
+    }
+  }
+
   def flatMapValue[V, V2](f: Future[Option[V]])(fn: V => Future[V2]): Future[Option[V2]] =
     f.flatMap {
       _ match {

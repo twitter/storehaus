@@ -16,17 +16,23 @@
 
 package com.twitter.storehaus
 
-import com.twitter.util.Future
-import java.io.Closeable
+import org.scalacheck.Properties
+import org.scalacheck.Arbitrary
 
-trait Store[-K, V] extends ReadableStore[K, V] with Closeable { self =>
-  /**
-   * replace a value
-   * Delete is the same as put((k,None))
-   */
-  def put(kv: (K, Option[V])): Future[Unit] = multiPut(Map(kv)).apply(kv._1)
-  def multiPut[K1 <: K](kvs: Map[K1, Option[V]]): Map[K1, Future[Unit]] =
-    kvs.map { kv => (kv._1, put(kv)) }
+object ShardedStoreProperties extends Properties("ShardedStore") {
+  import StoreProperties.storeTest
 
-  override def close { }
+  def moddiv(v: Int, by: Int): (Int, Int) = {
+    val cmod = v % by
+    val mod = if(cmod < 0) cmod + by else cmod
+    (mod, v/by)
+  }
+
+  property("ShardedStore test") = {
+    val SHARDS = 10
+    implicit val arbpair: Arbitrary[(Int,Int)] = Arbitrary { Arbitrary.arbitrary[Int].map { moddiv(_, SHARDS) } }
+    storeTest {
+      ShardedStore.fromMap((0 until SHARDS).map { _ -> new JMapStore[Int, String] }.toMap)
+    }
+  }
 }
