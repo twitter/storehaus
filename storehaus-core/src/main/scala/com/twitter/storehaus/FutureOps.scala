@@ -52,21 +52,20 @@ object FutureOps {
       }
     }
 
-  def selectFirstSuccessfulTrial[T](futures: Seq[Future[T]]): Future[T] = {
-    Future.select(futures).flatMap(entry => {
-      val (completedTry, otherFutures) = entry
-      completedTry match {
-        case Throw(e) => {
-          if (otherFutures.isEmpty) {
-            Future.exception(e)
-          } else {
-            selectFirstSuccessfulTrial(otherFutures)
+  def selectFirstSuccessfulTrial[T](futures: Seq[Future[T]]): Future[T] =
+    Future.select(futures)
+      .flatMap { case (completedTry, otherFutures) =>
+        completedTry match {
+          case Throw(e) => {
+            if (otherFutures.isEmpty) {
+              Future.exception(e)
+            } else {
+              selectFirstSuccessfulTrial(otherFutures)
+            }
           }
+          case Return(similarUsers) => Future.value(similarUsers)
         }
-        case Return(similarUsers) => Future.value(similarUsers)
       }
-    })
-  }
 
   def mapCollect[K, V](m: Map[K, Future[V]])(implicit fc: FutureCollector[(K, V)]): Future[Map[K, V]] =
     fc(m.view.map { case (k, fv) => fv.map { v => (k, v) } }.toSeq).map { _.toMap }

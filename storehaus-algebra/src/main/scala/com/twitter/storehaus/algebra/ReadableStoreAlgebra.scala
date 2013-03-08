@@ -51,4 +51,26 @@ class AlgebraicReadableStore[K, V](store: ReadableStore[K, V]) {
     (implicit ev: V <:< Map[InnerK, InnerV])
       : ReadableStore[CombinedK, InnerV] =
     ReadableStoreAlgebra.unpivoted(store.asInstanceOf[ReadableStore[K, Map[InnerK, InnerV]]])(split)
+
+  /**
+   * convert K1 to K then lookup K in this store
+   */
+  def composeKeyMapping[K1](fn: K1 => K): ReadableStore[K1, V] =
+    ReadableStore.convert(store)(fn) { (v: V) => Future.value(v) }
+
+  /**
+   * apply an async function on all the values
+   */
+  def flatMapValues[V2](fn: V => Future[V2]): ReadableStore[K, V2] =
+    ReadableStore.convert(store)(identity[K])(fn)
+
+  /**
+   * Apply a non-blocking function on all the values. If this function throws, it will be caught in
+   * the Future
+   */
+  def mapValues[V1](fn: V => V1): ReadableStore[K, V1] =
+    flatMapValues(fn.andThen { Future.value(_) })
+
+  def convert[K1, V1](kfn: K1 => K)(vfn: V => Future[V1]): ReadableStore[K1, V1] =
+    ReadableStore.convert(store)(kfn)(vfn)
 }

@@ -26,6 +26,14 @@ object Store {
   }
 
   def lru[K, V](maxSize: Int = 1000): Store[K, V] = new LRUStore(maxSize)
+
+  /**
+   * Returns a new Store[K, V] that queries all of the stores on read
+   * and returns the first values that are not exceptions. Writes are
+   * routed to every store in the supplied sequence.
+   */
+  def first[K, V](stores: Seq[Store[K, V]])(implicit collect: FutureCollector[Unit]): Store[K, V] =
+    new ReplicatedStore(stores)
 }
 
 trait Store[-K, V] extends ReadableStore[K, V] with Closeable { self =>

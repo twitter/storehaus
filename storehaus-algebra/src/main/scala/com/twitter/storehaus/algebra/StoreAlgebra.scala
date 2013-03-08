@@ -16,17 +16,29 @@
 
 package com.twitter.storehaus.algebra
 
+import com.twitter.bijection.Injection
 import com.twitter.storehaus.Store
+import com.twitter.util.Future
 
 object StoreAlgebra {
   implicit def enrichStore[K, V](store: Store[K, V]): AlgebraicStore[K, V] =
     new AlgebraicStore[K, V](store)
 
-  def unpivoted[K, OuterK, InnerK, V](store: Store[OuterK, Map[InnerK, V]])(split: K => (OuterK, InnerK)): Store[K, V] =
+  def unpivot[K, OuterK, InnerK, V](store: Store[OuterK, Map[InnerK, V]])(split: K => (OuterK, InnerK)): Store[K, V] =
     new UnpivotedStore(store)(split)
+
+  def convert[K1, K2, V1, V2](store: Store[K1, V1])(kfn: K2 => K1)(implicit inj: Injection[V2, V1]): Store[K2, V2] =
+    new ConvertedStore(store)(kfn)
 }
 
 class AlgebraicStore[K, V](store: Store[K, V]) {
   def unpivot[CombinedK, InnerK, InnerV](split: CombinedK => (K, InnerK))(implicit ev: V <:< Map[InnerK, InnerV]): Store[CombinedK, InnerV] =
-    StoreAlgebra.unpivoted(store.asInstanceOf[Store[K, Map[InnerK, InnerV]]])(split)
+    StoreAlgebra.unpivot(store.asInstanceOf[Store[K, Map[InnerK, InnerV]]])(split)
+
+  def composeKeyMapping[K1](fn: K1 => K): Store[K1, V] = StoreAlgebra.convert(store)(fn)
+
+  def mapValues[V1](implicit inj: Injection[V1, V]): Store[K, V1] = StoreAlgebra.convert(store)(identity[K])
+
+  def convert[K1, V1](fn: K1 => K)(implicit inj: Injection[V1, V]): Store[K1, V1] =
+    StoreAlgebra.convert(store)(fn)
 }

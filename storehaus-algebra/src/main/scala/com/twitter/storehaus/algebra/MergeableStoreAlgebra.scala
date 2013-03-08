@@ -17,6 +17,7 @@
 package com.twitter.storehaus.algebra
 
 import com.twitter.algebird.{ Monoid, StatefulSummer }
+import com.twitter.bijection.ImplicitBijection
 
 object MergeableStoreAlgebra {
   implicit def enrichMergeableStore[K, V](store: MergeableStore[K, V]): AlgebraicMergeableStore[K, V] =
@@ -28,6 +29,10 @@ object MergeableStoreAlgebra {
 
   def withSummer[K, V](store: MergeableStore[K, V], summer: StatefulSummer[Map[K, V]]): MergeableStore[K, V] =
     new BufferingStore(store, summer)
+
+  def convert[K1, K2, V1, V2](store: MergeableStore[K1, V1])(kfn: K2 => K1)
+    (implicit bij: ImplicitBijection[V2, V1]): MergeableStore[K2, V2] =
+    new ConvertedMergeableStore(store)(kfn)
 }
 
 class AlgebraicMergeableStore[K, V](store: MergeableStore[K, V]) {
@@ -38,4 +43,13 @@ class AlgebraicMergeableStore[K, V](store: MergeableStore[K, V]) {
     (implicit ev: V <:< Map[InnerK, InnerV], monoid: Monoid[InnerV])
       : MergeableStore[CombinedK, InnerV] =
     MergeableStoreAlgebra.unpivoted(store.asInstanceOf[MergeableStore[K, Map[InnerK, InnerV]]])(split)
+
+  def composeKeyMapping[K1](fn: K1 => K): MergeableStore[K1, V] =
+    MergeableStoreAlgebra.convert(store)(fn)
+
+  def mapValues[V1](implicit bij: ImplicitBijection[V1, V]): MergeableStore[K, V1] =
+    MergeableStoreAlgebra.convert(store)(identity[K])
+
+  def convert[K1, V1](fn: K1 => K)(implicit bij: ImplicitBijection[V1, V]): MergeableStore[K1, V1] =
+    MergeableStoreAlgebra.convert(store)(fn)
 }

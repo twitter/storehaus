@@ -19,12 +19,13 @@ package com.twitter.storehaus
 import com.twitter.util.Future
 
 /**
- * Value conversion returns a Future because V1 => V2 may fail, and we are going to convert to a
- * future anyway (so, a Try is kind of a Future that is not async). Thus we might as well add the
- * flexibility of accepting a V1 => Future[V2], though in practice Future.value/exception will
- * generally be used
+ * Value conversion returns a Future because V1 => V2 may fail, and we
+ * are going to convert to a future anyway (so, a Try is kind of a
+ * Future that is not async). Thus we might as well add the
+ * flexibility of accepting a V1 => Future[V2], though in practice
+ * Future.value/exception will generally be used.
  */
-class ConvertedReadableStore[K1, -K2, V1, +V2](rs: ReadableStore[K1, V1], kfn: K2 => K1, vfn: V1 => Future[V2])
+class ConvertedReadableStore[K1, -K2, V1, +V2](rs: ReadableStore[K1, V1])(kfn: K2 => K1)(vfn: V1 => Future[V2])
   extends AbstractReadableStore[K2, V2] {
   override def get(k2: K2) = FutureOps.flatMapValue(rs.get(kfn(k2)))(vfn)
   override def multiGet[K3 <: K2](s: Set[K3]) = {

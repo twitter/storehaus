@@ -17,14 +17,14 @@
 package com.twitter.storehaus
 
 import com.twitter.util.Future
-
+import java.util.{ Map => JMap, HashMap => JHashMap }
 /**
  *  @author Oscar Boykin
  *  @author Sam Ritchie
  */
 
 class JMapStore[K, V] extends Store[K, V] {
-  protected val jstore: java.util.Map[K, Option[V]] = new java.util.HashMap[K, Option[V]]()
+  protected val jstore: JMap[K, Option[V]] = new JHashMap[K, Option[V]]()
   protected def storeGet(k: K): Option[V] = {
     val stored = jstore.get(k)
     if (stored != null)
