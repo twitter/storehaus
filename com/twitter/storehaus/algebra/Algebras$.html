@@ -29,7 +29,7 @@
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/develop/storehaus-algebra/src/main/scala/com/twitter/storehaus/algebra/Algebras.scala">Algebras.scala</a></dd></dl><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.1.0/storehaus-algebra/src/main/scala/com/twitter/storehaus/algebra/Algebras.scala">Algebras.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent">AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
@@ -189,66 +189,6 @@
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.Algebras#futureField" data-isabs="false">
-      <a id="futureField[T](Field[T]):Field[Future[T]]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">implicit </span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">futureField</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span name="com.twitter.algebird.Field" class="extype">Field</span>[T]</span>)</span><span class="result">: <span name="com.twitter.algebird.Field" class="extype">Field</span>[<span name="com.twitter.util.Future" class="extype">Future</span>[T]]</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.Algebras#futureGroup" data-isabs="false">
-      <a id="futureGroup[T](Group[T]):Group[Future[T]]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">implicit </span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">futureGroup</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span name="com.twitter.algebird.Group" class="extype">Group</span>[T]</span>)</span><span class="result">: <span name="com.twitter.algebird.Group" class="extype">Group</span>[<span name="com.twitter.util.Future" class="extype">Future</span>[T]]</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.Algebras#futureMonoid" data-isabs="false">
-      <a id="futureMonoid[T](Monoid[T]):Monoid[Future[T]]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">implicit </span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">futureMonoid</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span name="com.twitter.algebird.Monoid" class="extype">Monoid</span>[T]</span>)</span><span class="result">: <span name="com.twitter.algebird.Monoid" class="extype">Monoid</span>[<span name="com.twitter.util.Future" class="extype">Future</span>[T]]</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.Algebras#futureRing" data-isabs="false">
-      <a id="futureRing[T](Ring[T]):Ring[Future[T]]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">implicit </span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">futureRing</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span name="com.twitter.algebird.Ring" class="extype">Ring</span>[T]</span>)</span><span class="result">: <span name="com.twitter.algebird.Ring" class="extype">Ring</span>[<span name="com.twitter.util.Future" class="extype">Future</span>[T]]</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.Algebras#futureSemigroup" data-isabs="false">
-      <a id="futureSemigroup[T](Semigroup[T]):Semigroup[Future[T]]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">implicit </span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">futureSemigroup</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span name="com.twitter.algebird.Semigroup" class="extype">Semigroup</span>[T]</span>)</span><span class="result">: <span name="com.twitter.algebird.Semigroup" class="extype">Semigroup</span>[<span name="com.twitter.util.Future" class="extype">Future</span>[T]]</span>
-      </span>
-      </h4>
-      
     </li><li visbl="pub" name="scala.AnyRef#getClass" data-isabs="false">
       <a id="getClass():java.lang.Class[_]"></a>
       <h4 class="signature">
@@ -285,6 +225,18 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.algebra.Algebras#monoid" data-isabs="false">
+      <a id="monoid[K, V](Monoid[V]):Monoid[ReadableStore[K, V]]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">implicit </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">monoid</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span name="com.twitter.algebird.Monoid" class="extype">Monoid</span>[V]</span>)</span><span class="result">: <span name="com.twitter.algebird.Monoid" class="extype">Monoid</span>[<a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[K, V]]</span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="scala.AnyRef#ne" data-isabs="false">
       <a id="ne(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -321,15 +273,15 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.Algebras#readableStoreMonoid" data-isabs="false">
-      <a id="readableStoreMonoid[K, V](Semigroup[V]):Monoid[ReadableStore[K, V]]"></a>
+    </li><li visbl="pub" name="com.twitter.storehaus.algebra.Algebras#semigroup" data-isabs="false">
+      <a id="semigroup[K, V](Semigroup[V]):Semigroup[ReadableStore[K, V]]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier">implicit </span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">readableStoreMonoid</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span name="com.twitter.algebird.Semigroup" class="extype">Semigroup</span>[V]</span>)</span><span class="result">: <span name="com.twitter.algebird.Monoid" class="extype">Monoid</span>[<a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[K, V]]</span>
+        <span class="name">semigroup</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span name="com.twitter.algebird.Semigroup" class="extype">Semigroup</span>[V]</span>)</span><span class="result">: <span name="com.twitter.algebird.Semigroup" class="extype">Semigroup</span>[<a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[K, V]]</span>
       </span>
       </h4>
       
@@ -357,66 +309,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.Algebras#tryField" data-isabs="false">
-      <a id="tryField[T](Field[T]):Field[Try[T]]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">implicit </span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">tryField</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span name="com.twitter.algebird.Field" class="extype">Field</span>[T]</span>)</span><span class="result">: <span name="com.twitter.algebird.Field" class="extype">Field</span>[<span name="com.twitter.util.Try" class="extype">Try</span>[T]]</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.Algebras#tryGroup" data-isabs="false">
-      <a id="tryGroup[T](Group[T]):Group[Try[T]]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">implicit </span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">tryGroup</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span name="com.twitter.algebird.Group" class="extype">Group</span>[T]</span>)</span><span class="result">: <span name="com.twitter.algebird.Group" class="extype">Group</span>[<span name="com.twitter.util.Try" class="extype">Try</span>[T]]</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.Algebras#tryMonoid" data-isabs="false">
-      <a id="tryMonoid[T](Monoid[T]):Monoid[Try[T]]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">implicit </span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">tryMonoid</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span name="com.twitter.algebird.Monoid" class="extype">Monoid</span>[T]</span>)</span><span class="result">: <span name="com.twitter.algebird.Monoid" class="extype">Monoid</span>[<span name="com.twitter.util.Try" class="extype">Try</span>[T]]</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.Algebras#tryRing" data-isabs="false">
-      <a id="tryRing[T](Ring[T]):Ring[Try[T]]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">implicit </span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">tryRing</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span name="com.twitter.algebird.Ring" class="extype">Ring</span>[T]</span>)</span><span class="result">: <span name="com.twitter.algebird.Ring" class="extype">Ring</span>[<span name="com.twitter.util.Try" class="extype">Try</span>[T]]</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.Algebras#trySemigroup" data-isabs="false">
-      <a id="trySemigroup[T](Semigroup[T]):Semigroup[Try[T]]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">implicit </span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">trySemigroup</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span name="com.twitter.algebird.Semigroup" class="extype">Semigroup</span>[T]</span>)</span><span class="result">: <span name="com.twitter.algebird.Semigroup" class="extype">Semigroup</span>[<span name="com.twitter.util.Try" class="extype">Try</span>[T]]</span>
-      </span>
-      </h4>
-      
     </li><li visbl="pub" name="scala.AnyRef#wait" data-isabs="false">
       <a id="wait():Unit"></a>
       <h4 class="signature">

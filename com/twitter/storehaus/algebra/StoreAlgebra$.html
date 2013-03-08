@@ -29,8 +29,8 @@
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>import StoreAlgebra.enrich to obtain enrichments.
-</p></div><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/develop/storehaus-algebra/src/main/scala/com/twitter/storehaus/algebra/StoreAlgebra.scala">StoreAlgebra.scala</a></dd></dl><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>Enrichments on Store.
+</p></div><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.1.0/storehaus-algebra/src/main/scala/com/twitter/storehaus/algebra/StoreAlgebra.scala">StoreAlgebra.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent">AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
@@ -151,27 +151,27 @@
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.StoreAlgebra#enrichReadableStore" data-isabs="false">
-      <a id="enrichReadableStore[K, V](ReadableStore[K, V]):AlgebraicReadableStore[K, V]"></a>
+    </li><li visbl="pub" name="com.twitter.storehaus.algebra.StoreAlgebra#convert" data-isabs="false">
+      <a id="convert[K1, K2, V1, V2](Store[K1, V1])((K2) ⇒ K1)(Injection[V2, V1]):Store[K2, V2]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
-        <span class="modifier">implicit </span>
+        <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">enrichReadableStore</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="params">(<span name="store">store: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[K, V]</span>)</span><span class="result">: <a name="com.twitter.storehaus.algebra.AlgebraicReadableStore" class="extype" href="AlgebraicReadableStore.html">AlgebraicReadableStore</a>[K, V]</span>
+        <span class="name">convert</span><span class="tparams">[<span name="K1">K1</span>, <span name="K2">K2</span>, <span name="V1">V1</span>, <span name="V2">V2</span>]</span><span class="params">(<span name="store">store: <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[K1, V1]</span>)</span><span class="params">(<span name="kfn">kfn: (K2) ⇒ K1</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="inj">inj: <span name="com.twitter.bijection.Injection" class="extype">Injection</span>[V2, V1]</span>)</span><span class="result">: <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[K2, V2]</span>
       </span>
       </h4>
       
     </li><li visbl="pub" name="com.twitter.storehaus.algebra.StoreAlgebra#enrichStore" data-isabs="false">
-      <a id="enrichStore[StoreType&lt;:Store[StoreType, K, V], K, V](StoreType):AlgebraicStore[StoreType, K, V]"></a>
+      <a id="enrichStore[K, V](Store[K, V]):AlgebraicStore[K, V]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier">implicit </span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">enrichStore</span><span class="tparams">[<span name="StoreType">StoreType &lt;: <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[StoreType, K, V]</span>, <span name="K">K</span>, <span name="V">V</span>]</span><span class="params">(<span name="store">store: StoreType</span>)</span><span class="result">: <a name="com.twitter.storehaus.algebra.AlgebraicStore" class="extype" href="AlgebraicStore.html">AlgebraicStore</a>[StoreType, K, V]</span>
+        <span class="name">enrichStore</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="params">(<span name="store">store: <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[K, V]</span>)</span><span class="result">: <a name="com.twitter.storehaus.algebra.AlgebraicStore" class="extype" href="AlgebraicStore.html">AlgebraicStore</a>[K, V]</span>
       </span>
       </h4>
       
@@ -310,6 +310,18 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.algebra.StoreAlgebra#unpivot" data-isabs="false">
+      <a id="unpivot[K, OuterK, InnerK, V](Store[OuterK, Map[InnerK, V]])((K) ⇒ (OuterK, InnerK)):Store[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">unpivot</span><span class="tparams">[<span name="K">K</span>, <span name="OuterK">OuterK</span>, <span name="InnerK">InnerK</span>, <span name="V">V</span>]</span><span class="params">(<span name="store">store: <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[OuterK, Map[InnerK, V]]</span>)</span><span class="params">(<span name="split">split: (K) ⇒ (OuterK, InnerK)</span>)</span><span class="result">: <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[K, V]</span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="scala.AnyRef#wait" data-isabs="false">
       <a id="wait():Unit"></a>
       <h4 class="signature">

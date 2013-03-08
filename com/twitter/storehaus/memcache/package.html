@@ -48,21 +48,7 @@
 
         <div class="types members" id="types">
               <h3>Type Members</h3>
-              <ol><li visbl="pub" name="com.twitter.storehaus.memcache.ChannelBufferBijection" data-isabs="false">
-      <a id="ChannelBufferBijection:ChannelBufferBijection"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">class</span>
-      </span>
-      <span class="symbol">
-        <a href="ChannelBufferBijection.html"><span class="name">ChannelBufferBijection</span></a><span class="result"> extends Bijection[ChannelBuffer, Array[Byte]]</span>
-      </span>
-      </h4>
-      <p class="comment cmt">Reads from the current position to the end into an array without changing
-the given ChannelBuffer
-</p>
-    </li><li visbl="pub" name="com.twitter.storehaus.memcache.HashEncoder" data-isabs="false">
+              <ol><li visbl="pub" name="com.twitter.storehaus.memcache.HashEncoder" data-isabs="false">
       <a id="HashEncoder:HashEncoder"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -74,27 +60,15 @@ the given ChannelBuffer
       </span>
       </h4>
       <p class="comment cmt">The HashEncoder provides an extensible way to hash a byte array.</p>
-    </li><li visbl="pub" name="com.twitter.storehaus.memcache.HostConfig" data-isabs="false">
-      <a id="HostConfig:HostConfig"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">case class</span>
-      </span>
-      <span class="symbol">
-        <a href="HostConfig.html"><span class="name">HostConfig</span></a><span class="params">(<span name="host">host: String</span>, <span name="port">port: Int</span>, <span name="weight">weight: Int</span>)</span><span class="result"> extends Product with Serializable</span>
-      </span>
-      </h4>
-      <p class="comment cmt"></p>
     </li><li visbl="pub" name="com.twitter.storehaus.memcache.MemcacheStore" data-isabs="false">
-      <a id="MemcacheStore:MemcacheStore[Key, Value]"></a>
+      <a id="MemcacheStore:MemcacheStore"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="MemcacheStore.html"><span class="name">MemcacheStore</span></a><span class="tparams">[<span name="Key">Key</span>, <span name="Value">Value</span>]</span><span class="result"> extends ConcurrentMutableStore[MemcacheStore[Key, Value], Key, Value]</span>
+        <a href="MemcacheStore.html"><span class="name">MemcacheStore</span></a><span class="result"> extends Store[String, ChannelBuffer]</span>
       </span>
       </h4>
       
@@ -128,7 +102,7 @@ the given ChannelBuffer
         <a href="MemcacheStore$.html"><span class="name">MemcacheStore</span></a><span class="result"> extends AnyRef</span>
       </span>
       </h4>
-      
+      <p class="comment cmt"></p>
     </li></ol>
             </div>
 

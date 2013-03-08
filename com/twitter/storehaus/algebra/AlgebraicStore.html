@@ -25,11 +25,11 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">AlgebraicStore</span><span class="tparams">[<span name="StoreType">StoreType &lt;: <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[StoreType, K, V]</span>, <span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends AnyRef</span>
+        <span class="name">AlgebraicStore</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends AnyRef</span>
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/develop/storehaus-algebra/src/main/scala/com/twitter/storehaus/algebra/StoreAlgebra.scala">StoreAlgebra.scala</a></dd></dl><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.1.0/storehaus-algebra/src/main/scala/com/twitter/storehaus/algebra/StoreAlgebra.scala">StoreAlgebra.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent">AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
@@ -58,14 +58,14 @@
         <div class="members" id="constructors">
               <h3>Instance Constructors</h3>
               <ol><li visbl="pub" name="com.twitter.storehaus.algebra.AlgebraicStore#this" data-isabs="false">
-      <a id="this:AlgebraicStore[StoreType, K, V]"></a>
+      <a id="this:AlgebraicStore[K, V]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">AlgebraicStore</span><span class="params">(<span name="store">store: StoreType</span>)</span>
+        <span class="name">AlgebraicStore</span><span class="params">(<span name="store">store: <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[K, V]</span>)</span>
       </span>
       </h4>
       
@@ -138,18 +138,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.AlgebraicStore#aggregating" data-isabs="false">
-      <a id="aggregating(Monoid[V]):AggregatingStore[StoreType, K, V]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">aggregating</span><span class="params">(<span class="implicit">implicit </span><span name="sg">sg: <span name="com.twitter.algebird.Monoid" class="extype">Monoid</span>[V]</span>)</span><span class="result">: <a name="com.twitter.storehaus.algebra.AggregatingStore" class="extype" href="AggregatingStore.html">AggregatingStore</a>[StoreType, K, V]</span>
-      </span>
-      </h4>
-      
     </li><li visbl="pub" name="scala.Any#asInstanceOf" data-isabs="false">
       <a id="asInstanceOf[T0]:T0"></a>
       <h4 class="signature">
@@ -177,6 +165,30 @@
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.algebra.AlgebraicStore#composeKeyMapping" data-isabs="false">
+      <a id="composeKeyMapping[K1]((K1) ⇒ K):Store[K1, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">composeKeyMapping</span><span class="tparams">[<span name="K1">K1</span>]</span><span class="params">(<span name="fn">fn: (K1) ⇒ K</span>)</span><span class="result">: <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[K1, V]</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.algebra.AlgebraicStore#convert" data-isabs="false">
+      <a id="convert[K1, V1]((K1) ⇒ K)(Injection[V1, V]):Store[K1, V1]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">convert</span><span class="tparams">[<span name="K1">K1</span>, <span name="V1">V1</span>]</span><span class="params">(<span name="fn">fn: (K1) ⇒ K</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="inj">inj: <span name="com.twitter.bijection.Injection" class="extype">Injection</span>[V1, V]</span>)</span><span class="result">: <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[K1, V1]</span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="scala.AnyRef#eq" data-isabs="false">
       <a id="eq(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -252,6 +264,18 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.algebra.AlgebraicStore#mapValues" data-isabs="false">
+      <a id="mapValues[V1](Injection[V1, V]):Store[K, V1]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">mapValues</span><span class="tparams">[<span name="V1">V1</span>]</span><span class="params">(<span class="implicit">implicit </span><span name="inj">inj: <span name="com.twitter.bijection.Injection" class="extype">Injection</span>[V1, V]</span>)</span><span class="result">: <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[K, V1]</span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="scala.AnyRef#ne" data-isabs="false">
       <a id="ne(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -300,6 +324,18 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.algebra.AlgebraicStore#toMergeable" data-isabs="false">
+      <a id="toMergeable(Monoid[V],FutureCollector[(K, Option[V])]):MergeableStore[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">toMergeable</span><span class="params">(<span class="implicit">implicit </span><span name="mon">mon: <span name="com.twitter.algebird.Monoid" class="extype">Monoid</span>[V]</span>, <span name="fc">fc: <a name="com.twitter.storehaus.FutureCollector" class="extype" href="../FutureCollector.html">FutureCollector</a>[(K, <span name="scala.Option" class="extype">Option</span>[V])]</span>)</span><span class="result">: <a name="com.twitter.storehaus.algebra.MergeableStore" class="extype" href="MergeableStore.html">MergeableStore</a>[K, V]</span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="scala.AnyRef#toString" data-isabs="false">
       <a id="toString():String"></a>
       <h4 class="signature">
@@ -312,6 +348,18 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.algebra.AlgebraicStore#unpivot" data-isabs="false">
+      <a id="unpivot[CombinedK, InnerK, InnerV]((CombinedK) ⇒ (K, InnerK))(&lt;:&lt;[V, Map[InnerK, InnerV]]):Store[CombinedK, InnerV]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">unpivot</span><span class="tparams">[<span name="CombinedK">CombinedK</span>, <span name="InnerK">InnerK</span>, <span name="InnerV">InnerV</span>]</span><span class="params">(<span name="split">split: (CombinedK) ⇒ (K, InnerK)</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ev">ev: <span name="scala.Predef.&lt;:&lt;" class="extype">&lt;:&lt;</span>[V, Map[InnerK, InnerV]]</span>)</span><span class="result">: <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[CombinedK, InnerV]</span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="scala.AnyRef#wait" data-isabs="false">
       <a id="wait():Unit"></a>
       <h4 class="signature">

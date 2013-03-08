@@ -25,16 +25,16 @@
         <span class="kind">trait</span>
       </span>
       <span class="symbol">
-        <span class="name">Store</span><span class="tparams">[<span name="Self">Self &lt;: <a name="com.twitter.storehaus.Store" class="extype" href="">Store</a>[Self, K, V]</span>, <span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a>[K, V]</span>
+        <span class="name">Store</span><span class="tparams">[<span name="K">-K</span>, <span name="V">V</span>]</span><span class="result"> extends <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a>[K, V] with <span name="java.io.Closeable" class="extype">Closeable</span></span>
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/develop/storehaus-core/src/main/scala/com/twitter/storehaus/Store.scala">Store.scala</a></dd></dl><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Self Type</dt><dd><a name="com.twitter.storehaus.Store" class="extype" href="">Store</a>[K, V]</dd><dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.1.0/storehaus-core/src/main/scala/com/twitter/storehaus/Store.scala">Store.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a>[K, V], <span name="java.io.Closeable" class="extype">Closeable</span>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
+          <div class="superTypes hiddenContent"><a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a>[K, V], <span name="java.io.Closeable" class="extype">Closeable</span>, <span name="java.lang.AutoCloseable" class="extype">AutoCloseable</span>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div><div class="toggleContainer block">
           <span class="toggle">Known Subclasses</span>
-          <div class="subClasses hiddenContent"><a name="com.twitter.storehaus.algebra.AggregatingStore" class="extype" href="algebra/AggregatingStore.html">AggregatingStore</a>, <a name="com.twitter.storehaus.ConcurrentHashMapStore" class="extype" href="ConcurrentHashMapStore.html">ConcurrentHashMapStore</a>, <a name="com.twitter.storehaus.ConcurrentMutableStore" class="extype" href="ConcurrentMutableStore.html">ConcurrentMutableStore</a>, <a name="com.twitter.storehaus.JMapStore" class="extype" href="JMapStore.html">JMapStore</a>, <a name="com.twitter.storehaus.KeysetStore" class="extype" href="KeysetStore.html">KeysetStore</a>, <a name="com.twitter.storehaus.LRUStore" class="extype" href="LRUStore.html">LRUStore</a>, <a name="com.twitter.storehaus.MapStore" class="extype" href="MapStore.html">MapStore</a>, <a name="com.twitter.storehaus.memcache.MemcacheStore" class="extype" href="memcache/MemcacheStore.html">MemcacheStore</a>, <a name="com.twitter.storehaus.MutableStore" class="extype" href="MutableStore.html">MutableStore</a>, <a name="com.twitter.storehaus.ReplicatedStore" class="extype" href="ReplicatedStore.html">ReplicatedStore</a>, <a name="com.twitter.storehaus.SynchronizingStore" class="extype" href="SynchronizingStore.html">SynchronizingStore</a></div>
+          <div class="subClasses hiddenContent"><a name="com.twitter.storehaus.algebra.AbstractMergeableStore" class="extype" href="algebra/AbstractMergeableStore.html">AbstractMergeableStore</a>, <a name="com.twitter.storehaus.algebra.BufferingStore" class="extype" href="algebra/BufferingStore.html">BufferingStore</a>, <a name="com.twitter.storehaus.ConcurrentHashMapStore" class="extype" href="ConcurrentHashMapStore.html">ConcurrentHashMapStore</a>, <a name="com.twitter.storehaus.algebra.ConvertedMergeableStore" class="extype" href="algebra/ConvertedMergeableStore.html">ConvertedMergeableStore</a>, <a name="com.twitter.storehaus.algebra.ConvertedStore" class="extype" href="algebra/ConvertedStore.html">ConvertedStore</a>, <a name="com.twitter.storehaus.JMapStore" class="extype" href="JMapStore.html">JMapStore</a>, <a name="com.twitter.storehaus.LRUStore" class="extype" href="LRUStore.html">LRUStore</a>, <a name="com.twitter.storehaus.memcache.MemcacheStore" class="extype" href="memcache/MemcacheStore.html">MemcacheStore</a>, <a name="com.twitter.storehaus.algebra.MergeableStore" class="extype" href="algebra/MergeableStore.html">MergeableStore</a>, <a name="com.twitter.storehaus.ReplicatedStore" class="extype" href="ReplicatedStore.html">ReplicatedStore</a>, <a name="com.twitter.storehaus.ShardedStore" class="extype" href="ShardedStore.html">ShardedStore</a>, <a name="com.twitter.storehaus.algebra.UnpivotedMergeableStore" class="extype" href="algebra/UnpivotedMergeableStore.html">UnpivotedMergeableStore</a>, <a name="com.twitter.storehaus.algebra.UnpivotedStore" class="extype" href="algebra/UnpivotedStore.html">UnpivotedStore</a></div>
         </div></div>
     
 
@@ -48,7 +48,7 @@
               <span class="filtertype">Inherited</span>
               <ol><li class="hideall out"><span>Hide All</span></li>
               <li class="showall in"><span>Show all</span></li></ol>
-              <ol id="linearization"><li name="com.twitter.storehaus.Store" class="in"><span>Store</span></li><li name="com.twitter.storehaus.ReadableStore" class="in"><span>ReadableStore</span></li><li name="java.io.Closeable" class="in"><span>Closeable</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
+              <ol id="linearization"><li name="com.twitter.storehaus.Store" class="in"><span>Store</span></li><li name="com.twitter.storehaus.ReadableStore" class="in"><span>ReadableStore</span></li><li name="java.io.Closeable" class="in"><span>Closeable</span></li><li name="java.lang.AutoCloseable" class="in"><span>AutoCloseable</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
             </div>
         <div id="visbl">
             <span class="filtertype">Visibility</span>
@@ -62,37 +62,10 @@
 
         
 
-        <div class="values members" id="values">
-              <h3>Abstract Value Members</h3>
-              <ol><li visbl="pub" name="com.twitter.storehaus.Store#+" data-isabs="true">
-      <a id="+((K, V)):Future[Self]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">abstract </span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name" title="gt4s: $plus">+</span><span class="params">(<span name="pair">pair: (K, V)</span>)</span><span class="result">: <span name="com.twitter.util.Future" class="extype">Future</span>[Self]</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="com.twitter.storehaus.Store#-" data-isabs="true">
-      <a id="-(K):Future[Self]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">abstract </span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name" title="gt4s: $minus">-</span><span class="params">(<span name="k">k: K</span>)</span><span class="result">: <span name="com.twitter.util.Future" class="extype">Future</span>[Self]</span>
-      </span>
-      </h4>
-      
-    </li></ol>
-            </div>
+        
 
         <div class="values members" id="values">
-              <h3>Concrete Value Members</h3>
+              <h3>Value Members</h3>
               <ol><li visbl="pub" name="scala.AnyRef#!=" data-isabs="false">
       <a id="!=(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -180,7 +153,7 @@
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.ReadableStore#close" data-isabs="false">
+    </li><li visbl="pub" name="com.twitter.storehaus.Store#close" data-isabs="false">
       <a id="close():Unit"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -191,7 +164,7 @@
         <span class="name">close</span><span class="params">()</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a> → Closeable</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.Store" class="extype" href="">Store</a> → <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a> → Closeable → AutoCloseable</dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#eq" data-isabs="false">
       <a id="eq(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -280,19 +253,31 @@
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
     </li><li visbl="pub" name="com.twitter.storehaus.ReadableStore#multiGet" data-isabs="false">
-      <a id="multiGet(Set[K]):Future[Map[K, Future[Option[V]]]]"></a>
+      <a id="multiGet[K1&lt;:K](Set[K1]):Map[K1, Future[Option[V]]]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">multiGet</span><span class="params">(<span name="ks">ks: Set[K]</span>)</span><span class="result">: <span name="com.twitter.util.Future" class="extype">Future</span>[Map[K, <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Option" class="extype">Option</span>[V]]]]</span>
+        <span class="name">multiGet</span><span class="tparams">[<span name="K1">K1 &lt;: K</span>]</span><span class="params">(<span name="ks">ks: Set[K1]</span>)</span><span class="result">: Map[K1, <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Option" class="extype">Option</span>[V]]]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">all keys in the set are in the resulting map
 </p><div class="fullcomment"><div class="comment cmt"><p>all keys in the set are in the resulting map
 </p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a></dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.Store#multiPut" data-isabs="false">
+      <a id="multiPut[K1&lt;:K](Map[K1, Option[V]]):Map[K1, Future[Unit]]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">multiPut</span><span class="tparams">[<span name="K1">K1 &lt;: K</span>]</span><span class="params">(<span name="kvs">kvs: Map[K1, <span name="scala.Option" class="extype">Option</span>[V]]</span>)</span><span class="result">: Map[K1, <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Unit" class="extype">Unit</span>]]</span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="scala.AnyRef#ne" data-isabs="false">
       <a id="ne(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -329,23 +314,20 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.ReadableStore#or" data-isabs="false">
-      <a id="or(ReadableStore[K, V]):ReadableStore[K, V]"></a>
+    </li><li visbl="pub" name="com.twitter.storehaus.Store#put" data-isabs="false">
+      <a id="put((K, Option[V])):Future[Unit]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">or</span><span class="params">(<span name="other">other: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a>[K, V]</span>)</span><span class="result">: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a>[K, V]</span>
+        <span class="name">put</span><span class="params">(<span name="kv">kv: (K, <span name="scala.Option" class="extype">Option</span>[V])</span>)</span><span class="result">: <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Unit" class="extype">Unit</span>]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">Returns a new ReadableStore[K, V] that queries both this and the other
-ReadableStore[K,V] for get and multiGet and returns the first
-future to succeed (following com.</p><div class="fullcomment"><div class="comment cmt"><p>Returns a new ReadableStore[K, V] that queries both this and the other
-ReadableStore[K,V] for get and multiGet and returns the first
-future to succeed (following com.twitter.util.Future's &quot;or&quot; logic).
-</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a></dd></dl></div>
+      <p class="shortcomment cmt">replace a value
+Delete is the same as put((k,None))
+</p>
     </li><li visbl="pub" name="scala.AnyRef#synchronized" data-isabs="false">
       <a id="synchronized[T0](⇒ T0):T0"></a>
       <h4 class="signature">
@@ -370,18 +352,6 @@ future to succeed (following com.twitter.util.Future's &quot;or&quot; logic).
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.Store#update" data-isabs="false">
-      <a id="update(K)((Option[V]) ⇒ Option[V]):Future[Self]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">update</span><span class="params">(<span name="k">k: K</span>)</span><span class="params">(<span name="fn">fn: (<span name="scala.Option" class="extype">Option</span>[V]) ⇒ <span name="scala.Option" class="extype">Option</span>[V]</span>)</span><span class="result">: <span name="com.twitter.util.Future" class="extype">Future</span>[Self]</span>
-      </span>
-      </h4>
-      
     </li><li visbl="pub" name="scala.AnyRef#wait" data-isabs="false">
       <a id="wait():Unit"></a>
       <h4 class="signature">
@@ -438,6 +408,8 @@ future to succeed (following com.twitter.util.Future's &quot;or&quot; logic).
               <h3>Inherited from <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a>[K, V]</h3>
             </div><div name="java.io.Closeable" class="parent">
               <h3>Inherited from <span name="java.io.Closeable" class="extype">Closeable</span></h3>
+            </div><div name="java.lang.AutoCloseable" class="parent">
+              <h3>Inherited from <span name="java.lang.AutoCloseable" class="extype">AutoCloseable</span></h3>
             </div><div name="scala.AnyRef" class="parent">
               <h3>Inherited from AnyRef</h3>
             </div><div name="scala.Any" class="parent">

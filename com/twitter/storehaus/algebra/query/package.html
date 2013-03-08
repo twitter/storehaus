@@ -1,0 +1,178 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html>
+        <head>
+          <title>com.twitter.storehaus.algebra.query</title>
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link type="text/css" media="screen" rel="stylesheet" href="../../../../../lib/template.css" />
+      <script type="text/javascript" src="../../../../../lib/jquery.js"></script>
+      <script type="text/javascript" src="../../../../../lib/jquery-ui.js"></script>
+      <script type="text/javascript" src="../../../../../lib/template.js"></script>
+      <script type="text/javascript" src="../../../../../lib/tools.tooltip.js"></script>
+    
+        </head>
+        <body onload="sh_highlightDocument('../lib/', '.min.js');" class="value">
+      <div id="definition">
+        <img src="../../../../../lib/package_big.png" />
+        <p id="owner"><a name="com" class="extype" href="../../../../package.html">com</a>.<a name="com.twitter" class="extype" href="../../../package.html">twitter</a>.<a name="com.twitter.storehaus" class="extype" href="../../package.html">storehaus</a>.<a name="com.twitter.storehaus.algebra" class="extype" href="../package.html">algebra</a></p>
+        <h1>query</h1>
+      </div>
+
+      <h4 class="signature" id="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <span class="name">query</span>
+      </span>
+      </h4>
+      
+      <div class="fullcommenttop" id="comment"></div>
+    
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input accesskey="/" type="text" /></span><span class="post"></span></div>
+        
+        
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
+
+      <div id="template">
+        <div id="allMembers">
+        
+
+        <div class="types members" id="types">
+              <h3>Type Members</h3>
+              <ol><li visbl="pub" name="com.twitter.storehaus.algebra.query.AbstractQueryStrategy" data-isabs="true">
+      <a id="AbstractQueryStrategy:AbstractQueryStrategy[Q, L, X]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="AbstractQueryStrategy.html"><span class="name">AbstractQueryStrategy</span></a><span class="tparams">[<span name="Q">Q</span>, <span name="L">L</span>, <span name="X">X</span>]</span><span class="result"> extends QueryStrategy[Q, L, X]</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.algebra.query.BucketTime" data-isabs="false">
+      <a id="BucketTime:BucketTime"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="BucketTime.html"><span class="name">BucketTime</span></a><span class="params">(<span name="bucket">bucket: Int</span>, <span name="timeInBuckets">timeInBuckets: Long</span>)</span><span class="result"> extends Product with Serializable</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.algebra.query.ExactMatch" data-isabs="false">
+      <a id="ExactMatch:ExactMatch[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="ExactMatch.html"><span class="name">ExactMatch</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="result"> extends AbstractQueryStrategy[T, T, T]</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Use this with cross to create an exact match sub-portion of your query
+</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.algebra.query.OptionQuery" data-isabs="false">
+      <a id="OptionQuery:OptionQuery[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="OptionQuery.html"><span class="name">OptionQuery</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="result"> extends AbstractQueryStrategy[Option[T], T, Option[T]]</span>
+      </span>
+      </h4>
+      <p class="comment cmt">This is for rollups: None means total sum, Some(q) is exact match
+</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.algebra.query.QueryStrategy" data-isabs="true">
+      <a id="QueryStrategy:QueryStrategy[Q, L, X]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="QueryStrategy.html"><span class="name">QueryStrategy</span></a><span class="tparams">[<span name="Q">-Q</span>, <span name="L">-L</span>, <span name="X">X</span>]</span><span class="result"> extends Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Query support for summingbird beyond Key-Value
+Q represents the query object
+L represents the logical input keys from your data
+X represents the expansion of logical keys (can't co variant because Set is not)
+</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.algebra.query.TimeRange" data-isabs="false">
+      <a id="TimeRange:TimeRange"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="TimeRange.html"><span class="name">TimeRange</span></a><span class="params">(<span name="start">start: Long</span>, <span name="end">end: Long</span>)</span><span class="result"> extends Product with Serializable</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.algebra.query.TimestampStrategy" data-isabs="false">
+      <a id="TimestampStrategy:TimestampStrategy"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="TimestampStrategy.html"><span class="name">TimestampStrategy</span></a><span class="result"> extends QueryStrategy[TimeRange, Long, BucketTime]</span>
+      </span>
+      </h4>
+      <p class="comment cmt">A query strategy for time with exponentially expanding buckets of time.</p>
+    </li></ol>
+            </div>
+
+        
+
+        <div class="values members" id="values">
+              <h3>Value Members</h3>
+              <ol><li visbl="pub" name="com.twitter.storehaus.algebra.query.QueryStrategy" data-isabs="false">
+      <a id="QueryStrategy:QueryStrategy"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="QueryStrategy$.html"><span class="name">QueryStrategy</span></a><span class="result"> extends Serializable</span>
+      </span>
+      </h4>
+      
+    </li></ol>
+            </div>
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        
+        </div>
+
+      </div>
+
+      <div id="tooltip"></div>
+
+      <div id="footer">  </div>
+
+
+    </body>
+      </html>

@@ -29,7 +29,7 @@
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/develop/storehaus-core/src/main/scala/com/twitter/storehaus/Store.scala">Store.scala</a></dd></dl><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.1.0/storehaus-core/src/main/scala/com/twitter/storehaus/Store.scala">Store.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent">AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
@@ -189,6 +189,34 @@
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.Store#first" data-isabs="false">
+      <a id="first[K, V](Seq[Store[K, V]])(FutureCollector[Unit]):Store[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">first</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="params">(<span name="stores">stores: Seq[<a name="com.twitter.storehaus.Store" class="extype" href="Store.html">Store</a>[K, V]]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="collect">collect: <a name="com.twitter.storehaus.FutureCollector" class="extype" href="FutureCollector.html">FutureCollector</a>[<span name="scala.Unit" class="extype">Unit</span>]</span>)</span><span class="result">: <a name="com.twitter.storehaus.Store" class="extype" href="Store.html">Store</a>[K, V]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Returns a new Store[K, V] that queries all of the stores on read
+and returns the first values that are not exceptions.</p><div class="fullcomment"><div class="comment cmt"><p>Returns a new Store[K, V] that queries all of the stores on read
+and returns the first values that are not exceptions. Writes are
+routed to every store in the supplied sequence.
+</p></div></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.Store#fromJMap" data-isabs="false">
+      <a id="fromJMap[K, V](Map[K, Option[V]]):Store[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">fromJMap</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="params">(<span name="m">m: <span name="java.util.Map" class="extype">Map</span>[K, <span name="scala.Option" class="extype">Option</span>[V]]</span>)</span><span class="result">: <a name="com.twitter.storehaus.Store" class="extype" href="Store.html">Store</a>[K, V]</span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="scala.AnyRef#getClass" data-isabs="false">
       <a id="getClass():java.lang.Class[_]"></a>
       <h4 class="signature">
@@ -225,6 +253,18 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.Store#lru" data-isabs="false">
+      <a id="lru[K, V](Int):Store[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">lru</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="params">(<span name="maxSize">maxSize: <span name="scala.Int" class="extype">Int</span> = <span class="symbol">1000</span></span>)</span><span class="result">: <a name="com.twitter.storehaus.Store" class="extype" href="Store.html">Store</a>[K, V]</span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="scala.AnyRef#ne" data-isabs="false">
       <a id="ne(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -261,18 +301,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.Store#selectFirstSuccessfulTrial" data-isabs="false">
-      <a id="selectFirstSuccessfulTrial[T](Seq[Future[T]]):Future[T]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">selectFirstSuccessfulTrial</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span name="futures">futures: Seq[<span name="com.twitter.util.Future" class="extype">Future</span>[T]]</span>)</span><span class="result">: <span name="com.twitter.util.Future" class="extype">Future</span>[T]</span>
-      </span>
-      </h4>
-      
     </li><li visbl="pub" name="scala.AnyRef#synchronized" data-isabs="false">
       <a id="synchronized[T0](⇒ T0):T0"></a>
       <h4 class="signature">
@@ -342,18 +370,6 @@
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.Store#zipWith" data-isabs="false">
-      <a id="zipWith[K, V](Set[K])((K) ⇒ V):Map[K, V]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">zipWith</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="params">(<span name="keys">keys: Set[K]</span>)</span><span class="params">(<span name="lookup">lookup: (K) ⇒ V</span>)</span><span class="result">: Map[K, V]</span>
-      </span>
-      </h4>
-      
     </li></ol>
             </div>
 

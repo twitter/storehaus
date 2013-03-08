@@ -14,9 +14,9 @@
         </head>
         <body onload="sh_highlightDocument('../lib/', '.min.js');" class="type">
       <div id="definition">
-        <a title="Go to companion" href="ReadableStoreMonoid$.html"><img src="../../../../lib/class_to_object_big.png" /></a>
+        <img src="../../../../lib/class_big.png" />
         <p id="owner"><a name="com" class="extype" href="../../../package.html">com</a>.<a name="com.twitter" class="extype" href="../../package.html">twitter</a>.<a name="com.twitter.storehaus" class="extype" href="../package.html">storehaus</a>.<a name="com.twitter.storehaus.algebra" class="extype" href="package.html">algebra</a></p>
-        <h1><a title="Go to companion" href="ReadableStoreMonoid$.html">ReadableStoreMonoid</a></h1>
+        <h1>ReadableStoreMonoid</h1>
       </div>
 
       <h4 class="signature" id="signature">
@@ -25,13 +25,13 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">ReadableStoreMonoid</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends <span name="com.twitter.algebird.Monoid" class="extype">Monoid</span>[<a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[K, V]]</span>
+        <span class="name">ReadableStoreMonoid</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends <a name="com.twitter.storehaus.algebra.ReadableStoreSemigroup" class="extype" href="ReadableStoreSemigroup.html">ReadableStoreSemigroup</a>[K, V] with <span name="com.twitter.algebird.Monoid" class="extype">Monoid</span>[<a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[K, V]]</span>
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/develop/storehaus-algebra/src/main/scala/com/twitter/storehaus/algebra/ReadableStoreMonoid.scala">ReadableStoreMonoid.scala</a></dd></dl><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.1.0/storehaus-algebra/src/main/scala/com/twitter/storehaus/algebra/Algebras.scala">Algebras.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><span name="com.twitter.algebird.Monoid" class="extype">Monoid</span>[<a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[K, V]], <span name="com.twitter.algebird.Semigroup" class="extype">Semigroup</span>[<a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[K, V]], <span name="java.io.Serializable" class="extype">Serializable</span>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
+          <div class="superTypes hiddenContent"><span name="com.twitter.algebird.Monoid" class="extype">Monoid</span>[<a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[K, V]], <a name="com.twitter.storehaus.algebra.ReadableStoreSemigroup" class="extype" href="ReadableStoreSemigroup.html">ReadableStoreSemigroup</a>[K, V], <span name="com.twitter.algebird.Semigroup" class="extype">Semigroup</span>[<a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[K, V]], <span name="java.io.Serializable" class="extype">Serializable</span>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
     
 
@@ -45,7 +45,7 @@
               <span class="filtertype">Inherited</span>
               <ol><li class="hideall out"><span>Hide All</span></li>
               <li class="showall in"><span>Show all</span></li></ol>
-              <ol id="linearization"><li name="com.twitter.storehaus.algebra.ReadableStoreMonoid" class="in"><span>ReadableStoreMonoid</span></li><li name="com.twitter.algebird.Monoid" class="in"><span>Monoid</span></li><li name="com.twitter.algebird.Semigroup" class="in"><span>Semigroup</span></li><li name="java.io.Serializable" class="in"><span>Serializable</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
+              <ol id="linearization"><li name="com.twitter.storehaus.algebra.ReadableStoreMonoid" class="in"><span>ReadableStoreMonoid</span></li><li name="com.twitter.algebird.Monoid" class="in"><span>Monoid</span></li><li name="com.twitter.storehaus.algebra.ReadableStoreSemigroup" class="in"><span>ReadableStoreSemigroup</span></li><li name="com.twitter.algebird.Semigroup" class="in"><span>Semigroup</span></li><li name="java.io.Serializable" class="in"><span>Serializable</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
             </div>
         <div id="visbl">
             <span class="filtertype">Visibility</span>
@@ -65,7 +65,7 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">ReadableStoreMonoid</span><span class="params">()</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span name="com.twitter.algebird.Semigroup" class="extype">Semigroup</span>[V]</span>)</span>
+        <span class="name">ReadableStoreMonoid</span><span class="params">()</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span name="com.twitter.algebird.Monoid" class="extype">Monoid</span>[V]</span>)</span>
       </span>
       </h4>
       
@@ -312,18 +312,18 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.ReadableStoreMonoid#plus" data-isabs="false">
-      <a id="plus(ReadableStore[K, V],ReadableStore[K, V]):ReadableStore[K, V]"></a>
+    </li><li visbl="pub" name="com.twitter.storehaus.algebra.ReadableStoreSemigroup#plus" data-isabs="false">
+      <a id="plus(ReadableStore[K, V],ReadableStore[K, V]):AbstractReadableStore[K, V]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">plus</span><span class="params">(<span name="l">l: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[K, V]</span>, <span name="r">r: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[K, V]</span>)</span><span class="result">: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[K, V]</span>
+        <span class="name">plus</span><span class="params">(<span name="l">l: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[K, V]</span>, <span name="r">r: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[K, V]</span>)</span><span class="result">: <a name="com.twitter.storehaus.AbstractReadableStore" class="extype" href="../AbstractReadableStore.html">AbstractReadableStore</a>[K, V]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.algebra.ReadableStoreMonoid" class="extype" href="">ReadableStoreMonoid</a> → Semigroup</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.algebra.ReadableStoreSemigroup" class="extype" href="ReadableStoreSemigroup.html">ReadableStoreSemigroup</a> → Semigroup</dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#synchronized" data-isabs="false">
       <a id="synchronized[T0](⇒ T0):T0"></a>
       <h4 class="signature">
@@ -394,14 +394,14 @@
               
         </dd></dl></div>
     </li><li visbl="pub" name="com.twitter.storehaus.algebra.ReadableStoreMonoid#zero" data-isabs="false">
-      <a id="zero:ReadableStore[K, V]"></a>
+      <a id="zero:ReadableStore[Any, V]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">zero</span><span class="result">: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[K, V]</span>
+        <span class="name">zero</span><span class="result">: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[<span name="scala.Any" class="extype">Any</span>, V]</span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.algebra.ReadableStoreMonoid" class="extype" href="">ReadableStoreMonoid</a> → Monoid</dd></dl></div>
@@ -432,6 +432,8 @@
         <div id="inheritedMembers">
         <div name="com.twitter.algebird.Monoid" class="parent">
               <h3>Inherited from <span name="com.twitter.algebird.Monoid" class="extype">Monoid</span>[<a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[K, V]]</h3>
+            </div><div name="com.twitter.storehaus.algebra.ReadableStoreSemigroup" class="parent">
+              <h3>Inherited from <a name="com.twitter.storehaus.algebra.ReadableStoreSemigroup" class="extype" href="ReadableStoreSemigroup.html">ReadableStoreSemigroup</a>[K, V]</h3>
             </div><div name="com.twitter.algebird.Semigroup" class="parent">
               <h3>Inherited from <span name="com.twitter.algebird.Semigroup" class="extype">Semigroup</span>[<a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[K, V]]</h3>
             </div><div name="java.io.Serializable" class="parent">

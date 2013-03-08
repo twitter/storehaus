@@ -25,13 +25,13 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">MemcacheStore</span><span class="tparams">[<span name="Key">Key</span>, <span name="Value">Value</span>]</span><span class="result"> extends <a name="com.twitter.storehaus.ConcurrentMutableStore" class="extype" href="../ConcurrentMutableStore.html">ConcurrentMutableStore</a>[<a name="com.twitter.storehaus.memcache.MemcacheStore" class="extype" href="">MemcacheStore</a>[Key, Value], Key, Value]</span>
+        <span class="name">MemcacheStore</span><span class="result"> extends <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[String, <span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span>]</span>
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/develop/storehaus-memcache/src/main/scala/com/twitter/storehaus/memcache/MemcacheStore.scala">MemcacheStore.scala</a></dd></dl><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.1.0/storehaus-memcache/src/main/scala/com/twitter/storehaus/memcache/MemcacheStore.scala">MemcacheStore.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><a name="com.twitter.storehaus.ConcurrentMutableStore" class="extype" href="../ConcurrentMutableStore.html">ConcurrentMutableStore</a>[<a name="com.twitter.storehaus.memcache.MemcacheStore" class="extype" href="">MemcacheStore</a>[Key, Value], Key, Value], <a name="com.twitter.storehaus.MutableStore" class="extype" href="../MutableStore.html">MutableStore</a>[<a name="com.twitter.storehaus.memcache.MemcacheStore" class="extype" href="">MemcacheStore</a>[Key, Value], Key, Value], <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[<a name="com.twitter.storehaus.memcache.MemcacheStore" class="extype" href="">MemcacheStore</a>[Key, Value], Key, Value], <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[Key, Value], <span name="java.io.Closeable" class="extype">Closeable</span>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
+          <div class="superTypes hiddenContent"><a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[String, <span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span>], <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[String, <span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span>], <span name="java.io.Closeable" class="extype">Closeable</span>, <span name="java.lang.AutoCloseable" class="extype">AutoCloseable</span>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
     
 
@@ -45,7 +45,7 @@
               <span class="filtertype">Inherited</span>
               <ol><li class="hideall out"><span>Hide All</span></li>
               <li class="showall in"><span>Show all</span></li></ol>
-              <ol id="linearization"><li name="com.twitter.storehaus.memcache.MemcacheStore" class="in"><span>MemcacheStore</span></li><li name="com.twitter.storehaus.ConcurrentMutableStore" class="in"><span>ConcurrentMutableStore</span></li><li name="com.twitter.storehaus.MutableStore" class="in"><span>MutableStore</span></li><li name="com.twitter.storehaus.Store" class="in"><span>Store</span></li><li name="com.twitter.storehaus.ReadableStore" class="in"><span>ReadableStore</span></li><li name="java.io.Closeable" class="in"><span>Closeable</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
+              <ol id="linearization"><li name="com.twitter.storehaus.memcache.MemcacheStore" class="in"><span>MemcacheStore</span></li><li name="com.twitter.storehaus.Store" class="in"><span>Store</span></li><li name="com.twitter.storehaus.ReadableStore" class="in"><span>ReadableStore</span></li><li name="java.io.Closeable" class="in"><span>Closeable</span></li><li name="java.lang.AutoCloseable" class="in"><span>AutoCloseable</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
             </div>
         <div id="visbl">
             <span class="filtertype">Visibility</span>
@@ -58,14 +58,14 @@
         <div class="members" id="constructors">
               <h3>Instance Constructors</h3>
               <ol><li visbl="pub" name="com.twitter.storehaus.memcache.MemcacheStore#this" data-isabs="false">
-      <a id="this:MemcacheStore[Key, Value]"></a>
+      <a id="this:MemcacheStore"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">MemcacheStore</span><span class="params">(<span name="hosts">hosts: Seq[<a name="com.twitter.storehaus.memcache.HostConfig" class="extype" href="HostConfig.html">HostConfig</a>]</span>, <span name="kBijection">kBijection: <span name="com.twitter.bijection.Bijection" class="extype">Bijection</span>[Key, <span name="scala.Array" class="extype">Array</span>[<span name="scala.Byte" class="extype">Byte</span>]]</span>, <span name="vBijection">vBijection: <span name="com.twitter.bijection.Bijection" class="extype">Bijection</span>[Value, <span name="scala.Array" class="extype">Array</span>[<span name="scala.Byte" class="extype">Byte</span>]]</span>, <span name="retries">retries: <span name="scala.Int" class="extype">Int</span></span>, <span name="timeout">timeout: <span name="com.twitter.util.Duration" class="extype">Duration</span></span>, <span name="ttl">ttl: <span name="com.twitter.util.Time" class="extype">Time</span></span>)</span>
+        <span class="name">MemcacheStore</span><span class="params">(<span name="client">client: <span name="com.twitter.finagle.memcached.Client" class="extype">Client</span></span>, <span name="ttl">ttl: <span name="com.twitter.util.Time" class="extype">Time</span></span>, <span name="flag">flag: <span name="scala.Int" class="extype">Int</span></span>)</span>
       </span>
       </h4>
       
@@ -114,30 +114,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.memcache.MemcacheStore#+" data-isabs="false">
-      <a id="+((Key, Value)):Future[MemcacheStore[Key, Value]]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name" title="gt4s: $plus">+</span><span class="params">(<span name="pair">pair: (Key, Value)</span>)</span><span class="result">: <span name="com.twitter.util.Future" class="extype">Future</span>[<a name="com.twitter.storehaus.memcache.MemcacheStore" class="extype" href="">MemcacheStore</a>[Key, Value]]</span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.memcache.MemcacheStore" class="extype" href="">MemcacheStore</a> → <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a></dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.memcache.MemcacheStore#-" data-isabs="false">
-      <a id="-(Key):Future[MemcacheStore[Key, Value]]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name" title="gt4s: $minus">-</span><span class="params">(<span name="k">k: Key</span>)</span><span class="result">: <span name="com.twitter.util.Future" class="extype">Future</span>[<a name="com.twitter.storehaus.memcache.MemcacheStore" class="extype" href="">MemcacheStore</a>[Key, Value]]</span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.memcache.MemcacheStore" class="extype" href="">MemcacheStore</a> → <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#==" data-isabs="false">
       <a id="==(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -162,18 +138,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.memcache.MemcacheStore#MEMCACHE_FLAG" data-isabs="false">
-      <a id="MEMCACHE_FLAG:Int"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">MEMCACHE_FLAG</span><span class="result">: <span name="scala.Int" class="extype">Int</span></span>
-      </span>
-      </h4>
-      
     </li><li visbl="pub" name="scala.Any#asInstanceOf" data-isabs="false">
       <a id="asInstanceOf[T0]:T0"></a>
       <h4 class="signature">
@@ -186,30 +150,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.memcache.MemcacheStore#client" data-isabs="false">
-      <a id="client:Future[BaseClient[Array[Byte]]]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">lazy val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">client</span><span class="result">: <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="com.twitter.finagle.memcached.BaseClient" class="extype">BaseClient</span>[<span name="scala.Array" class="extype">Array</span>[<span name="scala.Byte" class="extype">Byte</span>]]]</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="com.twitter.storehaus.memcache.MemcacheStore#clientBuilder" data-isabs="false">
-      <a id="clientBuilder(String,Int,Duration):ClientBuilder[Nothing, Nothing, Nothing, Nothing, Nothing]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">clientBuilder</span><span class="params">(<span name="name">name: String</span>, <span name="retries">retries: <span name="scala.Int" class="extype">Int</span></span>, <span name="timeout">timeout: <span name="com.twitter.util.Duration" class="extype">Duration</span></span>)</span><span class="result">: <span name="com.twitter.finagle.builder.ClientBuilder" class="extype">ClientBuilder</span>[<span name="scala.Nothing" class="extype">Nothing</span>, <span name="scala.Nothing" class="extype">Nothing</span>, <span name="scala.Nothing" class="extype">Nothing</span>, <span name="scala.Nothing" class="extype">Nothing</span>, <span name="scala.Nothing" class="extype">Nothing</span>]</span>
-      </span>
-      </h4>
-      
     </li><li visbl="prt" name="scala.AnyRef#clone" data-isabs="false">
       <a id="clone():AnyRef"></a>
       <h4 class="signature">
@@ -236,19 +176,7 @@
         <span class="name">close</span><span class="params">()</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.memcache.MemcacheStore" class="extype" href="">MemcacheStore</a> → <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a> → Closeable</dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.memcache.MemcacheStore#enc" data-isabs="false">
-      <a id="enc:(Key) ⇒ String"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">lazy val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">enc</span><span class="result">: (Key) ⇒ String</span>
-      </span>
-      </h4>
-      
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.memcache.MemcacheStore" class="extype" href="">MemcacheStore</a> → <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a> → <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a> → Closeable → AutoCloseable</dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#eq" data-isabs="false">
       <a id="eq(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -289,14 +217,14 @@
               
         </dd></dl></div>
     </li><li visbl="pub" name="com.twitter.storehaus.memcache.MemcacheStore#get" data-isabs="false">
-      <a id="get(Key):Future[Option[Value]]"></a>
+      <a id="get(String):Future[Option[ChannelBuffer]]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">get</span><span class="params">(<span name="k">k: Key</span>)</span><span class="result">: <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Option" class="extype">Option</span>[Value]]</span>
+        <span class="name">get</span><span class="params">(<span name="k">k: String</span>)</span><span class="result">: <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Option" class="extype">Option</span>[<span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span>]]</span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.memcache.MemcacheStore" class="extype" href="">MemcacheStore</a> → <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a></dd></dl></div>
@@ -337,19 +265,31 @@
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
     </li><li visbl="pub" name="com.twitter.storehaus.memcache.MemcacheStore#multiGet" data-isabs="false">
-      <a id="multiGet(Set[Key]):Future[Map[Key, Future[Option[Value]]]]"></a>
+      <a id="multiGet[K1&lt;:String](Set[K1]):Map[K1, Future[Option[ChannelBuffer]]]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">multiGet</span><span class="params">(<span name="ks">ks: Set[Key]</span>)</span><span class="result">: <span name="com.twitter.util.Future" class="extype">Future</span>[Map[Key, <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Option" class="extype">Option</span>[Value]]]]</span>
+        <span class="name">multiGet</span><span class="tparams">[<span name="K1">K1 &lt;: String</span>]</span><span class="params">(<span name="ks">ks: Set[K1]</span>)</span><span class="result">: Map[K1, <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Option" class="extype">Option</span>[<span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span>]]]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">all keys in the set are in the resulting map
 </p><div class="fullcomment"><div class="comment cmt"><p>all keys in the set are in the resulting map
 </p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.memcache.MemcacheStore" class="extype" href="">MemcacheStore</a> → <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a></dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.Store#multiPut" data-isabs="false">
+      <a id="multiPut[K1&lt;:String](Map[K1, Option[ChannelBuffer]]):Map[K1, Future[Unit]]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">multiPut</span><span class="tparams">[<span name="K1">K1 &lt;: String</span>]</span><span class="params">(<span name="kvs">kvs: Map[K1, <span name="scala.Option" class="extype">Option</span>[<span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span>]]</span>)</span><span class="result">: Map[K1, <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Unit" class="extype">Unit</span>]]</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#ne" data-isabs="false">
       <a id="ne(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -386,32 +326,31 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.ReadableStore#or" data-isabs="false">
-      <a id="or(ReadableStore[Key, Value]):ReadableStore[Key, Value]"></a>
+    </li><li visbl="pub" name="com.twitter.storehaus.memcache.MemcacheStore#put" data-isabs="false">
+      <a id="put((String, Option[ChannelBuffer])):Future[Unit]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">or</span><span class="params">(<span name="other">other: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[Key, Value]</span>)</span><span class="result">: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[Key, Value]</span>
+        <span class="name">put</span><span class="params">(<span name="kv">kv: (String, <span name="scala.Option" class="extype">Option</span>[<span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span>])</span>)</span><span class="result">: <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Unit" class="extype">Unit</span>]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">Returns a new ReadableStore[K, V] that queries both this and the other
-ReadableStore[K,V] for get and multiGet and returns the first
-future to succeed (following com.</p><div class="fullcomment"><div class="comment cmt"><p>Returns a new ReadableStore[K, V] that queries both this and the other
-ReadableStore[K,V] for get and multiGet and returns the first
-future to succeed (following com.twitter.util.Future's &quot;or&quot; logic).
-</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a></dd></dl></div>
+      <p class="shortcomment cmt">replace a value
+Delete is the same as put((k,None))
+</p><div class="fullcomment"><div class="comment cmt"><p>replace a value
+Delete is the same as put((k,None))
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.memcache.MemcacheStore" class="extype" href="">MemcacheStore</a> → <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a></dd></dl></div>
     </li><li visbl="prt" name="com.twitter.storehaus.memcache.MemcacheStore#set" data-isabs="false">
-      <a id="set(Key,Value):Future[Unit]"></a>
+      <a id="set(String,ChannelBuffer):Future[Unit]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">set</span><span class="params">(<span name="k">k: Key</span>, <span name="v">v: Value</span>)</span><span class="result">: <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Unit" class="extype">Unit</span>]</span>
+        <span class="name">set</span><span class="params">(<span name="k">k: String</span>, <span name="v">v: <span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span></span>)</span><span class="result">: <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Unit" class="extype">Unit</span>]</span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd></dl></div>
@@ -439,18 +378,6 @@ future to succeed (following com.twitter.util.Future's &quot;or&quot; logic).
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.Store#update" data-isabs="false">
-      <a id="update(Key)((Option[Value]) ⇒ Option[Value]):Future[MemcacheStore[Key, Value]]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">update</span><span class="params">(<span name="k">k: Key</span>)</span><span class="params">(<span name="fn">fn: (<span name="scala.Option" class="extype">Option</span>[Value]) ⇒ <span name="scala.Option" class="extype">Option</span>[Value]</span>)</span><span class="result">: <span name="com.twitter.util.Future" class="extype">Future</span>[<a name="com.twitter.storehaus.memcache.MemcacheStore" class="extype" href="">MemcacheStore</a>[Key, Value]]</span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#wait" data-isabs="false">
       <a id="wait():Unit"></a>
       <h4 class="signature">
@@ -503,16 +430,14 @@ future to succeed (following com.twitter.util.Future's &quot;or&quot; logic).
         </div>
 
         <div id="inheritedMembers">
-        <div name="com.twitter.storehaus.ConcurrentMutableStore" class="parent">
-              <h3>Inherited from <a name="com.twitter.storehaus.ConcurrentMutableStore" class="extype" href="../ConcurrentMutableStore.html">ConcurrentMutableStore</a>[<a name="com.twitter.storehaus.memcache.MemcacheStore" class="extype" href="">MemcacheStore</a>[Key, Value], Key, Value]</h3>
-            </div><div name="com.twitter.storehaus.MutableStore" class="parent">
-              <h3>Inherited from <a name="com.twitter.storehaus.MutableStore" class="extype" href="../MutableStore.html">MutableStore</a>[<a name="com.twitter.storehaus.memcache.MemcacheStore" class="extype" href="">MemcacheStore</a>[Key, Value], Key, Value]</h3>
-            </div><div name="com.twitter.storehaus.Store" class="parent">
-              <h3>Inherited from <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[<a name="com.twitter.storehaus.memcache.MemcacheStore" class="extype" href="">MemcacheStore</a>[Key, Value], Key, Value]</h3>
+        <div name="com.twitter.storehaus.Store" class="parent">
+              <h3>Inherited from <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[String, <span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span>]</h3>
             </div><div name="com.twitter.storehaus.ReadableStore" class="parent">
-              <h3>Inherited from <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[Key, Value]</h3>
+              <h3>Inherited from <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[String, <span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span>]</h3>
             </div><div name="java.io.Closeable" class="parent">
               <h3>Inherited from <span name="java.io.Closeable" class="extype">Closeable</span></h3>
+            </div><div name="java.lang.AutoCloseable" class="parent">
+              <h3>Inherited from <span name="java.lang.AutoCloseable" class="extype">AutoCloseable</span></h3>
             </div><div name="scala.AnyRef" class="parent">
               <h3>Inherited from AnyRef</h3>
             </div><div name="scala.Any" class="parent">

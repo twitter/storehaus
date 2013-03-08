@@ -29,7 +29,7 @@
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/develop/storehaus-memcache/src/main/scala/com/twitter/storehaus/memcache/MemcacheStore.scala">MemcacheStore.scala</a></dd></dl><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><div class="comment cmt"></div><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.1.0/storehaus-memcache/src/main/scala/com/twitter/storehaus/memcache/MemcacheStore.scala">MemcacheStore.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent">AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
@@ -123,6 +123,18 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.memcache.MemcacheStore#DEFAULT_FLAG" data-isabs="false">
+      <a id="DEFAULT_FLAG:Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">DEFAULT_FLAG</span><span class="result">: <span name="scala.Int" class="extype">Int</span></span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="com.twitter.storehaus.memcache.MemcacheStore#DEFAULT_TTL" data-isabs="false">
       <a id="DEFAULT_TTL:Time"></a>
       <h4 class="signature">
@@ -136,14 +148,14 @@
       </h4>
       
     </li><li visbl="pub" name="com.twitter.storehaus.memcache.MemcacheStore#apply" data-isabs="false">
-      <a id="apply[Key, Value](Seq[HostConfig],Int,Duration,Time)(Bijection[Key, Array[Byte]],Bijection[Value, Array[Byte]]):MemcacheStore[Key, Value]"></a>
+      <a id="apply(Client,Time,Int):MemcacheStore"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">apply</span><span class="tparams">[<span name="Key">Key</span>, <span name="Value">Value</span>]</span><span class="params">(<span name="hosts">hosts: Seq[<a name="com.twitter.storehaus.memcache.HostConfig" class="extype" href="HostConfig.html">HostConfig</a>]</span>, <span name="retries">retries: <span name="scala.Int" class="extype">Int</span> = <span class="symbol">2</span></span>, <span name="timeout">timeout: <span name="com.twitter.util.Duration" class="extype">Duration</span> = <span class="symbol"><span class="name"><a href="../../../package.html">1.seconds</a></span></span></span>, <span name="ttl">ttl: <span name="com.twitter.util.Time" class="extype">Time</span> = <span class="symbol"><span class="name"><a href="#DEFAULT_TTL:Time">DEFAULT_TTL</a></span></span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="kb">kb: <span name="com.twitter.bijection.Bijection" class="extype">Bijection</span>[Key, <span name="scala.Array" class="extype">Array</span>[<span name="scala.Byte" class="extype">Byte</span>]]</span>, <span name="vb">vb: <span name="com.twitter.bijection.Bijection" class="extype">Bijection</span>[Value, <span name="scala.Array" class="extype">Array</span>[<span name="scala.Byte" class="extype">Byte</span>]]</span>)</span><span class="result">: <a name="com.twitter.storehaus.memcache.MemcacheStore" class="extype" href="MemcacheStore.html">MemcacheStore</a>[Key, Value]</span>
+        <span class="name">apply</span><span class="params">(<span name="client">client: <span name="com.twitter.finagle.memcached.Client" class="extype">Client</span></span>, <span name="ttl">ttl: <span name="com.twitter.util.Time" class="extype">Time</span> = <span class="symbol"><span class="name"><a href="#DEFAULT_TTL:Time">DEFAULT_TTL</a></span></span></span>, <span name="flag">flag: <span name="scala.Int" class="extype">Int</span> = <span class="symbol"><span class="name"><a href="#DEFAULT_FLAG:Int">DEFAULT_FLAG</a></span></span></span>)</span><span class="result">: <a name="com.twitter.storehaus.memcache.MemcacheStore" class="extype" href="MemcacheStore.html">MemcacheStore</a></span>
       </span>
       </h4>
       
@@ -297,18 +309,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.memcache.MemcacheStore#toEncoder" data-isabs="false">
-      <a id="toEncoder[Key](Bijection[Key, Array[Byte]]):Encoder[Key, String]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">implicit </span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">toEncoder</span><span class="tparams">[<span name="Key">Key</span>]</span><span class="params">(<span class="implicit">implicit </span><span name="bijection">bijection: <span name="com.twitter.bijection.Bijection" class="extype">Bijection</span>[Key, <span name="scala.Array" class="extype">Array</span>[<span name="scala.Byte" class="extype">Byte</span>]]</span>)</span><span class="result">: <span name="com.twitter.util.Encoder" class="extype">Encoder</span>[Key, String]</span>
-      </span>
-      </h4>
-      
     </li><li visbl="pub" name="scala.AnyRef#toString" data-isabs="false">
       <a id="toString():String"></a>
       <h4 class="signature">
