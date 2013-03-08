@@ -19,6 +19,10 @@ package com.twitter.storehaus.algebra
 import com.twitter.algebird.{ Monoid, StatefulSummer }
 import com.twitter.bijection.ImplicitBijection
 
+/**
+  * Enrichments on MergeableStore.
+  */
+
 object MergeableStoreAlgebra {
   implicit def enrichMergeableStore[K, V](store: MergeableStore[K, V]): AlgebraicMergeableStore[K, V] =
     new AlgebraicMergeableStore[K, V](store)

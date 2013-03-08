@@ -20,6 +20,10 @@ import com.twitter.algebird.Monoid
 import com.twitter.util.Future
 import com.twitter.storehaus.{ AbstractReadableStore, ReadableStore }
 
+/**
+  * Enrichments on ReadableStore.
+  */
+
 object ReadableStoreAlgebra {
   implicit def enrichReadableStore[K, V](store: ReadableStore[K, V]): AlgebraicReadableStore[K, V] =
     new AlgebraicReadableStore[K, V](store)

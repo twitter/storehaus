@@ -20,6 +20,9 @@ import com.twitter.bijection.Injection
 import com.twitter.storehaus.Store
 import com.twitter.util.Future
 
+/**
+  * Enrichments on Store.
+  */
 object StoreAlgebra {
   implicit def enrichStore[K, V](store: Store[K, V]): AlgebraicStore[K, V] =
     new AlgebraicStore[K, V](store)
