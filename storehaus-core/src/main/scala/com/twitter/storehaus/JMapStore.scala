@@ -23,8 +23,8 @@ import com.twitter.util.Future
  *  @author Sam Ritchie
  */
 
-class JMapStore[K,V] extends Store[K,V] {
-  protected val jstore: java.util.Map[K,Option[V]] = new java.util.HashMap[K, Option[V]]()
+class JMapStore[K, V] extends Store[K, V] {
+  protected val jstore: java.util.Map[K, Option[V]] = new java.util.HashMap[K, Option[V]]()
   protected def storeGet(k: K): Option[V] = {
     val stored = jstore.get(k)
     if (stored != null)
@@ -33,9 +33,8 @@ class JMapStore[K,V] extends Store[K,V] {
       None
   }
   override def get(k: K): Future[Option[V]] = Future.value(storeGet(k))
-  override def put(kv: (K,Option[V])) = {
-    if(kv._2.isEmpty) jstore.remove(kv._1) else jstore.put(kv._1, kv._2)
+  override def put(kv: (K, Option[V])) = {
+    if (kv._2.isEmpty) jstore.remove(kv._1) else jstore.put(kv._1, kv._2)
     Future.Unit
   }
 }
-

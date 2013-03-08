@@ -19,7 +19,7 @@ package com.twitter.storehaus.memcache
 import com.twitter.conversions.time._
 import com.twitter.util.{ Future, Time }
 import com.twitter.finagle.memcached.{ GetResult, Client }
-import com.twitter.storehaus.Store
+import com.twitter.storehaus.{ FutureOps, Store }
 import org.jboss.netty.buffer.ChannelBuffer
 
 /**
@@ -50,7 +50,7 @@ class MemcacheStore(client: Client, ttl: Time, flag: Int) extends Store[String, 
         result.hits.mapValues { v => Future.value(Some(v.value)) } ++
         result.failures.mapValues { Future.exception(_) }
       }
-    Store.liftValues(ks, memcacheResult, { (k: K1) => Future.value(Future.None) })
+    FutureOps.liftValues(ks, memcacheResult, { (k: K1) => Future.value(Future.None) })
       .mapValues { _.flatten }
   }
 

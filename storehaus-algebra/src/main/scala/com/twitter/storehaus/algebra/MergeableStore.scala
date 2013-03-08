@@ -19,7 +19,7 @@ package com.twitter.storehaus.algebra
 import com.twitter.algebird.{Monoid, MapMonoid, Semigroup, MapAlgebra}
 import com.twitter.storehaus._
 
-import Store.mapCollect
+import FutureOps.mapCollect
 
 import com.twitter.algebird.util.UtilAlgebras._
 

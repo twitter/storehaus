@@ -20,7 +20,9 @@ import com.twitter.algebird.Monoid
 import com.twitter.algebird.util.UtilAlgebras._
 import com.twitter.bijection.Pivot
 import com.twitter.util.Future
-import com.twitter.storehaus.{ FutureCollector, ReadableStore, Store }
+import com.twitter.storehaus.{
+  CollectionOps, FutureCollector, FutureOps, ReadableStore, Store
+}
 
 /**
  * Methods used in the various unpivot stores.
@@ -29,7 +31,7 @@ import com.twitter.storehaus.{ FutureCollector, ReadableStore, Store }
  */
 
 object PivotOps {
-    /**
+  /**
     * Queries the underlying store with a multiGet and transforms the
     * underlying map by filtering out all (innerK -> v) pairs that a)
     * contain None as the value or 2) in combination with the paired
@@ -66,7 +68,7 @@ object PivotOps {
   )(
     split: K => (OuterK, InnerK)
   )(implicit collect: FutureCollector[InnerPair[OuterK, InnerK, V]]): Map[K1, Future[Unit]] = {
-    val pivoted = MapPivotEncoder[K1, OuterK, InnerK, Option[V]](kvs)(split)
+    val pivoted = CollectionOps.pivotMap[K1, OuterK, InnerK, Option[V]](kvs)(split)
 
     // Input data merged with all relevant data from the underlying
     // store.
@@ -82,7 +84,7 @@ object PivotOps {
     // Result of a multiPut of all affected pairs in the underlying
     // store.
     val submitted: Future[Map[OuterK, Future[Unit]]] =
-      Store.mapCollect(mergedResult)(collect).map { store.multiPut(_) }
+      FutureOps.mapCollect(mergedResult)(collect).map { store.multiPut(_) }
 
     // The final flatMap returns a map of K to the future responsible
     // for writing K's value into the underlying store. Due to

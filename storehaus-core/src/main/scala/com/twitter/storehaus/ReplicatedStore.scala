@@ -18,10 +18,10 @@ package com.twitter.storehaus
 
 import com.twitter.util.Future
 
-import Store.{ selectFirstSuccessfulTrial => selectFirst }
-import ReadableStore.combineMaps
+import FutureOps.{ selectFirstSuccessfulTrial => selectFirst }
+import CollectionOps.combineMaps
 
-class ReplicatedReadableStore[-K, +V](stores: Seq[ReadableStore[K, V]]) extends ReadableStore[K, V] {
+class ReplicatedReadableStore[-K, +V](stores: Seq[ReadableStore[K, V]]) extends AbstractReadableStore[K, V] {
   override def get(k: K) = selectFirst(stores.map { _.get(k) })
   override def multiGet[K1 <: K](ks: Set[K1]) =
     combineMaps(stores.map { _.multiGet(ks) }).mapValues { selectFirst(_) }

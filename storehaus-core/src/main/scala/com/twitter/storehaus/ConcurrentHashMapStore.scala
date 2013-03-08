@@ -23,6 +23,6 @@ import java.util.concurrent.{ ConcurrentHashMap => JConcurrentHashMap }
  *  @author Sam Ritchie
  */
 
-class ConcurrentHashMapStore[K,V] extends JMapStore[K,V] {
-  protected override val jstore = new JConcurrentHashMap[K,Option[V]]
+class ConcurrentHashMapStore[K, V] extends JMapStore[K, V] {
+  protected override val jstore = new JConcurrentHashMap[K, Option[V]]
 }

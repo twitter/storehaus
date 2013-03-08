@@ -14,17 +14,18 @@
  * limitations under the License.
  */
 
-package com.twitter.storehaus.algebra
+package com.twitter.storehaus
 
 /**
- * PivotEncoder to Map[InnerK, V] (vs Iterable[(InnerK, V)], as
- * bijection.Pivot would provide).
- *
- * @author Sam Ritchie
+ * Helpful transformations on maps and collections.
  */
 
-object MapPivotEncoder {
-  def apply[K, OuterK, InnerK, V](pairs: Map[K, V])(split: K => (OuterK, InnerK)): Map[OuterK, Map[InnerK, V]] =
+object CollectionOps {
+  /**
+   * PivotEncoder to Map[InnerK, V] (vs Iterable[(InnerK, V)], as
+   * com.twitter.bijection.Pivot would provide).
+   */
+  def pivotMap[K, OuterK, InnerK, V](pairs: Map[K, V])(split: K => (OuterK, InnerK)): Map[OuterK, Map[InnerK, V]] =
     pairs.toList.map {
       case (k, v) =>
         val (outerK, innerK) = split(k)
@@ -32,4 +33,14 @@ object MapPivotEncoder {
     }
       .groupBy { _._1 }
       .mapValues { _.map { _._2 }.toMap }
+
+  def zipWith[K, V](keys: Set[K])(lookup: K => V): Map[K, V] =
+    keys.foldLeft(Map.empty[K, V]) { (m, k) => m + (k -> lookup(k)) }
+
+  def combineMaps[K, V](m: Seq[Map[K, V]]): Map[K, Seq[V]] =
+    m.foldLeft(Map[K, List[V]]()) { (oldM, mkv) =>
+      mkv.foldLeft(oldM) { (seqm, kv) =>
+        seqm + (kv._1 -> (kv._2 :: seqm.getOrElse(kv._1, Nil)))
+      }
+    }.mapValues { _.reverse }
 }
