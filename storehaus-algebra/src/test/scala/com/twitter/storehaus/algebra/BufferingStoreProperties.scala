@@ -23,12 +23,13 @@ import org.scalacheck.Properties
 object BufferingStoreProperties extends Properties("BufferingStore") {
   import StoreProperties.storeTest
   import MergeableStoreProperties.{ mergeableStoreTest, newStore }
+  import StoreAlgebra._
 
   property("BufferingStore obeys the store properties") = storeTest {
-    new BufferingStore(newStore[String, Map[Int, String]], SummingQueue[Map[String, Map[Int, String]]](10))
+    newStore[String, Map[Int, String]].withSummer(SummingQueue[Map[String, Map[Int, String]]](10))
   }
 
   property("BufferingStore obeys the store laws") = mergeableStoreTest {
-    new BufferingStore(newStore[String, Map[String, Int]], SummingQueue[Map[String, Map[String, Int]]](10))
+    newStore[String, Map[String, Int]].withSummer(SummingQueue[Map[String, Map[String, Int]]](10))
   }
 }

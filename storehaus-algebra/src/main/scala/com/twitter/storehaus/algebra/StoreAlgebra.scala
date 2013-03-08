@@ -17,7 +17,7 @@
 
 package com.twitter.storehaus.algebra
 
-import com.twitter.algebird.{ Monoid, Semigroup }
+import com.twitter.algebird.{ Monoid, Semigroup, StatefulSummer }
 import com.twitter.util.Future
 import com.twitter.storehaus.{ AbstractReadableStore, ReadableStore, Store }
 
@@ -67,6 +67,7 @@ class AlgebraicStore[K, V](store: Store[K, V]) {
 }
 
 class AlgebraicMergeableStore[K, V](store: MergeableStore[K, V]) {
+  def withSummer(summer: StatefulSummer[Map[K, V]]): MergeableStore[K, V] = new BufferingStore(store, summer)
   def unpivot[CombinedK, InnerK, InnerV](split: CombinedK => (K, InnerK))
     (implicit ev: V <:< Map[InnerK, InnerV], monoid: Monoid[InnerV]): MergeableStore[CombinedK, InnerV] =
     new UnpivotedMergeableStore[CombinedK, K, InnerK, InnerV](
