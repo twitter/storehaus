@@ -31,6 +31,29 @@ object ReadableStore {
   def first[K,V](stores: Seq[ReadableStore[K, V]]): ReadableStore[K, V] =
     new ReplicatedReadableStore(stores)
 
+  /** Treat a Function1 like a ReadableStore
+   */
+  def fromFunction[K,V](getfn: (K) => Option[V]): ReadableStore[K,V] = new AbstractReadableStore[K,V] {
+    override def get(k: K) = // I know Future(getfn(k)) looks similar, we've seen some high costs with that
+      try { Future.value(getfn(k)) }
+      catch { case e: Throwable => Future.exception(e) }
+  }
+
+  /** Treat a PartialFunction like a ReadableStore
+   */
+  def fromPartial[K,V](getfn: PartialFunction[K,V]): ReadableStore[K,V] = new AbstractReadableStore[K,V] {
+    override def get(k: K) = if(getfn.isDefinedAt(k)) {
+      try { Future.value(Some(getfn(k))) }
+      catch { case e: Throwable => Future.exception(e) }
+    } else Future.None
+  }
+
+  /** Treat a function returning a Future[Option[V]] as the get method of a ReadableStore
+   */
+  def fromFuture[K,V](getfn: (K) => Future[Option[V]]): ReadableStore[K,V] = new AbstractReadableStore[K,V] {
+    override def get(k: K) = getfn(k)
+  }
+
   // This should go somewhere else, but it is needed for many combinators on stores
   def combineMaps[K,V](m: Seq[Map[K,V]]): Map[K,Seq[V]] =
     m.foldLeft(Map[K,List[V]]()) { (oldM, mkv) =>
