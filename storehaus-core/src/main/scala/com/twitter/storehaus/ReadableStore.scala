@@ -38,26 +38,29 @@ object ReadableStore {
   def fromMap[K, V](m: Map[K, V]): ReadableStore[K, V] = new MapStore(m)
   def fromIndexedSeq[T](iseq: IndexedSeq[T]): ReadableStore[Int, T] = new IndexedSeqReadableStore(iseq)
 
-  /** Treat a Function1 like a ReadableStore
+  /**
+   * Treat a Function1 like a ReadableStore
    */
-  def fromFunction[K,V](getfn: (K) => Option[V]): ReadableStore[K,V] = new AbstractReadableStore[K,V] {
+  def fromFunction[K, V](getfn: (K) => Option[V]): ReadableStore[K, V] = new AbstractReadableStore[K, V] {
     override def get(k: K) = // I know Future(getfn(k)) looks similar, we've seen some high costs with that
       try { Future.value(getfn(k)) }
       catch { case e: Throwable => Future.exception(e) }
   }
 
-  /** Treat a PartialFunction like a ReadableStore
+  /**
+   * Treat a PartialFunction like a ReadableStore
    */
-  def fromPartial[K,V](getfn: PartialFunction[K,V]): ReadableStore[K,V] = new AbstractReadableStore[K,V] {
-    override def get(k: K) = if(getfn.isDefinedAt(k)) {
+  def fromPartial[K, V](getfn: PartialFunction[K, V]): ReadableStore[K, V] = new AbstractReadableStore[K, V] {
+    override def get(k: K) = if (getfn.isDefinedAt(k)) {
       try { Future.value(Some(getfn(k))) }
       catch { case e: Throwable => Future.exception(e) }
     } else Future.None
   }
 
-  /** Treat a function returning a Future[Option[V]] as the get method of a ReadableStore
+  /**
+   * Treat a function returning a Future[Option[V]] as the get method of a ReadableStore
    */
-  def fromFuture[K,V](getfn: (K) => Future[Option[V]]): ReadableStore[K,V] = new AbstractReadableStore[K,V] {
+  def fromFuture[K, V](getfn: (K) => Future[Option[V]]): ReadableStore[K, V] = new AbstractReadableStore[K, V] {
     override def get(k: K) = getfn(k)
   }
 }
@@ -71,7 +74,7 @@ trait ReadableStore[-K, +V] extends Closeable { self =>
   def multiGet[K1 <: K](ks: Set[K1]): Map[K1, Future[Option[V]]] =
     ks.map { k => (k, self.get(k)) }.toMap
 
-  override def close { }
+  override def close {}
 
   // These methods are defined in terms of the above:
   /**

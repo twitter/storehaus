@@ -23,10 +23,6 @@ import java.util.{ LinkedHashMap => JLinkedHashMap, Map => JMap }
  *  @author Sam Ritchie
  */
 
-object LRUStore {
-  def apply[K, V](maxSize: Int = 1000) = new LRUStore[K, V](maxSize)
-}
-
 class LRUStore[K, V](maxSize: Int) extends JMapStore[K, V] {
   // create a java linked hashmap with access-ordering (LRU)
   protected override val jstore = new JLinkedHashMap[K, Option[V]](maxSize + 1, 0.75f, true) {

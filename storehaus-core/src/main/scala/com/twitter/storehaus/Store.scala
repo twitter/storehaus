@@ -18,6 +18,15 @@ package com.twitter.storehaus
 
 import com.twitter.util.Future
 import java.io.Closeable
+import java.util.{ Map => JMap }
+
+object Store {
+  def fromJMap[K, V](m: JMap[K, Option[V]]): Store[K, V] = new JMapStore[K, V] {
+    override val jstore = m
+  }
+
+  def lru[K, V](maxSize: Int = 1000): Store[K, V] = new LRUStore(maxSize)
+}
 
 trait Store[-K, V] extends ReadableStore[K, V] with Closeable { self =>
   /**

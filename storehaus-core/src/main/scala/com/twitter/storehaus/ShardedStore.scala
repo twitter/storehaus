@@ -41,7 +41,7 @@ class ShardedReadableStore[-K1, -K2, +V, +S <: ReadableStore[K2, V]](routes: Rea
 
   override def get(k: (K1,K2)): Future[Option[V]] = {
     val (k1, k2) = k
-    Store.combineFOFn[K1,S,V](routes.get _, _.get(k2))(k1)
+    FutureOps.combineFOFn[K1,S,V](routes.get _, _.get(k2))(k1)
   }
 
   override def multiGet[T<:(K1,K2)](ks: Set[T]): Map[T, Future[Option[V]]] = {
@@ -57,7 +57,7 @@ class ShardedReadableStore[-K1, -K2, +V, +S <: ReadableStore[K2, V]](routes: Rea
       (k1, innerm)
     }.toMap
     // Now construct the result map:
-    Store.zipWith(ks) { t =>
+    CollectionOps.zipWith(ks) { t =>
       ksMap(t._1).flatMap { m2 => m2(t._2) }
     }
   }
@@ -114,7 +114,7 @@ class ShardedStore[-K1,-K2,V, +S <: Store[K2,V]](routes: ReadableStore[K1, S]) e
       (k1, innerm)
     }
     // Do the lookup:
-    Store.zipWith(kvs.keySet) { t =>
+    CollectionOps.zipWith(kvs.keySet) { t =>
       shardMap(t._1).flatMap { m2 => m2(t._2) }
     }
   }
