@@ -16,21 +16,20 @@
 
 package com.twitter.storehaus.algebra
 
+import com.twitter.algebird.SummingQueue
 import com.twitter.storehaus.{ StoreProperties, JMapStore }
 import org.scalacheck.Properties
 
-object UnpivotedStoreProperties extends Properties("UnpivotedStore") {
+object BufferingStoreProperties extends Properties("BufferingStore") {
   import StoreProperties.storeTest
-  import MergeableStoreProperties.{ newStore, mergeableStoreTest }
+  import MergeableStoreProperties.{ mergeableStoreTest, newStore }
   import StoreAlgebra._
 
-  property("UnpivotedStore obeys the store properties") = storeTest {
-    val mergeableStore = MergeableStore.fromStore(new JMapStore[String, Map[Int, String]])
-    new UnpivotedStore[(String, Int), String, Int, String](mergeableStore)(identity)
+  property("BufferingStore obeys the store properties") = storeTest {
+    newStore[String, Map[Int, String]].withSummer(SummingQueue[Map[String, Map[Int, String]]](10))
   }
 
-  property("UnpivotedMergeableStore from JMapStore obeys the store laws") =
-    mergeableStoreTest {
-      newStore[String, Map[Int, Int]].unpivot[(String, Int), Int, Int](identity)
-    }
+  property("BufferingStore obeys the store laws") = mergeableStoreTest {
+    newStore[String, Map[String, Int]].withSummer(SummingQueue[Map[String, Map[String, Int]]](10))
+  }
 }
