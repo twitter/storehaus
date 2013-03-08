@@ -56,6 +56,7 @@ class BufferingMergeable[-K, V](wrapped: Mergeable[K, V], summer: StatefulSummer
 class BufferingStore[-K, V](store: MergeableStore[K, V], summer: StatefulSummer[Map[K, V]])
   extends BufferingMergeable[K, V](store, summer)
   with MergeableStore[K, V] {
+  protected implicit val collector = FutureCollector.bestEffort[(K, Unit)]
 
   override def get(k: K): Future[Option[V]] =
     summer.flush
@@ -64,7 +65,6 @@ class BufferingStore[-K, V](store: MergeableStore[K, V], summer: StatefulSummer[
       .flatMap { _ => store.get(k) }
 
   override def multiGet[K1 <: K](ks: Set[K1]): Map[K1, Future[Option[V]]] = {
-    implicit val collector = FutureCollector.bestEffort[(K, Unit)]
     val writeComputation: Future[Unit] =
       summer.flush.map { m =>
         Store.mapCollect {
@@ -73,12 +73,8 @@ class BufferingStore[-K, V](store: MergeableStore[K, V], summer: StatefulSummer[
       }.getOrElse(Future.Unit)
     Store.liftFutureValues(ks, writeComputation.map { _ => store.multiGet(ks) })
   }
-  override def put(pair: (K, Option[V])) = {
-    implicit val collector = FutureCollector.bestEffort[(K, Unit)]
-    flush.flatMap { _ => store.put(pair) }
-  }
-  override def multiPut[K1 <: K](kvs: Map[K1, Option[V]]) = {
-    implicit val collector = FutureCollector.bestEffort[(K, Unit)]
+  override def put(pair: (K, Option[V])) = flush.flatMap { _ => store.put(pair) }
+
+  override def multiPut[K1 <: K](kvs: Map[K1, Option[V]]) =
     Store.liftFutureValues(kvs.keySet, flush.map { _ => store.multiPut(kvs) })
-  }
 }
