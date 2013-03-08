@@ -63,6 +63,12 @@ object Store {
     ks.view.map { k1 =>
       k1 -> result.flatMap { _.get(k1).map { Future.value(_) }.getOrElse(missingfn(k1)) }
     }.toMap
+
+  def liftFutureValues[K,K1<:K,V](ks: Set[K1], result: Future[Map[K, Future[V]]],
+    missingfn: (K1) => Future[V] = missingValueFor _): Map[K1, Future[V]] =
+    ks.view.map { k1 =>
+      k1 -> result.flatMap { _.get(k1).getOrElse(missingfn(k1)) }
+    }.toMap
 }
 
 trait Store[-K, V] extends ReadableStore[K, V] with Closeable { self =>
