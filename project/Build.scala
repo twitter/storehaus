@@ -1,14 +1,16 @@
+package storehaus
+
 import sbt._
 import Keys._
+import sbtgitflow.ReleasePlugin._
 
 object StorehausBuild extends Build {
-  val sharedSettings = Project.defaultSettings ++ Seq(
+  val sharedSettings = Project.defaultSettings ++ releaseSettings ++ Seq(
     organization := "com.twitter",
-    version := "0.0.4",
-    scalaVersion := "2.9.2",
+    crossScalaVersions := Seq("2.9.2", "2.10.0"),
     libraryDependencies ++= Seq(
       "org.scalacheck" %% "scalacheck" % "1.10.0" % "test" withSources(),
-      "org.scala-tools.testing" % "specs_2.9.1" % "1.6.9" % "test" withSources()
+      "org.scala-tools.testing" %% "specs" % "1.6.9" % "test" withSources()
     ),
 
     resolvers ++= Seq(
@@ -31,9 +33,9 @@ object StorehausBuild extends Build {
     publishTo <<= version { (v: String) =>
       val nexus = "http://artifactory.local.twitter.com/"
       if (v.trim.endsWith("SNAPSHOT"))
-        Some("sonatype-snapshots" at nexus + "libs-snapshots-local")
+        Some("artifactory-snapshots" at nexus + "libs-snapshots-local")
       else
-        Some("sonatype-releases"  at nexus + "libs-releases-local")
+        Some("artifactory-releases"  at nexus + "libs-releases-local")
     },
 
     pomExtra := (
@@ -57,11 +59,6 @@ object StorehausBuild extends Build {
           <url>http://twitter.com/posco</url>
         </developer>
         <developer>
-          <id>oscar</id>
-          <name>Marius Eriksen</name>
-          <url>http://twitter.com/marius</url>
-        </developer>
-        <developer>
           <id>sritchie</id>
           <name>Sam Ritchie</name>
           <url>http://twitter.com/sritchie</url>
@@ -69,9 +66,13 @@ object StorehausBuild extends Build {
       </developers>)
   )
 
+  val algebirdVersion = "0.1.9"
+  val bijectionVersion = "0.3.0"
+
   lazy val storehaus = Project(
     id = "storehaus",
-    base = file(".")
+    base = file("."),
+    settings = sharedSettings ++ DocGen.publishSettings
     ).settings(
     test := { },
     publish := { }, // skip publishing for this root project.
@@ -86,7 +87,7 @@ object StorehausBuild extends Build {
     settings = sharedSettings
   ).settings(
     name := "storehaus-core",
-    libraryDependencies += "com.twitter" % "util-core" % "5.3.15"
+    libraryDependencies += "com.twitter" %% "util-core" % "6.2.0"
   )
 
   lazy val storehausAlgebra = Project(
@@ -95,10 +96,10 @@ object StorehausBuild extends Build {
     settings = sharedSettings
   ).settings(
     name := "storehaus-algebra",
-    libraryDependencies ++= Seq(
-      "com.twitter" %% "algebird" % "0.1.6",
-      "com.twitter" %% "bijection-core" % "0.2.0"
-    )
+    libraryDependencies += "com.twitter" %% "algebird-core" % algebirdVersion,
+    libraryDependencies += "com.twitter" %% "algebird-util" % algebirdVersion,
+    libraryDependencies += "com.twitter" %% "bijection-core" % bijectionVersion,
+    libraryDependencies += "com.twitter" %% "bijection-algebird" % bijectionVersion
   ).dependsOn(storehausCore % "test->test;compile->compile")
 
   lazy val storehausMemcache = Project(
@@ -107,9 +108,6 @@ object StorehausBuild extends Build {
     settings = sharedSettings
   ).settings(
     name := "storehaus-memcache",
-    libraryDependencies ++= Seq(
-      "com.twitter" %% "bijection-core" % "0.2.0",
-      "com.twitter" % "finagle-memcached" % "5.3.23"
-    )
+    libraryDependencies += "com.twitter" %% "finagle-memcached" % "6.2.0"
   ).dependsOn(storehausCore % "test->test;compile->compile")
 }

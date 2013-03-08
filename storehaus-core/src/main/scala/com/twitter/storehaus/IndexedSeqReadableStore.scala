@@ -16,11 +16,10 @@
 
 package com.twitter.storehaus
 
-import org.scalacheck.Properties
+import com.twitter.util.Future
 
-object ReplicatedStoreProperties extends Properties("ReplicatedStore") {
-  import StoreProperties.storeTest
-
-  property("ReplicatedStore test") =
-    storeTest(new ReplicatedStore(Stream.continually(new JMapStore[String, Int]).take(100).toSeq))
+class IndexedSeqReadableStore[V](iseq: IndexedSeq[V]) extends ReadableStore[Int, V] {
+  override def get(idx: Int) = if (idx >= 0 && idx < iseq.size) {
+    Future.value(Some(iseq(idx)))
+  } else Future.None
 }

@@ -17,10 +17,22 @@
 package com.twitter.storehaus
 
 import org.scalacheck.Properties
+import org.scalacheck.Arbitrary
 
-object ReplicatedStoreProperties extends Properties("ReplicatedStore") {
+object ShardedStoreProperties extends Properties("ShardedStore") {
   import StoreProperties.storeTest
 
-  property("ReplicatedStore test") =
-    storeTest(new ReplicatedStore(Stream.continually(new JMapStore[String, Int]).take(100).toSeq))
+  def moddiv(v: Int, by: Int): (Int, Int) = {
+    val cmod = v % by
+    val mod = if(cmod < 0) cmod + by else cmod
+    (mod, v/by)
+  }
+
+  property("ShardedStore test") = {
+    val SHARDS = 10
+    implicit val arbpair: Arbitrary[(Int,Int)] = Arbitrary { Arbitrary.arbitrary[Int].map { moddiv(_, SHARDS) } }
+    storeTest {
+      ShardedStore.fromMap((0 until SHARDS).map { _ -> new JMapStore[Int, String] }.toMap)
+    }
+  }
 }

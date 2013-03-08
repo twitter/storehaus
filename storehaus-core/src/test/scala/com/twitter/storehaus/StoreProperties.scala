@@ -25,57 +25,44 @@ import org.scalacheck.Gen.choose
 import org.scalacheck.Prop._
 
 object StoreProperties extends Properties("Store") {
-
   // Adds a bunch of items and removes them and sees if they are absent
-  def storeTest[StoreType<:Store[StoreType,K,V],K,V](store: StoreType)
+  def storeTest[K, V](store: Store[K, V])
     (implicit arbk: Arbitrary[K], arbv: Arbitrary[V]) =
     forAll { (examples: List[(K,V)]) =>
-      val adds = examples.foldLeft((store, true)) { (old, kv) =>
-        val next = (old._1 + (kv)).get
-        val nextGood = (next.get(kv._1).get.get == kv._2)
-        (next, nextGood && old._2)
+      examples.forall { (kv) =>
+        store.put((kv._1, Some(kv._2))).get // force the future
+        store.get(kv._1).get == Some(kv._2)
+      } && examples.forall { kv =>
+        store.put((kv._1, None)).get // force the future
+        store.get(kv._1).get == None
       }
-      examples.foldLeft(adds) { (old, kv) =>
-        val next = (old._1 - (kv._1)).get
-        val nextGood = (next.get(kv._1).get == None)
-        (next, nextGood && old._2)
-      }._2
     }
 
   property("multiGet returns Some(Future(None)) for missing keys") =
     forAll { (m: Map[String, Int]) =>
       val keys = m.keySet
       val expanded: Set[String] = keys ++ (keys map { _ + "suffix!" })
-      val ms = new MapStore(m)
-      (ms.multiGet(expanded) map { retM: Map[String, Future[Option[Int]]] =>
-        expanded forall { s: String =>
-          retM.get(s) match {
-            case None => m.contains(s) == false
-            case Some(f) => f.get == m.get(s)
-          }
-        }
-      }).get
+      val ms = ReadableStore.fromMap(m)
+      val retM = ms.multiGet(expanded)
+      expanded forall { s: String =>
+        ms.get(s).get == retM(s).get
+      }
     }
 
   property("Map wraps store works") = forAll { (m: Map[String, Int]) =>
-    val ms = new MapStore(m)
-    (ms.keySet == m.keySet) &&
-      (ms.multiGet(m.keySet).map { kv => (kv.mapValues { _.get }) == (m mapValues { Some(_) }) }.get) &&
-      (m.keySet.map { k => (ms.get(k).get == m.get(k)) }.forall { x => x })
+    val ms = ReadableStore.fromMap(m)
+    val retM = ms.multiGet(m.keySet)
+    (retM.forall { kv: (String, Future[Option[Int]]) =>
+        (ms.get(kv._1).get == kv._2.get) && (m.get(kv._1) == kv._2.get)
+      }) && (m.keySet.forall { k => (ms.get(k).get == m.get(k)) })
   }
 
-  property("MapStore test") =
-    storeTest[MapStore[String,Int],String,Int](new MapStore[String,Int]())
+  property("ConcurrentHashMapStore test") = storeTest(new ConcurrentHashMapStore[String,Int]())
 
-  property("ConcurrentHashMapStore test") =
-    storeTest[ConcurrentHashMapStore[String,Int],String,Int](
-      new ConcurrentHashMapStore[String,Int]())
-
-  property("LRUStore test") =
-    storeTest[LRUStore[String,Int],String,Int](LRUStore[String,Int](100000))
+  property("LRUStore test") = storeTest(Store.lru[String,Int](100000))
 
   property("Or works as expected") = forAll { (m1: Map[String, Int], m2: Map[String, Int]) =>
-    val orRO = (new MapStore(m1)) or (new MapStore(m2))
+    val orRO = ReadableStore.first(Seq(ReadableStore.fromMap(m1), ReadableStore.fromMap(m2)))
    (m1.keySet ++ m2.keySet).forall { k =>
      (orRO.get(k).get == m1.get(k)) ||
        (orRO.get(k).get == m2.get(k))

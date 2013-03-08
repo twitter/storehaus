@@ -16,122 +16,51 @@
 
 package com.twitter.storehaus.memcache
 
-import com.twitter.bijection.{ Base64String, Bijection }
 import com.twitter.conversions.time._
-import com.twitter.util.{ Duration, Encoder, Future, FuturePool, Time }
-import com.twitter.finagle.builder.ClientBuilder
-import com.twitter.finagle.memcached.protocol.text.Memcached
-import com.twitter.finagle.memcached.{ Client, KetamaClientBuilder }
-import com.twitter.storehaus.ConcurrentMutableStore
-
-import Bijection.connect
+import com.twitter.util.{ Future, Time }
+import com.twitter.finagle.memcached.{ GetResult, Client }
+import com.twitter.storehaus.{ FutureOps, Store }
+import org.jboss.netty.buffer.ChannelBuffer
 
 /**
  *  @author Oscar Boykin
  *  @author Sam Ritchie
  */
 
-// "weight" is a finagle implementation detail for the Memcached
-// client. A higher weight gives a particular host precedence over
-// others of lower weight in a client instance's host list.
-
-case class HostConfig(host: String, port: Int = 11211, weight: Int = 1) {
-  // TODO: Turn into a bijection.
-  def toTuple = (host, port, weight)
-}
-
 object MemcacheStore {
   // Default Memcached TTL is one day.
   val DEFAULT_TTL = Time.fromSeconds(24 * 60 * 60)
 
-  // implicitly convert the standard key serialization bijection into a
-  // key->hashed string bijection, suitable for use with Memcached.
-  implicit def toEncoder[Key](implicit bijection: Bijection[Key,Array[Byte]])
-  : Encoder[Key,String] =
-    new Encoder[Key,String] {
-      val enc = (bijection andThen HashEncoder() andThen connect[Array[Byte], Base64String])
-        override def encode(k: Key) = enc(k).str
-    }
+  // This flag used on "set" operations. Search this page for "flag"
+  // for more info on the following variable:
+  // http://docs.libmemcached.org/memcached_set.html
+  val DEFAULT_FLAG = 0
 
-  // Instantiate a Memcached store using a Ketama client with the
-  // given # of retries, request timeout and ttl.
-  def apply[Key,Value](hosts: Seq[HostConfig],
-                       retries: Int = 2,
-                       timeout: Duration = 1.seconds,
-                       ttl: Time = DEFAULT_TTL)
-  (implicit kb: Bijection[Key,Array[Byte]], vb: Bijection[Value,Array[Byte]]) =
-    new MemcacheStore[Key,Value](hosts, kb, vb, retries, timeout, ttl)
+  def apply(client: Client, ttl: Time = DEFAULT_TTL, flag: Int = DEFAULT_FLAG) =
+    new MemcacheStore(client, ttl, flag)
 }
 
-class MemcacheStore[Key,Value](hosts: Seq[HostConfig],
-                               kBijection: Bijection[Key, Array[Byte]],
-                               vBijection: Bijection[Value, Array[Byte]],
-                               retries: Int,
-                               timeout: Duration,
-                               ttl: Time)
-extends ConcurrentMutableStore[MemcacheStore[Key,Value],Key,Value] {
+class MemcacheStore(client: Client, ttl: Time, flag: Int) extends Store[String, ChannelBuffer] {
 
-  lazy val enc =
-    kBijection
-      .andThen(HashEncoder())
-      .andThen(connect[Array[Byte], Base64String])
-      .andThen(Base64String.unwrap)
+  override def get(k: String): Future[Option[ChannelBuffer]] = client.get(k)
 
-  // Memcache flag used on "set" operations. Search this page for
-  // "flag" for more info on the following variable:
-  // http://docs.libmemcached.org/memcached_set.html
-
-  val MEMCACHE_FLAG = 0
-
-  def clientBuilder(name: String, retries: Int, timeout: Duration) = {
-    ClientBuilder()
-      .name(name)
-      .retries(retries)
-      .tcpConnectTimeout(timeout)
-      .requestTimeout(timeout)
-      .connectTimeout(timeout)
-      .readerIdleTimeout(timeout)
-  }
-
-  lazy val client = FuturePool.unboundedPool {
-    val builder = clientBuilder("memcache_client", retries, timeout)
-      .hostConnectionLimit(1)
-      .codec(Memcached())
-    KetamaClientBuilder()
-      .clientBuilder(builder)
-      .nodes(hosts.map(_.toTuple))
-      .build()
-      .withBytes // Adaptor to allow bytes vs channel buffers.
-  }
-
-  override def get(k: Key): Future[Option[Value]] =
-    client flatMap { c =>
-      c.get(enc(k)) map { opt =>
-        opt map { vBijection.invert(_) }
+  override def multiGet[K1 <: String](ks: Set[K1]): Map[K1, Future[Option[ChannelBuffer]]] = {
+    val memcacheResult: Future[Map[String, Future[Option[ChannelBuffer]]]] =
+      client.getResult(ks).map { result =>
+        result.hits.mapValues { v => Future.value(Some(v.value)) } ++
+        result.failures.mapValues { Future.exception(_) }
       }
+    FutureOps.liftValues(ks, memcacheResult, { (k: K1) => Future.value(Future.None) })
+      .mapValues { _.flatten }
+  }
+
+  protected def set(k: String, v: ChannelBuffer) = client.set(k, flag, ttl, v)
+
+  override def put(kv: (String, Option[ChannelBuffer])): Future[Unit] =
+    kv match {
+      case (key, Some(value)) => client.set(key, flag, ttl, value)
+      case (key, None) => client.delete(key).unit
     }
 
-  override def multiGet(ks: Set[Key]): Future[Map[Key, Future[Option[Value]]]] = {
-    val encodedKs = ks map { enc(_) }
-    val encMap = (encodedKs zip ks).toMap
-
-    client flatMap { c =>
-      c.get(encodedKs.toIterable) map { retMap =>
-      // TODO: use getResult here
-        encMap map { case(encK, k) =>
-          k -> Future(retMap.get(encK) map { bytes => vBijection.invert(bytes) })
-        }
-      }
-    }
-  }
-
-  override def -(k: Key) = client flatMap { _.delete(enc(k)) map { _ => this } }
-  override def +(pair: (Key, Value)) = set(pair._1, pair._2) map { _ => this }
-
-  protected def set(k: Key, v: Value) = {
-    val valBytes = vBijection(v)
-    client flatMap { _.set(enc(k), MEMCACHE_FLAG, ttl, valBytes) }
-  }
-
-  override def close { client foreach { _.release } }
+  override def close { client.release }
 }

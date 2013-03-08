@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package com.twitter.storehaus
+package com.twitter.storehaus.algebra.query
 
-import org.scalacheck.Properties
-
-object ReplicatedStoreProperties extends Properties("ReplicatedStore") {
-  import StoreProperties.storeTest
-
-  property("ReplicatedStore test") =
-    storeTest(new ReplicatedStore(Stream.continually(new JMapStore[String, Int]).take(100).toSeq))
+/**
+ * Use this with cross to create an exact match sub-portion of your query
+ */
+class ExactMatch[T] extends AbstractQueryStrategy[T,T,T] {
+  def query(q: T) = Set(q)
+  def index(key: T) = Set(key)
 }

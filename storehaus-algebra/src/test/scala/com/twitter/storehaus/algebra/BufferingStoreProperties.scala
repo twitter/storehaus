@@ -14,13 +14,22 @@
  * limitations under the License.
  */
 
-package com.twitter.storehaus
+package com.twitter.storehaus.algebra
 
+import com.twitter.algebird.SummingQueue
+import com.twitter.storehaus.{ StoreProperties, JMapStore }
 import org.scalacheck.Properties
 
-object ReplicatedStoreProperties extends Properties("ReplicatedStore") {
+object BufferingStoreProperties extends Properties("BufferingStore") {
   import StoreProperties.storeTest
+  import MergeableStoreProperties.{ mergeableStoreTest, newStore }
+  import MergeableStoreEnrichment._
 
-  property("ReplicatedStore test") =
-    storeTest(new ReplicatedStore(Stream.continually(new JMapStore[String, Int]).take(100).toSeq))
+  property("BufferingStore obeys the store properties") = storeTest {
+    newStore[String, Map[Int, String]].withSummer(SummingQueue[Map[String, Map[Int, String]]](10))
+  }
+
+  property("BufferingStore obeys the store laws") = mergeableStoreTest {
+    newStore[String, Map[String, Int]].withSummer(SummingQueue[Map[String, Map[String, Int]]](10))
+  }
 }

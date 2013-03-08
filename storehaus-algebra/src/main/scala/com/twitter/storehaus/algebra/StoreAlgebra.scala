@@ -16,74 +16,36 @@
 
 package com.twitter.storehaus.algebra
 
-import com.twitter.algebird.{ Monoid, Semigroup }
+import com.twitter.algebird.Monoid
+import com.twitter.bijection.Injection
+import com.twitter.storehaus.{ FutureCollector, Store }
 import com.twitter.util.Future
-import com.twitter.storehaus.{ ReadableStore, Store }
 
 /**
- * import StoreAlgebra.enrich to obtain enrichments.
- */
+  * Enrichments on Store.
+  */
 object StoreAlgebra {
-  implicit def enrichReadableStore[K, V](store: ReadableStore[K, V]): AlgebraicReadableStore[K, V] =
-    new AlgebraicReadableStore[K, V](store)
+  implicit def enrichStore[K, V](store: Store[K, V]): AlgebraicStore[K, V] =
+    new AlgebraicStore[K, V](store)
 
-  implicit def enrichStore[StoreType <: Store[StoreType, K, V], K, V](store: StoreType): AlgebraicStore[StoreType, K, V] =
-    new AlgebraicStore[StoreType, K, V](store)
+  def unpivot[K, OuterK, InnerK, V](store: Store[OuterK, Map[InnerK, V]])(split: K => (OuterK, InnerK)): Store[K, V] =
+    new UnpivotedStore(store)(split)
+
+  def convert[K1, K2, V1, V2](store: Store[K1, V1])(kfn: K2 => K1)(implicit inj: Injection[V2, V1]): Store[K2, V2] =
+    new ConvertedStore(store)(kfn)
 }
 
-class AlgebraicReadableStore[K, V](store: ReadableStore[K, V]) {
-  import ReadableStoreMonoid.apply
+class AlgebraicStore[K, V](store: Store[K, V]) {
+  def toMergeable(implicit mon: Monoid[V], fc: FutureCollector[(K, Option[V])]): MergeableStore[K, V] =
+    MergeableStore.fromStore(store)
 
-  /**
-   * Returns a new store that queries this store and the supplied other store
-   * and returns an option of both values summed together.
-   */
-  def +(other: ReadableStore[K, V])(implicit sg: Semigroup[V]): ReadableStore[K, V] =
-    Monoid.plus(store, other)
+  def unpivot[CombinedK, InnerK, InnerV](split: CombinedK => (K, InnerK))(implicit ev: V <:< Map[InnerK, InnerV]): Store[CombinedK, InnerV] =
+    StoreAlgebra.unpivot(store.asInstanceOf[Store[K, Map[InnerK, InnerV]]])(split)
 
-  /**
-   * If V is TraversableOnce[T], returns a new store that sums V down into a single T
-   * before returning.
-   */
-  def summed[T](implicit ev: V <:< TraversableOnce[T], sg: Semigroup[T]): ReadableStore[K, T] =
-    new ReadableStore[K, T] {
-      override def get(k: K) = store.get(k) map { _ flatMap { Semigroup.sumOption(_) } }
-      override def multiGet(ks: Set[K]) =
-        store.multiGet(ks) map { kv =>
-          kv.mapValues { fs: Future[Option[V]] =>
-            fs.map { opt => opt.flatMap { ts => Semigroup.sumOption(ev(ts)) } }
-          }
-        }
-    }
-}
+  def composeKeyMapping[K1](fn: K1 => K): Store[K1, V] = StoreAlgebra.convert(store)(fn)
 
-class AlgebraicStore[StoreType <: Store[StoreType, K, V], K, V](store: StoreType) {
-  def aggregating(implicit sg: Monoid[V]): AggregatingStore[StoreType, K, V] = new AggregatingStore(store)
-}
+  def mapValues[V1](implicit inj: Injection[V1, V]): Store[K, V1] = StoreAlgebra.convert(store)(identity[K])
 
-/**
- * Store which aggregates values added with + into the existing value in the store.
- * If addition ever results in a zero value, the key is deleted from the store.
- */
-class AggregatingStore[StoreType <: Store[StoreType, K, V], K, V: Monoid](store: StoreType)
-extends Store[AggregatingStore[StoreType, K, V], K, V] {
-  override def get(k: K) = store.get(k)
-  override def multiGet(ks: Set[K]) = store.multiGet(ks)
-
-  override def -(k: K): Future[AggregatingStore[StoreType, K, V]] =
-    (store - k) map { new AggregatingStore(_) }
-
-  override def +(pair: (K,V)): Future[AggregatingStore[StoreType, K, V]] = {
-    val (k, v) = pair
-    store.get(k) flatMap { oldV: Option[V] =>
-      Monoid.nonZeroOption(oldV.map { Monoid.plus(_, v) } getOrElse v)
-        .map { newV => store + (k -> newV) }
-        .getOrElse(store - k)
-        .map { new AggregatingStore(_) }
-    }
-  }
-
-  override def update(k: K)(fn: Option[V] => Option[V]): Future[AggregatingStore[StoreType, K, V]] = {
-    store.update(k)(fn) map { new AggregatingStore(_) }
-  }
+  def convert[K1, V1](fn: K1 => K)(implicit inj: Injection[V1, V]): Store[K1, V1] =
+    StoreAlgebra.convert(store)(fn)
 }

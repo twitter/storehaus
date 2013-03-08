@@ -14,21 +14,12 @@
  * limitations under the License.
  */
 
-package com.twitter.storehaus.memcache
+package com.twitter.storehaus.algebra.query
 
-import com.twitter.bijection.Bijection
-
-import org.jboss.netty.buffer.{ChannelBuffer, ChannelBuffers}
-
-/** Reads from the current position to the end into an array without changing
- * the given ChannelBuffer
+/**
+ * This is for rollups: None means total sum, Some(q) is exact match
  */
-class ChannelBufferBijection extends Bijection[ChannelBuffer, Array[Byte]] {
-  override def apply(cb: ChannelBuffer) = {
-    val dup = cb.duplicate
-    val result = new Array[Byte](dup.readableBytes)
-    dup.readBytes(result)
-    result
-  }
-  override def invert(ary: Array[Byte]) = ChannelBuffers.wrappedBuffer(ary)
+class OptionQuery[T] extends AbstractQueryStrategy[Option[T], T, Option[T]] {
+  def query(q: Option[T]) = Set(q)
+  def index(key: T) = Set(Some(key), None)
 }
