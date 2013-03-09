@@ -15,8 +15,7 @@ object StorehausBuild extends Build {
 
     resolvers ++= Seq(
       "snapshots" at "http://oss.sonatype.org/content/repositories/snapshots",
-      "releases"  at "http://oss.sonatype.org/content/repositories/releases",
-      "Twitter Maven" at "http://maven.twttr.com"
+      "releases"  at "http://oss.sonatype.org/content/repositories/releases"
     ),
 
     parallelExecution in Test := true,
@@ -77,9 +76,12 @@ object StorehausBuild extends Build {
     test := { },
     publish := { }, // skip publishing for this root project.
     publishLocal := { }
-  ).aggregate(storehausCore,
-              storehausAlgebra,
-              storehausMemcache)
+  ).aggregate(
+    storehausCore,
+    storehausAlgebra,
+    storehausMemcache,
+    storehausBerkeleyDB
+  )
 
   lazy val storehausCore = Project(
     id = "storehaus-core",
@@ -109,5 +111,15 @@ object StorehausBuild extends Build {
   ).settings(
     name := "storehaus-memcache",
     libraryDependencies += "com.twitter" %% "finagle-memcached" % "6.2.0"
+  ).dependsOn(storehausCore % "test->test;compile->compile")
+
+  lazy val storehausBerkeleyDB = Project(
+    id = "storehaus-berkeleydb",
+    base = file("storehaus-berkeleydb"),
+    settings = sharedSettings
+  ).settings(
+    name := "storehaus-berkeleydb",
+    resolvers += "oracle" at "http://download.oracle.com/maven",
+    libraryDependencies += "com.sleepycat" %% "je" % "5.0.58"
   ).dependsOn(storehausCore % "test->test;compile->compile")
 }
