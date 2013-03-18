@@ -36,7 +36,7 @@ object Store {
     new ReplicatedStore(stores)
 }
 
-trait Store[-K, V] extends ReadableStore[K, V] with Closeable { self =>
+trait Store[-K, V] extends ReadableStore[K, V] { self =>
   /**
    * replace a value
    * Delete is the same as put((k,None))
@@ -44,6 +44,4 @@ trait Store[-K, V] extends ReadableStore[K, V] with Closeable { self =>
   def put(kv: (K, Option[V])): Future[Unit] = multiPut(Map(kv)).apply(kv._1)
   def multiPut[K1 <: K](kvs: Map[K1, Option[V]]): Map[K1, Future[Unit]] =
     kvs.map { kv => (kv._1, put(kv)) }
-
-  override def close { }
 }
