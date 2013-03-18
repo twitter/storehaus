@@ -1,5 +1,12 @@
 # storehaus #
 
+### Version.0.1.0 ###
+
+* Documentation overhaul
+* `BufferingStore`
+* `UnpivotedStore`
+* `FutureCollector`
+
 ### Version 0.0.4 ###
 
 * Break `Store` into `Store` and `MergeableStore`.
