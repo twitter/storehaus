@@ -1,6 +1,10 @@
 ## Storehaus [![Build Status](https://secure.travis-ci.org/twitter/storehaus.png)](http://travis-ci.org/twitter/storehaus)
 
-Storehaus is a library that makes it easy to work with remote key value stores. Storehaus's core module defines two traits; a read-only `ReadableStore` and a read-write `Store`. The traits themselves are dirt simple:
+Storehaus is a library that makes it easy to work with remote key value stores.
+
+### Storehaus-Core
+
+Storehaus's core module defines two traits; a read-only `ReadableStore` and a read-write `Store`. The traits themselves are dirt simple:
 
 ```scala
 trait ReadableStore[-K, +V] extends Closeable {
@@ -9,8 +13,20 @@ trait ReadableStore[-K, +V] extends Closeable {
   override def close { }
 }
 
+trait Store[-K, V] extends ReadableStore[K, V] {
+  def put(kv: (K, Option[V])): Future[Unit]
+  def multiPut[K1 <: K](kvs: Map[K1, Option[V]]): Map[K1, Future[Unit]]
+}
+
+```
+
+### Storehaus-Algebra
 
 See the [current API documentation](http://twitter.github.com/storehaus) for more information.
+
+### Other Modules
+
+Storehaus-memcache wraps Twitter's [finagle-memcached](https://github.com/twitter/finagle/tree/master/finagle-memcached) library.
 
 ## Maven
 
