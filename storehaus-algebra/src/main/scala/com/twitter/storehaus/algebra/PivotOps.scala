@@ -44,9 +44,9 @@ object PivotOps {
       .map { case (outerK, futureOptV) =>
         outerK -> futureOptV.map { optV =>
           optV.map { _.filterKeys { pred(outerK, _) }.toList }
-            .filter { _.isEmpty }
+            .filter { !_.isEmpty }
         }
-      }
+    }
 
   /**
     * For each value, filters out InnerK entries with a value of None.
@@ -56,7 +56,7 @@ object PivotOps {
     pivoted.mapValues { m =>
       Future.value {
         Some(m.collect { case (innerK, Some(v)) => innerK -> v }.toList)
-          .filter { _.isEmpty }
+          .filter { !_.isEmpty }
       }
     }
 
@@ -75,12 +75,10 @@ object PivotOps {
     val mergedResult: Map[OuterK, Future[Option[Map[InnerK, V]]]] =
       Monoid.plus(
         multiGetFiltered(store, pivoted.keySet) { case (outerK, innerK) =>
-            val pivotedInnerM = pivoted(outerK)
-            pivotedInnerM.contains(innerK) && !pivotedInnerM(innerK).isDefined
+            !pivoted(outerK).contains(innerK)
         },
         collectPivoted(pivoted)
       ).mapValues { _.map { _.map { _.toMap } } }
-
     // Result of a multiPut of all affected pairs in the underlying
     // store.
     val submitted: Future[Map[OuterK, Future[Unit]]] =
