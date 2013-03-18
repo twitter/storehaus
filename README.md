@@ -1,6 +1,14 @@
 ## Storehaus [![Build Status](https://secure.travis-ci.org/twitter/storehaus.png)](http://travis-ci.org/twitter/storehaus)
 
-Combinators on async key-value stores.
+Storehaus is a library that makes it easy to work with remote key value stores. Storehaus's core module defines two traits; a read-only `ReadableStore` and a read-write `Store`. The traits themselves are dirt simple:
+
+```scala
+trait ReadableStore[-K, +V] extends Closeable {
+  def get(k: K): Future[Option[V]]
+  def multiGet[K1 <: K](ks: Set[K1]): Map[K1, Future[Option[V]]]
+  override def close { }
+}
+
 
 See the [current API documentation](http://twitter.github.com/storehaus) for more information.
 
