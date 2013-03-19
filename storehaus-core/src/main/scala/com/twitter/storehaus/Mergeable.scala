@@ -14,21 +14,20 @@
  * limitations under the License.
  */
 
-package com.twitter.storehaus.algebra
+package com.twitter.storehaus
 
-import com.twitter.algebird.{ Monoid, StatefulSummer }
+import com.twitter.util.Future
 
-object MergeableEnrichment {
+object Mergeable {
   implicit def enrich[K, V](store: Mergeable[K, V]): EnrichedMergeable[K, V] =
     new EnrichedMergeable[K, V](store)
+
+  def unpivot[K, OuterK, InnerK, V](mergeable: Mergeable[OuterK, Map[InnerK, V]])
+    (split: K => (OuterK, InnerK)): Mergeable[K, V] =
+    new UnpivotedMergeable(mergeable)(split)
 }
 
-class EnrichedMergeable[K, V](store: Mergeable[K, V]) {
-  def withSummer(summer: StatefulSummer[Map[K, V]]): Mergeable[K, V] =
-    Mergeable.withSummer(store, summer)
-
-  def unpivot[CombinedK, InnerK, InnerV](split: CombinedK => (K, InnerK))
-    (implicit ev: V <:< Map[InnerK, InnerV], monoid: Monoid[InnerV])
-      : Mergeable[CombinedK, InnerV] =
-    Mergeable.unpivot(store.asInstanceOf[MergeableStore[K, Map[InnerK, InnerV]]])(split)
+trait Mergeable[-K, V] extends java.io.Serializable {
+  def merge(kv: (K, V)): Future[Unit] = multiMerge(Map(kv)).apply(kv._1)
+  def multiMerge[K1<:K](kvs: Map[K1,V]): Map[K1, Future[Unit]] = kvs.map { kv => (kv._1, merge(kv)) }
 }

@@ -16,12 +16,9 @@
 
 package com.twitter.storehaus
 
-import com.twitter.util.Future
-
-/**
- * Concrete empty store implementation.
- */
-
-object EmptyReadableStore extends AbstractReadableStore[Any, Nothing] {
-  override def get(k: Any) = com.twitter.util.Future.None
+class EnrichedMergeable[-K, V](store: Mergeable[K, V]) {
+  def unpivot[CombinedK, InnerK, InnerV](split: CombinedK => (K, InnerK))
+    (implicit ev: V <:< Map[InnerK, InnerV])
+      : Mergeable[CombinedK, InnerV] =
+    Mergeable.unpivot(store.asInstanceOf[Mergeable[K, Map[InnerK, InnerV]]])(split)
 }

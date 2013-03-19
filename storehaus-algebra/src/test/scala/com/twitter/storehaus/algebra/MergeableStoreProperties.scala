@@ -19,10 +19,10 @@ package com.twitter.storehaus.algebra
 import com.twitter.algebird.{ MapAlgebra, Monoid, SummingQueue }
 import com.twitter.bijection.algebird.AlgebirdBijections._
 import com.twitter.bijection.Injection
+import com.twitter.storehaus._
 import org.scalacheck.{ Arbitrary, Properties }
 import org.scalacheck.Prop._
 import org.scalacheck.Properties
-import com.twitter.storehaus.{ Store, JMapStore, FutureOps }
 
 object MergeableStoreProperties extends Properties("MergeableStore") {
   def rightContainsLeft[K,V: Equiv](l: Map[K, V], r: Map[K, V]): Boolean =
@@ -67,12 +67,12 @@ object MergeableStoreProperties extends Properties("MergeableStore") {
     }
 
   def newStore[K, V: Monoid]: MergeableStore[K, V] =
-    MergeableStore.fromStore(new JMapStore[K, V])
+    MergeableStoreAlgebra.fromStore(new JMapStore[K, V])
 
   def newConvertedStore[K,V1,V2](implicit inj: Injection[V2,V1], monoid: Monoid[V2]): MergeableStore[K,V2] = {
     val store = new JMapStore[K, V1]
     val cstore = new ConvertedStore[K,K,V1,V2](store)(identity[K])
-    MergeableStore.fromStore(cstore)
+    MergeableStoreAlgebra.fromStore(cstore)
   }
 
   def singleMergeableStoreTest[K: Arbitrary, V: Arbitrary: Monoid: Equiv](store: MergeableStore[K, V]) =

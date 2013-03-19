@@ -16,17 +16,18 @@
 
 package com.twitter.storehaus.algebra
 
-import com.twitter.storehaus.{ StoreProperties, JMapStore }
+import com.twitter.storehaus.{ JMapStore, MergeableStore, StoreProperties, UnpivotedStore }
 import org.scalacheck.Properties
 
 object UnpivotedStoreProperties extends Properties("UnpivotedStore") {
   import StoreProperties.storeTest
   import MergeableStoreProperties.{ newStore, mergeableStoreTest }
-  import MergeableStoreEnrichment._
+  import MergeableStore.enrich
 
   property("UnpivotedStore obeys the store properties") = storeTest {
-    val mergeableStore = MergeableStore.fromStore(new JMapStore[String, Map[Int, String]])
-    new UnpivotedStore[(String, Int), String, Int, String](mergeableStore)(identity)
+    new UnpivotedStore[(String, Int), String, Int, String](
+      new JMapStore[String, Map[Int, String]]
+    )(identity)
   }
 
   property("UnpivotedMergeableStore from JMapStore obeys the store laws") =

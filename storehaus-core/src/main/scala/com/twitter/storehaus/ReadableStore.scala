@@ -20,6 +20,9 @@ import com.twitter.util.Future
 import java.io.Closeable
 
 object ReadableStore {
+  implicit def enrich[K, V](store: ReadableStore[K, V]): EnrichedReadableStore[K, V] =
+    new EnrichedReadableStore(store)
+
   val empty: ReadableStore[Any, Nothing] = EmptyReadableStore
 
   /**
@@ -66,6 +69,10 @@ object ReadableStore {
 
   def andThen[K, V, V2, V3 >: V](l: ReadableStore[K, V], r: ReadableStore[V3, V2])(implicit fc: FutureCollector[V3]): ReadableStore[K, V2] =
     new ComposedStore[K, V, V2, V3](l, r)
+
+  def unpivot[K, OuterK, InnerK, V](store: ReadableStore[OuterK, Map[InnerK, V]])
+    (split: K => (OuterK, InnerK)): ReadableStore[K, V] =
+    new UnpivotedReadableStore(store)(split)
 
   def convert[K1, K2, V1, V2](store: ReadableStore[K1, V1])(kfn: K2 => K1)(vfn: V1 => Future[V2]): ReadableStore[K2, V2] =
     new ConvertedReadableStore(store)(kfn)(vfn)

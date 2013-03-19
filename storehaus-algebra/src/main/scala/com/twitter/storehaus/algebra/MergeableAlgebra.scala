@@ -16,14 +16,13 @@
 
 package com.twitter.storehaus.algebra
 
-import com.twitter.algebird.{ Monoid, StatefulSummer }
+import com.twitter.algebird.StatefulSummer
 import com.twitter.bijection.ImplicitBijection
-import com.twitter.util.Future
+import com.twitter.storehaus.Mergeable
 
-object Mergeable {
-  def unpivot[K, OuterK, InnerK, V: Monoid](mergeable: Mergeable[OuterK, Map[InnerK, V]])
-    (split: K => (OuterK, InnerK)): Mergeable[K, V] =
-    new UnpivotedMergeable(mergeable)(split)
+object MergeableAlgebra {
+  implicit def enrich[K, V](store: Mergeable[K, V]): AlgebraicMergeable[K, V] =
+    new AlgebraicMergeable(store)
 
   def withSummer[K, V](mergeable: Mergeable[K, V], summer: StatefulSummer[Map[K, V]]): Mergeable[K, V] =
     new BufferingMergeable(mergeable, summer)
@@ -33,8 +32,16 @@ object Mergeable {
     new ConvertedMergeable(mergeable)(kfn)
 }
 
-trait Mergeable[-K, V] extends java.io.Serializable {
-  def monoid: Monoid[V]
-  def merge(kv: (K, V)): Future[Unit] = multiMerge(Map(kv)).apply(kv._1)
-  def multiMerge[K1<:K](kvs: Map[K1,V]): Map[K1, Future[Unit]] = kvs.map { kv => (kv._1, merge(kv)) }
+class AlgebraicMergeable[K, V](wrapped: Mergeable[K, V]) {
+  def withSummer(summer: StatefulSummer[Map[K, V]]): Mergeable[K, V] =
+    MergeableAlgebra.withSummer(wrapped, summer)
+
+  def composeKeyMapping[K1](fn: K1 => K): Mergeable[K1, V] =
+    MergeableAlgebra.convert(wrapped)(fn)
+
+  def mapValues[V1](implicit bij: ImplicitBijection[V1, V]): Mergeable[K, V1] =
+    MergeableAlgebra.convert(wrapped)(identity[K])
+
+  def convert[K1, V1](fn: K1 => K)(implicit bij: ImplicitBijection[V1, V]): Mergeable[K1, V1] =
+    MergeableAlgebra.convert(wrapped)(fn)
 }

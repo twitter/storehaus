@@ -14,22 +14,12 @@
  * limitations under the License.
  */
 
-package com.twitter.storehaus.algebra
+package com.twitter.storehaus
 
-import com.twitter.algebird.Monoid
 import com.twitter.util.Future
-import com.twitter.storehaus.CollectionOps
-
-/**
-  * MergeableStore enrichment which presents a MergeableStore[K, V]
-  * over top of a packed MergeableStore[OuterK, Map[InnerK, V]].
-  *
-  * @author Sam Ritchie
-  */
 
 class UnpivotedMergeable[-K, OuterK, InnerK, V](wrapped: Mergeable[OuterK, Map[InnerK, V]])(split: K => (OuterK, InnerK))
-  (override implicit val monoid: Monoid[V])
-    extends Mergeable[K, V] {
+  extends Mergeable[K, V] {
 
   override def merge(pair: (K, V)): Future[Unit] = {
     val (k, v) = pair
@@ -49,14 +39,4 @@ class UnpivotedMergeable[-K, OuterK, InnerK, V](wrapped: Mergeable[OuterK, Map[I
         }
     }.toMap
   }
-}
-
-class UnpivotedMergeableStore[-K, OuterK, InnerK, V](store: MergeableStore[OuterK, Map[InnerK, V]])(split: K => (OuterK, InnerK))
-  (override implicit val monoid: Monoid[V])
-    extends UnpivotedStore[K, OuterK, InnerK, V](store)(split)
-    with MergeableStore[K, V] {
-  protected val unpivotedMergeable = new UnpivotedMergeable(store)(split)
-  override def merge(pair: (K, V)): Future[Unit] = unpivotedMergeable.merge(pair)
-  override def multiMerge[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Unit]] = unpivotedMergeable.multiMerge(kvs)
-  override def close { store.close }
 }

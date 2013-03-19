@@ -16,8 +16,7 @@
 
 package com.twitter.storehaus.algebra.query
 
-import com.twitter.storehaus.{ReadableStore, AbstractReadableStore}
-import com.twitter.storehaus.algebra.Mergeable
+import com.twitter.storehaus.{ ReadableStore, AbstractReadableStore, Mergeable }
 
 import com.twitter.algebird.{Semigroup, Monoid}
 import com.twitter.algebird.MapAlgebra
@@ -83,10 +82,8 @@ object QueryStrategy extends Serializable {
         multiSum(qset, qs.query _, rs.multiGet[X] _)
     }
 
-  def index[Q,L,X,V](qs: QueryStrategy[Q,L,X], ms: Mergeable[X,V]): Mergeable[L,V] = {
+  def index[Q,L,X,V: Monoid](qs: QueryStrategy[Q,L,X], ms: Mergeable[X,V]): Mergeable[L,V] = {
     new Mergeable[L,V] {
-      implicit def monoid = ms.monoid
-
       override def multiMerge[L1<:L](kvs: Map[L1,V]): Map[L1, Future[Unit]] = {
         // Need this to collect the futures for each L1:
         val x2lv: Map[X,(Set[L1], V)] = Monoid.sum {

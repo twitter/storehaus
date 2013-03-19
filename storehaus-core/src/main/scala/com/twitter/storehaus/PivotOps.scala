@@ -14,15 +14,9 @@
  * limitations under the License.
  */
 
-package com.twitter.storehaus.algebra
+package com.twitter.storehaus
 
-import com.twitter.algebird.Monoid
-import com.twitter.algebird.util.UtilAlgebras._
-import com.twitter.bijection.Pivot
 import com.twitter.util.Future
-import com.twitter.storehaus.{
-  CollectionOps, FutureCollector, FutureOps, ReadableStore, Store
-}
 
 /**
  * Methods used in the various unpivot stores.
@@ -44,7 +38,7 @@ object PivotOps {
       .map { case (outerK, futureOptV) =>
         outerK -> futureOptV.map { optV =>
           optV.map { _.filterKeys { pred(outerK, _) }.toList }
-            .filter { _.isEmpty }
+            .filter { !_.isEmpty }
         }
       }
 
@@ -56,27 +50,43 @@ object PivotOps {
     pivoted.mapValues { m =>
       Future.value {
         Some(m.collect { case (innerK, Some(v)) => innerK -> v }.toList)
-          .filter { _.isEmpty }
+          .filter { !_.isEmpty }
       }
     }
 
   type InnerPair[OuterK, InnerK, V] = (OuterK, Option[Map[InnerK,V]])
 
-  def multiPut[K, K1 <: K, OuterK, InnerK, V](
-    store: Store[OuterK, Map[InnerK, V]],
-    kvs: Map[K1, Option[V]]
-  )(
-    split: K => (OuterK, InnerK)
-  )(implicit collect: FutureCollector[InnerPair[OuterK, InnerK, V]]): Map[K1, Future[Unit]] = {
+  /**
+    * Really belongs in Algebird, but recoding this explicitly keeps the dependency out.
+    */
+  private def plusM[K, V](
+    l: Map[K, Future[Option[List[V]]]],
+    r: Map[K, Future[Option[List[V]]]]
+  ): Map[K, Future[Option[List[V]]]] =
+    (r /: l) { case (m, (k, futureOptV)) =>
+        val newV = for {
+          leftOptV <- futureOptV
+          rightOptV <- m.getOrElse(k, Future.None)
+        } yield (leftOptV, rightOptV) match {
+          case (None, None) => None
+          case (None, Some(v)) => Some(v)
+          case (Some(v), None) => Some(v)
+          case (Some(l), Some(r)) => Some(l ++ r)
+        }
+        m + (k -> newV)
+    }
+
+  def multiPut[K, K1 <: K, OuterK, InnerK, V](store: Store[OuterK, Map[InnerK, V]], kvs: Map[K1, Option[V]])
+    (split: K => (OuterK, InnerK))
+    (implicit collect: FutureCollector[InnerPair[OuterK, InnerK, V]]): Map[K1, Future[Unit]] = {
     val pivoted = CollectionOps.pivotMap[K1, OuterK, InnerK, Option[V]](kvs)(split)
 
     // Input data merged with all relevant data from the underlying
     // store.
     val mergedResult: Map[OuterK, Future[Option[Map[InnerK, V]]]] =
-      Monoid.plus(
+      plusM(
         multiGetFiltered(store, pivoted.keySet) { case (outerK, innerK) =>
-            val pivotedInnerM = pivoted(outerK)
-            pivotedInnerM.contains(innerK) && !pivotedInnerM(innerK).isDefined
+            !pivoted(outerK).contains(innerK)
         },
         collectPivoted(pivoted)
       ).mapValues { _.map { _.map { _.toMap } } }
