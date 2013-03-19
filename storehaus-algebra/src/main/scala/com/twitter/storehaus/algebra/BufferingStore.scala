@@ -16,14 +16,17 @@
 
 package com.twitter.storehaus.algebra
 
-import com.twitter.algebird.StatefulSummer
-import com.twitter.util.Future
-import com.twitter.storehaus.{ FutureOps, FutureCollector, MergeableStore }
+import com.twitter.algebird.{ Monoid, StatefulSummer }
+import com.twitter.util.{ Future, Promise }
+import com.twitter.storehaus.{ FutureOps, FutureCollector }
+import scala.collection.mutable.{ Map => MMap }
 
 class BufferingStore[-K, V](store: MergeableStore[K, V], summer: StatefulSummer[Map[K, V]])
-  extends BufferingMergeable[K, V](store, summer)
-  with MergeableStore[K, V] {
+  extends MergeableStore[K, V] {
+  private val promiseMap = MMap[Any, Promise[Unit]]()
   protected implicit val collector = FutureCollector.bestEffort[(Any, Unit)]
+
+  override val monoid: Monoid[V] = store.monoid
 
   override def get(k: K): Future[Option[V]] =
     summer.flush
@@ -44,4 +47,30 @@ class BufferingStore[-K, V](store: MergeableStore[K, V], summer: StatefulSummer[
 
   override def multiPut[K1 <: K](kvs: Map[K1, Option[V]]) =
     FutureOps.liftFutureValues(kvs.keySet, flush.map { _ => store.multiPut(kvs) })
+
+  def flush(implicit collect: FutureCollector[(Any, Unit)]): Future[Unit] =
+    summer.flush
+      .map { m => FutureOps.mapCollect(store.multiMerge(m)).unit }
+      .getOrElse(Future.Unit)
+
+  protected def multiPromise[K1 <: K](ks: Set[K1]): Map[K1, Promise[Unit]] = {
+    ks.map { k =>
+      k -> promiseMap.getOrElseUpdate(k, new Promise[Unit])
+    }.toMap
+  }
+
+  protected def multiFulfill[K1 <: K](m: Map[K1, Future[Unit]]): Map[K1, Future[Unit]] = {
+    m.foreach { case (k, futureUnit) => promiseMap(k).become(futureUnit) }
+    promiseMap --= m.keySet
+    m
+  }
+
+  protected def mergeAndFulfill[K1 <: K](m: Map[K1, V]) = multiFulfill(store.multiMerge(m))
+
+  override def merge(pair: (K, V)): Future[Unit] = multiMerge(Map(pair))(pair._1)
+  override def multiMerge[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Unit]] = {
+    val result: Map[K1, Future[Unit]] = multiPromise(kvs.keySet)
+    summer.put(kvs.asInstanceOf[Map[K, V]]).foreach { mergeAndFulfill(_) }
+    result
+  }
 }

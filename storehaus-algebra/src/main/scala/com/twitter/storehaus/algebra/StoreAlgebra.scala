@@ -18,7 +18,7 @@ package com.twitter.storehaus.algebra
 
 import com.twitter.algebird.Monoid
 import com.twitter.bijection.Injection
-import com.twitter.storehaus.{ FutureCollector, Store, MergeableStore }
+import com.twitter.storehaus.{ FutureCollector, Store }
 import com.twitter.util.Future
 
 /**
@@ -28,13 +28,14 @@ object StoreAlgebra {
   implicit def enrich[K, V](store: Store[K, V]): AlgebraicStore[K, V] =
     new AlgebraicStore(store)
 
-  def convert[K1, K2, V1, V2](store: Store[K1, V1])(kfn: K2 => K1)(implicit inj: Injection[V2, V1]): Store[K2, V2] =
+  def convert[K1, K2, V1, V2](store: Store[K1, V1])(kfn: K2 => K1)
+    (implicit inj: Injection[V2, V1]): Store[K2, V2] =
     new ConvertedStore(store)(kfn)
 }
 
 class AlgebraicStore[K, V](store: Store[K, V]) {
   def toMergeable(implicit mon: Monoid[V], fc: FutureCollector[(K, Option[V])]): MergeableStore[K, V] =
-    MergeableStoreAlgebra.fromStore(store)
+    MergeableStore.fromStore(store)
 
   def composeKeyMapping[K1](fn: K1 => K): Store[K1, V] = StoreAlgebra.convert(store)(fn)
 

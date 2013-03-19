@@ -23,7 +23,7 @@ import org.scalacheck.Properties
 object BufferingStoreProperties extends Properties("BufferingStore") {
   import StoreProperties.storeTest
   import MergeableStoreProperties.{ mergeableStoreTest, newStore }
-  import MergeableStoreAlgebra.enrich
+  import MergeableStore.enrich
 
   property("BufferingStore obeys the store properties") = storeTest {
     newStore[String, Map[Int, String]].withSummer(SummingQueue[Map[String, Map[Int, String]]](10))

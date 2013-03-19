@@ -67,12 +67,12 @@ object MergeableStoreProperties extends Properties("MergeableStore") {
     }
 
   def newStore[K, V: Monoid]: MergeableStore[K, V] =
-    MergeableStoreAlgebra.fromStore(new JMapStore[K, V])
+    MergeableStore.fromStore(new JMapStore[K, V])
 
   def newConvertedStore[K,V1,V2](implicit inj: Injection[V2,V1], monoid: Monoid[V2]): MergeableStore[K,V2] = {
     val store = new JMapStore[K, V1]
     val cstore = new ConvertedStore[K,K,V1,V2](store)(identity[K])
-    MergeableStoreAlgebra.fromStore(cstore)
+    MergeableStore.fromStore(cstore)
   }
 
   def singleMergeableStoreTest[K: Arbitrary, V: Arbitrary: Monoid: Equiv](store: MergeableStore[K, V]) =

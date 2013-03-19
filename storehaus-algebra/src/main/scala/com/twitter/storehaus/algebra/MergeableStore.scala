@@ -18,12 +18,18 @@ package com.twitter.storehaus.algebra
 
 import com.twitter.algebird.{ Semigroup, Monoid, StatefulSummer }
 import com.twitter.bijection.ImplicitBijection
-import com.twitter.storehaus.{ FutureCollector, Store, MergeableStore }
+import com.twitter.storehaus.{ FutureCollector, Store }
 import com.twitter.util.Future
 
-object MergeableStoreAlgebra {
-  implicit def enrich[K, V](store: MergeableStore[K, V]): AlgebraicMergeableStore[K, V] =
-    new AlgebraicMergeableStore(store)
+trait MergeableStore[-K, V] extends Store[K, V] {
+  def monoid: Monoid[V]
+  def merge(kv: (K, V)): Future[Unit] = multiMerge(Map(kv)).apply(kv._1)
+  def multiMerge[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Unit]] = kvs.map { kv => (kv._1, merge(kv)) }
+}
+
+object MergeableStore {
+  implicit def enrich[K, V](store: MergeableStore[K, V]): EnrichedMergeableStore[K, V] =
+    new EnrichedMergeableStore(store)
 
     /**
     * Implements multiMerge functionality in terms of an underlying
@@ -46,6 +52,10 @@ object MergeableStoreAlgebra {
     }.toMap
   }
 
+  def unpivot[K, OuterK, InnerK, V: Monoid](store: MergeableStore[OuterK, Map[InnerK, V]])
+    (split: K => (OuterK, InnerK)): MergeableStore[K, V] =
+    new UnpivotedMergeableStore(store)(split)
+
   def fromStore[K,V](store: Store[K,V])(implicit mon: Monoid[V], fc: FutureCollector[(K, Option[V])]): MergeableStore[K,V] =
     new MergeableMonoidStore[K, V](store, fc)
 
@@ -55,18 +65,4 @@ object MergeableStoreAlgebra {
   def convert[K1, K2, V1, V2](store: MergeableStore[K1, V1])(kfn: K2 => K1)
     (implicit bij: ImplicitBijection[V2, V1]): MergeableStore[K2, V2] =
     new ConvertedMergeableStore(store)(kfn)
-}
-
-class AlgebraicMergeableStore[K, V](store: MergeableStore[K, V]) {
-  def withSummer(summer: StatefulSummer[Map[K, V]]): MergeableStore[K, V] =
-    MergeableStoreAlgebra.withSummer(store, summer)
-
-  def composeKeyMapping[K1](fn: K1 => K): MergeableStore[K1, V] =
-    MergeableStoreAlgebra.convert(store)(fn)
-
-  def mapValues[V1](implicit bij: ImplicitBijection[V1, V]): MergeableStore[K, V1] =
-    MergeableStoreAlgebra.convert(store)(identity[K])
-
-  def convert[K1, V1](fn: K1 => K)(implicit bij: ImplicitBijection[V1, V]): MergeableStore[K1, V1] =
-    MergeableStoreAlgebra.convert(store)(fn)
 }

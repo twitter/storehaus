@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus.algebra
 
-import com.twitter.storehaus.{ JMapStore, MergeableStore, StoreProperties, UnpivotedStore }
+import com.twitter.storehaus.{ JMapStore, StoreProperties, UnpivotedStore }
 import org.scalacheck.Properties
 
 object UnpivotedStoreProperties extends Properties("UnpivotedStore") {

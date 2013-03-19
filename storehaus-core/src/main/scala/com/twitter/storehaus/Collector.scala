@@ -16,13 +16,8 @@
 
 package com.twitter.storehaus
 
-trait MergeableStore[-K, V] extends Mergeable[K,V] with Store[K, V]
+import com.twitter.util.Future
 
-object MergeableStore {
-  implicit def enrich[K, V](store: MergeableStore[K, V]): EnrichedMergeableStore[K, V] =
-    new EnrichedMergeableStore(store)
-
-  def unpivot[K, OuterK, InnerK, V](store: MergeableStore[OuterK, Map[InnerK, V]])
-    (split: K => (OuterK, InnerK)): MergeableStore[K, V] =
-    new UnpivotedMergeableStore(store)(split)
+trait Collector[-T] {
+  def collect(ts: TraversableOnce[T]): Future[Unit]
 }
