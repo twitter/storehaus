@@ -26,10 +26,16 @@ object BufferingStoreProperties extends Properties("BufferingStore") {
   import MergeableStore.enrich
 
   property("BufferingStore obeys the store properties") = storeTest {
-    newStore[String, Map[Int, String]].withSummer(SummingQueue[Map[String, Map[Int, String]]](10))
+    newStore[String, Map[Int, String]].withSummer { monoid =>
+      implicit val m = monoid
+      SummingQueue[Map[String, Map[Int, String]]](10)
+    }
   }
 
   property("BufferingStore obeys the store laws") = mergeableStoreTest {
-    newStore[String, Map[String, Int]].withSummer(SummingQueue[Map[String, Map[String, Int]]](10))
+    newStore[String, Map[String, Int]].withSummer { monoid =>
+      implicit val m = monoid
+      SummingQueue[Map[String, Map[String, Int]]](10)
+    }
   }
 }

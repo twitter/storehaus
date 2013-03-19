@@ -59,8 +59,8 @@ object MergeableStore {
   def fromStore[K,V](store: Store[K,V])(implicit mon: Monoid[V], fc: FutureCollector[(K, Option[V])]): MergeableStore[K,V] =
     new MergeableMonoidStore[K, V](store, fc)
 
-  def withSummer[K, V](store: MergeableStore[K, V], summer: StatefulSummer[Map[K, V]]): MergeableStore[K, V] =
-    new BufferingStore(store, summer)
+  def withSummer[K, V](store: MergeableStore[K, V])(summerCons: Monoid[V] => StatefulSummer[Map[K, V]]): MergeableStore[K, V] =
+    new BufferingStore(store, summerCons)
 
   def convert[K1, K2, V1, V2](store: MergeableStore[K1, V1])(kfn: K2 => K1)
     (implicit bij: ImplicitBijection[V2, V1]): MergeableStore[K2, V2] =

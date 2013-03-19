@@ -25,8 +25,8 @@ class EnrichedMergeableStore[K, V](store: MergeableStore[K, V]) {
       : MergeableStore[CombinedK, InnerV] =
     MergeableStore.unpivot(store.asInstanceOf[MergeableStore[K, Map[InnerK, InnerV]]])(split)
 
-  def withSummer(summer: StatefulSummer[Map[K, V]]): MergeableStore[K, V] =
-    MergeableStore.withSummer(store, summer)
+  def withSummer(summerCons: Monoid[V] => StatefulSummer[Map[K, V]]): MergeableStore[K, V] =
+    MergeableStore.withSummer(store)(summerCons)
 
   def composeKeyMapping[K1](fn: K1 => K): MergeableStore[K1, V] =
     MergeableStore.convert(store)(fn)

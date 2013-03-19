@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus.algebra.query
 
-import com.twitter.storehaus.{ AbstractReadableStore, Collector, FutureOps, ReadableStore }
+import com.twitter.storehaus.{ AbstractReadableStore, FutureOps, ReadableStore }
 import com.twitter.storehaus.algebra.MergeableStore
 
 import com.twitter.algebird.{Semigroup, Monoid}
@@ -79,15 +79,13 @@ object QueryStrategy extends Serializable {
         multiSum(qset, qs.query _, rs.multiGet[X] _)
     }
 
-  def index[Q,L,X,V](qs: QueryStrategy[Q,L,X], ms: MergeableStore[X,V]): Collector[(L,V)] = {
-    new Collector[(L, V)] {
-      implicit val m: Monoid[V] = ms.monoid
-      override def collect(ts: TraversableOnce[(L, V)]): Future[Unit] = {
-        val summed: Map[X, V] = Monoid.sum {
-          ts.flatMap { case (l,v) => qs.index(l).map { x => Map(x -> v) } }
-        }
-        FutureOps.mapCollect(ms.multiMerge(summed)).unit
-      }
+  // TODO: Think about whether we need to return some sort of Sink
+  // type vs a Function1.
+  def index[Q,L,X,V](qs: QueryStrategy[Q,L,X], ms: MergeableStore[X,V]): (TraversableOnce[(L, V)] => Future[Unit]) = { ts =>
+    implicit val m: Monoid[V] = ms.monoid
+    val summed: Map[X, V] = Monoid.sum {
+      ts.flatMap { case (l,v) => qs.index(l).map { x => Map(x -> v) } }
     }
+    FutureOps.mapCollect(ms.multiMerge(summed)).unit
   }
 }

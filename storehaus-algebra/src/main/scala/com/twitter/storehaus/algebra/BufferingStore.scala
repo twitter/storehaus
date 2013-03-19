@@ -21,10 +21,11 @@ import com.twitter.util.{ Future, Promise }
 import com.twitter.storehaus.{ FutureOps, FutureCollector }
 import scala.collection.mutable.{ Map => MMap }
 
-class BufferingStore[-K, V](store: MergeableStore[K, V], summer: StatefulSummer[Map[K, V]])
+class BufferingStore[K, V](store: MergeableStore[K, V], summerCons: Monoid[V] => StatefulSummer[Map[K, V]])
   extends MergeableStore[K, V] {
   private val promiseMap = MMap[Any, Promise[Unit]]()
   protected implicit val collector = FutureCollector.bestEffort[(Any, Unit)]
+  protected val summer: StatefulSummer[Map[K, V]] = summerCons(store.monoid)
 
   override val monoid: Monoid[V] = store.monoid
 
