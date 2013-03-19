@@ -21,6 +21,9 @@ import com.twitter.algebird.Monoid
 import com.twitter.util.Future
 
 /** A combinator to produce an inverted indexed as you are merging
+ * TODO: this is not thread safe, gets and puts are separated.
+ * we need to either add semantics to those APIs, or figure out
+ * how to write all of these operations as merge
  */
 object IndexedStore {
   // We totally own writes to store and index or shit busts, ONLY READ from the input stores after this call
