@@ -22,6 +22,12 @@ import com.twitter.util.Future
 
 import Conversion.asMethod
 
+/**
+  * Caveat Emptor! The monoid on the resulting
+  * `ConvertedMergeableStore` will be the bijected monoid from
+  * Monoid[V1] => Monoid[V2]. This will not necessarily result in the
+  * behavior you'd expect.
+  */
 class ConvertedMergeableStore[K1, -K2, V1, V2](store: MergeableStore[K1, V1])(kfn: K2 => K1)
   (implicit bij: ImplicitBijection[V2, V1])
   extends ConvertedStore[K1, K2, V1, V2](store)(kfn)(Injection.fromBijection(bij.bijection))
