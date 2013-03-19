@@ -16,8 +16,8 @@
 
 package com.twitter.storehaus.algebra.query
 
-import com.twitter.storehaus.{ReadableStore, AbstractReadableStore}
-import com.twitter.storehaus.algebra.Mergeable
+import com.twitter.storehaus.{ AbstractReadableStore, FutureOps, ReadableStore }
+import com.twitter.storehaus.algebra.MergeableStore
 
 import com.twitter.algebird.{Semigroup, Monoid}
 import com.twitter.algebird.MapAlgebra
@@ -67,10 +67,6 @@ object QueryStrategy extends Serializable {
   protected def sumValues[K,V:Monoid](ks: Set[K], m: Map[K,V]): V =
     Monoid.sum(ks.flatMap { m.get(_) })
 
-  // TODO: This is added to algebird, use that when a new version is available
-  protected def invertMap[K,V](m: Map[K,Set[V]]): Map[V,Set[K]] =
-    Monoid.sum(m.toIterable.flatMap { case (k,sv) => sv.map { v => Map(v -> Set(k)) } })
-
   def query[Q,L,X,V:Semigroup](qs: QueryStrategy[Q,L,X], rs: ReadableStore[X,V]): ReadableStore[Q,V] =
     new AbstractReadableStore[Q,V] {
       override def get(q: Q): Future[Option[V]] = {
@@ -83,22 +79,13 @@ object QueryStrategy extends Serializable {
         multiSum(qset, qs.query _, rs.multiGet[X] _)
     }
 
-  def index[Q,L,X,V](qs: QueryStrategy[Q,L,X], ms: Mergeable[X,V]): Mergeable[L,V] = {
-    new Mergeable[L,V] {
-      implicit def monoid = ms.monoid
-
-      override def multiMerge[L1<:L](kvs: Map[L1,V]): Map[L1, Future[Unit]] = {
-        // Need this to collect the futures for each L1:
-        val x2lv: Map[X,(Set[L1], V)] = Monoid.sum {
-          kvs.toIterable.flatMap { case (l,v) => qs.index(l).map { x => Map(x -> (Set(l),v)) } }
-        }
-        val xfMap: Map[X,Future[Unit]] = ms.multiMerge(x2lv.mapValues { _._2 })
-        invertMap(x2lv.mapValues { _._1 }).mapValues { xs =>
-          // Collect all the futures for a given l to a Future[Seq[Unit]]
-          // then convert Seq[Unit] => Unit
-          Future.collect(xs.map { x => xfMap(x) }.toSeq).map { _ => () }
-        }
-      }
+  // TODO: Think about whether we need to return some sort of Sink
+  // type vs a Function1.
+  def index[Q,L,X,V](qs: QueryStrategy[Q,L,X], ms: MergeableStore[X,V]): (TraversableOnce[(L, V)] => Future[Unit]) = { ts =>
+    implicit val m: Monoid[V] = ms.monoid
+    val summed: Map[X, V] = Monoid.sum {
+      ts.flatMap { case (l,v) => qs.index(l).map { x => Map(x -> v) } }
     }
+    FutureOps.mapCollect(ms.multiMerge(summed)).unit
   }
 }

@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package com.twitter.storehaus.algebra
+package com.twitter.storehaus
 
 import com.twitter.util.Future
-import com.twitter.storehaus.{ FutureCollector, Store }
 
 /**
  * Store enrichment which presents a Store[K, V] over top of a packed
@@ -27,7 +26,7 @@ import com.twitter.storehaus.{ FutureCollector, Store }
  */
 
 class UnpivotedStore[-K, OuterK, InnerK, V](store: Store[OuterK, Map[InnerK, V]])(split: K => (OuterK, InnerK))
-  extends UnpivotedReadableStore[K, OuterK, InnerK, V](store)(split)
+    extends UnpivotedReadableStore[K, OuterK, InnerK, V](store)(split)
   with Store[K, V] {
 
   override def put(pair: (K, Option[V])) = {

@@ -18,7 +18,7 @@ package com.twitter.storehaus
 
 import com.twitter.util.Future
 
-class IndexedSeqReadableStore[V](iseq: IndexedSeq[V]) extends ReadableStore[Int, V] {
+class IndexedSeqReadableStore[+V](iseq: IndexedSeq[V]) extends ReadableStore[Int, V] {
   override def get(idx: Int) = if (idx >= 0 && idx < iseq.size) {
     Future.value(Some(iseq(idx)))
   } else Future.None

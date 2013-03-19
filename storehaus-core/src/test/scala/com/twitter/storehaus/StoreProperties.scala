@@ -18,25 +18,32 @@ package com.twitter.storehaus
 
 import com.twitter.util.Future
 
-import org.scalacheck.Arbitrary
-import org.scalacheck.Properties
-import org.scalacheck.Prop.forAll
+import org.scalacheck.{ Arbitrary, Properties }
 import org.scalacheck.Gen.choose
 import org.scalacheck.Prop._
 
 object StoreProperties extends Properties("Store") {
-  // Adds a bunch of items and removes them and sees if they are absent
-  def storeTest[K, V](store: Store[K, V])
-    (implicit arbk: Arbitrary[K], arbv: Arbitrary[V]) =
-    forAll { (examples: List[(K,V)]) =>
-      examples.forall { (kv) =>
-        store.put((kv._1, Some(kv._2))).get // force the future
-        store.get(kv._1).get == Some(kv._2)
-      } && examples.forall { kv =>
-        store.put((kv._1, None)).get // force the future
-        store.get(kv._1).get == None
+  def baseTest[K: Arbitrary, V: Arbitrary: Equiv](store: Store[K, V])
+    (put: (Store[K, V], List[(K, Option[V])]) => Unit) =
+    forAll { (examples: List[(K, Option[V])]) =>
+      put(store, examples)
+      examples.toMap.forall { case (k, optV) =>
+          Equiv[Option[V]].equiv(store.get(k).get, optV)
       }
     }
+
+  def putStoreTest[K: Arbitrary, V: Arbitrary: Equiv](store: Store[K, V]) =
+    baseTest(store) { (s, pairs) =>
+      pairs.foreach { s.put(_).get }
+    }
+
+  def multiPutStoreTest[K: Arbitrary, V: Arbitrary: Equiv](store: Store[K, V]) =
+    baseTest(store) { (s, pairs) =>
+      FutureOps.mapCollect(s.multiPut(pairs.toMap)).get
+    }
+
+  def storeTest[K: Arbitrary, V: Arbitrary: Equiv](store: Store[K, V]) =
+    putStoreTest(store) && multiPutStoreTest(store)
 
   property("multiGet returns Some(Future(None)) for missing keys") =
     forAll { (m: Map[String, Int]) =>

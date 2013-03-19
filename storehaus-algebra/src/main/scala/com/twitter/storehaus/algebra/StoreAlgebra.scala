@@ -25,22 +25,17 @@ import com.twitter.util.Future
   * Enrichments on Store.
   */
 object StoreAlgebra {
-  implicit def enrichStore[K, V](store: Store[K, V]): AlgebraicStore[K, V] =
-    new AlgebraicStore[K, V](store)
+  implicit def enrich[K, V](store: Store[K, V]): AlgebraicStore[K, V] =
+    new AlgebraicStore(store)
 
-  def unpivot[K, OuterK, InnerK, V](store: Store[OuterK, Map[InnerK, V]])(split: K => (OuterK, InnerK)): Store[K, V] =
-    new UnpivotedStore(store)(split)
-
-  def convert[K1, K2, V1, V2](store: Store[K1, V1])(kfn: K2 => K1)(implicit inj: Injection[V2, V1]): Store[K2, V2] =
+  def convert[K1, K2, V1, V2](store: Store[K1, V1])(kfn: K2 => K1)
+    (implicit inj: Injection[V2, V1]): Store[K2, V2] =
     new ConvertedStore(store)(kfn)
 }
 
 class AlgebraicStore[K, V](store: Store[K, V]) {
   def toMergeable(implicit mon: Monoid[V], fc: FutureCollector[(K, Option[V])]): MergeableStore[K, V] =
     MergeableStore.fromStore(store)
-
-  def unpivot[CombinedK, InnerK, InnerV](split: CombinedK => (K, InnerK))(implicit ev: V <:< Map[InnerK, InnerV]): Store[CombinedK, InnerV] =
-    StoreAlgebra.unpivot(store.asInstanceOf[Store[K, Map[InnerK, InnerV]]])(split)
 
   def composeKeyMapping[K1](fn: K1 => K): Store[K1, V] = StoreAlgebra.convert(store)(fn)
 
