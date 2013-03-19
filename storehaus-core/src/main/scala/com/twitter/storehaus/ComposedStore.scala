@@ -19,7 +19,7 @@ package com.twitter.storehaus
 import com.twitter.util.Future
 import java.io.Closeable
 
-class ComposedStore[K, V, V2, V3 >: V](l: ReadableStore[K, V], r: ReadableStore[V3, V2])(implicit fc: FutureCollector[V3])
+class ComposedStore[-K, V, V2, V3 >: V](l: ReadableStore[K, V], r: ReadableStore[V3, V2])(implicit fc: FutureCollector[V3])
   extends AbstractReadableStore[K, V2] {
   override def get(k: K) =
     for (

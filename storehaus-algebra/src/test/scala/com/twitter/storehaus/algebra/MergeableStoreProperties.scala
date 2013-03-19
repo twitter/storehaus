@@ -19,10 +19,10 @@ package com.twitter.storehaus.algebra
 import com.twitter.algebird.{ MapAlgebra, Monoid, SummingQueue }
 import com.twitter.bijection.algebird.AlgebirdBijections._
 import com.twitter.bijection.Injection
+import com.twitter.storehaus._
 import org.scalacheck.{ Arbitrary, Properties }
 import org.scalacheck.Prop._
 import org.scalacheck.Properties
-import com.twitter.storehaus.{ Store, JMapStore, FutureOps }
 
 object MergeableStoreProperties extends Properties("MergeableStore") {
   def rightContainsLeft[K,V: Equiv](l: Map[K, V], r: Map[K, V]): Boolean =

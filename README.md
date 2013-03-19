@@ -29,19 +29,15 @@ The `ReadableStore` trait uses the `Future[Option[V]]` return type to communicat
 
 The [`ReadableStore`](http://twitter.github.com/storehaus/#com.twitter.storehaus.ReadableStore$) and [`Store`](http://twitter.github.com/storehaus/#com.twitter.storehaus.Store$) companion objects provide a bunch of ways to create new stores. See the linked API documentation for more information.
 
-### Storehaus-Algebra
+### Combinators
 
-`storehaus-core` helps you create stores; `storehaus-algebra` gives you the tools to combine stores in interesting ways.
-
-#### It's the combinators, stupid!
-
-Coding with Storehaus's interfaces gives you access to a number of powerful combinators. The easiest way to access these combinators is by wrapping your store in an [`AlgebraicReadableStore`](http://twitter.github.com/storehaus/#com.twitter.storehaus.algebra.AlgebraicReadableStore) or an [`AlgebraicStore`](http://twitter.github.com/storehaus/#com.twitter.storehaus.algebra.AlgebraicStore). Storehaus provides implicit conversions inside of the [`ReadableStoreAlgebra`](http://twitter.github.com/storehaus/#com.twitter.storehaus.algebra.ReadableStoreAlgebra$) and [`StoreAlgebra`](http://twitter.github.com/storehaus/#com.twitter.storehaus.algebra.StoreAlgebra$) objects.
+Coding with Storehaus's interfaces gives you access to a number of powerful combinators. The easiest way to access these combinators is by wrapping your store in an [`EnrichedReadableStore`](http://twitter.github.com/storehaus/#com.twitter.storehaus.EnrichedReadableStore) or an [`EnrichedStore`](http://twitter.github.com/storehaus/#com.twitter.storehaus.EnrichedStore). Storehaus provides implicit conversions inside of the [`ReadableStore`](http://twitter.github.com/storehaus/#com.twitter.storehaus.ReadableStore$) and [`Store`](http://twitter.github.com/storehaus/#com.twitter.storehaus.Store$) objects.
 
 Here's an example of the `mapValues` combinator, useful for transforming the type of an existing store.
 
 ```scala
 import com.twitter.storehaus.ReadableStore
-import com.twitter.storehaus.algebra.ReadableStoreAlgebra._
+import ReadableStore.enrich
 
 // Create a ReadableStore from Int -> String:
 val store = ReadableStore.fromMap(Map[Int, String](1 -> "some value", 2 -> "other value"))
@@ -58,25 +54,23 @@ countStore.get(1).get
 // res6: Option[Int] = Some(10)
 ```
 
-#### MergeableStore
+### Storehaus-Algebra
 
-`storehaus-algebra` module defines two new traits: `Mergeable` and `MergeableStore`. If you're using key-value stores for aggregations, you're going to love `Mergeable`.
+`storehaus-algebra` module adds the `MergeableStore` trait. If you're using key-value stores for aggregations, you're going to love `MergeableStore`.
 
 ```scala
 package com.twitter.storehaus.algebra
 
-trait Mergeable[-K, V] extends java.io.Serializable {
+trait MergeableStore[-K, V] extends Store[K, V] {
   def monoid: Monoid[V]
-  def merge(kv: (K, V)): Future[Unit]
-  def multiMerge[K1 <: K](kvs: Map[K1,V]): Map[K1, Future[Unit]]
+  def merge(kv: (K, V)): Future[Unit] = multiMerge(Map(kv)).apply(kv._1)
+  def multiMerge[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Unit]] = kvs.map { kv => (kv._1, merge(kv)) }
 }
-
-trait MergeableStore[-K, V] extends Mergeable[K, V] with Store[K, V]
 ```
 
 `MergeableStore`'s `merge` and `multiMerge` are similar to `put` and `multiPut`; the difference is that values added with `merge` are added to the store's existing value. Because the addition is handled with a `Monoid[V]` from Twitter's [Algebird](https://github.com/twitter/algebird) project, it's easy to write stores that aggregate [Lists](http://twitter.github.com/algebird/#com.twitter.algebird.ListMonoid), [decayed values](http://twitter.github.com/algebird/#com.twitter.algebird.DecayedValue), even [HyperLogLog](http://twitter.github.com/algebird/#com.twitter.algebird.HyperLogLog$) instances.
 
-The [`Mergeable`](http://twitter.github.com/storehaus/#com.twitter.storehaus.algebra.Mergeable$) and [`MergeableStore`](http://twitter.github.com/storehaus/#com.twitter.storehaus.algebra.MergeableStore$) objects provide a number of combinators on these types. For ease of use, Storehaus provides implicit conversions to enrichments on `Mergeable` and `MergeableStore`. Access these by importing, respectively, `MergeableEnrichment.enrich` or `MergeableStoreEnrichment.enrich`.
+The [`MergeableStore`](http://twitter.github.com/storehaus/#com.twitter.storehaus.algebra.MergeableStore$) object provides a number of combinators on these stores. For ease of use, Storehaus provides an implicit conversion to an enrichment on `MergeableStore`. Access this by importing `MergeableStore.enrich`.
 
 ### Other Modules
 

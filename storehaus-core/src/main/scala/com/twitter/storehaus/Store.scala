@@ -21,6 +21,9 @@ import java.io.Closeable
 import java.util.{ Map => JMap }
 
 object Store {
+  implicit def enrich[K, V](store: Store[K, V]): EnrichedStore[K, V] =
+    new EnrichedStore[K, V](store)
+
   def fromJMap[K, V](m: JMap[K, Option[V]]): Store[K, V] = new JMapStore[K, V] {
     override val jstore = m
   }
@@ -34,6 +37,10 @@ object Store {
    */
   def first[K, V](stores: Seq[Store[K, V]])(implicit collect: FutureCollector[Unit]): Store[K, V] =
     new ReplicatedStore(stores)
+
+  def unpivot[K, OuterK, InnerK, V](store: Store[OuterK, Map[InnerK, V]])
+    (split: K => (OuterK, InnerK)): Store[K, V] =
+    new UnpivotedStore(store)(split)
 }
 
 trait Store[-K, V] extends ReadableStore[K, V] { self =>
