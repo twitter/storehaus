@@ -14,23 +14,21 @@
  * limitations under the License.
  */
 
-package com.twitter.storehaus.algebra
+package com.twitter.storehaus
 
-import com.twitter.bijection.ImplicitBijection
-import com.twitter.storehaus.Mergeable
 import com.twitter.util.Future
 
-class ConvertedMergeable[K1, -K2, V1, V2](wrapped: Mergeable[K1, V1])(kfn: K2 => K1)(implicit bij: ImplicitBijection[V2, V1])
+class ConvertedMergeable[K1, -K2, -V1, V2](wrapped: Mergeable[K1, V1])(kfn: K2 => K1)(vfn: V2 => V1)
   extends Mergeable[K2, V2] {
 
   override def merge(kv: (K2, V2)): Future[Unit] = {
     val k1 = kfn(kv._1)
-    val v1 = bij.bijection(kv._2)
-    wrapped.merge((k1, v1))
+    val v1 = vfn(kv._2)
+    wrapped.merge((k1 -> v1))
   }
 
   override def multiMerge[K3 <: K2](kvs: Map[K3, V2]): Map[K3, Future[Unit]] = {
-    val mapK1V1 = kvs.map { case (k3, v2) => (kfn(k3), bij.bijection(v2)) }
+    val mapK1V1 = kvs.map { case (k3, v2) => (kfn(k3), vfn(v2)) }
     val res: Map[K1, Future[Unit]] = wrapped.multiMerge(mapK1V1)
     kvs.keySet.map { k3 => (k3, res(kfn(k3))) }.toMap
   }

@@ -17,13 +17,13 @@
 package com.twitter.storehaus.algebra
 
 import com.twitter.bijection.{ Injection, ImplicitBijection }
-import com.twitter.storehaus.MergeableStore
+import com.twitter.storehaus.{ Mergeable, MergeableStore }
 import com.twitter.util.Future
 
 class ConvertedMergeableStore[K1, -K2, V1, V2](store: MergeableStore[K1, V1])(kfn: K2 => K1)(implicit bij: ImplicitBijection[V2, V1])
   extends ConvertedStore[K1, K2, V1, V2](store)(kfn)(Injection.fromBijection(bij.bijection))
   with MergeableStore[K2, V2] {
-  protected val convertedMergeable = new ConvertedMergeable(store)(kfn)
+  protected val convertedMergeable: Mergeable[K2, V2] = Mergeable.convert(store)(kfn) { bij.bijection(_) }
   override def merge(kv: (K2, V2)): Future[Unit] = convertedMergeable.merge(kv)
   override def multiMerge[K3 <: K2](kvs: Map[K3, V2]): Map[K3, Future[Unit]] = convertedMergeable.multiMerge(kvs)
   override def close { store.close }

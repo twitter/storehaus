@@ -16,9 +16,18 @@
 
 package com.twitter.storehaus
 
-class EnrichedMergeable[-K, V](store: Mergeable[K, V]) {
+class EnrichedMergeable[-K, V](wrapped: Mergeable[K, V]) {
   def unpivot[CombinedK, InnerK, InnerV](split: CombinedK => (K, InnerK))
     (implicit ev: V <:< Map[InnerK, InnerV])
       : Mergeable[CombinedK, InnerV] =
-    Mergeable.unpivot(store.asInstanceOf[Mergeable[K, Map[InnerK, InnerV]]])(split)
+    Mergeable.unpivot(wrapped.asInstanceOf[Mergeable[K, Map[InnerK, InnerV]]])(split)
+
+  def composeKeyMapping[K1](fn: K1 => K): Mergeable[K1, V] =
+    Mergeable.convert(wrapped)(fn)(identity)
+
+  def mapValues[V1](fn: V1 => V): Mergeable[K, V1] =
+    Mergeable.convert(wrapped)(identity[K])(fn)
+
+  def convert[K1, V1](kfn: K1 => K)(vfn: V1 => V): Mergeable[K1, V1] =
+    Mergeable.convert(wrapped)(kfn)(vfn)
 }

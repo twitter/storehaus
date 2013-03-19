@@ -25,6 +25,9 @@ object Mergeable {
   def unpivot[K, OuterK, InnerK, V](mergeable: Mergeable[OuterK, Map[InnerK, V]])
     (split: K => (OuterK, InnerK)): Mergeable[K, V] =
     new UnpivotedMergeable(mergeable)(split)
+
+  def convert[K1, K2, V1, V2](mergeable: Mergeable[K1, V1])(kfn: K2 => K1)(vfn: V2 => V1): Mergeable[K2, V2] =
+    new ConvertedMergeable(mergeable)(kfn)(vfn)
 }
 
 trait Mergeable[-K, V] extends java.io.Serializable {
