@@ -19,6 +19,9 @@ package com.twitter.storehaus
 import com.twitter.util.Future
 
 class EnrichedReadableStore[-K, +V](store: ReadableStore[K, V]) {
+  def andThen[V2, K1 >: V](other: ReadableStore[K1, V2])(implicit fc: FutureCollector[K1]): ReadableStore[K, V2] =
+    new ComposedStore[K, V, V2, K1](store, other)
+
   def unpivot[CombinedK, InnerK, InnerV](split: CombinedK => (K, InnerK))
     (implicit ev: V <:< Map[InnerK, InnerV])
       : ReadableStore[CombinedK, InnerV] =
