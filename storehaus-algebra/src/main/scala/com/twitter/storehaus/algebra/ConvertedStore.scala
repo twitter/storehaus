@@ -20,6 +20,11 @@ import com.twitter.bijection.Injection
 import com.twitter.storehaus.{ ConvertedReadableStore, Store }
 import com.twitter.util.Future
 
+/** Use an injection on V2,V1 to convert a store of values V2.
+ * If the value stored in the underlying store cannot be converted back to V2, then you will get a Future.exception
+ * containing the string "cannot be converted"
+ * TODO: we should add a specific exception type here so we can safely filter these cases to Future.None if we so choose.
+ */
 class ConvertedStore[K1, -K2, V1, V2](store: Store[K1, V1])(kfn: K2 => K1)(implicit inj: Injection[V2, V1])
   extends ConvertedReadableStore[K1, K2, V1, V2](store)(kfn)({ v1: V1 =>
     inj.invert(v1).map { Future.value(_) }
