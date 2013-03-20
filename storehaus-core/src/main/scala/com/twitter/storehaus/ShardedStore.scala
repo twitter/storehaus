@@ -96,9 +96,8 @@ class ShardedStore[-K1,-K2,V, +S <: Store[K2,V]](routes: ReadableStore[K1, S]) e
   }
   override def multiPut[T<:(K1,K2)](kvs: Map[T, Option[V]]): Map[T, Future[Unit]] = {
     val pivoted: Map[K1,Map[K2, Option[V]]] =
-      kvs.groupBy { _._1 }
-        .mapValues { maptv => maptv.map { case (t,v) => (t._2, v) } }
-        .map { case (t, m) => (t._1, m) }
+      kvs.groupBy { case ((k1, _), _) => k1 } // Group by the outer key:
+        .mapValues { maptv => maptv.map { case ((_, k2), v) => (k2, v) } } // Keep just the inner key in each group
         .toMap
 
     val shards: Map[K1, Future[Option[S]]] = routes.multiGet(pivoted.keySet)
