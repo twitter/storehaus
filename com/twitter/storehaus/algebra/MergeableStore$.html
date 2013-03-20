@@ -29,7 +29,7 @@
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.2.0/storehaus-algebra/src/main/scala/com/twitter/storehaus/algebra/MergeableStore.scala">MergeableStore.scala</a></dd></dl><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>Some factory methods and combinators on MergeableStore</p></div><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.2.0/storehaus-algebra/src/main/scala/com/twitter/storehaus/algebra/MergeableStore.scala">MergeableStore.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent">AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
@@ -161,7 +161,11 @@
         <span class="name">convert</span><span class="tparams">[<span name="K1">K1</span>, <span name="K2">K2</span>, <span name="V1">V1</span>, <span name="V2">V2</span>]</span><span class="params">(<span name="store">store: <a name="com.twitter.storehaus.algebra.MergeableStore" class="extype" href="MergeableStore.html">MergeableStore</a>[K1, V1]</span>)</span><span class="params">(<span name="kfn">kfn: (K2) ⇒ K1</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="bij">bij: <span name="com.twitter.bijection.ImplicitBijection" class="extype">ImplicitBijection</span>[V2, V1]</span>)</span><span class="result">: <a name="com.twitter.storehaus.algebra.MergeableStore" class="extype" href="MergeableStore.html">MergeableStore</a>[K2, V2]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Convert the key and value type of this mergeable.</p><div class="fullcomment"><div class="comment cmt"><p>Convert the key and value type of this mergeable.
+Note this just bijects the Monoid, so the underlying monoid action is unchanged. For instance
+if you did a Bijection from Long to (Int,Int), the underlying monoid would still be long, not the
+default (Int,Int) monoid which works differently. Use of this probably requires careful design.
+</p></div></div>
     </li><li visbl="pub" name="com.twitter.storehaus.algebra.MergeableStore#enrich" data-isabs="false">
       <a id="enrich[K, V](MergeableStore[K, V]):EnrichedMergeableStore[K, V]"></a>
       <h4 class="signature">
@@ -224,7 +228,9 @@
         <span class="name">fromStore</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="params">(<span name="store">store: <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[K, V]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="mon">mon: <span name="com.twitter.algebird.Monoid" class="extype">Monoid</span>[V]</span>, <span name="fc">fc: <a name="com.twitter.storehaus.FutureCollector" class="extype" href="../FutureCollector.html">FutureCollector</a>[(K, <span name="scala.Option" class="extype">Option</span>[V])]</span>)</span><span class="result">: <a name="com.twitter.storehaus.algebra.MergeableStore" class="extype" href="MergeableStore.html">MergeableStore</a>[K, V]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Create a mergeable by implementing merge with get followed by put.</p><div class="fullcomment"><div class="comment cmt"><p>Create a mergeable by implementing merge with get followed by put.
+Only safe if each key is owned by a single thread.
+</p></div></div>
     </li><li visbl="pub" name="scala.AnyRef#getClass" data-isabs="false">
       <a id="getClass():java.lang.Class[_]"></a>
       <h4 class="signature">
@@ -345,7 +351,13 @@ store's multiGet and multiSet.</p>
         <span class="name">unpivot</span><span class="tparams">[<span name="K">K</span>, <span name="OuterK">OuterK</span>, <span name="InnerK">InnerK</span>, <span name="V">V</span>]</span><span class="params">(<span name="store">store: <a name="com.twitter.storehaus.algebra.MergeableStore" class="extype" href="MergeableStore.html">MergeableStore</a>[OuterK, Map[InnerK, V]]</span>)</span><span class="params">(<span name="split">split: (K) ⇒ (OuterK, InnerK)</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span name="com.twitter.algebird.Monoid" class="extype">Monoid</span>[V]</span>)</span><span class="result">: <a name="com.twitter.storehaus.algebra.MergeableStore" class="extype" href="MergeableStore.html">MergeableStore</a>[K, V]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">unpivot or uncurry this MergeableStore
+TODO: not clear is correct.</p><div class="fullcomment"><div class="comment cmt"><p>unpivot or uncurry this MergeableStore
+TODO: not clear is correct. It is injecting whatever monoid is present at call time
+not the actual monoid being used by the underlying store. I guess we need to unpivot
+the monoid as well (and might not even be well defined).
+If the monoid is the usual mapMonoid, everything is fine.
+</p></div></div>
     </li><li visbl="pub" name="scala.AnyRef#wait" data-isabs="false">
       <a id="wait():Unit"></a>
       <h4 class="signature">
@@ -402,7 +414,9 @@ store's multiGet and multiSet.</p>
         <span class="name">withSummer</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="params">(<span name="store">store: <a name="com.twitter.storehaus.algebra.MergeableStore" class="extype" href="MergeableStore.html">MergeableStore</a>[K, V]</span>)</span><span class="params">(<span name="summerCons">summerCons: (<span name="com.twitter.algebird.Monoid" class="extype">Monoid</span>[V]) ⇒ <span name="com.twitter.algebird.StatefulSummer" class="extype">StatefulSummer</span>[Map[K, V]]</span>)</span><span class="result">: <a name="com.twitter.storehaus.algebra.MergeableStore" class="extype" href="MergeableStore.html">MergeableStore</a>[K, V]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Use a StatefulSummer to buffer results before calling merge.</p><div class="fullcomment"><div class="comment cmt"><p>Use a StatefulSummer to buffer results before calling merge.
+Useful when merging to a remote store, of if you have some very hot keys
+</p></div></div>
     </li></ol>
             </div>
 

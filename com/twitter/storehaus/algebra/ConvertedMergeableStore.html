@@ -283,7 +283,8 @@ Prefer multiGet if you are getting more than one key at a time
         <span class="name">merge</span><span class="params">(<span name="kv">kv: (K2, V2)</span>)</span><span class="result">: <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Unit" class="extype">Unit</span>]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.algebra.ConvertedMergeableStore" class="extype" href="">ConvertedMergeableStore</a> → <a name="com.twitter.storehaus.algebra.MergeableStore" class="extype" href="MergeableStore.html">MergeableStore</a></dd></dl></div>
+      <p class="shortcomment cmt">the key should hold: Monoid.</p><div class="fullcomment"><div class="comment cmt"><p>the key should hold: Monoid.plus(get(kv._1).get, Some(kv._2)) after this.
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.algebra.ConvertedMergeableStore" class="extype" href="">ConvertedMergeableStore</a> → <a name="com.twitter.storehaus.algebra.MergeableStore" class="extype" href="MergeableStore.html">MergeableStore</a></dd></dl></div>
     </li><li visbl="pub" name="com.twitter.storehaus.algebra.ConvertedMergeableStore#monoid" data-isabs="false">
       <a id="monoid:Monoid[V2]"></a>
       <h4 class="signature">
@@ -295,7 +296,7 @@ Prefer multiGet if you are getting more than one key at a time
         <span class="name">monoid</span><span class="result">: <span name="com.twitter.algebird.Monoid" class="extype">Monoid</span>[V2]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.algebra.ConvertedMergeableStore" class="extype" href="">ConvertedMergeableStore</a> → <a name="com.twitter.storehaus.algebra.MergeableStore" class="extype" href="MergeableStore.html">MergeableStore</a></dd></dl></div>
+      <p class="shortcomment cmt">The monoid equivalent to the merge operation of this store</p><div class="fullcomment"><div class="comment cmt"><p>The monoid equivalent to the merge operation of this store</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.algebra.ConvertedMergeableStore" class="extype" href="">ConvertedMergeableStore</a> → <a name="com.twitter.storehaus.algebra.MergeableStore" class="extype" href="MergeableStore.html">MergeableStore</a></dd></dl></div>
     </li><li visbl="pub" name="com.twitter.storehaus.ConvertedReadableStore#multiGet" data-isabs="false">
       <a id="multiGet[K3&lt;:K2](Set[K3]):Map[K3, Future[Option[V2]]]"></a>
       <h4 class="signature">
@@ -323,7 +324,7 @@ Future.exception.
         <span class="name">multiMerge</span><span class="tparams">[<span name="K3">K3 &lt;: K2</span>]</span><span class="params">(<span name="kvs">kvs: Map[K3, V2]</span>)</span><span class="result">: Map[K3, <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Unit" class="extype">Unit</span>]]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.algebra.ConvertedMergeableStore" class="extype" href="">ConvertedMergeableStore</a> → <a name="com.twitter.storehaus.algebra.MergeableStore" class="extype" href="MergeableStore.html">MergeableStore</a></dd></dl></div>
+      <p class="shortcomment cmt">merge a set of keys.</p><div class="fullcomment"><div class="comment cmt"><p>merge a set of keys.</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.algebra.ConvertedMergeableStore" class="extype" href="">ConvertedMergeableStore</a> → <a name="com.twitter.storehaus.algebra.MergeableStore" class="extype" href="MergeableStore.html">MergeableStore</a></dd></dl></div>
     </li><li visbl="pub" name="com.twitter.storehaus.algebra.ConvertedStore#multiPut" data-isabs="false">
       <a id="multiPut[K3&lt;:K2](Map[K3, Option[V2]]):Map[K3, Future[Unit]]"></a>
       <h4 class="signature">

@@ -29,7 +29,12 @@
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.2.0/storehaus-algebra/src/main/scala/com/twitter/storehaus/algebra/BufferingStore.scala">BufferingStore.scala</a></dd></dl><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>A Mergeable that sits on top of another mergeable and pre-aggregates before pushing into merge/multiMerge
+This is very useful for cases where you have some keys that are very hot, or you have a remote store that
+you don't want to constantly hit.
+Note that calling a get/put forces a flush on this store.  Also note that the Futures returned by merge
+are completed only when the underlying store is finally merged.
+</p></div><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.2.0/storehaus-algebra/src/main/scala/com/twitter/storehaus/algebra/BufferingStore.scala">BufferingStore.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><a name="com.twitter.storehaus.algebra.MergeableStore" class="extype" href="MergeableStore.html">MergeableStore</a>[K, V], <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[K, V], <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[K, V], <span name="java.io.Closeable" class="extype">Closeable</span>, <span name="java.lang.AutoCloseable" class="extype">AutoCloseable</span>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
@@ -303,7 +308,8 @@ Prefer multiGet if you are getting more than one key at a time
         <span class="name">merge</span><span class="params">(<span name="pair">pair: (K, V)</span>)</span><span class="result">: <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Unit" class="extype">Unit</span>]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.algebra.BufferingStore" class="extype" href="">BufferingStore</a> → <a name="com.twitter.storehaus.algebra.MergeableStore" class="extype" href="MergeableStore.html">MergeableStore</a></dd></dl></div>
+      <p class="shortcomment cmt">the key should hold: Monoid.</p><div class="fullcomment"><div class="comment cmt"><p>the key should hold: Monoid.plus(get(kv._1).get, Some(kv._2)) after this.
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.algebra.BufferingStore" class="extype" href="">BufferingStore</a> → <a name="com.twitter.storehaus.algebra.MergeableStore" class="extype" href="MergeableStore.html">MergeableStore</a></dd></dl></div>
     </li><li visbl="prt" name="com.twitter.storehaus.algebra.BufferingStore#mergeAndFulfill" data-isabs="false">
       <a id="mergeAndFulfill[K1&lt;:K](Map[K1, V]):Map[K1, Future[Unit]]"></a>
       <h4 class="signature">
@@ -327,7 +333,7 @@ Prefer multiGet if you are getting more than one key at a time
         <span class="name">monoid</span><span class="result">: <span name="com.twitter.algebird.Monoid" class="extype">Monoid</span>[V]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.algebra.BufferingStore" class="extype" href="">BufferingStore</a> → <a name="com.twitter.storehaus.algebra.MergeableStore" class="extype" href="MergeableStore.html">MergeableStore</a></dd></dl></div>
+      <p class="shortcomment cmt">The monoid equivalent to the merge operation of this store</p><div class="fullcomment"><div class="comment cmt"><p>The monoid equivalent to the merge operation of this store</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.algebra.BufferingStore" class="extype" href="">BufferingStore</a> → <a name="com.twitter.storehaus.algebra.MergeableStore" class="extype" href="MergeableStore.html">MergeableStore</a></dd></dl></div>
     </li><li visbl="prt" name="com.twitter.storehaus.algebra.BufferingStore#multiFulfill" data-isabs="false">
       <a id="multiFulfill[K1&lt;:K](Map[K1, Future[Unit]]):Map[K1, Future[Unit]]"></a>
       <h4 class="signature">
@@ -367,7 +373,7 @@ Future.exception.
         <span class="name">multiMerge</span><span class="tparams">[<span name="K1">K1 &lt;: K</span>]</span><span class="params">(<span name="kvs">kvs: Map[K1, V]</span>)</span><span class="result">: Map[K1, <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Unit" class="extype">Unit</span>]]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.algebra.BufferingStore" class="extype" href="">BufferingStore</a> → <a name="com.twitter.storehaus.algebra.MergeableStore" class="extype" href="MergeableStore.html">MergeableStore</a></dd></dl></div>
+      <p class="shortcomment cmt">merge a set of keys.</p><div class="fullcomment"><div class="comment cmt"><p>merge a set of keys.</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.algebra.BufferingStore" class="extype" href="">BufferingStore</a> → <a name="com.twitter.storehaus.algebra.MergeableStore" class="extype" href="MergeableStore.html">MergeableStore</a></dd></dl></div>
     </li><li visbl="prt" name="com.twitter.storehaus.algebra.BufferingStore#multiPromise" data-isabs="false">
       <a id="multiPromise[K1&lt;:K](Set[K1]):Map[K1, Promise[Unit]]"></a>
       <h4 class="signature">

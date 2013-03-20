@@ -83,7 +83,9 @@
         <a href="BufferingStore.html"><span class="name">BufferingStore</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends MergeableStore[K, V]</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">A Mergeable that sits on top of another mergeable and pre-aggregates before pushing into merge/multiMerge
+This is very useful for cases where you have some keys that are very hot, or you have a remote store that
+you don't want to constantly hit.</p>
     </li><li visbl="pub" name="com.twitter.storehaus.algebra.ConvertedMergeableStore" data-isabs="false">
       <a id="ConvertedMergeableStore:ConvertedMergeableStore[K1, K2, V1, V2]"></a>
       <h4 class="signature">
@@ -109,7 +111,7 @@ Monoid[V1] =&gt; Monoid[V2].</p>
         <a href="ConvertedStore.html"><span class="name">ConvertedStore</span></a><span class="tparams">[<span name="K1">K1</span>, <span name="K2">-K2</span>, <span name="V1">V1</span>, <span name="V2">V2</span>]</span><span class="result"> extends ConvertedReadableStore[K1, K2, V1, V2] with Store[K2, V2]</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">Use an injection on V2,V1 to convert a store of values V2.</p>
     </li><li visbl="pub" name="com.twitter.storehaus.algebra.EnrichedMergeableStore" data-isabs="false">
       <a id="EnrichedMergeableStore:EnrichedMergeableStore[K, V]"></a>
       <h4 class="signature">
@@ -121,7 +123,7 @@ Monoid[V1] =&gt; Monoid[V2].</p>
         <a href="EnrichedMergeableStore.html"><span class="name">EnrichedMergeableStore</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends AnyRef</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">Enrichment class to add methods to MergeableStore</p>
     </li><li visbl="pub" name="com.twitter.storehaus.algebra.MergeableMonoidStore" data-isabs="false">
       <a id="MergeableMonoidStore:MergeableMonoidStore[K, V]"></a>
       <h4 class="signature">
@@ -145,7 +147,7 @@ Monoid[V1] =&gt; Monoid[V2].</p>
         <a href="MergeableStore.html"><span class="name">MergeableStore</span></a><span class="tparams">[<span name="K">-K</span>, <span name="V">V</span>]</span><span class="result"> extends Store[K, V]</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">Main trait to represent stores that are used for aggregation</p>
     </li><li visbl="pub" name="com.twitter.storehaus.algebra.ReadableStoreMonoid" data-isabs="false">
       <a id="ReadableStoreMonoid:ReadableStoreMonoid[K, V]"></a>
       <h4 class="signature">
@@ -157,7 +159,7 @@ Monoid[V1] =&gt; Monoid[V2].</p>
         <a href="ReadableStoreMonoid.html"><span class="name">ReadableStoreMonoid</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends ReadableStoreSemigroup[K, V] with Monoid[ReadableStore[K, V]]</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">Same as a ReadableStoreSemigroup except with a zero that the constant store always returning Monoid.</p>
     </li><li visbl="pub" name="com.twitter.storehaus.algebra.ReadableStoreSemigroup" data-isabs="false">
       <a id="ReadableStoreSemigroup:ReadableStoreSemigroup[K, V]"></a>
       <h4 class="signature">
@@ -169,7 +171,7 @@ Monoid[V1] =&gt; Monoid[V2].</p>
         <a href="ReadableStoreSemigroup.html"><span class="name">ReadableStoreSemigroup</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends Semigroup[ReadableStore[K, V]]</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">A semigroup that uses the future semigroup to add results of both gets</p>
     </li><li visbl="pub" name="com.twitter.storehaus.algebra.UnpivotedMergeableStore" data-isabs="false">
       <a id="UnpivotedMergeableStore:UnpivotedMergeableStore[K, OuterK, InnerK, V]"></a>
       <h4 class="signature">
@@ -201,7 +203,7 @@ over top of a packed MergeableStore[OuterK, Map[InnerK, V]].</p>
         <a href="Algebras$.html"><span class="name">Algebras</span></a><span class="result"> extends AnyRef</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">import Algebras.</p>
     </li><li visbl="pub" name="com.twitter.storehaus.algebra.MergeableStore" data-isabs="false">
       <a id="MergeableStore:MergeableStore"></a>
       <h4 class="signature">
@@ -213,7 +215,7 @@ over top of a packed MergeableStore[OuterK, Map[InnerK, V]].</p>
         <a href="MergeableStore$.html"><span class="name">MergeableStore</span></a><span class="result"> extends AnyRef</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">Some factory methods and combinators on MergeableStore</p>
     </li><li visbl="pub" name="com.twitter.storehaus.algebra.ReadableStoreAlgebra" data-isabs="false">
       <a id="ReadableStoreAlgebra:ReadableStoreAlgebra"></a>
       <h4 class="signature">

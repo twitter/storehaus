@@ -29,7 +29,7 @@
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.2.0/storehaus-algebra/src/main/scala/com/twitter/storehaus/algebra/query/QueryStrategy.scala">QueryStrategy.scala</a></dd></dl><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>For use in java/avoiding trait bloat. Avoid using in APIs</p></div><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.2.0/storehaus-algebra/src/main/scala/com/twitter/storehaus/algebra/query/QueryStrategy.scala">QueryStrategy.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><a name="com.twitter.storehaus.algebra.query.QueryStrategy" class="extype" href="QueryStrategy.html">QueryStrategy</a>[Q, L, X], <span name="java.io.Serializable" class="extype">Serializable</span>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div><div class="toggleContainer block">
@@ -90,7 +90,7 @@
         <span class="name">index</span><span class="params">(<span name="key">key: L</span>)</span><span class="result">: Set[X]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.algebra.query.QueryStrategy" class="extype" href="QueryStrategy.html">QueryStrategy</a></dd></dl></div>
+      <p class="shortcomment cmt">Used in your summingbird job to flatmap your keys, increment all these X with the value</p><div class="fullcomment"><div class="comment cmt"><p>Used in your summingbird job to flatmap your keys, increment all these X with the value</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.algebra.query.QueryStrategy" class="extype" href="QueryStrategy.html">QueryStrategy</a></dd></dl></div>
     </li><li visbl="pub" name="com.twitter.storehaus.algebra.query.QueryStrategy#query" data-isabs="true">
       <a id="query(Q):Set[X]"></a>
       <h4 class="signature">
@@ -102,7 +102,7 @@
         <span class="name">query</span><span class="params">(<span name="q">q: Q</span>)</span><span class="result">: Set[X]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.algebra.query.QueryStrategy" class="extype" href="QueryStrategy.html">QueryStrategy</a></dd></dl></div>
+      <p class="shortcomment cmt">Used by the client reads, read all these X and sum the result</p><div class="fullcomment"><div class="comment cmt"><p>Used by the client reads, read all these X and sum the result</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.algebra.query.QueryStrategy" class="extype" href="QueryStrategy.html">QueryStrategy</a></dd></dl></div>
     </li></ol>
             </div>
 
@@ -206,7 +206,7 @@
         <span class="name">cross</span><span class="tparams">[<span name="Q2">Q2</span>, <span name="L2">L2</span>, <span name="X2">X2</span>]</span><span class="params">(<span name="qs2">qs2: <a name="com.twitter.storehaus.algebra.query.QueryStrategy" class="extype" href="QueryStrategy.html">QueryStrategy</a>[Q2, L2, X2]</span>)</span><span class="result">: <a name="com.twitter.storehaus.algebra.query.QueryStrategy" class="extype" href="QueryStrategy.html">QueryStrategy</a>[(Q, Q2), (L, L2), (X, X2)]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.algebra.query.QueryStrategy" class="extype" href="QueryStrategy.html">QueryStrategy</a></dd></dl></div>
+      <p class="shortcomment cmt">Create new strategy on a this and a second query strategy</p><div class="fullcomment"><div class="comment cmt"><p>Create new strategy on a this and a second query strategy</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.algebra.query.QueryStrategy" class="extype" href="QueryStrategy.html">QueryStrategy</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#eq" data-isabs="false">
       <a id="eq(AnyRef):Boolean"></a>
       <h4 class="signature">

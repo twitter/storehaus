@@ -29,7 +29,7 @@
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.2.0/storehaus-algebra/src/main/scala/com/twitter/storehaus/algebra/query/QueryStrategy.scala">QueryStrategy.scala</a></dd></dl><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>Factory methods and combinators on QueryStrategies</p></div><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.2.0/storehaus-algebra/src/main/scala/com/twitter/storehaus/algebra/query/QueryStrategy.scala">QueryStrategy.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><span name="java.io.Serializable" class="extype">Serializable</span>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
@@ -224,7 +224,8 @@
         <span class="name">index</span><span class="tparams">[<span name="Q">Q</span>, <span name="L">L</span>, <span name="X">X</span>, <span name="V">V</span>]</span><span class="params">(<span name="qs">qs: <a name="com.twitter.storehaus.algebra.query.QueryStrategy" class="extype" href="QueryStrategy.html">QueryStrategy</a>[Q, L, X]</span>, <span name="ms">ms: <a name="com.twitter.storehaus.algebra.MergeableStore" class="extype" href="../MergeableStore.html">MergeableStore</a>[X, V]</span>)</span><span class="result">: (TraversableOnce[(L, V)]) ⇒ <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Unit" class="extype">Unit</span>]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Given a query strategry and a MergeableStore, return a function that accepts pairs of (L,V)
+and merges them into the store so they can be queried with this strategy.</p>
     </li><li visbl="pub" name="scala.Any#isInstanceOf" data-isabs="false">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <h4 class="signature">
@@ -296,7 +297,8 @@
         <span class="name">query</span><span class="tparams">[<span name="Q">Q</span>, <span name="L">L</span>, <span name="X">X</span>, <span name="V">V</span>]</span><span class="params">(<span name="qs">qs: <a name="com.twitter.storehaus.algebra.query.QueryStrategy" class="extype" href="QueryStrategy.html">QueryStrategy</a>[Q, L, X]</span>, <span name="rs">rs: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../../ReadableStore.html">ReadableStore</a>[X, V]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span name="com.twitter.algebird.Semigroup" class="extype">Semigroup</span>[V]</span>)</span><span class="result">: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../../ReadableStore.html">ReadableStore</a>[Q, V]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Given a QueryStrategry and a ReadableStore which has been indexed correctly, give a ReadableStore on Queries
+</p>
     </li><li visbl="prt" name="com.twitter.storehaus.algebra.query.QueryStrategy#readResolve" data-isabs="false">
       <a id="readResolve():AnyRef"></a>
       <h4 class="signature">
