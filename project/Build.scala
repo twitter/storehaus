@@ -15,8 +15,7 @@ object StorehausBuild extends Build {
 
     resolvers ++= Seq(
       "snapshots" at "http://oss.sonatype.org/content/repositories/snapshots",
-      "releases"  at "http://oss.sonatype.org/content/repositories/releases",
-      "Twitter Maven" at "http://maven.twttr.com"
+      "releases"  at "http://oss.sonatype.org/content/repositories/releases"
     ),
 
     parallelExecution in Test := true,
@@ -31,11 +30,11 @@ object StorehausBuild extends Build {
     pomIncludeRepository := { x => false },
 
     publishTo <<= version { (v: String) =>
-      val nexus = "http://artifactory.local.twitter.com/"
+      val nexus = "https://oss.sonatype.org/"
       if (v.trim.endsWith("SNAPSHOT"))
-        Some("artifactory-snapshots" at nexus + "libs-snapshots-local")
+        Some("sonatype-snapshots" at nexus + "content/repositories/snapshots")
       else
-        Some("artifactory-releases"  at nexus + "libs-releases-local")
+        Some("sonatype-releases"  at nexus + "service/local/staging/deploy/maven2")
     },
 
     pomExtra := (
@@ -66,7 +65,7 @@ object StorehausBuild extends Build {
       </developers>)
   )
 
-  val algebirdVersion = "0.1.9"
+  val algebirdVersion = "0.1.11"
   val bijectionVersion = "0.3.0"
 
   lazy val storehaus = Project(
