@@ -15,7 +15,8 @@ object StorehausBuild extends Build {
 
     resolvers ++= Seq(
       "snapshots" at "http://oss.sonatype.org/content/repositories/snapshots",
-      "releases"  at "http://oss.sonatype.org/content/repositories/releases"
+      "releases"  at "http://oss.sonatype.org/content/repositories/releases",
+      "Twitter Maven" at "http://maven.twttr.com"
     ),
 
     parallelExecution in Test := true,
