@@ -30,11 +30,11 @@ object StorehausBuild extends Build {
     pomIncludeRepository := { x => false },
 
     publishTo <<= version { (v: String) =>
-      val nexus = "http://artifactory.local.twitter.com/"
+      val nexus = "https://oss.sonatype.org/"
       if (v.trim.endsWith("SNAPSHOT"))
-        Some("artifactory-snapshots" at nexus + "libs-snapshots-local")
+        Some("sonatype-snapshots" at nexus + "content/repositories/snapshots")
       else
-        Some("artifactory-releases"  at nexus + "libs-releases-local")
+        Some("sonatype-releases"  at nexus + "service/local/staging/deploy/maven2")
     },
 
     pomExtra := (
