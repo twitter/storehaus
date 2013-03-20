@@ -16,6 +16,9 @@
 
 package com.twitter.storehaus
 
+/** Enrichment class to add method to Store[K, V]
+ * TODO in scala 2.10 this should be a value class
+ */
 class EnrichedStore[-K, V](store: Store[K, V]) {
   def unpivot[CombinedK, InnerK, InnerV](split: CombinedK => (K, InnerK))(implicit ev: V <:< Map[InnerK, InnerV]): Store[CombinedK, InnerV] =
     Store.unpivot(store.asInstanceOf[Store[K, Map[InnerK, InnerV]]])(split)

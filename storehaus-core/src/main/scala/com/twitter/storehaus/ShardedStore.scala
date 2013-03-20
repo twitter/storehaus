@@ -18,10 +18,9 @@ package com.twitter.storehaus
 
 import com.twitter.util.Future
 
-/**
+/** Factory methods to create ShardedReadableStore instances
  *  @author Oscar Boykin
  */
-
 object ShardedReadableStore {
   def fromMap[K1,K2,V](m: Map[K1, ReadableStore[K2, V]]): ReadableStore[(K1,K2), V] = {
     val routes = new MapStore(m)
@@ -63,6 +62,7 @@ class ShardedReadableStore[-K1, -K2, +V, +S <: ReadableStore[K2, V]](routes: Rea
   }
 }
 
+/** Factory methods to create ShardedStore instances */
 object ShardedStore {
   def fromMap[K1,K2,V](m: Map[K1, Store[K2, V]]): Store[(K1,K2), V] = {
     val routes = new MapStore(m)
@@ -81,7 +81,8 @@ class MissingShardException[K](val key: K)
 
 
 /** combines a mapping of Stores into one Store that internally routes
- * Note: if a K1 is absent from the routes, any put will give a Future.exception
+ * Note: if a K1 is absent from the routes, any put will give a
+ * {{{ Future.exception(new MissingShardException(k1)) }}}
  */
 class ShardedStore[-K1,-K2,V, +S <: Store[K2,V]](routes: ReadableStore[K1, S]) extends ShardedReadableStore[K1,K2,V,S](routes)
   with Store[(K1,K2), V] {
