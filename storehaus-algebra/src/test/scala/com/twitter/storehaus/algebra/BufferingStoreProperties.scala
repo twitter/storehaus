@@ -22,7 +22,7 @@ import org.scalacheck.Properties
 
 object BufferingStoreProperties extends Properties("BufferingStore") {
   import StoreProperties.storeTest
-  import MergeableStoreProperties.{ mergeableStoreTest, newStore }
+  import MergeableStoreProperties._
   import MergeableStore.enrich
 
   property("BufferingStore obeys the store properties") = storeTest {
