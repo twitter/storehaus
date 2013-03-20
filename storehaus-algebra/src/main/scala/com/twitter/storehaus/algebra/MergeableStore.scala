@@ -21,12 +21,18 @@ import com.twitter.bijection.ImplicitBijection
 import com.twitter.storehaus.{ FutureCollector, Store }
 import com.twitter.util.Future
 
+/** Main trait to represent stores that are used for aggregation */
 trait MergeableStore[-K, V] extends Store[K, V] {
+  /** The monoid equivalent to the merge operation of this store */
   def monoid: Monoid[V]
+  /** the key should hold: Monoid.plus(get(kv._1).get, Some(kv._2)) after this.
+   */
   def merge(kv: (K, V)): Future[Unit] = multiMerge(Map(kv)).apply(kv._1)
+  /** merge a set of keys. */
   def multiMerge[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Unit]] = kvs.map { kv => (kv._1, merge(kv)) }
 }
 
+/** Some factory methods and combinators on MergeableStore */
 object MergeableStore {
   implicit def enrich[K, V](store: MergeableStore[K, V]): EnrichedMergeableStore[K, V] =
     new EnrichedMergeableStore(store)
@@ -52,16 +58,33 @@ object MergeableStore {
     }.toMap
   }
 
+  /** unpivot or uncurry this MergeableStore
+   * TODO: not clear is correct. It is injecting whatever monoid is present at call time
+   * not the actual monoid being used by the underlying store. I guess we need to unpivot
+   * the monoid as well (and might not even be well defined).
+   * If the monoid is the usual mapMonoid, everything is fine.
+   */
   def unpivot[K, OuterK, InnerK, V: Monoid](store: MergeableStore[OuterK, Map[InnerK, V]])
     (split: K => (OuterK, InnerK)): MergeableStore[K, V] =
     new UnpivotedMergeableStore(store)(split)
 
+  /** Create a mergeable by implementing merge with get followed by put.
+   * Only safe if each key is owned by a single thread.
+   */
   def fromStore[K,V](store: Store[K,V])(implicit mon: Monoid[V], fc: FutureCollector[(K, Option[V])]): MergeableStore[K,V] =
     new MergeableMonoidStore[K, V](store, fc)
 
+  /** Use a StatefulSummer to buffer results before calling merge.
+   * Useful when merging to a remote store, of if you have some very hot keys
+   */
   def withSummer[K, V](store: MergeableStore[K, V])(summerCons: Monoid[V] => StatefulSummer[Map[K, V]]): MergeableStore[K, V] =
     new BufferingStore(store, summerCons)
 
+  /** Convert the key and value type of this mergeable.
+   * Note this just bijects the Monoid, so the underlying monoid action is unchanged. For instance
+   * if you did a Bijection from Long to (Int,Int), the underlying monoid would still be long, not the
+   * default (Int,Int) monoid which works differently. Use of this probably requires careful design.
+   */
   def convert[K1, K2, V1, V2](store: MergeableStore[K1, V1])(kfn: K2 => K1)
     (implicit bij: ImplicitBijection[V2, V1]): MergeableStore[K2, V2] =
     new ConvertedMergeableStore(store)(kfn)
