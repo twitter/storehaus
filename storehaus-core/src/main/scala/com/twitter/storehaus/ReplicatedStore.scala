@@ -21,6 +21,8 @@ import com.twitter.util.Future
 import FutureOps.{ selectFirstSuccessfulTrial => selectFirst }
 import CollectionOps.combineMaps
 
+/** Replicates reads to a seq of stores and returns the first successful value (empty or not)
+ */
 class ReplicatedReadableStore[-K, +V](stores: Seq[ReadableStore[K, V]]) extends AbstractReadableStore[K, V] {
   override def get(k: K) = selectFirst(stores.map { _.get(k) })
   override def multiGet[K1 <: K](ks: Set[K1]) =

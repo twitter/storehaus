@@ -20,14 +20,22 @@ import com.twitter.util.Future
 import java.io.Closeable
 import java.util.{ Map => JMap }
 
+/** Factory methods and some combinators on Stores */
 object Store {
+  /** Import Store.enrich to get access to additional methods/combinators on your stores
+   * see [[com.twitter.storehaus.EnrichedStore]]
+   */
   implicit def enrich[K, V](store: Store[K, V]): EnrichedStore[K, V] =
     new EnrichedStore[K, V](store)
 
+  /** Given a java Map with Option[V] for the values, make a store */
   def fromJMap[K, V](m: JMap[K, Option[V]]): Store[K, V] = new JMapStore[K, V] {
     override val jstore = m
   }
 
+  /** Create an LRUStore which has a given maximum capacity. Note this will just
+   * silently evict members that have not been used lately.
+   */
   def lru[K, V](maxSize: Int = 1000): Store[K, V] = new LRUStore(maxSize)
 
   /**
@@ -38,17 +46,27 @@ object Store {
   def first[K, V](stores: Seq[Store[K, V]])(implicit collect: FutureCollector[Unit]): Store[K, V] =
     new ReplicatedStore(stores)
 
+  /** Given a Store with values which are themselves Maps, unpivot/uncurry.
+   * The values of the new store are the inner values of the original store.
+   * multiGet/multiPut on this store will do the smart thing and pack into a
+   * minimum number of multiGets/multiPuts on the underlying store
+   */
   def unpivot[K, OuterK, InnerK, V](store: Store[OuterK, Map[InnerK, V]])
     (split: K => (OuterK, InnerK)): Store[K, V] =
     new UnpivotedStore(store)(split)
 }
 
+/** Main trait for mutable stores.
+ * Instances must implement EITHER put, multiPut or both. The default implementations
+ * are in terms of each other.
+ */
 trait Store[-K, V] extends ReadableStore[K, V] { self =>
   /**
    * replace a value
    * Delete is the same as put((k,None))
    */
   def put(kv: (K, Option[V])): Future[Unit] = multiPut(Map(kv)).apply(kv._1)
+  /** Replace a set of keys at one time */
   def multiPut[K1 <: K](kvs: Map[K1, Option[V]]): Map[K1, Future[Unit]] =
     kvs.map { kv => (kv._1, put(kv)) }
 }

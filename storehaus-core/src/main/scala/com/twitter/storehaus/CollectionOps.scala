@@ -16,8 +16,9 @@
 
 package com.twitter.storehaus
 
-/**
- * Helpful transformations on maps and collections.
+/** Helpful transformations on maps and collections.
+ * These are combinators or transformers on collections that should probably be somewhere in the
+ * scala collection API, but are not.
  */
 
 object CollectionOps {
@@ -34,9 +35,16 @@ object CollectionOps {
       .groupBy { _._1 }
       .mapValues { _.map { _._2 }.toMap }
 
+  /** create a Map from a Set of keys and a lookup function */
   def zipWith[K, V](keys: Set[K])(lookup: K => V): Map[K, V] =
     keys.foldLeft(Map.empty[K, V]) { (m, k) => m + (k -> lookup(k)) }
 
+  /** from a Seq of Maps produce a Map with values being Seqs.
+   * Note that it is impossible to reverse this function because
+   * we lose track of which V came from which Map.
+   * Often used with a [[com.twitter.storehaus.FutureCollector]] on the inner
+   * value.
+   */
   def combineMaps[K, V](m: Seq[Map[K, V]]): Map[K, Seq[V]] =
     m.foldLeft(Map[K, List[V]]()) { (oldM, mkv) =>
       mkv.foldLeft(oldM) { (seqm, kv) =>

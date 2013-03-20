@@ -18,12 +18,11 @@ package com.twitter.storehaus
 
 import com.twitter.util.Future
 
-/**
+/** MapStore is a ReadableStore backed by a scala immutable Map.
+ *
  *  @author Oscar Boykin
  *  @author Sam Ritchie
  */
-
-// MapStore is an immutable store.
 class MapStore[K, +V](val backingStore: Map[K, V] = Map[K, V]()) extends ReadableStore[K, V] {
   override def get(k: K) = Future.value(backingStore.get(k))
 }
