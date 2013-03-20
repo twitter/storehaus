@@ -29,7 +29,7 @@
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.1.0/storehaus-algebra/src/main/scala/com/twitter/storehaus/algebra/query/QueryStrategy.scala">QueryStrategy.scala</a></dd></dl><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.2.0/storehaus-algebra/src/main/scala/com/twitter/storehaus/algebra/query/QueryStrategy.scala">QueryStrategy.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><span name="java.io.Serializable" class="extype">Serializable</span>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
@@ -214,29 +214,17 @@
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li visbl="pub" name="com.twitter.storehaus.algebra.query.QueryStrategy#index" data-isabs="false">
-      <a id="index[Q, L, X, V](QueryStrategy[Q, L, X],Mergeable[X, V]):Mergeable[L, V]"></a>
+      <a id="index[Q, L, X, V](QueryStrategy[Q, L, X],MergeableStore[X, V]):(TraversableOnce[(L, V)]) ⇒ Future[Unit]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">index</span><span class="tparams">[<span name="Q">Q</span>, <span name="L">L</span>, <span name="X">X</span>, <span name="V">V</span>]</span><span class="params">(<span name="qs">qs: <a name="com.twitter.storehaus.algebra.query.QueryStrategy" class="extype" href="QueryStrategy.html">QueryStrategy</a>[Q, L, X]</span>, <span name="ms">ms: <a name="com.twitter.storehaus.algebra.Mergeable" class="extype" href="../Mergeable.html">Mergeable</a>[X, V]</span>)</span><span class="result">: <a name="com.twitter.storehaus.algebra.Mergeable" class="extype" href="../Mergeable.html">Mergeable</a>[L, V]</span>
+        <span class="name">index</span><span class="tparams">[<span name="Q">Q</span>, <span name="L">L</span>, <span name="X">X</span>, <span name="V">V</span>]</span><span class="params">(<span name="qs">qs: <a name="com.twitter.storehaus.algebra.query.QueryStrategy" class="extype" href="QueryStrategy.html">QueryStrategy</a>[Q, L, X]</span>, <span name="ms">ms: <a name="com.twitter.storehaus.algebra.MergeableStore" class="extype" href="../MergeableStore.html">MergeableStore</a>[X, V]</span>)</span><span class="result">: (TraversableOnce[(L, V)]) ⇒ <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Unit" class="extype">Unit</span>]</span>
       </span>
       </h4>
       
-    </li><li visbl="prt" name="com.twitter.storehaus.algebra.query.QueryStrategy#invertMap" data-isabs="false">
-      <a id="invertMap[K, V](Map[K, Set[V]]):Map[V, Set[K]]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">invertMap</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="params">(<span name="m">m: Map[K, Set[V]]</span>)</span><span class="result">: Map[V, Set[K]]</span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd></dl></div>
     </li><li visbl="pub" name="scala.Any#isInstanceOf" data-isabs="false">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <h4 class="signature">

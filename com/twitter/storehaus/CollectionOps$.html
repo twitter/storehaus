@@ -30,7 +30,9 @@
       </h4>
       
       <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>Helpful transformations on maps and collections.
-</p></div><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.1.0/storehaus-core/src/main/scala/com/twitter/storehaus/CollectionOps.scala">CollectionOps.scala</a></dd></dl><div class="toggleContainer block">
+These are combinators or transformers on collections that should probably be somewhere in the
+scala collection API, but are not.
+</p></div><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.2.0/storehaus-core/src/main/scala/com/twitter/storehaus/CollectionOps.scala">CollectionOps.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent">AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
@@ -162,7 +164,12 @@
         <span class="name">combineMaps</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="params">(<span name="m">m: Seq[Map[K, V]]</span>)</span><span class="result">: Map[K, Seq[V]]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">from a Seq of Maps produce a Map with values being Seqs.</p><div class="fullcomment"><div class="comment cmt"><p>from a Seq of Maps produce a Map with values being Seqs.
+Note that it is impossible to reverse this function because
+we lose track of which V came from which Map.
+Often used with a <a name="com.twitter.storehaus.FutureCollector" class="extype" href="FutureCollector.html">FutureCollector</a> on the inner
+value.
+</p></div></div>
     </li><li visbl="pub" name="scala.AnyRef#eq" data-isabs="false">
       <a id="eq(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -369,7 +376,7 @@ com.twitter.bijection.Pivot would provide).
         <span class="name">zipWith</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="params">(<span name="keys">keys: Set[K]</span>)</span><span class="params">(<span name="lookup">lookup: (K) ⇒ V</span>)</span><span class="result">: Map[K, V]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">create a Map from a Set of keys and a lookup function</p>
     </li></ol>
             </div>
 

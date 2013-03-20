@@ -59,7 +59,7 @@
         <a href="AbstractReadableStore.html"><span class="name">AbstractReadableStore</span></a><span class="tparams">[<span name="K">-K</span>, <span name="V">+V</span>]</span><span class="result"> extends ReadableStore[K, V]</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">Abstract extension of the defined trait to minimize trait bloat.</p>
     </li><li visbl="pub" name="com.twitter.storehaus.ComposedStore" data-isabs="false">
       <a id="ComposedStore:ComposedStore[K, V, V2, V3]"></a>
       <h4 class="signature">
@@ -68,10 +68,13 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="ComposedStore.html"><span class="name">ComposedStore</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>, <span name="V2">V2</span>, <span name="V3">V3 &gt;: V</span>]</span><span class="result"> extends AbstractReadableStore[K, V2]</span>
+        <a href="ComposedStore.html"><span class="name">ComposedStore</span></a><span class="tparams">[<span name="K">-K</span>, <span name="V">V</span>, <span name="V2">V2</span>, <span name="V3">V3 &gt;: V</span>]</span><span class="result"> extends AbstractReadableStore[K, V2]</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">A store that is made from looking up values in the first store, then using that as the key in the second
+When used with com.twitter.storehaus.ConvertedStore you can do some powerful sequential processing
+of stores
+</p>
     </li><li visbl="pub" name="com.twitter.storehaus.ConcurrentHashMapStore" data-isabs="false">
       <a id="ConcurrentHashMapStore:ConcurrentHashMapStore[K, V]"></a>
       <h4 class="signature">
@@ -83,7 +86,10 @@
         <a href="ConcurrentHashMapStore.html"><span class="name">ConcurrentHashMapStore</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends JMapStore[K, V]</span>
       </span>
       </h4>
-      <p class="comment cmt"></p>
+      <p class="comment cmt">A simple JMapStore whose underlying store is a Java ConcurrentHashMap
+useful if you are going to be modifying a store from many threads, something
+you in general cannot do unless the docs specifically say that a store is
+safe for that.</p>
     </li><li visbl="pub" name="com.twitter.storehaus.ConvertedReadableStore" data-isabs="false">
       <a id="ConvertedReadableStore:ConvertedReadableStore[K1, K2, V1, V2]"></a>
       <h4 class="signature">
@@ -95,9 +101,32 @@
         <a href="ConvertedReadableStore.html"><span class="name">ConvertedReadableStore</span></a><span class="tparams">[<span name="K1">K1</span>, <span name="K2">-K2</span>, <span name="V1">V1</span>, <span name="V2">+V2</span>]</span><span class="result"> extends AbstractReadableStore[K2, V2]</span>
       </span>
       </h4>
-      <p class="comment cmt">Value conversion returns a Future because V1 =&gt; V2 may fail, and we
-are going to convert to a future anyway (so, a Try is kind of a
-Future that is not async).</p>
+      <p class="comment cmt">Convert the keys/values of a store.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.EnrichedReadableStore" data-isabs="false">
+      <a id="EnrichedReadableStore:EnrichedReadableStore[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="EnrichedReadableStore.html"><span class="name">EnrichedReadableStore</span></a><span class="tparams">[<span name="K">-K</span>, <span name="V">+V</span>]</span><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.EnrichedStore" data-isabs="false">
+      <a id="EnrichedStore:EnrichedStore[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="EnrichedStore.html"><span class="name">EnrichedStore</span></a><span class="tparams">[<span name="K">-K</span>, <span name="V">V</span>]</span><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Enrichment class to add method to Store[K, V]
+TODO in scala 2.</p>
     </li><li visbl="pub" name="com.twitter.storehaus.FutureCollector" data-isabs="true">
       <a id="FutureCollector:FutureCollector[T]"></a>
       <h4 class="signature">
@@ -109,7 +138,7 @@ Future that is not async).</p>
         <a href="FutureCollector.html"><span class="name">FutureCollector</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="result"> extends (Seq[Future[T]]) ⇒ Future[Seq[T]]</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">A type to represent how Seq of futures are collected into a future of Seq[T]</p>
     </li><li visbl="pub" name="com.twitter.storehaus.IndexedSeqReadableStore" data-isabs="false">
       <a id="IndexedSeqReadableStore:IndexedSeqReadableStore[V]"></a>
       <h4 class="signature">
@@ -118,10 +147,10 @@ Future that is not async).</p>
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="IndexedSeqReadableStore.html"><span class="name">IndexedSeqReadableStore</span></a><span class="tparams">[<span name="V">V</span>]</span><span class="result"> extends ReadableStore[Int, V]</span>
+        <a href="IndexedSeqReadableStore.html"><span class="name">IndexedSeqReadableStore</span></a><span class="tparams">[<span name="V">+V</span>]</span><span class="result"> extends ReadableStore[Int, V]</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">Simple wrapper on IndexedSeq[V] to make it accessible as a ReadableStore</p>
     </li><li visbl="pub" name="com.twitter.storehaus.JMapStore" data-isabs="false">
       <a id="JMapStore:JMapStore[K, V]"></a>
       <h4 class="signature">
@@ -133,7 +162,9 @@ Future that is not async).</p>
         <a href="JMapStore.html"><span class="name">JMapStore</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends Store[K, V]</span>
       </span>
       </h4>
-      <p class="comment cmt"></p>
+      <p class="comment cmt">A Store instance which is backed by a Java Map (by default JHashMap)
+Obviously, there is no optimization of the multiGet/multiPut methods on this
+store and these are just implemented using the default implementation from Store.</p>
     </li><li visbl="pub" name="com.twitter.storehaus.LRUStore" data-isabs="false">
       <a id="LRUStore:LRUStore[K, V]"></a>
       <h4 class="signature">
@@ -154,10 +185,10 @@ Future that is not async).</p>
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="MapStore.html"><span class="name">MapStore</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends ReadableStore[K, V]</span>
+        <a href="MapStore.html"><span class="name">MapStore</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">+V</span>]</span><span class="result"> extends ReadableStore[K, V]</span>
       </span>
       </h4>
-      <p class="comment cmt"></p>
+      <p class="comment cmt">MapStore is a ReadableStore backed by a scala immutable Map.</p>
     </li><li visbl="pub" name="com.twitter.storehaus.MissingShardException" data-isabs="false">
       <a id="MissingShardException:MissingShardException[K]"></a>
       <h4 class="signature">
@@ -193,7 +224,8 @@ Future that is not async).</p>
         <a href="ReadableStore.html"><span class="name">ReadableStore</span></a><span class="tparams">[<span name="K">-K</span>, <span name="V">+V</span>]</span><span class="result"> extends Closeable</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">Main trait to represent asynchronous readable stores
+Here you see the tri-state logic:</p>
     </li><li visbl="pub" name="com.twitter.storehaus.ReplicatedReadableStore" data-isabs="false">
       <a id="ReplicatedReadableStore:ReplicatedReadableStore[K, V]"></a>
       <h4 class="signature">
@@ -205,7 +237,8 @@ Future that is not async).</p>
         <a href="ReplicatedReadableStore.html"><span class="name">ReplicatedReadableStore</span></a><span class="tparams">[<span name="K">-K</span>, <span name="V">+V</span>]</span><span class="result"> extends AbstractReadableStore[K, V]</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">Replicates reads to a seq of stores and returns the first successful value (empty or not)
+</p>
     </li><li visbl="pub" name="com.twitter.storehaus.ReplicatedStore" data-isabs="false">
       <a id="ReplicatedStore:ReplicatedStore[K, V]"></a>
       <h4 class="signature">
@@ -243,7 +276,7 @@ Note: if K1 is absent from the routes, you will always get Future.</p>
       </span>
       </h4>
       <p class="comment cmt">combines a mapping of Stores into one Store that internally routes
-Note: if a K1 is absent from the routes, any put will give a Future.</p>
+Note: if a K1 is absent from the routes, any put will give a</p>
     </li><li visbl="pub" name="com.twitter.storehaus.Store" data-isabs="true">
       <a id="Store:Store[K, V]"></a>
       <h4 class="signature">
@@ -252,10 +285,36 @@ Note: if a K1 is absent from the routes, any put will give a Future.</p>
         <span class="kind">trait</span>
       </span>
       <span class="symbol">
-        <a href="Store.html"><span class="name">Store</span></a><span class="tparams">[<span name="K">-K</span>, <span name="V">V</span>]</span><span class="result"> extends ReadableStore[K, V] with Closeable</span>
+        <a href="Store.html"><span class="name">Store</span></a><span class="tparams">[<span name="K">-K</span>, <span name="V">V</span>]</span><span class="result"> extends ReadableStore[K, V]</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">Main trait for mutable stores.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.UnpivotedReadableStore" data-isabs="false">
+      <a id="UnpivotedReadableStore:UnpivotedReadableStore[K, OuterK, InnerK, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="UnpivotedReadableStore.html"><span class="name">UnpivotedReadableStore</span></a><span class="tparams">[<span name="K">-K</span>, <span name="OuterK">OuterK</span>, <span name="InnerK">InnerK</span>, <span name="V">+V</span>]</span><span class="result"> extends ReadableStore[K, V]</span>
+      </span>
+      </h4>
+      <p class="comment cmt">ReadableStore enrichment which presents a ReadableStore[K, V] over
+top of a packed ReadableStore[OuterK, Map[InnerK, V]].</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.UnpivotedStore" data-isabs="false">
+      <a id="UnpivotedStore:UnpivotedStore[K, OuterK, InnerK, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="UnpivotedStore.html"><span class="name">UnpivotedStore</span></a><span class="tparams">[<span name="K">-K</span>, <span name="OuterK">OuterK</span>, <span name="InnerK">InnerK</span>, <span name="V">V</span>]</span><span class="result"> extends UnpivotedReadableStore[K, OuterK, InnerK, V] with Store[K, V]</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Store enrichment which presents a Store[K, V] over top of a packed
+Store[OuterK, Map[InnerK, V]].</p>
     </li></ol>
             </div>
 
@@ -298,7 +357,7 @@ Note: if a K1 is absent from the routes, any put will give a Future.</p>
         <a href="FutureCollector$.html"><span class="name">FutureCollector</span></a><span class="result"> extends AnyRef</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">Some factory methods and instances of FutureCollector that are used in storehaus</p>
     </li><li visbl="pub" name="com.twitter.storehaus.FutureOps" data-isabs="false">
       <a id="FutureOps:FutureOps"></a>
       <h4 class="signature">
@@ -310,7 +369,20 @@ Note: if a K1 is absent from the routes, any put will give a Future.</p>
         <a href="FutureOps$.html"><span class="name">FutureOps</span></a><span class="result"> extends AnyRef</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">Some combinators on Futures or Seqs of Futures that are used internally
+These should arguably exist in util-core.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.PivotOps" data-isabs="false">
+      <a id="PivotOps:PivotOps"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="PivotOps$.html"><span class="name">PivotOps</span></a><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Methods used in the various unpivot stores.</p>
     </li><li visbl="pub" name="com.twitter.storehaus.ReadableStore" data-isabs="false">
       <a id="ReadableStore:ReadableStore"></a>
       <h4 class="signature">
@@ -322,7 +394,7 @@ Note: if a K1 is absent from the routes, any put will give a Future.</p>
         <a href="ReadableStore$.html"><span class="name">ReadableStore</span></a><span class="result"> extends AnyRef</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">Holds various factory and transformation functions for ReadableStore instances</p>
     </li><li visbl="pub" name="com.twitter.storehaus.ShardedReadableStore" data-isabs="false">
       <a id="ShardedReadableStore:ShardedReadableStore"></a>
       <h4 class="signature">
@@ -334,7 +406,7 @@ Note: if a K1 is absent from the routes, any put will give a Future.</p>
         <a href="ShardedReadableStore$.html"><span class="name">ShardedReadableStore</span></a><span class="result"> extends AnyRef</span>
       </span>
       </h4>
-      <p class="comment cmt"></p>
+      <p class="comment cmt">Factory methods to create ShardedReadableStore instances</p>
     </li><li visbl="pub" name="com.twitter.storehaus.ShardedStore" data-isabs="false">
       <a id="ShardedStore:ShardedStore"></a>
       <h4 class="signature">
@@ -346,7 +418,7 @@ Note: if a K1 is absent from the routes, any put will give a Future.</p>
         <a href="ShardedStore$.html"><span class="name">ShardedStore</span></a><span class="result"> extends AnyRef</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">Factory methods to create ShardedStore instances</p>
     </li><li visbl="pub" name="com.twitter.storehaus.Store" data-isabs="false">
       <a id="Store:Store"></a>
       <h4 class="signature">
@@ -358,7 +430,7 @@ Note: if a K1 is absent from the routes, any put will give a Future.</p>
         <a href="Store$.html"><span class="name">Store</span></a><span class="result"> extends AnyRef</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">Factory methods and some combinators on Stores</p>
     </li><li visbl="pub" name="com.twitter.storehaus.algebra" data-isabs="false">
       <a id="algebra:algebra"></a>
       <h4 class="signature">

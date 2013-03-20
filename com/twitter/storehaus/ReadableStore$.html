@@ -29,7 +29,7 @@
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.1.0/storehaus-core/src/main/scala/com/twitter/storehaus/ReadableStore.scala">ReadableStore.scala</a></dd></dl><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>Holds various factory and transformation functions for ReadableStore instances</p></div><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.2.0/storehaus-core/src/main/scala/com/twitter/storehaus/ReadableStore.scala">ReadableStore.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent">AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
@@ -134,7 +134,11 @@
         <span class="name">andThen</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>, <span name="V2">V2</span>, <span name="V3">V3 &gt;: V</span>]</span><span class="params">(<span name="l">l: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a>[K, V]</span>, <span name="r">r: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a>[V3, V2]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="fc">fc: <a name="com.twitter.storehaus.FutureCollector" class="extype" href="FutureCollector.html">FutureCollector</a>[V3]</span>)</span><span class="result">: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a>[K, V2]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Do a &quot;join&quot; on two stores: look up from the first, and use that value as the key in the next
+A factory method for <a name="com.twitter.storehaus.ComposedStore" class="extype" href="ComposedStore.html">ComposedStore</a>.</p><div class="fullcomment"><div class="comment cmt"><p>Do a &quot;join&quot; on two stores: look up from the first, and use that value as the key in the next
+A factory method for <a name="com.twitter.storehaus.ComposedStore" class="extype" href="ComposedStore.html">ComposedStore</a>.
+See also ReadableStore.convert if you need to change the value or key before the andThen
+</p></div></div>
     </li><li visbl="pub" name="scala.Any#asInstanceOf" data-isabs="false">
       <a id="asInstanceOf[T0]:T0"></a>
       <h4 class="signature">
@@ -186,7 +190,9 @@ supplied value V.</p>
         <span class="name">convert</span><span class="tparams">[<span name="K1">K1</span>, <span name="K2">K2</span>, <span name="V1">V1</span>, <span name="V2">V2</span>]</span><span class="params">(<span name="store">store: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a>[K1, V1]</span>)</span><span class="params">(<span name="kfn">kfn: (K2) ⇒ K1</span>)</span><span class="params">(<span name="vfn">vfn: (V1) ⇒ <span name="com.twitter.util.Future" class="extype">Future</span>[V2]</span>)</span><span class="result">: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a>[K2, V2]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Lazily change the key and value for a store.</p><div class="fullcomment"><div class="comment cmt"><p>Lazily change the key and value for a store.
+This does not change the representation, only alters before going in or out of the store.
+</p></div></div>
     </li><li visbl="pub" name="com.twitter.storehaus.ReadableStore#empty" data-isabs="false">
       <a id="empty:ReadableStore[Any, Nothing]"></a>
       <h4 class="signature">
@@ -198,7 +204,24 @@ supplied value V.</p>
         <span class="name">empty</span><span class="result">: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a>[<span name="scala.Any" class="extype">Any</span>, <span name="scala.Nothing" class="extype">Nothing</span>]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Due to the variance notations, this suffices for an empty store of any K,V type</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.ReadableStore#enrich" data-isabs="false">
+      <a id="enrich[K, V](ReadableStore[K, V]):EnrichedReadableStore[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">implicit </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">enrich</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="params">(<span name="store">store: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a>[K, V]</span>)</span><span class="result">: <a name="com.twitter.storehaus.EnrichedReadableStore" class="extype" href="EnrichedReadableStore.html">EnrichedReadableStore</a>[K, V]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Adds enrichment methods to ReadableStore
+This allows you to do: store.</p><div class="fullcomment"><div class="comment cmt"><p>Adds enrichment methods to ReadableStore
+This allows you to do: store.mapValues, for instance.  Access this in your code
+by doing: </p><pre>
+ <span class="kw">import</span> ReadableStore.enrich 
+</pre></div></div>
     </li><li visbl="pub" name="scala.AnyRef#eq" data-isabs="false">
       <a id="eq(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -288,7 +311,7 @@ and returns the first values that are not exceptions.</p>
         <span class="name">fromIndexedSeq</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span name="iseq">iseq: IndexedSeq[T]</span>)</span><span class="result">: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a>[<span name="scala.Int" class="extype">Int</span>, T]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Factory method to create a ReadableStore from an IndexedSeq.</p>
     </li><li visbl="pub" name="com.twitter.storehaus.ReadableStore#fromMap" data-isabs="false">
       <a id="fromMap[K, V](Map[K, V]):ReadableStore[K, V]"></a>
       <h4 class="signature">
@@ -300,7 +323,7 @@ and returns the first values that are not exceptions.</p>
         <span class="name">fromMap</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="params">(<span name="m">m: Map[K, V]</span>)</span><span class="result">: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a>[K, V]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Factory method to create a ReadableStore from a Map.</p>
     </li><li visbl="pub" name="com.twitter.storehaus.ReadableStore#fromPartial" data-isabs="false">
       <a id="fromPartial[K, V](PartialFunction[K, V]):ReadableStore[K, V]"></a>
       <h4 class="signature">
@@ -410,6 +433,21 @@ and returns the first values that are not exceptions.</p>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.ReadableStore#unpivot" data-isabs="false">
+      <a id="unpivot[K, OuterK, InnerK, V](ReadableStore[OuterK, Map[InnerK, V]])((K) ⇒ (OuterK, InnerK)):ReadableStore[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">unpivot</span><span class="tparams">[<span name="K">K</span>, <span name="OuterK">OuterK</span>, <span name="InnerK">InnerK</span>, <span name="V">V</span>]</span><span class="params">(<span name="store">store: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a>[OuterK, Map[InnerK, V]]</span>)</span><span class="params">(<span name="split">split: (K) ⇒ (OuterK, InnerK)</span>)</span><span class="result">: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a>[K, V]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">unpivot or uncurry a ReadableStore which has a value that is a Map.</p><div class="fullcomment"><div class="comment cmt"><p>unpivot or uncurry a ReadableStore which has a value that is a Map.
+Often it is more efficient to pack values into inner maps, especially when you have very sparse
+stores.  This allows you to work with such a packed store as though it was unpacked
+</p></div></div>
     </li><li visbl="pub" name="scala.AnyRef#wait" data-isabs="false">
       <a id="wait():Unit"></a>
       <h4 class="signature">

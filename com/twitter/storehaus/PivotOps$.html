@@ -2,21 +2,21 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html>
         <head>
-          <title>com.twitter.storehaus.algebra.Mergeable</title>
+          <title>com.twitter.storehaus.PivotOps</title>
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
-      <link type="text/css" media="screen" rel="stylesheet" href="../../../../lib/template.css" />
-      <script type="text/javascript" src="../../../../lib/jquery.js"></script>
-      <script type="text/javascript" src="../../../../lib/jquery-ui.js"></script>
-      <script type="text/javascript" src="../../../../lib/template.js"></script>
-      <script type="text/javascript" src="../../../../lib/tools.tooltip.js"></script>
+      <link type="text/css" media="screen" rel="stylesheet" href="../../../lib/template.css" />
+      <script type="text/javascript" src="../../../lib/jquery.js"></script>
+      <script type="text/javascript" src="../../../lib/jquery-ui.js"></script>
+      <script type="text/javascript" src="../../../lib/template.js"></script>
+      <script type="text/javascript" src="../../../lib/tools.tooltip.js"></script>
     
         </head>
         <body onload="sh_highlightDocument('../lib/', '.min.js');" class="value">
       <div id="definition">
-        <a title="Go to companion" href="Mergeable.html"><img src="../../../../lib/object_to_trait_big.png" /></a>
-        <p id="owner"><a name="com" class="extype" href="../../../package.html">com</a>.<a name="com.twitter" class="extype" href="../../package.html">twitter</a>.<a name="com.twitter.storehaus" class="extype" href="../package.html">storehaus</a>.<a name="com.twitter.storehaus.algebra" class="extype" href="package.html">algebra</a></p>
-        <h1><a title="Go to companion" href="Mergeable.html">Mergeable</a></h1>
+        <img src="../../../lib/object_big.png" />
+        <p id="owner"><a name="com" class="extype" href="../../package.html">com</a>.<a name="com.twitter" class="extype" href="../package.html">twitter</a>.<a name="com.twitter.storehaus" class="extype" href="package.html">storehaus</a></p>
+        <h1>PivotOps</h1>
       </div>
 
       <h4 class="signature" id="signature">
@@ -25,13 +25,14 @@
         <span class="kind">object</span>
       </span>
       <span class="symbol">
-        <span class="name">Mergeable</span><span class="result"> extends <span name="scala.Serializable" class="extype">Serializable</span></span>
+        <span class="name">PivotOps</span><span class="result"> extends AnyRef</span>
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.1.0/storehaus-algebra/src/main/scala/com/twitter/storehaus/algebra/Mergeable.scala">Mergeable.scala</a></dd></dl><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>Methods used in the various unpivot stores.
+</p></div><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.2.0/storehaus-core/src/main/scala/com/twitter/storehaus/PivotOps.scala">PivotOps.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><span name="scala.Serializable" class="extype">Serializable</span>, <span name="java.io.Serializable" class="extype">Serializable</span>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
+          <div class="superTypes hiddenContent">AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
     
 
@@ -45,7 +46,7 @@
               <span class="filtertype">Inherited</span>
               <ol><li class="hideall out"><span>Hide All</span></li>
               <li class="showall in"><span>Show all</span></li></ol>
-              <ol id="linearization"><li name="com.twitter.storehaus.algebra.Mergeable" class="in"><span>Mergeable</span></li><li name="scala.Serializable" class="in"><span>Serializable</span></li><li name="java.io.Serializable" class="in"><span>Serializable</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
+              <ol id="linearization"><li name="com.twitter.storehaus.PivotOps" class="in"><span>PivotOps</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
             </div>
         <div id="visbl">
             <span class="filtertype">Visibility</span>
@@ -57,7 +58,22 @@
         <div id="allMembers">
         
 
-        
+        <div class="types members" id="types">
+              <h3>Type Members</h3>
+              <ol><li visbl="pub" name="com.twitter.storehaus.PivotOps#InnerPair" data-isabs="false">
+      <a id="InnerPair:(OuterK, Option[Map[InnerK, V]])"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">type</span>
+      </span>
+      <span class="symbol">
+        <span class="name">InnerPair</span><span class="tparams">[<span name="OuterK">OuterK</span>, <span name="InnerK">InnerK</span>, <span name="V">V</span>]</span><span class="result"> = (OuterK, <span name="scala.Option" class="extype">Option</span>[Map[InnerK, V]])</span>
+      </span>
+      </h4>
+      
+    </li></ol>
+            </div>
 
         
 
@@ -146,22 +162,22 @@
         <span class="name">clone</span><span class="params">()</span><span class="result">: AnyRef</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a name="java.lang" class="extype" href="../../../../java/lang/package.html">lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a name="java.lang" class="extype" href="../../../java/lang/package.html">lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.Mergeable#convert" data-isabs="false">
-      <a id="convert[K1, K2, V1, V2](Mergeable[K1, V1])((K2) ⇒ K1)(ImplicitBijection[V2, V1]):Mergeable[K2, V2]"></a>
+    </li><li visbl="pub" name="com.twitter.storehaus.PivotOps#collectPivoted" data-isabs="false">
+      <a id="collectPivoted[K, OuterK, InnerK, V](Map[OuterK, Map[InnerK, Option[V]]]):Map[OuterK, Future[Option[List[(InnerK, V)]]]]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">convert</span><span class="tparams">[<span name="K1">K1</span>, <span name="K2">K2</span>, <span name="V1">V1</span>, <span name="V2">V2</span>]</span><span class="params">(<span name="mergeable">mergeable: <a name="com.twitter.storehaus.algebra.Mergeable" class="extype" href="Mergeable.html">Mergeable</a>[K1, V1]</span>)</span><span class="params">(<span name="kfn">kfn: (K2) ⇒ K1</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="bij">bij: <span name="com.twitter.bijection.ImplicitBijection" class="extype">ImplicitBijection</span>[V2, V1]</span>)</span><span class="result">: <a name="com.twitter.storehaus.algebra.Mergeable" class="extype" href="Mergeable.html">Mergeable</a>[K2, V2]</span>
+        <span class="name">collectPivoted</span><span class="tparams">[<span name="K">K</span>, <span name="OuterK">OuterK</span>, <span name="InnerK">InnerK</span>, <span name="V">V</span>]</span><span class="params">(<span name="pivoted">pivoted: Map[OuterK, Map[InnerK, <span name="scala.Option" class="extype">Option</span>[V]]]</span>)</span><span class="result">: Map[OuterK, <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Option" class="extype">Option</span>[List[(InnerK, V)]]]]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">For each value, filters out InnerK entries with a value of None.</p>
     </li><li visbl="pub" name="scala.AnyRef#eq" data-isabs="false">
       <a id="eq(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -197,7 +213,7 @@
         <span class="name">finalize</span><span class="params">()</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a name="java.lang" class="extype" href="../../../../java/lang/package.html">lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a name="java.lang" class="extype" href="../../../java/lang/package.html">lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
@@ -237,6 +253,33 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.PivotOps#multiGetFiltered" data-isabs="false">
+      <a id="multiGetFiltered[OuterK, InnerK, V](ReadableStore[OuterK, Map[InnerK, V]],Set[OuterK])((OuterK, InnerK) ⇒ Boolean):Map[OuterK, Future[Option[List[(InnerK, V)]]]]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">multiGetFiltered</span><span class="tparams">[<span name="OuterK">OuterK</span>, <span name="InnerK">InnerK</span>, <span name="V">V</span>]</span><span class="params">(<span name="store">store: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a>[OuterK, Map[InnerK, V]]</span>, <span name="ks">ks: Set[OuterK]</span>)</span><span class="params">(<span name="pred">pred: (OuterK, InnerK) ⇒ <span name="scala.Boolean" class="extype">Boolean</span></span>)</span><span class="result">: Map[OuterK, <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Option" class="extype">Option</span>[List[(InnerK, V)]]]]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Queries the underlying store with a multiGet and transforms the
+underlying map by filtering out all (innerK -&gt; v) pairs that a)
+contain None as the value or 2) in combination with the paired
+outerK don't pass the input filter.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.PivotOps#multiPut" data-isabs="false">
+      <a id="multiPut[K, K1&lt;:K, OuterK, InnerK, V](Store[OuterK, Map[InnerK, V]],Map[K1, Option[V]])((K) ⇒ (OuterK, InnerK))(FutureCollector[(OuterK, Option[Map[InnerK, V]])]):Map[K1, Future[Unit]]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">multiPut</span><span class="tparams">[<span name="K">K</span>, <span name="K1">K1 &lt;: K</span>, <span name="OuterK">OuterK</span>, <span name="InnerK">InnerK</span>, <span name="V">V</span>]</span><span class="params">(<span name="store">store: <a name="com.twitter.storehaus.Store" class="extype" href="Store.html">Store</a>[OuterK, Map[InnerK, V]]</span>, <span name="kvs">kvs: Map[K1, <span name="scala.Option" class="extype">Option</span>[V]]</span>)</span><span class="params">(<span name="split">split: (K) ⇒ (OuterK, InnerK)</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="collect">collect: <a name="com.twitter.storehaus.FutureCollector" class="extype" href="FutureCollector.html">FutureCollector</a>[(OuterK, <span name="scala.Option" class="extype">Option</span>[Map[InnerK, V]])]</span>)</span><span class="result">: Map[K1, <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Unit" class="extype">Unit</span>]]</span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="scala.AnyRef#ne" data-isabs="false">
       <a id="ne(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -273,18 +316,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li visbl="prt" name="com.twitter.storehaus.algebra.Mergeable#readResolve" data-isabs="false">
-      <a id="readResolve():AnyRef"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">readResolve</span><span class="params">()</span><span class="result">: AnyRef</span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#synchronized" data-isabs="false">
       <a id="synchronized[T0](⇒ T0):T0"></a>
       <h4 class="signature">
@@ -309,18 +340,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.Mergeable#unpivot" data-isabs="false">
-      <a id="unpivot[K, OuterK, InnerK, V](Mergeable[OuterK, Map[InnerK, V]])((K) ⇒ (OuterK, InnerK))(Monoid[V]):Mergeable[K, V]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">unpivot</span><span class="tparams">[<span name="K">K</span>, <span name="OuterK">OuterK</span>, <span name="InnerK">InnerK</span>, <span name="V">V</span>]</span><span class="params">(<span name="mergeable">mergeable: <a name="com.twitter.storehaus.algebra.Mergeable" class="extype" href="Mergeable.html">Mergeable</a>[OuterK, Map[InnerK, V]]</span>)</span><span class="params">(<span name="split">split: (K) ⇒ (OuterK, InnerK)</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span name="com.twitter.algebird.Monoid" class="extype">Monoid</span>[V]</span>)</span><span class="result">: <a name="com.twitter.storehaus.algebra.Mergeable" class="extype" href="Mergeable.html">Mergeable</a>[K, V]</span>
-      </span>
-      </h4>
-      
     </li><li visbl="pub" name="scala.AnyRef#wait" data-isabs="false">
       <a id="wait():Unit"></a>
       <h4 class="signature">
@@ -366,18 +385,6 @@
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.Mergeable#withSummer" data-isabs="false">
-      <a id="withSummer[K, V](Mergeable[K, V],StatefulSummer[Map[K, V]]):Mergeable[K, V]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">withSummer</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="params">(<span name="mergeable">mergeable: <a name="com.twitter.storehaus.algebra.Mergeable" class="extype" href="Mergeable.html">Mergeable</a>[K, V]</span>, <span name="summer">summer: <span name="com.twitter.algebird.StatefulSummer" class="extype">StatefulSummer</span>[Map[K, V]]</span>)</span><span class="result">: <a name="com.twitter.storehaus.algebra.Mergeable" class="extype" href="Mergeable.html">Mergeable</a>[K, V]</span>
-      </span>
-      </h4>
-      
     </li></ol>
             </div>
 
@@ -385,11 +392,7 @@
         </div>
 
         <div id="inheritedMembers">
-        <div name="scala.Serializable" class="parent">
-              <h3>Inherited from <span name="scala.Serializable" class="extype">Serializable</span></h3>
-            </div><div name="java.io.Serializable" class="parent">
-              <h3>Inherited from <span name="java.io.Serializable" class="extype">Serializable</span></h3>
-            </div><div name="scala.AnyRef" class="parent">
+        <div name="scala.AnyRef" class="parent">
               <h3>Inherited from AnyRef</h3>
             </div><div name="scala.Any" class="parent">
               <h3>Inherited from <span name="scala.Any" class="extype">Any</span></h3>

@@ -29,7 +29,7 @@
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.1.0/storehaus-algebra/src/main/scala/com/twitter/storehaus/algebra/ReadableStoreAlgebra.scala">ReadableStoreAlgebra.scala</a></dd></dl><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.2.0/storehaus-algebra/src/main/scala/com/twitter/storehaus/algebra/ReadableStoreAlgebra.scala">ReadableStoreAlgebra.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent">AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
@@ -165,31 +165,6 @@
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.AlgebraicReadableStore#composeKeyMapping" data-isabs="false">
-      <a id="composeKeyMapping[K1]((K1) ⇒ K):ReadableStore[K1, V]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">composeKeyMapping</span><span class="tparams">[<span name="K1">K1</span>]</span><span class="params">(<span name="fn">fn: (K1) ⇒ K</span>)</span><span class="result">: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[K1, V]</span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">convert K1 to K then lookup K in this store
-</p>
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.AlgebraicReadableStore#convert" data-isabs="false">
-      <a id="convert[K1, V1]((K1) ⇒ K)((V) ⇒ Future[V1]):ReadableStore[K1, V1]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">convert</span><span class="tparams">[<span name="K1">K1</span>, <span name="V1">V1</span>]</span><span class="params">(<span name="kfn">kfn: (K1) ⇒ K</span>)</span><span class="params">(<span name="vfn">vfn: (V) ⇒ <span name="com.twitter.util.Future" class="extype">Future</span>[V1]</span>)</span><span class="result">: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[K1, V1]</span>
-      </span>
-      </h4>
-      
     </li><li visbl="pub" name="scala.AnyRef#eq" data-isabs="false">
       <a id="eq(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -229,19 +204,6 @@
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.AlgebraicReadableStore#flatMapValues" data-isabs="false">
-      <a id="flatMapValues[V2]((V) ⇒ Future[V2]):ReadableStore[K, V2]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">flatMapValues</span><span class="tparams">[<span name="V2">V2</span>]</span><span class="params">(<span name="fn">fn: (V) ⇒ <span name="com.twitter.util.Future" class="extype">Future</span>[V2]</span>)</span><span class="result">: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[K, V2]</span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">apply an async function on all the values
-</p>
     </li><li visbl="pub" name="scala.AnyRef#getClass" data-isabs="false">
       <a id="getClass():java.lang.Class[_]"></a>
       <h4 class="signature">
@@ -278,20 +240,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.AlgebraicReadableStore#mapValues" data-isabs="false">
-      <a id="mapValues[V1]((V) ⇒ V1):ReadableStore[K, V1]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">mapValues</span><span class="tparams">[<span name="V1">V1</span>]</span><span class="params">(<span name="fn">fn: (V) ⇒ V1</span>)</span><span class="result">: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[K, V1]</span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">Apply a non-blocking function on all the values.</p><div class="fullcomment"><div class="comment cmt"><p>Apply a non-blocking function on all the values. If this function throws, it will be caught in
-the Future
-</p></div></div>
     </li><li visbl="pub" name="scala.AnyRef#ne" data-isabs="false">
       <a id="ne(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -364,18 +312,6 @@ the Future
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.AlgebraicReadableStore#unpivot" data-isabs="false">
-      <a id="unpivot[CombinedK, InnerK, InnerV]((CombinedK) ⇒ (K, InnerK))(&lt;:&lt;[V, Map[InnerK, InnerV]]):ReadableStore[CombinedK, InnerV]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">unpivot</span><span class="tparams">[<span name="CombinedK">CombinedK</span>, <span name="InnerK">InnerK</span>, <span name="InnerV">InnerV</span>]</span><span class="params">(<span name="split">split: (CombinedK) ⇒ (K, InnerK)</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ev">ev: <span name="scala.Predef.&lt;:&lt;" class="extype">&lt;:&lt;</span>[V, Map[InnerK, InnerV]]</span>)</span><span class="result">: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[CombinedK, InnerV]</span>
-      </span>
-      </h4>
-      
     </li><li visbl="pub" name="scala.AnyRef#wait" data-isabs="false">
       <a id="wait():Unit"></a>
       <h4 class="signature">

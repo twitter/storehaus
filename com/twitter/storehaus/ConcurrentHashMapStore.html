@@ -29,7 +29,11 @@
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><div class="comment cmt"></div><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.1.0/storehaus-core/src/main/scala/com/twitter/storehaus/ConcurrentHashMapStore.scala">ConcurrentHashMapStore.scala</a></dd></dl><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>A simple JMapStore whose underlying store is a Java ConcurrentHashMap
+useful if you are going to be modifying a store from many threads, something
+you in general cannot do unless the docs specifically say that a store is
+safe for that.
+</p></div><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.2.0/storehaus-core/src/main/scala/com/twitter/storehaus/ConcurrentHashMapStore.scala">ConcurrentHashMapStore.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><a name="com.twitter.storehaus.JMapStore" class="extype" href="JMapStore.html">JMapStore</a>[K, V], <a name="com.twitter.storehaus.Store" class="extype" href="Store.html">Store</a>[K, V], <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a>[K, V], <span name="java.io.Closeable" class="extype">Closeable</span>, <span name="java.lang.AutoCloseable" class="extype">AutoCloseable</span>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
@@ -165,7 +169,7 @@
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.Store#close" data-isabs="false">
+    </li><li visbl="pub" name="com.twitter.storehaus.ReadableStore#close" data-isabs="false">
       <a id="close():Unit"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -176,7 +180,9 @@
         <span class="name">close</span><span class="params">()</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.Store" class="extype" href="Store.html">Store</a> → <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a> → Closeable → AutoCloseable</dd></dl></div>
+      <p class="shortcomment cmt">Close this store and release any resources.</p><div class="fullcomment"><div class="comment cmt"><p>Close this store and release any resources.
+It is undefined what happens on get/multiGet after close
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a> → Closeable → AutoCloseable</dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#eq" data-isabs="false">
       <a id="eq(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -227,7 +233,9 @@
         <span class="name">get</span><span class="params">(<span name="k">k: K</span>)</span><span class="result">: <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Option" class="extype">Option</span>[V]]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.JMapStore" class="extype" href="JMapStore.html">JMapStore</a> → <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a></dd></dl></div>
+      <p class="shortcomment cmt">get a single key from the store.</p><div class="fullcomment"><div class="comment cmt"><p>get a single key from the store.
+Prefer multiGet if you are getting more than one key at a time
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.JMapStore" class="extype" href="JMapStore.html">JMapStore</a> → <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#getClass" data-isabs="false">
       <a id="getClass():java.lang.Class[_]"></a>
       <h4 class="signature">
@@ -287,8 +295,10 @@
         <span class="name">multiGet</span><span class="tparams">[<span name="K1">K1 &lt;: K</span>]</span><span class="params">(<span name="ks">ks: Set[K1]</span>)</span><span class="result">: Map[K1, <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Option" class="extype">Option</span>[V]]]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">all keys in the set are in the resulting map
-</p><div class="fullcomment"><div class="comment cmt"><p>all keys in the set are in the resulting map
+      <p class="shortcomment cmt">Get a set of keys from the store.</p><div class="fullcomment"><div class="comment cmt"><p>Get a set of keys from the store.
+Important: all keys in the input set are in the resulting map. If the store
+fails to return a value for a given key, that should be represented by a
+Future.exception.
 </p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a></dd></dl></div>
     </li><li visbl="pub" name="com.twitter.storehaus.Store#multiPut" data-isabs="false">
       <a id="multiPut[K1&lt;:K](Map[K1, Option[V]]):Map[K1, Future[Unit]]"></a>
@@ -301,7 +311,7 @@
         <span class="name">multiPut</span><span class="tparams">[<span name="K1">K1 &lt;: K</span>]</span><span class="params">(<span name="kvs">kvs: Map[K1, <span name="scala.Option" class="extype">Option</span>[V]]</span>)</span><span class="result">: Map[K1, <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Unit" class="extype">Unit</span>]]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.Store" class="extype" href="Store.html">Store</a></dd></dl></div>
+      <p class="shortcomment cmt">Replace a set of keys at one time</p><div class="fullcomment"><div class="comment cmt"><p>Replace a set of keys at one time</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.Store" class="extype" href="Store.html">Store</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#ne" data-isabs="false">
       <a id="ne(AnyRef):Boolean"></a>
       <h4 class="signature">

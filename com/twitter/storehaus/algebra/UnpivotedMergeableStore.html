@@ -25,13 +25,15 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">UnpivotedMergeableStore</span><span class="tparams">[<span name="K">-K</span>, <span name="OuterK">OuterK</span>, <span name="InnerK">InnerK</span>, <span name="V">V</span>]</span><span class="result"> extends <a name="com.twitter.storehaus.algebra.UnpivotedStore" class="extype" href="UnpivotedStore.html">UnpivotedStore</a>[K, OuterK, InnerK, V] with <a name="com.twitter.storehaus.algebra.MergeableStore" class="extype" href="MergeableStore.html">MergeableStore</a>[K, V]</span>
+        <span class="name">UnpivotedMergeableStore</span><span class="tparams">[<span name="K">-K</span>, <span name="OuterK">OuterK</span>, <span name="InnerK">InnerK</span>, <span name="V">V</span>]</span><span class="result"> extends <a name="com.twitter.storehaus.UnpivotedStore" class="extype" href="../UnpivotedStore.html">UnpivotedStore</a>[K, OuterK, InnerK, V] with <a name="com.twitter.storehaus.algebra.MergeableStore" class="extype" href="MergeableStore.html">MergeableStore</a>[K, V]</span>
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.1.0/storehaus-algebra/src/main/scala/com/twitter/storehaus/algebra/UnpivotedMergeableStore.scala">UnpivotedMergeableStore.scala</a></dd></dl><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>MergeableStore enrichment which presents a MergeableStore[K, V]
+over top of a packed MergeableStore[OuterK, Map[InnerK, V]].
+</p></div><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.2.0/storehaus-algebra/src/main/scala/com/twitter/storehaus/algebra/UnpivotedMergeableStore.scala">UnpivotedMergeableStore.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><a name="com.twitter.storehaus.algebra.MergeableStore" class="extype" href="MergeableStore.html">MergeableStore</a>[K, V], <a name="com.twitter.storehaus.algebra.Mergeable" class="extype" href="Mergeable.html">Mergeable</a>[K, V], <span name="java.io.Serializable" class="extype">Serializable</span>, <a name="com.twitter.storehaus.algebra.UnpivotedStore" class="extype" href="UnpivotedStore.html">UnpivotedStore</a>[K, OuterK, InnerK, V], <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[K, V], <a name="com.twitter.storehaus.algebra.UnpivotedReadableStore" class="extype" href="UnpivotedReadableStore.html">UnpivotedReadableStore</a>[K, OuterK, InnerK, V], <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[K, V], <span name="java.io.Closeable" class="extype">Closeable</span>, <span name="java.lang.AutoCloseable" class="extype">AutoCloseable</span>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
+          <div class="superTypes hiddenContent"><a name="com.twitter.storehaus.algebra.MergeableStore" class="extype" href="MergeableStore.html">MergeableStore</a>[K, V], <a name="com.twitter.storehaus.UnpivotedStore" class="extype" href="../UnpivotedStore.html">UnpivotedStore</a>[K, OuterK, InnerK, V], <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[K, V], <a name="com.twitter.storehaus.UnpivotedReadableStore" class="extype" href="../UnpivotedReadableStore.html">UnpivotedReadableStore</a>[K, OuterK, InnerK, V], <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[K, V], <span name="java.io.Closeable" class="extype">Closeable</span>, <span name="java.lang.AutoCloseable" class="extype">AutoCloseable</span>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
     
 
@@ -45,7 +47,7 @@
               <span class="filtertype">Inherited</span>
               <ol><li class="hideall out"><span>Hide All</span></li>
               <li class="showall in"><span>Show all</span></li></ol>
-              <ol id="linearization"><li name="com.twitter.storehaus.algebra.UnpivotedMergeableStore" class="in"><span>UnpivotedMergeableStore</span></li><li name="com.twitter.storehaus.algebra.MergeableStore" class="in"><span>MergeableStore</span></li><li name="com.twitter.storehaus.algebra.Mergeable" class="in"><span>Mergeable</span></li><li name="java.io.Serializable" class="in"><span>Serializable</span></li><li name="com.twitter.storehaus.algebra.UnpivotedStore" class="in"><span>UnpivotedStore</span></li><li name="com.twitter.storehaus.Store" class="in"><span>Store</span></li><li name="com.twitter.storehaus.algebra.UnpivotedReadableStore" class="in"><span>UnpivotedReadableStore</span></li><li name="com.twitter.storehaus.ReadableStore" class="in"><span>ReadableStore</span></li><li name="java.io.Closeable" class="in"><span>Closeable</span></li><li name="java.lang.AutoCloseable" class="in"><span>AutoCloseable</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
+              <ol id="linearization"><li name="com.twitter.storehaus.algebra.UnpivotedMergeableStore" class="in"><span>UnpivotedMergeableStore</span></li><li name="com.twitter.storehaus.algebra.MergeableStore" class="in"><span>MergeableStore</span></li><li name="com.twitter.storehaus.UnpivotedStore" class="in"><span>UnpivotedStore</span></li><li name="com.twitter.storehaus.Store" class="in"><span>Store</span></li><li name="com.twitter.storehaus.UnpivotedReadableStore" class="in"><span>UnpivotedReadableStore</span></li><li name="com.twitter.storehaus.ReadableStore" class="in"><span>ReadableStore</span></li><li name="java.io.Closeable" class="in"><span>Closeable</span></li><li name="java.lang.AutoCloseable" class="in"><span>AutoCloseable</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
             </div>
         <div id="visbl">
             <span class="filtertype">Visibility</span>
@@ -65,7 +67,7 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">UnpivotedMergeableStore</span><span class="params">(<span name="store">store: <a name="com.twitter.storehaus.algebra.MergeableStore" class="extype" href="MergeableStore.html">MergeableStore</a>[OuterK, Map[InnerK, V]]</span>)</span><span class="params">(<span name="split">split: (K) ⇒ (OuterK, InnerK)</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="monoid">monoid: <span name="com.twitter.algebird.Monoid" class="extype">Monoid</span>[V]</span>)</span>
+        <span class="name">UnpivotedMergeableStore</span><span class="params">(<span name="store">store: <a name="com.twitter.storehaus.algebra.MergeableStore" class="extype" href="MergeableStore.html">MergeableStore</a>[OuterK, Map[InnerK, V]]</span>)</span><span class="params">(<span name="split">split: (K) ⇒ (OuterK, InnerK)</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: <span name="com.twitter.algebird.Monoid" class="extype">Monoid</span>[V]</span>)</span>
       </span>
       </h4>
       
@@ -176,7 +178,9 @@
         <span class="name">close</span><span class="params">()</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.algebra.UnpivotedMergeableStore" class="extype" href="">UnpivotedMergeableStore</a> → <a name="com.twitter.storehaus.algebra.UnpivotedStore" class="extype" href="UnpivotedStore.html">UnpivotedStore</a> → <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a> → <a name="com.twitter.storehaus.algebra.UnpivotedReadableStore" class="extype" href="UnpivotedReadableStore.html">UnpivotedReadableStore</a> → <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a> → Closeable → AutoCloseable</dd></dl></div>
+      <p class="shortcomment cmt">Close this store and release any resources.</p><div class="fullcomment"><div class="comment cmt"><p>Close this store and release any resources.
+It is undefined what happens on get/multiGet after close
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.algebra.UnpivotedMergeableStore" class="extype" href="">UnpivotedMergeableStore</a> → <a name="com.twitter.storehaus.UnpivotedStore" class="extype" href="../UnpivotedStore.html">UnpivotedStore</a> → <a name="com.twitter.storehaus.UnpivotedReadableStore" class="extype" href="../UnpivotedReadableStore.html">UnpivotedReadableStore</a> → <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a> → Closeable → AutoCloseable</dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#eq" data-isabs="false">
       <a id="eq(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -216,7 +220,7 @@
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.UnpivotedReadableStore#get" data-isabs="false">
+    </li><li visbl="pub" name="com.twitter.storehaus.UnpivotedReadableStore#get" data-isabs="false">
       <a id="get(K):Future[Option[V]]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -227,7 +231,9 @@
         <span class="name">get</span><span class="params">(<span name="k">k: K</span>)</span><span class="result">: <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Option" class="extype">Option</span>[V]]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.algebra.UnpivotedReadableStore" class="extype" href="UnpivotedReadableStore.html">UnpivotedReadableStore</a> → <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a></dd></dl></div>
+      <p class="shortcomment cmt">get a single key from the store.</p><div class="fullcomment"><div class="comment cmt"><p>get a single key from the store.
+Prefer multiGet if you are getting more than one key at a time
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.UnpivotedReadableStore" class="extype" href="../UnpivotedReadableStore.html">UnpivotedReadableStore</a> → <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#getClass" data-isabs="false">
       <a id="getClass():java.lang.Class[_]"></a>
       <h4 class="signature">
@@ -275,20 +281,20 @@
         <span class="name">merge</span><span class="params">(<span name="pair">pair: (K, V)</span>)</span><span class="result">: <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Unit" class="extype">Unit</span>]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.algebra.UnpivotedMergeableStore" class="extype" href="">UnpivotedMergeableStore</a> → <a name="com.twitter.storehaus.algebra.Mergeable" class="extype" href="Mergeable.html">Mergeable</a></dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.algebra.UnpivotedMergeableStore" class="extype" href="">UnpivotedMergeableStore</a> → <a name="com.twitter.storehaus.algebra.MergeableStore" class="extype" href="MergeableStore.html">MergeableStore</a></dd></dl></div>
     </li><li visbl="pub" name="com.twitter.storehaus.algebra.UnpivotedMergeableStore#monoid" data-isabs="false">
       <a id="monoid:Monoid[V]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
-        <span class="modifier">implicit </span>
+        <span class="modifier"></span>
         <span class="kind">val</span>
       </span>
       <span class="symbol">
         <span class="name">monoid</span><span class="result">: <span name="com.twitter.algebird.Monoid" class="extype">Monoid</span>[V]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.algebra.UnpivotedMergeableStore" class="extype" href="">UnpivotedMergeableStore</a> → <a name="com.twitter.storehaus.algebra.Mergeable" class="extype" href="Mergeable.html">Mergeable</a></dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.UnpivotedReadableStore#multiGet" data-isabs="false">
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.algebra.UnpivotedMergeableStore" class="extype" href="">UnpivotedMergeableStore</a> → <a name="com.twitter.storehaus.algebra.MergeableStore" class="extype" href="MergeableStore.html">MergeableStore</a></dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.UnpivotedReadableStore#multiGet" data-isabs="false">
       <a id="multiGet[T&lt;:K](Set[T]):Map[T, Future[Option[V]]]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -299,9 +305,11 @@
         <span class="name">multiGet</span><span class="tparams">[<span name="T">T &lt;: K</span>]</span><span class="params">(<span name="ks">ks: Set[T]</span>)</span><span class="result">: Map[T, <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Option" class="extype">Option</span>[V]]]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">all keys in the set are in the resulting map
-</p><div class="fullcomment"><div class="comment cmt"><p>all keys in the set are in the resulting map
-</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.algebra.UnpivotedReadableStore" class="extype" href="UnpivotedReadableStore.html">UnpivotedReadableStore</a> → <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a></dd></dl></div>
+      <p class="shortcomment cmt">Get a set of keys from the store.</p><div class="fullcomment"><div class="comment cmt"><p>Get a set of keys from the store.
+Important: all keys in the input set are in the resulting map. If the store
+fails to return a value for a given key, that should be represented by a
+Future.exception.
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.UnpivotedReadableStore" class="extype" href="../UnpivotedReadableStore.html">UnpivotedReadableStore</a> → <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a></dd></dl></div>
     </li><li visbl="pub" name="com.twitter.storehaus.algebra.UnpivotedMergeableStore#multiMerge" data-isabs="false">
       <a id="multiMerge[K1&lt;:K](Map[K1, V]):Map[K1, Future[Unit]]"></a>
       <h4 class="signature">
@@ -313,8 +321,8 @@
         <span class="name">multiMerge</span><span class="tparams">[<span name="K1">K1 &lt;: K</span>]</span><span class="params">(<span name="kvs">kvs: Map[K1, V]</span>)</span><span class="result">: Map[K1, <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Unit" class="extype">Unit</span>]]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.algebra.UnpivotedMergeableStore" class="extype" href="">UnpivotedMergeableStore</a> → <a name="com.twitter.storehaus.algebra.Mergeable" class="extype" href="Mergeable.html">Mergeable</a></dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.UnpivotedStore#multiPut" data-isabs="false">
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.algebra.UnpivotedMergeableStore" class="extype" href="">UnpivotedMergeableStore</a> → <a name="com.twitter.storehaus.algebra.MergeableStore" class="extype" href="MergeableStore.html">MergeableStore</a></dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.UnpivotedStore#multiPut" data-isabs="false">
       <a id="multiPut[K1&lt;:K](Map[K1, Option[V]]):Map[K1, Future[Unit]]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -325,7 +333,7 @@
         <span class="name">multiPut</span><span class="tparams">[<span name="K1">K1 &lt;: K</span>]</span><span class="params">(<span name="kvs">kvs: Map[K1, <span name="scala.Option" class="extype">Option</span>[V]]</span>)</span><span class="result">: Map[K1, <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Unit" class="extype">Unit</span>]]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.algebra.UnpivotedStore" class="extype" href="UnpivotedStore.html">UnpivotedStore</a> → <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a></dd></dl></div>
+      <p class="shortcomment cmt">Replace a set of keys at one time</p><div class="fullcomment"><div class="comment cmt"><p>Replace a set of keys at one time</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.UnpivotedStore" class="extype" href="../UnpivotedStore.html">UnpivotedStore</a> → <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#ne" data-isabs="false">
       <a id="ne(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -362,7 +370,7 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.UnpivotedStore#put" data-isabs="false">
+    </li><li visbl="pub" name="com.twitter.storehaus.UnpivotedStore#put" data-isabs="false">
       <a id="put((K, Option[V])):Future[Unit]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -377,7 +385,7 @@
 Delete is the same as put((k,None))
 </p><div class="fullcomment"><div class="comment cmt"><p>replace a value
 Delete is the same as put((k,None))
-</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.algebra.UnpivotedStore" class="extype" href="UnpivotedStore.html">UnpivotedStore</a> → <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a></dd></dl></div>
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.UnpivotedStore" class="extype" href="../UnpivotedStore.html">UnpivotedStore</a> → <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#synchronized" data-isabs="false">
       <a id="synchronized[T0](⇒ T0):T0"></a>
       <h4 class="signature">
@@ -402,18 +410,6 @@ Delete is the same as put((k,None))
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li visbl="prt" name="com.twitter.storehaus.algebra.UnpivotedMergeableStore#unpivotedMergeable" data-isabs="false">
-      <a id="unpivotedMergeable:UnpivotedMergeable[K, OuterK, InnerK, V]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">unpivotedMergeable</span><span class="result">: <a name="com.twitter.storehaus.algebra.UnpivotedMergeable" class="extype" href="UnpivotedMergeable.html">UnpivotedMergeable</a>[K, OuterK, InnerK, V]</span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#wait" data-isabs="false">
       <a id="wait():Unit"></a>
       <h4 class="signature">
@@ -468,16 +464,12 @@ Delete is the same as put((k,None))
         <div id="inheritedMembers">
         <div name="com.twitter.storehaus.algebra.MergeableStore" class="parent">
               <h3>Inherited from <a name="com.twitter.storehaus.algebra.MergeableStore" class="extype" href="MergeableStore.html">MergeableStore</a>[K, V]</h3>
-            </div><div name="com.twitter.storehaus.algebra.Mergeable" class="parent">
-              <h3>Inherited from <a name="com.twitter.storehaus.algebra.Mergeable" class="extype" href="Mergeable.html">Mergeable</a>[K, V]</h3>
-            </div><div name="java.io.Serializable" class="parent">
-              <h3>Inherited from <span name="java.io.Serializable" class="extype">Serializable</span></h3>
-            </div><div name="com.twitter.storehaus.algebra.UnpivotedStore" class="parent">
-              <h3>Inherited from <a name="com.twitter.storehaus.algebra.UnpivotedStore" class="extype" href="UnpivotedStore.html">UnpivotedStore</a>[K, OuterK, InnerK, V]</h3>
+            </div><div name="com.twitter.storehaus.UnpivotedStore" class="parent">
+              <h3>Inherited from <a name="com.twitter.storehaus.UnpivotedStore" class="extype" href="../UnpivotedStore.html">UnpivotedStore</a>[K, OuterK, InnerK, V]</h3>
             </div><div name="com.twitter.storehaus.Store" class="parent">
               <h3>Inherited from <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[K, V]</h3>
-            </div><div name="com.twitter.storehaus.algebra.UnpivotedReadableStore" class="parent">
-              <h3>Inherited from <a name="com.twitter.storehaus.algebra.UnpivotedReadableStore" class="extype" href="UnpivotedReadableStore.html">UnpivotedReadableStore</a>[K, OuterK, InnerK, V]</h3>
+            </div><div name="com.twitter.storehaus.UnpivotedReadableStore" class="parent">
+              <h3>Inherited from <a name="com.twitter.storehaus.UnpivotedReadableStore" class="extype" href="../UnpivotedReadableStore.html">UnpivotedReadableStore</a>[K, OuterK, InnerK, V]</h3>
             </div><div name="com.twitter.storehaus.ReadableStore" class="parent">
               <h3>Inherited from <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[K, V]</h3>
             </div><div name="java.io.Closeable" class="parent">

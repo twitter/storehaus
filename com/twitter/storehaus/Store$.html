@@ -29,7 +29,7 @@
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.1.0/storehaus-core/src/main/scala/com/twitter/storehaus/Store.scala">Store.scala</a></dd></dl><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>Factory methods and some combinators on Stores</p></div><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.2.0/storehaus-core/src/main/scala/com/twitter/storehaus/Store.scala">Store.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent">AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
@@ -150,6 +150,20 @@
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.Store#enrich" data-isabs="false">
+      <a id="enrich[K, V](Store[K, V]):EnrichedStore[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">implicit </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">enrich</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="params">(<span name="store">store: <a name="com.twitter.storehaus.Store" class="extype" href="Store.html">Store</a>[K, V]</span>)</span><span class="result">: <a name="com.twitter.storehaus.EnrichedStore" class="extype" href="EnrichedStore.html">EnrichedStore</a>[K, V]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Import Store.</p><div class="fullcomment"><div class="comment cmt"><p>Import Store.enrich to get access to additional methods/combinators on your stores
+see <a name="com.twitter.storehaus.EnrichedStore" class="extype" href="EnrichedStore.html">EnrichedStore</a>
+</p></div></div>
     </li><li visbl="pub" name="scala.AnyRef#eq" data-isabs="false">
       <a id="eq(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -216,7 +230,7 @@ routed to every store in the supplied sequence.
         <span class="name">fromJMap</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="params">(<span name="m">m: <span name="java.util.Map" class="extype">Map</span>[K, <span name="scala.Option" class="extype">Option</span>[V]]</span>)</span><span class="result">: <a name="com.twitter.storehaus.Store" class="extype" href="Store.html">Store</a>[K, V]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Given a java Map with Option[V] for the values, make a store</p>
     </li><li visbl="pub" name="scala.AnyRef#getClass" data-isabs="false">
       <a id="getClass():java.lang.Class[_]"></a>
       <h4 class="signature">
@@ -264,7 +278,9 @@ routed to every store in the supplied sequence.
         <span class="name">lru</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="params">(<span name="maxSize">maxSize: <span name="scala.Int" class="extype">Int</span> = <span class="symbol">1000</span></span>)</span><span class="result">: <a name="com.twitter.storehaus.Store" class="extype" href="Store.html">Store</a>[K, V]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Create an LRUStore which has a given maximum capacity.</p><div class="fullcomment"><div class="comment cmt"><p>Create an LRUStore which has a given maximum capacity. Note this will just
+silently evict members that have not been used lately.
+</p></div></div>
     </li><li visbl="pub" name="scala.AnyRef#ne" data-isabs="false">
       <a id="ne(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -325,6 +341,22 @@ routed to every store in the supplied sequence.
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.Store#unpivot" data-isabs="false">
+      <a id="unpivot[K, OuterK, InnerK, V](Store[OuterK, Map[InnerK, V]])((K) ⇒ (OuterK, InnerK)):Store[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">unpivot</span><span class="tparams">[<span name="K">K</span>, <span name="OuterK">OuterK</span>, <span name="InnerK">InnerK</span>, <span name="V">V</span>]</span><span class="params">(<span name="store">store: <a name="com.twitter.storehaus.Store" class="extype" href="Store.html">Store</a>[OuterK, Map[InnerK, V]]</span>)</span><span class="params">(<span name="split">split: (K) ⇒ (OuterK, InnerK)</span>)</span><span class="result">: <a name="com.twitter.storehaus.Store" class="extype" href="Store.html">Store</a>[K, V]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Given a Store with values which are themselves Maps, unpivot/uncurry.</p><div class="fullcomment"><div class="comment cmt"><p>Given a Store with values which are themselves Maps, unpivot/uncurry.
+The values of the new store are the inner values of the original store.
+multiGet/multiPut on this store will do the smart thing and pack into a
+minimum number of multiGets/multiPuts on the underlying store
+</p></div></div>
     </li><li visbl="pub" name="scala.AnyRef#wait" data-isabs="false">
       <a id="wait():Unit"></a>
       <h4 class="signature">

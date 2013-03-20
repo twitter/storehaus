@@ -29,7 +29,9 @@
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.1.0/storehaus-core/src/main/scala/com/twitter/storehaus/FutureOps.scala">FutureOps.scala</a></dd></dl><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>Some combinators on Futures or Seqs of Futures that are used internally
+These should arguably exist in util-core.
+</p></div><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.2.0/storehaus-core/src/main/scala/com/twitter/storehaus/FutureOps.scala">FutureOps.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent">AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
@@ -161,7 +163,7 @@
         <span class="name">combineFOFn</span><span class="tparams">[<span name="A">A</span>, <span name="B">B</span>, <span name="C">C</span>]</span><span class="params">(<span name="f1">f1: (A) ⇒ <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Option" class="extype">Option</span>[B]]</span>, <span name="f2">f2: (B) ⇒ <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Option" class="extype">Option</span>[C]]</span>)</span><span class="params">(<span name="a">a: A</span>)</span><span class="result">: <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Option" class="extype">Option</span>[C]]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Kleisli operator for Future[Option[_]] Monad.</p><div class="fullcomment"><div class="comment cmt"><p>Kleisli operator for Future[Option[_]] Monad.  I knew it would come to this.</p></div></div>
     </li><li visbl="pub" name="scala.AnyRef#eq" data-isabs="false">
       <a id="eq(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -212,7 +214,7 @@
         <span class="name">flatMapValue</span><span class="tparams">[<span name="V">V</span>, <span name="V2">V2</span>]</span><span class="params">(<span name="f">f: <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Option" class="extype">Option</span>[V]]</span>)</span><span class="params">(<span name="fn">fn: (V) ⇒ <span name="com.twitter.util.Future" class="extype">Future</span>[V2]</span>)</span><span class="result">: <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Option" class="extype">Option</span>[V2]]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">If the f has Future(None) return None, otherwise flatMap the value with the given function</p>
     </li><li visbl="pub" name="scala.AnyRef#getClass" data-isabs="false">
       <a id="getClass():java.lang.Class[_]"></a>
       <h4 class="signature">
@@ -260,7 +262,8 @@
         <span class="name">liftFutureValues</span><span class="tparams">[<span name="K">K</span>, <span name="K1">K1 &lt;: K</span>, <span name="V">V</span>]</span><span class="params">(<span name="ks">ks: Set[K1]</span>, <span name="result">result: <span name="com.twitter.util.Future" class="extype">Future</span>[Map[K, <span name="com.twitter.util.Future" class="extype">Future</span>[V]]]</span>, <span name="missingfn">missingfn: (K1) ⇒ <span name="com.twitter.util.Future" class="extype">Future</span>[V]</span>)</span><span class="result">: Map[K1, <span name="com.twitter.util.Future" class="extype">Future</span>[V]]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Push the outer future on a result into all the values
+Useful for putting finagle memcache into the same API as storehaus.</p>
     </li><li visbl="pub" name="com.twitter.storehaus.FutureOps#liftValues" data-isabs="false">
       <a id="liftValues[K, K1&lt;:K, V](Set[K1],Future[Map[K, V]],(K1) ⇒ Future[V]):Map[K1, Future[V]]"></a>
       <h4 class="signature">
@@ -272,7 +275,7 @@
         <span class="name">liftValues</span><span class="tparams">[<span name="K">K</span>, <span name="K1">K1 &lt;: K</span>, <span name="V">V</span>]</span><span class="params">(<span name="ks">ks: Set[K1]</span>, <span name="result">result: <span name="com.twitter.util.Future" class="extype">Future</span>[Map[K, V]]</span>, <span name="missingfn">missingfn: (K1) ⇒ <span name="com.twitter.util.Future" class="extype">Future</span>[V]</span>)</span><span class="result">: Map[K1, <span name="com.twitter.util.Future" class="extype">Future</span>[V]]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">remove the outer wrapping of a Future and push it onto the values.</p>
     </li><li visbl="pub" name="com.twitter.storehaus.FutureOps#mapCollect" data-isabs="false">
       <a id="mapCollect[K, V](Map[K, Future[V]])(FutureCollector[(K, V)]):Future[Map[K, V]]"></a>
       <h4 class="signature">
@@ -284,7 +287,7 @@
         <span class="name">mapCollect</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="params">(<span name="m">m: Map[K, <span name="com.twitter.util.Future" class="extype">Future</span>[V]]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="fc">fc: <a name="com.twitter.storehaus.FutureCollector" class="extype" href="FutureCollector.html">FutureCollector</a>[(K, V)]</span>)</span><span class="result">: <span name="com.twitter.util.Future" class="extype">Future</span>[Map[K, V]]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Use the given future collector to produce a single Future of Map from a Map with Future values</p>
     </li><li visbl="pub" name="com.twitter.storehaus.FutureOps#missingValueFor" data-isabs="false">
       <a id="missingValueFor[K](K):Future[Nothing]"></a>
       <h4 class="signature">
@@ -344,7 +347,7 @@
         <span class="name">selectFirstSuccessfulTrial</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span name="futures">futures: Seq[<span name="com.twitter.util.Future" class="extype">Future</span>[T]]</span>)</span><span class="result">: <span name="com.twitter.util.Future" class="extype">Future</span>[T]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Given a Seq of equivalent Futures, return the first non-exceptional, unless all are exceptions</p>
     </li><li visbl="pub" name="scala.AnyRef#synchronized" data-isabs="false">
       <a id="synchronized[T0](⇒ T0):T0"></a>
       <h4 class="signature">

@@ -2,21 +2,21 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html>
         <head>
-          <title>com.twitter.storehaus.algebra.EnrichedMergeable</title>
+          <title>com.twitter.storehaus.EnrichedReadableStore</title>
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
-      <link type="text/css" media="screen" rel="stylesheet" href="../../../../lib/template.css" />
-      <script type="text/javascript" src="../../../../lib/jquery.js"></script>
-      <script type="text/javascript" src="../../../../lib/jquery-ui.js"></script>
-      <script type="text/javascript" src="../../../../lib/template.js"></script>
-      <script type="text/javascript" src="../../../../lib/tools.tooltip.js"></script>
+      <link type="text/css" media="screen" rel="stylesheet" href="../../../lib/template.css" />
+      <script type="text/javascript" src="../../../lib/jquery.js"></script>
+      <script type="text/javascript" src="../../../lib/jquery-ui.js"></script>
+      <script type="text/javascript" src="../../../lib/template.js"></script>
+      <script type="text/javascript" src="../../../lib/tools.tooltip.js"></script>
     
         </head>
         <body onload="sh_highlightDocument('../lib/', '.min.js');" class="type">
       <div id="definition">
-        <img src="../../../../lib/class_big.png" />
-        <p id="owner"><a name="com" class="extype" href="../../../package.html">com</a>.<a name="com.twitter" class="extype" href="../../package.html">twitter</a>.<a name="com.twitter.storehaus" class="extype" href="../package.html">storehaus</a>.<a name="com.twitter.storehaus.algebra" class="extype" href="package.html">algebra</a></p>
-        <h1>EnrichedMergeable</h1>
+        <img src="../../../lib/class_big.png" />
+        <p id="owner"><a name="com" class="extype" href="../../package.html">com</a>.<a name="com.twitter" class="extype" href="../package.html">twitter</a>.<a name="com.twitter.storehaus" class="extype" href="package.html">storehaus</a></p>
+        <h1>EnrichedReadableStore</h1>
       </div>
 
       <h4 class="signature" id="signature">
@@ -25,11 +25,11 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">EnrichedMergeable</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends AnyRef</span>
+        <span class="name">EnrichedReadableStore</span><span class="tparams">[<span name="K">-K</span>, <span name="V">+V</span>]</span><span class="result"> extends AnyRef</span>
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.1.0/storehaus-algebra/src/main/scala/com/twitter/storehaus/algebra/MergeableEnirchment.scala">MergeableEnirchment.scala</a></dd></dl><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.2.0/storehaus-core/src/main/scala/com/twitter/storehaus/EnrichedReadableStore.scala">EnrichedReadableStore.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent">AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
@@ -45,7 +45,7 @@
               <span class="filtertype">Inherited</span>
               <ol><li class="hideall out"><span>Hide All</span></li>
               <li class="showall in"><span>Show all</span></li></ol>
-              <ol id="linearization"><li name="com.twitter.storehaus.algebra.EnrichedMergeable" class="in"><span>EnrichedMergeable</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
+              <ol id="linearization"><li name="com.twitter.storehaus.EnrichedReadableStore" class="in"><span>EnrichedReadableStore</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
             </div>
         <div id="visbl">
             <span class="filtertype">Visibility</span>
@@ -57,15 +57,15 @@
         <div id="allMembers">
         <div class="members" id="constructors">
               <h3>Instance Constructors</h3>
-              <ol><li visbl="pub" name="com.twitter.storehaus.algebra.EnrichedMergeable#this" data-isabs="false">
-      <a id="this:EnrichedMergeable[K, V]"></a>
+              <ol><li visbl="pub" name="com.twitter.storehaus.EnrichedReadableStore#this" data-isabs="false">
+      <a id="this:EnrichedReadableStore[K, V]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">EnrichedMergeable</span><span class="params">(<span name="store">store: <a name="com.twitter.storehaus.algebra.Mergeable" class="extype" href="Mergeable.html">Mergeable</a>[K, V]</span>)</span>
+        <span class="name">EnrichedReadableStore</span><span class="params">(<span name="store">store: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a>[K, V]</span>)</span>
       </span>
       </h4>
       
@@ -138,6 +138,18 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.EnrichedReadableStore#andThen" data-isabs="false">
+      <a id="andThen[V2, K1&gt;:V](ReadableStore[K1, V2])(FutureCollector[K1]):ReadableStore[K, V2]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">andThen</span><span class="tparams">[<span name="V2">V2</span>, <span name="K1">K1 &gt;: V</span>]</span><span class="params">(<span name="other">other: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a>[K1, V2]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="fc">fc: <a name="com.twitter.storehaus.FutureCollector" class="extype" href="FutureCollector.html">FutureCollector</a>[K1]</span>)</span><span class="result">: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a>[K, V2]</span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="scala.Any#asInstanceOf" data-isabs="false">
       <a id="asInstanceOf[T0]:T0"></a>
       <h4 class="signature">
@@ -161,10 +173,35 @@
         <span class="name">clone</span><span class="params">()</span><span class="result">: AnyRef</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a name="java.lang" class="extype" href="../../../../java/lang/package.html">lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a name="java.lang" class="extype" href="../../../java/lang/package.html">lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.EnrichedReadableStore#composeKeyMapping" data-isabs="false">
+      <a id="composeKeyMapping[K1]((K1) ⇒ K):ReadableStore[K1, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">composeKeyMapping</span><span class="tparams">[<span name="K1">K1</span>]</span><span class="params">(<span name="fn">fn: (K1) ⇒ K</span>)</span><span class="result">: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a>[K1, V]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">convert K1 to K then lookup K in this store
+</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.EnrichedReadableStore#convert" data-isabs="false">
+      <a id="convert[K1, V1]((K1) ⇒ K)((V) ⇒ Future[V1]):ReadableStore[K1, V1]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">convert</span><span class="tparams">[<span name="K1">K1</span>, <span name="V1">V1</span>]</span><span class="params">(<span name="kfn">kfn: (K1) ⇒ K</span>)</span><span class="params">(<span name="vfn">vfn: (V) ⇒ <span name="com.twitter.util.Future" class="extype">Future</span>[V1]</span>)</span><span class="result">: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a>[K1, V1]</span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="scala.AnyRef#eq" data-isabs="false">
       <a id="eq(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -200,10 +237,23 @@
         <span class="name">finalize</span><span class="params">()</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a name="java.lang" class="extype" href="../../../../java/lang/package.html">lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a name="java.lang" class="extype" href="../../../java/lang/package.html">lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.EnrichedReadableStore#flatMapValues" data-isabs="false">
+      <a id="flatMapValues[V2]((V) ⇒ Future[V2]):ReadableStore[K, V2]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">flatMapValues</span><span class="tparams">[<span name="V2">V2</span>]</span><span class="params">(<span name="fn">fn: (V) ⇒ <span name="com.twitter.util.Future" class="extype">Future</span>[V2]</span>)</span><span class="result">: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a>[K, V2]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">apply an async function on all the values
+</p>
     </li><li visbl="pub" name="scala.AnyRef#getClass" data-isabs="false">
       <a id="getClass():java.lang.Class[_]"></a>
       <h4 class="signature">
@@ -240,6 +290,20 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.EnrichedReadableStore#mapValues" data-isabs="false">
+      <a id="mapValues[V1]((V) ⇒ V1):ReadableStore[K, V1]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">mapValues</span><span class="tparams">[<span name="V1">V1</span>]</span><span class="params">(<span name="fn">fn: (V) ⇒ V1</span>)</span><span class="result">: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a>[K, V1]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Apply a non-blocking function on all the values.</p><div class="fullcomment"><div class="comment cmt"><p>Apply a non-blocking function on all the values. If this function
+throws, it will be caught in the Future.
+</p></div></div>
     </li><li visbl="pub" name="scala.AnyRef#ne" data-isabs="false">
       <a id="ne(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -300,15 +364,15 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.EnrichedMergeable#unpivot" data-isabs="false">
-      <a id="unpivot[CombinedK, InnerK, InnerV]((CombinedK) ⇒ (K, InnerK))(&lt;:&lt;[V, Map[InnerK, InnerV]],Monoid[InnerV]):Mergeable[CombinedK, InnerV]"></a>
+    </li><li visbl="pub" name="com.twitter.storehaus.EnrichedReadableStore#unpivot" data-isabs="false">
+      <a id="unpivot[CombinedK, InnerK, InnerV]((CombinedK) ⇒ (K, InnerK))(&lt;:&lt;[V, Map[InnerK, InnerV]]):ReadableStore[CombinedK, InnerV]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">unpivot</span><span class="tparams">[<span name="CombinedK">CombinedK</span>, <span name="InnerK">InnerK</span>, <span name="InnerV">InnerV</span>]</span><span class="params">(<span name="split">split: (CombinedK) ⇒ (K, InnerK)</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ev">ev: <span name="scala.Predef.&lt;:&lt;" class="extype">&lt;:&lt;</span>[V, Map[InnerK, InnerV]]</span>, <span name="monoid">monoid: <span name="com.twitter.algebird.Monoid" class="extype">Monoid</span>[InnerV]</span>)</span><span class="result">: <a name="com.twitter.storehaus.algebra.Mergeable" class="extype" href="Mergeable.html">Mergeable</a>[CombinedK, InnerV]</span>
+        <span class="name">unpivot</span><span class="tparams">[<span name="CombinedK">CombinedK</span>, <span name="InnerK">InnerK</span>, <span name="InnerV">InnerV</span>]</span><span class="params">(<span name="split">split: (CombinedK) ⇒ (K, InnerK)</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ev">ev: <span name="scala.Predef.&lt;:&lt;" class="extype">&lt;:&lt;</span>[V, Map[InnerK, InnerV]]</span>)</span><span class="result">: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a>[CombinedK, InnerV]</span>
       </span>
       </h4>
       
@@ -357,18 +421,6 @@
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.EnrichedMergeable#withSummer" data-isabs="false">
-      <a id="withSummer(StatefulSummer[Map[K, V]]):Mergeable[K, V]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">withSummer</span><span class="params">(<span name="summer">summer: <span name="com.twitter.algebird.StatefulSummer" class="extype">StatefulSummer</span>[Map[K, V]]</span>)</span><span class="result">: <a name="com.twitter.storehaus.algebra.Mergeable" class="extype" href="Mergeable.html">Mergeable</a>[K, V]</span>
-      </span>
-      </h4>
-      
     </li></ol>
             </div>
 

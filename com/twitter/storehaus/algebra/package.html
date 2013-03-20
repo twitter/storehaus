@@ -48,19 +48,7 @@
 
         <div class="types members" id="types">
               <h3>Type Members</h3>
-              <ol><li visbl="pub" name="com.twitter.storehaus.algebra.AbstractMergeableStore" data-isabs="true">
-      <a id="AbstractMergeableStore:AbstractMergeableStore[K, V]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">abstract </span>
-        <span class="kind">class</span>
-      </span>
-      <span class="symbol">
-        <a href="AbstractMergeableStore.html"><span class="name">AbstractMergeableStore</span></a><span class="tparams">[<span name="K">-K</span>, <span name="V">V</span>]</span><span class="result"> extends MergeableStore[K, V]</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.AlgebraicReadableStore" data-isabs="false">
+              <ol><li visbl="pub" name="com.twitter.storehaus.algebra.AlgebraicReadableStore" data-isabs="false">
       <a id="AlgebraicReadableStore:AlgebraicReadableStore[K, V]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -84,18 +72,6 @@
       </span>
       </h4>
       
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.BufferingMergeable" data-isabs="false">
-      <a id="BufferingMergeable:BufferingMergeable[K, V]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">class</span>
-      </span>
-      <span class="symbol">
-        <a href="BufferingMergeable.html"><span class="name">BufferingMergeable</span></a><span class="tparams">[<span name="K">-K</span>, <span name="V">V</span>]</span><span class="result"> extends Mergeable[K, V]</span>
-      </span>
-      </h4>
-      
     </li><li visbl="pub" name="com.twitter.storehaus.algebra.BufferingStore" data-isabs="false">
       <a id="BufferingStore:BufferingStore[K, V]"></a>
       <h4 class="signature">
@@ -104,19 +80,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="BufferingStore.html"><span class="name">BufferingStore</span></a><span class="tparams">[<span name="K">-K</span>, <span name="V">V</span>]</span><span class="result"> extends BufferingMergeable[K, V] with MergeableStore[K, V]</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.ConvertedMergeable" data-isabs="false">
-      <a id="ConvertedMergeable:ConvertedMergeable[K1, K2, V1, V2]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">class</span>
-      </span>
-      <span class="symbol">
-        <a href="ConvertedMergeable.html"><span class="name">ConvertedMergeable</span></a><span class="tparams">[<span name="K1">K1</span>, <span name="K2">-K2</span>, <span name="V1">V1</span>, <span name="V2">V2</span>]</span><span class="result"> extends Mergeable[K2, V2]</span>
+        <a href="BufferingStore.html"><span class="name">BufferingStore</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends MergeableStore[K, V]</span>
       </span>
       </h4>
       
@@ -131,7 +95,9 @@
         <a href="ConvertedMergeableStore.html"><span class="name">ConvertedMergeableStore</span></a><span class="tparams">[<span name="K1">K1</span>, <span name="K2">-K2</span>, <span name="V1">V1</span>, <span name="V2">V2</span>]</span><span class="result"> extends ConvertedStore[K1, K2, V1, V2] with MergeableStore[K2, V2]</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">Caveat Emptor! The monoid on the resulting
+<code>ConvertedMergeableStore</code> will be the bijected monoid from
+Monoid[V1] =&gt; Monoid[V2].</p>
     </li><li visbl="pub" name="com.twitter.storehaus.algebra.ConvertedStore" data-isabs="false">
       <a id="ConvertedStore:ConvertedStore[K1, K2, V1, V2]"></a>
       <h4 class="signature">
@@ -141,18 +107,6 @@
       </span>
       <span class="symbol">
         <a href="ConvertedStore.html"><span class="name">ConvertedStore</span></a><span class="tparams">[<span name="K1">K1</span>, <span name="K2">-K2</span>, <span name="V1">V1</span>, <span name="V2">V2</span>]</span><span class="result"> extends ConvertedReadableStore[K1, K2, V1, V2] with Store[K2, V2]</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.EnrichedMergeable" data-isabs="false">
-      <a id="EnrichedMergeable:EnrichedMergeable[K, V]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">class</span>
-      </span>
-      <span class="symbol">
-        <a href="EnrichedMergeable.html"><span class="name">EnrichedMergeable</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends AnyRef</span>
       </span>
       </h4>
       
@@ -168,15 +122,15 @@
       </span>
       </h4>
       
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.Mergeable" data-isabs="true">
-      <a id="Mergeable:Mergeable[K, V]"></a>
+    </li><li visbl="pub" name="com.twitter.storehaus.algebra.MergeableMonoidStore" data-isabs="false">
+      <a id="MergeableMonoidStore:MergeableMonoidStore[K, V]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">trait</span>
+        <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="Mergeable.html"><span class="name">Mergeable</span></a><span class="tparams">[<span name="K">-K</span>, <span name="V">V</span>]</span><span class="result"> extends Serializable</span>
+        <a href="MergeableMonoidStore.html"><span class="name">MergeableMonoidStore</span></a><span class="tparams">[<span name="K">-K</span>, <span name="V">V</span>]</span><span class="result"> extends MergeableStore[K, V]</span>
       </span>
       </h4>
       
@@ -188,10 +142,10 @@
         <span class="kind">trait</span>
       </span>
       <span class="symbol">
-        <a href="MergeableStore.html"><span class="name">MergeableStore</span></a><span class="tparams">[<span name="K">-K</span>, <span name="V">V</span>]</span><span class="result"> extends Mergeable[K, V] with Store[K, V]</span>
+        <a href="MergeableStore.html"><span class="name">MergeableStore</span></a><span class="tparams">[<span name="K">-K</span>, <span name="V">V</span>]</span><span class="result"> extends Store[K, V]</span>
       </span>
       </h4>
-      <p class="comment cmt">None is indistinguishable from monoid.</p>
+      
     </li><li visbl="pub" name="com.twitter.storehaus.algebra.ReadableStoreMonoid" data-isabs="false">
       <a id="ReadableStoreMonoid:ReadableStoreMonoid[K, V]"></a>
       <h4 class="signature">
@@ -216,19 +170,6 @@
       </span>
       </h4>
       
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.UnpivotedMergeable" data-isabs="false">
-      <a id="UnpivotedMergeable:UnpivotedMergeable[K, OuterK, InnerK, V]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">class</span>
-      </span>
-      <span class="symbol">
-        <a href="UnpivotedMergeable.html"><span class="name">UnpivotedMergeable</span></a><span class="tparams">[<span name="K">-K</span>, <span name="OuterK">OuterK</span>, <span name="InnerK">InnerK</span>, <span name="V">V</span>]</span><span class="result"> extends Mergeable[K, V]</span>
-      </span>
-      </h4>
-      <p class="comment cmt">MergeableStore enrichment which presents a MergeableStore[K, V]
-over top of a packed MergeableStore[OuterK, Map[InnerK, V]].</p>
     </li><li visbl="pub" name="com.twitter.storehaus.algebra.UnpivotedMergeableStore" data-isabs="false">
       <a id="UnpivotedMergeableStore:UnpivotedMergeableStore[K, OuterK, InnerK, V]"></a>
       <h4 class="signature">
@@ -240,33 +181,8 @@ over top of a packed MergeableStore[OuterK, Map[InnerK, V]].</p>
         <a href="UnpivotedMergeableStore.html"><span class="name">UnpivotedMergeableStore</span></a><span class="tparams">[<span name="K">-K</span>, <span name="OuterK">OuterK</span>, <span name="InnerK">InnerK</span>, <span name="V">V</span>]</span><span class="result"> extends UnpivotedStore[K, OuterK, InnerK, V] with MergeableStore[K, V]</span>
       </span>
       </h4>
-      
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.UnpivotedReadableStore" data-isabs="false">
-      <a id="UnpivotedReadableStore:UnpivotedReadableStore[K, OuterK, InnerK, V]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">class</span>
-      </span>
-      <span class="symbol">
-        <a href="UnpivotedReadableStore.html"><span class="name">UnpivotedReadableStore</span></a><span class="tparams">[<span name="K">-K</span>, <span name="OuterK">OuterK</span>, <span name="InnerK">InnerK</span>, <span name="V">+V</span>]</span><span class="result"> extends ReadableStore[K, V]</span>
-      </span>
-      </h4>
-      <p class="comment cmt">ReadableStore enrichment which presents a ReadableStore[K, V] over
-top of a packed ReadableStore[OuterK, Map[InnerK, V]].</p>
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.UnpivotedStore" data-isabs="false">
-      <a id="UnpivotedStore:UnpivotedStore[K, OuterK, InnerK, V]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">class</span>
-      </span>
-      <span class="symbol">
-        <a href="UnpivotedStore.html"><span class="name">UnpivotedStore</span></a><span class="tparams">[<span name="K">-K</span>, <span name="OuterK">OuterK</span>, <span name="InnerK">InnerK</span>, <span name="V">V</span>]</span><span class="result"> extends UnpivotedReadableStore[K, OuterK, InnerK, V] with Store[K, V]</span>
-      </span>
-      </h4>
-      <p class="comment cmt">Store enrichment which presents a Store[K, V] over top of a packed
-Store[OuterK, Map[InnerK, V]].</p>
+      <p class="comment cmt">MergeableStore enrichment which presents a MergeableStore[K, V]
+over top of a packed MergeableStore[OuterK, Map[InnerK, V]].</p>
     </li></ol>
             </div>
 
@@ -286,30 +202,6 @@ Store[OuterK, Map[InnerK, V]].</p>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.Mergeable" data-isabs="false">
-      <a id="Mergeable:Mergeable"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">object</span>
-      </span>
-      <span class="symbol">
-        <a href="Mergeable$.html"><span class="name">Mergeable</span></a><span class="result"> extends Serializable</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.MergeableEnrichment" data-isabs="false">
-      <a id="MergeableEnrichment:MergeableEnrichment"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">object</span>
-      </span>
-      <span class="symbol">
-        <a href="MergeableEnrichment$.html"><span class="name">MergeableEnrichment</span></a><span class="result"> extends AnyRef</span>
-      </span>
-      </h4>
-      
     </li><li visbl="pub" name="com.twitter.storehaus.algebra.MergeableStore" data-isabs="false">
       <a id="MergeableStore:MergeableStore"></a>
       <h4 class="signature">
@@ -318,34 +210,10 @@ Store[OuterK, Map[InnerK, V]].</p>
         <span class="kind">object</span>
       </span>
       <span class="symbol">
-        <a href="MergeableStore$.html"><span class="name">MergeableStore</span></a><span class="result"> extends Serializable</span>
+        <a href="MergeableStore$.html"><span class="name">MergeableStore</span></a><span class="result"> extends AnyRef</span>
       </span>
       </h4>
       
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.MergeableStoreEnrichment" data-isabs="false">
-      <a id="MergeableStoreEnrichment:MergeableStoreEnrichment"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">object</span>
-      </span>
-      <span class="symbol">
-        <a href="MergeableStoreEnrichment$.html"><span class="name">MergeableStoreEnrichment</span></a><span class="result"> extends AnyRef</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.PivotOps" data-isabs="false">
-      <a id="PivotOps:PivotOps"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">object</span>
-      </span>
-      <span class="symbol">
-        <a href="PivotOps$.html"><span class="name">PivotOps</span></a><span class="result"> extends AnyRef</span>
-      </span>
-      </h4>
-      <p class="comment cmt">Methods used in the various unpivot stores.</p>
     </li><li visbl="pub" name="com.twitter.storehaus.algebra.ReadableStoreAlgebra" data-isabs="false">
       <a id="ReadableStoreAlgebra:ReadableStoreAlgebra"></a>
       <h4 class="signature">
