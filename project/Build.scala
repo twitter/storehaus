@@ -15,8 +15,7 @@ object StorehausBuild extends Build {
 
     resolvers ++= Seq(
       "snapshots" at "http://oss.sonatype.org/content/repositories/snapshots",
-      "releases"  at "http://oss.sonatype.org/content/repositories/releases",
-      "Twitter Maven" at "http://maven.twttr.com"
+      "releases"  at "http://oss.sonatype.org/content/repositories/releases"
     ),
 
     parallelExecution in Test := true,
@@ -66,7 +65,7 @@ object StorehausBuild extends Build {
       </developers>)
   )
 
-  val algebirdVersion = "0.1.9"
+  val algebirdVersion = "0.1.11"
   val bijectionVersion = "0.3.0"
 
   lazy val storehaus = Project(
