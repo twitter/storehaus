@@ -14,13 +14,9 @@
  * limitations under the License.
  */
 
-package com.twitter.storehaus.algebra
+package com.twitter.storehaus
 
-import com.twitter.algebird.Monoid
-import com.twitter.algebird.util.UtilAlgebras._
-import com.twitter.bijection.Pivot
 import com.twitter.util.Future
-import com.twitter.storehaus.ReadableStore
 
 /**
  * ReadableStore enrichment which presents a ReadableStore[K, V] over
@@ -37,8 +33,14 @@ class UnpivotedReadableStore[-K, OuterK, InnerK, +V](store: ReadableStore[OuterK
     store.get(outerK).map { _.flatMap { _.get(innerK) } }
   }
 
+  private def pivot(pairs: Iterable[K]): Map[OuterK, Iterable[InnerK]] =
+    pairs.map { k =>
+      val (k1, k2) = split(k)
+      (k1 -> List(k2))
+    }.groupBy { _._1 }
+      .mapValues { _.map { case (_, k2s) => k2s }.flatten }
+
   override def multiGet[T <: K](ks: Set[T]): Map[T, Future[Option[V]]] = {
-    val pivot = Pivot.encoder[K, OuterK, InnerK](split)
     val ret: Map[OuterK, Future[Option[Map[InnerK, V]]]] = store.multiGet(pivot(ks).keySet)
     ks.map { k =>
       val (outerK, innerK) = split(k)

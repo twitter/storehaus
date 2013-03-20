@@ -1,5 +1,18 @@
 # storehaus #
 
+### Version.0.2.0 ###
+
+* Move `MergeableStore` into storehaus-core
+* Remove `Mergeable`
+* Prep for open source release.
+
+### Version.0.1.0 ###
+
+* Documentation overhaul
+* `BufferingStore`
+* `UnpivotedStore`
+* `FutureCollector`
+
 ### Version 0.0.4 ###
 
 * Break `Store` into `Store` and `MergeableStore`.

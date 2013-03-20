@@ -21,6 +21,9 @@ import java.io.Closeable
 import java.util.{ Map => JMap }
 
 object Store {
+  implicit def enrich[K, V](store: Store[K, V]): EnrichedStore[K, V] =
+    new EnrichedStore[K, V](store)
+
   def fromJMap[K, V](m: JMap[K, Option[V]]): Store[K, V] = new JMapStore[K, V] {
     override val jstore = m
   }
@@ -34,9 +37,13 @@ object Store {
    */
   def first[K, V](stores: Seq[Store[K, V]])(implicit collect: FutureCollector[Unit]): Store[K, V] =
     new ReplicatedStore(stores)
+
+  def unpivot[K, OuterK, InnerK, V](store: Store[OuterK, Map[InnerK, V]])
+    (split: K => (OuterK, InnerK)): Store[K, V] =
+    new UnpivotedStore(store)(split)
 }
 
-trait Store[-K, V] extends ReadableStore[K, V] with Closeable { self =>
+trait Store[-K, V] extends ReadableStore[K, V] { self =>
   /**
    * replace a value
    * Delete is the same as put((k,None))
@@ -44,6 +51,4 @@ trait Store[-K, V] extends ReadableStore[K, V] with Closeable { self =>
   def put(kv: (K, Option[V])): Future[Unit] = multiPut(Map(kv)).apply(kv._1)
   def multiPut[K1 <: K](kvs: Map[K1, Option[V]]): Map[K1, Future[Unit]] =
     kvs.map { kv => (kv._1, put(kv)) }
-
-  override def close { }
 }
