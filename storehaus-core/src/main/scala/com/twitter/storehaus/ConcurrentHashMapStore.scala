@@ -18,11 +18,14 @@ package com.twitter.storehaus
 
 import java.util.concurrent.{ ConcurrentHashMap => JConcurrentHashMap }
 
-/**
+/** A simple JMapStore whose underlying store is a Java ConcurrentHashMap
+ * useful if you are going to be modifying a store from many threads, something
+ * you in general cannot do unless the docs specifically say that a store is
+ * safe for that.
+ *
  *  @author Oscar Boykin
  *  @author Sam Ritchie
  */
-
 class ConcurrentHashMapStore[K, V] extends JMapStore[K, V] {
   protected override val jstore = new JConcurrentHashMap[K, Option[V]]
 }
