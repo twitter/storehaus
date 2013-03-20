@@ -1,8 +1,10 @@
 # storehaus #
 
-### Version.0.1.1 ###
+### Version.0.2.0 ###
 
-* Move `Mergeable` and `MergeableStore` into storehaus-core
+* Move `MergeableStore` into storehaus-core
+* Remove `Mergeable`
+* Prep for open source release.
 
 ### Version.0.1.0 ###
 
