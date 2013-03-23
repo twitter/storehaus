@@ -110,4 +110,14 @@ object StorehausBuild extends Build {
     name := "storehaus-memcache",
     libraryDependencies += "com.twitter" %% "finagle-memcached" % "6.2.0"
   ).dependsOn(storehausCore % "test->test;compile->compile")
+
+  lazy val storehausRedis = Project(
+    id = "storehaus-redis",
+    base = file("storehaus-redis"),
+    settings = sharedSettings
+  ).settings(
+    name := "storehause-redis",
+    libraryDependencies += "com.twitter" %% "finagle-redis" % "6.2.0"
+  ).dependsOn(storehausCore % "test->test;compile->compile")
+
 }
