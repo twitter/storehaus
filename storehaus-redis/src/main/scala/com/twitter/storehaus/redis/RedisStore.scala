@@ -41,11 +41,12 @@ class RedisStore(client: Client, ttl: Option[Time]) extends Store[ChannelBuffer,
 
   override def multiGet[K1 <: ChannelBuffer](ks: Set[K1]): Map[K1, Future[Option[ChannelBuffer]]] = {    
     val redisResult: Future[Map[ChannelBuffer, Future[Option[ChannelBuffer]]]] = {
-      val keys = ks.toSeq
+      // fast index-lookup
+      val keys = Vector.empty[K1] ++ ks
       client.mGet(keys).map { result =>
         // we must know that there is a corresponding value for every key
         if (result.size != keys.size) Map.empty[ChannelBuffer, Future[Option[ChannelBuffer]]]
-        else Map(result.zipWithIndex.map {
+        else Map(result.view.zipWithIndex.map {
           case (value, i) => keys(i) -> Future.value(value)
         }:_*)
       }
