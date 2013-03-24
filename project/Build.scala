@@ -116,7 +116,7 @@ object StorehausBuild extends Build {
     base = file("storehaus-redis"),
     settings = sharedSettings
   ).settings(
-    name := "storehause-redis",
+    name := "storehaus-redis",
     libraryDependencies += "com.twitter" %% "finagle-redis" % "6.2.0"
   ).dependsOn(storehausCore % "test->test;compile->compile")
 
