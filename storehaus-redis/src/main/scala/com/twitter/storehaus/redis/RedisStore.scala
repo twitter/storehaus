@@ -19,7 +19,7 @@ package com.twitter.storehaus.redis
 import com.twitter.conversions.time._
 import com.twitter.util.{ Future, Time }
 import com.twitter.finagle.redis.Client
-import com.twitter.storehaus.{ FutureOps, Store }
+import com.twitter.storehaus.{ FutureOps, MissingValueException, Store }
 import org.jboss.netty.buffer.ChannelBuffer
 
 /**
@@ -41,17 +41,18 @@ class RedisStore(client: Client, ttl: Option[Time]) extends Store[ChannelBuffer,
 
   override def multiGet[K1 <: ChannelBuffer](ks: Set[K1]): Map[K1, Future[Option[ChannelBuffer]]] = {    
     val redisResult: Future[Map[ChannelBuffer, Future[Option[ChannelBuffer]]]] = {
-      // fast index-lookup
-      val keys = Vector.empty[K1] ++ ks
+      // results are expected in the same order as keys
+      // keys w/o mapped results are considered exceptional
+      val keys = ks.toIndexedSeq.view
       client.mGet(keys).map { result =>
-        // we must know that there is a corresponding value for every key
-        if (result.size != keys.size) Map.empty[ChannelBuffer, Future[Option[ChannelBuffer]]]
-        else Map(result.view.zipWithIndex.map {
-          case (value, i) => keys(i) -> Future.value(value)
-        }:_*)
+        val zipped = keys.zip(result).map {
+          case (k, v) => (k -> Future.value(v))
+        }.toMap
+        zipped ++ keys.filterNot(zipped.isDefinedAt).map { k =>
+          k -> Future.exception(new MissingValueException(k))
+        }
       }
     }
-    
     FutureOps.liftValues(ks, redisResult, { (k: K1) => Future.value(Future.None) })
       .mapValues { _.flatten }
   }
