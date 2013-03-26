@@ -79,7 +79,8 @@ object StorehausBuild extends Build {
     publishLocal := { }
   ).aggregate(storehausCore,
               storehausAlgebra,
-              storehausMemcache)
+              storehausMemcache,
+              storehausRedis)
 
   lazy val storehausCore = Project(
     id = "storehaus-core",
