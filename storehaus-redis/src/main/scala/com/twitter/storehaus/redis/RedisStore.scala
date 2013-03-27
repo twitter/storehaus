@@ -16,6 +16,7 @@
 
 package com.twitter.storehaus.redis
 
+import com.twitter.algebird.Monoid
 import com.twitter.conversions.time._
 import com.twitter.util.{ Future, Time }
 import com.twitter.finagle.redis.Client
@@ -27,26 +28,36 @@ import org.jboss.netty.buffer.ChannelBuffer
  */
 
 object RedisStore {
+  /** A no-op ChannelBuffered type for finagle-redis's common interface */
+  implicit object IdentityChannelBuffered extends ChannelBuffered[ChannelBuffer] {
+    override def apply(cb: ChannelBuffer) = cb
+    override def invert(cb: ChannelBuffer) = cb
+  }
+
   object Default {
     val TTL: Option[Time] = None
   }
 
-  def apply(client: Client, ttl: Option[Time] = Default.TTL) =
-    new RedisStore(client, ttl)
+  def apply[T: ChannelBuffered](client: Client, ttl: Option[Time] = Default.TTL) =
+    new RedisStore[T](client, ttl)
 }
 
-class RedisStore(client: Client, ttl: Option[Time]) extends Store[ChannelBuffer, ChannelBuffer] {
+class RedisStore[V: ChannelBuffered](client: Client, ttl: Option[Time])
+  extends Store[ChannelBuffer, V] {
 
-  override def get(k: ChannelBuffer): Future[Option[ChannelBuffer]] = client.get(k)
+  val bufferer = implicitly[ChannelBuffered[V]]
 
-  override def multiGet[K1 <: ChannelBuffer](ks: Set[K1]): Map[K1, Future[Option[ChannelBuffer]]] = {    
-    val redisResult: Future[Map[ChannelBuffer, Future[Option[ChannelBuffer]]]] = {
+  override def get(k: ChannelBuffer): Future[Option[V]] =
+    client.get(k).map(_.map(bufferer.apply(_)))
+
+  override def multiGet[K1 <: ChannelBuffer](ks: Set[K1]): Map[K1, Future[Option[V]]] = {
+    val redisResult: Future[Map[ChannelBuffer, Future[Option[V]]]] = {
       // results are expected in the same order as keys
       // keys w/o mapped results are considered exceptional
       val keys = ks.toIndexedSeq.view
       client.mGet(keys).map { result =>
         val zipped = keys.zip(result).map {
-          case (k, v) => (k -> Future.value(v))
+          case (k, v) => (k -> Future.value(v.map(bufferer.apply(_))))
         }.toMap
         zipped ++ keys.filterNot(zipped.isDefinedAt).map { k =>
           k -> Future.exception(new MissingValueException(k))
@@ -57,10 +68,11 @@ class RedisStore(client: Client, ttl: Option[Time]) extends Store[ChannelBuffer,
       .mapValues { _.flatten }
   }
 
-  protected def set(k: ChannelBuffer, v: ChannelBuffer) =
-    ttl.map(exp => client.setEx(k, exp.inSeconds, v)).getOrElse(client.set(k, v))
+  protected def set(k: ChannelBuffer, v: V) =
+    ttl.map(exp => client.setEx(k, exp.inSeconds, bufferer.invert(v)))
+       .getOrElse(client.set(k, bufferer.invert(v)))
 
-  override def put(kv: (ChannelBuffer, Option[ChannelBuffer])): Future[Unit] =
+  override def put(kv: (ChannelBuffer, Option[V])): Future[Unit] =
     kv match {
       case (key, Some(value)) => set(key, value)
       case (key, None) => client.del(Seq(key)).unit

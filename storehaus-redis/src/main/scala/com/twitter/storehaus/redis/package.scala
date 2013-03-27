@@ -14,11 +14,18 @@
  * limitations under the License.
  */
 package com.twitter.storehaus
-
+import com.twitter.bijection.Bijection
 import org.jboss.netty.buffer.{ ChannelBuffer, ChannelBuffers }
 import org.jboss.netty.util.CharsetUtil.UTF_8
 
 package object redis {
   implicit def str2ChannelBuffer(str: String): ChannelBuffer =
     ChannelBuffers.copiedBuffer(str, UTF_8)
+
+  /** The finagle redis client is ChannelBuffer-based in keys and values
+   *  RedisStores are polymophic in value types to support algebraic
+   *  merging operations. A ChannelBuffered represents a bijection
+   *  that can produce and extract a ChannelBuffer from said type.
+   */
+  trait ChannelBuffered[T] extends Bijection[ChannelBuffer, T]
 }
