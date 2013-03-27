@@ -26,10 +26,9 @@ import scala.annotation.tailrec
 class CachedReadableStore[K, V](store: ReadableStore[K, V], cache: Cache[K, Future[Option[V]]]) extends ReadableStore[K, V] {
   val cacheRef = Atomic[Cache[K, Future[Option[V]]]](cache)
 
-  override def get(k: K): Future[Option[V]] = {
+  override def get(k: K): Future[Option[V]] =
     cacheRef.update { _.touch(k)(store.get(_)) }
       .get(k).getOrElse(Future.None)
-  }
 
   override def multiGet[K1 <: K](keys: Set[K1]): Map[K1, Future[Option[V]]] = {
     val touched = cacheRef.update { _.multiTouch(keys.toSet[K])(store.multiGet(_)) }
@@ -39,10 +38,12 @@ class CachedReadableStore[K, V](store: ReadableStore[K, V], cache: Cache[K, Futu
 
 // Thanks to http://blog.scala4java.com/2012/03/atomic-update-of-atomicreference.html
 object Atomic {
-  def apply[T](obj: T) = new Atomic(new AtomicReference(obj))
+  def apply[T](obj: T) = new Atomic(obj)
 }
 
-class Atomic[T](val atomic: AtomicReference[T]) {
+class Atomic[T](obj: T) {
+  protected val atomic: AtomicReference[T] = new AtomicReference(obj)
+
   /**
   * Update and return the new state
   * NO GUARANTEE THAT update IS ONLY CALLED ONCE!!!!

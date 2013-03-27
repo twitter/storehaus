@@ -56,9 +56,6 @@ trait Cache[K, V] {
   /* Removes the supplied key from the cache. */
   def evict(k: K): Cache[K, V]
 
-  /* re-initializes the cache using the supplied map as a seed. */
-  def seed(seed: Map[K, V]): Cache[K, V]
-
   /**
     * Touches the cache with the supplied key. If the key is present
     * in the cache, the cache calls "hit" on the key. If the key is

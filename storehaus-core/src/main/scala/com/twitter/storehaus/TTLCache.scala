@@ -16,17 +16,10 @@
 
 package com.twitter.storehaus
 
-/**
-  * Basic cache implementation using an immutable backing map.
-  *
-  * @author Sam Ritchie
-  */
+import scala.collection.SortedMap
 
-class BasicCache[K, V](m: Map[K, V]) extends Cache[K, V] {
-  override def get(k: K) = m.get(k)
-  override def contains(k: K) = m.contains(k)
-  override def hit(k: K) = this
-  override def put(kv: (K, V)) = new BasicCache(m + kv)
-  override def evict(k: K) = new BasicCache(m - k)
-  override def toString = m.toString
-}
+/**
+ * Immutable implementation of a *T*ime *T*o *L*ive cache.
+ *
+ *  @author Sam Ritchie
+ */

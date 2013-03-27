@@ -76,14 +76,6 @@ class LRUCache[K, V](maxSize: Long, idx: Long, map: Map[K, (Long, V)], ord: Sort
         new LRUCache(maxSize, idx + 1, map - k, ord - oldIdx)
     }.getOrElse(this)
 
-  override def seed(seed: Map[K, V]): Cache[K, V] = {
-    val newMap = seed.mapValues { (0L, _) }
-    val newOrd = seed.foldLeft(SortedMap.empty[Long, K]) { (acc, pair) =>
-      acc + (0L -> pair._1)
-    }
-    new LRUCache(maxSize, 0, newMap, newOrd)
-  }
-
   override def toString = {
     val pairStrings = map.map { case (k, (_, v)) => k + " -> " + v }
     "LRUCache(" + pairStrings.toList.mkString(", ") + ")"
