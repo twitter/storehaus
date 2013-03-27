@@ -16,23 +16,18 @@
 
 package com.twitter.storehaus
 
-import java.util.{ Map => JMap }
-import scala.collection.JavaConverters._
-
 /**
-  * Basic cache implementation
+  * Basic cache implementation using an immutable backing map.
+  *
+  * @author Sam Ritchie
   */
 
-class JMapCache[K, V](val m: JMap[K, V]) extends Cache[K, V] {
-  def get(k: K) = Option(m.get(k))
-  override def contains(k: K) = m.containsKey(k)
-  def hit(k: K) = this
-  def miss(kv: (K, V)) = { m.put(kv._1, kv._2); this }
-  def evict(k: K) = { m.remove(k); this }
-  def seed[T <: K](seed: Map[T, V]) = {
-    m.clear
-    m.putAll(seed.asJava)
-    this
-  }
+class BasicCache[K, V](val m: Map[K, V]) extends Cache[K, V] {
+  override def get(k: K) = m.get(k)
+  override def contains(k: K) = m.contains(k)
+  override def hit(k: K) = this
+  override def put(kv: (K, V)) = new BasicCache(m + kv)
+  override def evict(k: K) = new BasicCache(m - k)
+  override def seed(seed: Map[K, V]) = new BasicCache(seed)
   override def toString = m.toString
 }

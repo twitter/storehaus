@@ -17,17 +17,22 @@
 package com.twitter.storehaus
 
 import com.twitter.util.Future
+import java.util.concurrent.atomic.AtomicReference
 
 // TODO: Should we throw some special exception about a value that
 // never made it into the cache vs Future.None?
 
-class CachedReadableStore[-K, V](store: ReadableStore[K, V], cache: Cache[K, Future[Option[V]]]) extends ReadableStore[K, V] {
+class CachedReadableStore[K, V](store: ReadableStore[K, V], cache: Cache[K, Future[Option[V]]]) extends ReadableStore[K, V] {
+  val cacheRef = new AtomicReference[Cache[K, Future[Option[V]]]](cache)
+
   override def get(k: K): Future[Option[V]] = {
-    cache.touch(k)(store.get(_))
-      .get(k).getOrElse(Future.None)
+    cacheRef.set(cacheRef.get.touch(k)(store.get(_)))
+    cacheRef.get.get(k).getOrElse(Future.None)
   }
+
   override def multiGet[K1 <: K](keys: Set[K1]): Map[K1, Future[Option[V]]] = {
-    val pinged = cache.multiTouch(keys)(store.multiGet(_))
-    CollectionOps.zipWith(keys) { pinged.get(_).getOrElse(Future.None) }
+    cacheRef.set(cacheRef.get.multiTouch(keys.toSet[K])(store.multiGet(_)))
+    val touched = cacheRef.get
+    CollectionOps.zipWith(keys) { touched.get(_).getOrElse(Future.None) }
   }
 }

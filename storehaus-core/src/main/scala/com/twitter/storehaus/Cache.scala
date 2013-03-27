@@ -16,25 +16,21 @@
 
 package com.twitter.storehaus
 
+import scala.collection.SortedMap
+
 /**
   * Cache trait for use with Storehaus stores.
+  *
+  * Inspired by clojure's core.cache:
+  * https://github.com/clojure/core.cache/blob/master/src/main/clojure/clojure/core/cache.clj
+  *
+  * @author Sam Ritchie
   */
 
 object Cache {
-  def touch[K, V, T <: Cache[K, V]](cache: T, k: K)(fn: K => V): T = {
-    if (cache.contains(k))
-      cache.hit(k)
-    else
-      cache.miss(k -> fn(k))
-  }
-
-  def multiTouch[K1 <: K, K, V, T <: Cache[K, V]](cache: T, ks: Set[K1])(fn: Set[K1] => Map[K1, V]): T = {
-    val (hits, misses) =
-      ks.map { k => k -> cache.contains(k) }
-        .partition { _._2 }
-    val hitCache = hits.foldLeft(cache) { case (acc, (k, _)) => acc.hit(k) }
-    fn(misses.map { _._1 }.toSet).foldLeft(hitCache) { _.miss(_) }
-  }
+  def basic[K, V] = new BasicCache(Map.empty[K, V])
+  def lru[K, V](maxSize: Long) =
+    new LRUCache(maxSize, 0, Map.empty[K, (Long, V)], SortedMap.empty[Long, K])
 }
 
 trait Cache[K, V] {
@@ -52,27 +48,36 @@ trait Cache[K, V] {
   def contains(k: K): Boolean
 
   /* Promotes the supplied key within the cache. */
-  def hit(k: K): this.type
+  def hit(k: K): Cache[K, V]
 
   /* Writes the supplied pair into the cache. */
-  def miss(kv: (K, V)): this.type
+  def put(kv: (K, V)): Cache[K, V]
 
   /* Removes the supplied key from the cache. */
-  def evict(k: K): this.type
+  def evict(k: K): Cache[K, V]
 
   /* re-initializes the cache using the supplied map as a seed. */
-  def seed[T <: K](seed: Map[T, V]): this.type
+  def seed(seed: Map[K, V]): Cache[K, V]
 
   /**
     * Touches the cache with the supplied key. If the key is present
     * in the cache, the cache calls "hit" on the key. If the key is
     * missing, the cache adds fn(k) to itself.
     */
-  def touch(k: K)(fn: K => V): this.type = Cache.touch[K, V, this.type](this, k)(fn)
+  def touch(k: K)(fn: K => V): Cache[K, V] =
+    if (contains(k))
+      hit(k)
+    else
+      put(k -> fn(k))
 
   /**
     * The same as touch for multiple keys.
     */
-  def multiTouch[K1 <: K](ks: Set[K1])(fn: Set[K1] => Map[K1, V]) =
-    Cache.multiTouch[K1, K, V, this.type](this, ks)(fn)
+  def multiTouch(ks: Set[K])(fn: Set[K] => Map[K, V]): Cache[K, V] = {
+    val (hits, misses) =
+      ks.map { k => k -> contains(k) }
+        .partition { _._2 }
+    val hitCache = hits.foldLeft(this) { case (acc, (k, _)) => acc.hit(k) }
+    fn(misses.map { _._1 }.toSet).foldLeft(hitCache) { _.put(_) }
+  }
 }

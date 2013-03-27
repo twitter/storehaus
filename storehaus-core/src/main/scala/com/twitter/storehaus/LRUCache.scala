@@ -16,21 +16,76 @@
 
 package com.twitter.storehaus
 
-import java.util.{ Map => JMap, LinkedHashMap => JLinkedHashMap }
+import scala.collection.SortedMap
 
 /**
-  * LRUCache
-  */
+ * Immutable implementation of an LRU cache.
+ *
+ *  @author Oscar Boykin
+ *  @author Sam Ritchie
+ */
 
-class LRUCache[K, V](maxSize: Int) extends JMapCache[K, V](
-  new JLinkedHashMap[K, V](maxSize + 1, 0.75f, false) {
-    override protected def removeEldestEntry(eldest: JMap.Entry[K, V]) =
-      super.size > maxSize
-  }) {
-  // Put the current value back into the LinkedHashMap to refresh the
-  // key.
-  override def hit(k: K) = {
-    get(k).foreach { m.put(k, _) }
-    this
+/**
+ * "map" is the backing store used to hold key -> (index,value)
+ * pairs. The index tracks the access time for a particular key. "ord"
+ * is used to determine the Least-Recently-Used key in "map" by taking
+ * the minimum index.
+ */
+
+class LRUCache[K, V](maxSize: Long, idx: Long, map: Map[K, (Long, V)], ord: SortedMap[Long, K]) extends Cache[K, V] {
+  // Scala's SortedMap requires an ordering on pairs. To guarantee
+  // sorting on index only, LRUCache defines an implicit ordering on K
+  // that treats all K as equal.
+  protected implicit val kOrd = new Ordering[K] { def compare(l: K, r: K) = 0 }
+
+  override def get(k: K): Option[V] = map.get(k).map { _._2 }
+
+  override def contains(k: K): Boolean = map.contains(k)
+
+  override def hit(k: K): Cache[K, V] =
+    map.get(k).map {
+      case (oldIdx, v) =>
+        val newIdx = idx + 1
+        val newMap = map + (k -> (newIdx, v))
+        val newOrd = ord - oldIdx + (newIdx -> k)
+        new LRUCache(maxSize, newIdx, newMap, newOrd)
+    }.getOrElse(this)
+
+  override def put(kv: (K, V)): Cache[K, V] = {
+    val (key, value) = kv
+    val newIdx = idx + 1
+    val (newMap, newOrd) =
+      if (ord.size > maxSize) {
+        val (idxToEvict, keyToEvict) =
+          if (map.contains(key))
+            (map(key)._1, key)
+          else
+            ord.min
+        (map - keyToEvict, ord - idxToEvict)
+      } else
+        (map, ord)
+
+    new LRUCache(maxSize, newIdx,
+      newMap + (key -> (newIdx, value)),
+      newOrd + (newIdx -> key))
+  }
+
+  override def evict(k: K): Cache[K, V] =
+    map.get(k).map {
+      case (oldIdx, _) =>
+        new LRUCache(maxSize, idx + 1, map - k, ord - oldIdx)
+    }.getOrElse(this)
+
+  override def seed(seed: Map[K, V]): Cache[K, V] = {
+    val newMap = seed.mapValues { (0L, _) }
+    val newOrd = seed.foldLeft(SortedMap.empty[Long, K]) { (acc, pair) =>
+      acc + (0L -> pair._1)
+    }
+    new LRUCache(maxSize, 0, newMap, newOrd)
+  }
+
+  override def toString = {
+    val pairStrings = map.map { case (k, (_, v)) => k + " -> " + v }
+    "LRUCache(" + pairStrings.toList.mkString(", ") + ")"
   }
 }
