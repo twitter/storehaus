@@ -16,6 +16,7 @@
 
 package com.twitter.storehaus
 
+import com.twitter.storehaus.cache.Cache
 import com.twitter.util.Future
 import java.util.concurrent.atomic.AtomicReference
 import scala.annotation.tailrec
@@ -25,6 +26,10 @@ import scala.annotation.tailrec
 
 class CachedReadableStore[K, V](store: ReadableStore[K, V], cache: Cache[K, Future[Option[V]]]) extends ReadableStore[K, V] {
   val cacheRef = Atomic[Cache[K, Future[Option[V]]]](cache)
+
+  def swapCache(cache: Cache[K, Future[Option[V]]]) {
+    cacheRef.update { _ => cache }
+  }
 
   override def get(k: K): Future[Option[V]] =
     cacheRef.update { _.touch(k)(store.get(_)) }

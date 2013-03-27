@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.twitter.storehaus
+package com.twitter.storehaus.cache
 
 import scala.collection.SortedMap
 
@@ -55,7 +55,7 @@ class LRUCache[K, V](maxSize: Long, idx: Long, map: Map[K, (Long, V)], ord: Sort
     val (key, value) = kv
     val newIdx = idx + 1
     val (newMap, newOrd) =
-      if (ord.size > maxSize) {
+      if (ord.size >= maxSize) {
         val (idxToEvict, keyToEvict) =
           if (map.contains(key))
             (map(key)._1, key)
@@ -70,11 +70,11 @@ class LRUCache[K, V](maxSize: Long, idx: Long, map: Map[K, (Long, V)], ord: Sort
       newOrd + (newIdx -> key))
   }
 
-  override def evict(k: K): Cache[K, V] =
+  override def evict(k: K): (Option[V], Cache[K, V]) =
     map.get(k).map {
-      case (oldIdx, _) =>
-        new LRUCache(maxSize, idx + 1, map - k, ord - oldIdx)
-    }.getOrElse(this)
+      case (oldIdx, v) =>
+        (Some(v), new LRUCache(maxSize, idx + 1, map - k, ord - oldIdx))
+    }.getOrElse((None, this))
 
   override def toString = {
     val pairStrings = map.map { case (k, (_, v)) => k + " -> " + v }

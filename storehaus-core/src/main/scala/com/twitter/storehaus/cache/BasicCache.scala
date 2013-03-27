@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.twitter.storehaus
+package com.twitter.storehaus.cache
 
 /**
   * Basic cache implementation using an immutable backing map.
@@ -27,6 +27,8 @@ class BasicCache[K, V](m: Map[K, V]) extends Cache[K, V] {
   override def contains(k: K) = m.contains(k)
   override def hit(k: K) = this
   override def put(kv: (K, V)) = new BasicCache(m + kv)
-  override def evict(k: K) = new BasicCache(m - k)
+  override def evict(k: K) =
+    m.get(k).map { v => (Some(v), new BasicCache(m - k)) }
+      .getOrElse((None, this))
   override def toString = m.toString
 }

@@ -16,6 +16,7 @@
 
 package com.twitter.storehaus
 
+import com.twitter.storehaus.cache.Cache
 import com.twitter.util.Future
 import java.io.Closeable
 

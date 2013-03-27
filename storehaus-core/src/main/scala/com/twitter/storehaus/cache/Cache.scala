@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
-package com.twitter.storehaus
+package com.twitter.storehaus.cache
+
+import com.twitter.util.Duration
 
 import scala.collection.SortedMap
+import scala.collection.immutable.Queue
 
 /**
   * Cache trait for use with Storehaus stores.
@@ -31,6 +34,10 @@ object Cache {
   def basic[K, V] = new BasicCache(Map.empty[K, V])
   def lru[K, V](maxSize: Long) =
     new LRUCache(maxSize, 0, Map.empty[K, (Long, V)], SortedMap.empty[Long, K])
+  def fifo[K, V](maxSize: Long) =
+    new FIFOCache(maxSize, Map.empty[K, V], Queue.empty[K])
+  def ttl[K, V](ttl: Duration) =
+    new TTLCache(ttl, Map.empty[K, V], Map.empty[K, Long])
 }
 
 trait Cache[K, V] {
@@ -53,8 +60,8 @@ trait Cache[K, V] {
   /* Writes the supplied pair into the cache. */
   def put(kv: (K, V)): Cache[K, V]
 
-  /* Removes the supplied key from the cache. */
-  def evict(k: K): Cache[K, V]
+  /* Returns an option of the evicted value and the new cache state. */
+  def evict(k: K): (Option[V], Cache[K, V])
 
   /**
     * Touches the cache with the supplied key. If the key is present
