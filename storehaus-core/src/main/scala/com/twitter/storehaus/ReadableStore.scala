@@ -94,6 +94,9 @@ object ReadableStore {
    */
   def convert[K1, K2, V1, V2](store: ReadableStore[K1, V1])(kfn: K2 => K1)(vfn: V1 => Future[V2]): ReadableStore[K2, V2] =
     new ConvertedReadableStore(store)(kfn)(vfn)
+
+  def withCache[K, V](store: ReadableStore[K, V], cache: Cache[K, Future[Option[V]]]): ReadableStore[K, V] =
+    new CachedReadableStore(store, cache)
 }
 
 /** Main trait to represent asynchronous readable stores
