@@ -119,6 +119,6 @@ object StorehausBuild extends Build {
   ).settings(
     name := "storehaus-redis",
     libraryDependencies += "com.twitter" %% "finagle-redis" % "6.2.0"
-  ).dependsOn(storehausCore % "test->test;compile->compile")
+  ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
 }
