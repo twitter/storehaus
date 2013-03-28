@@ -22,66 +22,97 @@ import scala.collection.SortedMap
 import scala.collection.immutable.Queue
 
 /**
-  * Cache trait for use with Storehaus stores.
-  *
-  * Inspired by clojure's core.cache:
-  * https://github.com/clojure/core.cache/blob/master/src/main/clojure/clojure/core/cache.clj
-  *
-  * @author Sam Ritchie
-  */
-
+ * Companion object to Cache. Contains a number of methods for
+ * generating various cache implementations.
+ */
 object Cache {
-  def basic[K, V] = new BasicCache(Map.empty[K, V])
-  def lru[K, V](maxSize: Long) =
-    new LRUCache(maxSize, 0, Map.empty[K, (Long, V)], SortedMap.empty[Long, K])
-  def fifo[K, V](maxSize: Long) =
-    new FIFOCache(maxSize, Map.empty[K, V], Queue.empty[K])
-  def ttl[K, V](ttl: Duration) =
-    new TTLCache(ttl, Map.empty[K, V], Map.empty[K, Long])
+  /**
+   * Generate a Cache from the supplied Map. (Caveat emptor: this
+   * will never evict keys!)
+   */
+  def fromMap[K, V](m: Map[K, V] = Map.empty) = new MapCache(m)
+  def lru[K, V](maxSize: Long) = new LRUCache(maxSize, 0, Map.empty[K, (Long, V)], SortedMap.empty[Long, K])
+  def ttl[K, V](ttl: Duration) = new TTLCache(ttl, Map.empty[K, V], Map.empty[K, Long])(() => System.currentTimeMillis)
 }
+
+/**
+ * Immutable Cache trait for use with Storehaus stores.
+ *
+ * Inspired by clojure's core.cache:
+ * https://github.com/clojure/core.cache/blob/master/src/main/clojure/clojure/core/cache.clj
+ *
+ * @author Oscar Boykin
+ * @author Sam Ritchie
+ */
 
 trait Cache[K, V] {
   /**
-    * Returns an option containing the value stored for the supplied
-    * key or None if the key is not present in the cache. (A call to
-    * get does NOT mutate the cache.)
-    */
+   * Returns an option containing the value stored for the supplied
+   * key or None if the key is not present in the cache. (A call to
+   * get should not change the underlying cache in any way.)
+   */
   def get(k: K): Option[V]
 
-  /**
-    * Returns true if the cache contains a value for the supplied key,
-    * false otherwise.
-    */
-  def contains(k: K): Boolean
+  /* Returns a pair of Option[K] (representing a key possibly evicted by
+   * new key-value pair) and a new cache containing the supplied
+   * key-value pair. */
+  def put(kv: (K, V)): (Set[K], Cache[K, V])
 
-  /* Promotes the supplied key within the cache. */
+  /* Returns a new cache with the supplied Promotes the supplied key
+   * within the cache. */
   def hit(k: K): Cache[K, V]
-
-  /* Writes the supplied pair into the cache. */
-  def put(kv: (K, V)): Cache[K, V]
 
   /* Returns an option of the evicted value and the new cache state. */
   def evict(k: K): (Option[V], Cache[K, V])
 
   /**
-    * Touches the cache with the supplied key. If the key is present
-    * in the cache, the cache calls "hit" on the key. If the key is
-    * missing, the cache adds fn(k) to itself.
-    */
+   * Returns an iterator of all key-value pairs inside of this
+   * cache.
+   */
+  def iterator: Iterator[(K, V)]
+
+  /** Returns an empty version of this specific cache implementation. */
+  def empty: Cache[K, V]
+
+  /**
+   * Returns true if the cache contains a value for the supplied key,
+   * false otherwise.
+   */
+  def contains(k: K): Boolean = get(k).isDefined
+
+  /* Returns this cache's key-value pairs as an immutable Map. */
+  def toMap: Map[K, V] = iterator.toMap
+
+  /* Returns a new cache containing the supplied key-value pair (and
+   * possibly evicting some other key). */
+  def +(kv: (K, V)): Cache[K, V] = put(kv)._2
+
+  /* Returns a new Cache with this key evicted. */
+  def -(k: K): Cache[K, V] = evict(k)._2
+
+  /* Returns a new cache seeded with the kv-pairs in the supplied
+   * map. */
+  def seed(m: Map[K, V]): Cache[K, V] = m.foldLeft(empty)(_ + _)
+
+  /**
+   * Touches the cache with the supplied key. If the key is present
+   * in the cache, the cache calls "hit" on the key. If the key is
+   * missing, the cache adds fn(k) to itself.
+   */
   def touch(k: K)(fn: K => V): Cache[K, V] =
     if (contains(k))
       hit(k)
     else
-      put(k -> fn(k))
+      this + (k -> fn(k))
 
   /**
-    * The same as touch for multiple keys.
-    */
+   * The same as touch for multiple keys.
+   */
   def multiTouch(ks: Set[K])(fn: Set[K] => Map[K, V]): Cache[K, V] = {
     val (hits, misses) =
       ks.map { k => k -> contains(k) }
         .partition { _._2 }
     val hitCache = hits.foldLeft(this) { case (acc, (k, _)) => acc.hit(k) }
-    fn(misses.map { _._1 }.toSet).foldLeft(hitCache) { _.put(_) }
+    fn(misses.map { _._1 }.toSet).foldLeft(hitCache) { _ + _ }
   }
 }

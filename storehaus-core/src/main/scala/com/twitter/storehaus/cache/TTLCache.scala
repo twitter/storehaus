@@ -17,39 +17,49 @@
 package com.twitter.storehaus.cache
 
 import com.twitter.util.Duration
-import com.twitter.conversions.time._
 
 /**
  * Immutable implementation of a *T*ime *T*o *L*ive cache.
  *
+ * Every value placed into the cache will be assigned a time
+ * (generated via the supplied clock function). After the supplied
+ * time-to-live Duration has passed, placing any new pair into the
+ * cache will evict all expired keys.
+ *
+ * @author Oscar Boykin
  *  @author Sam Ritchie
  */
 
-class TTLCache[K, V](ttl: Duration, cache: Map[K, V], keyToMillis: Map[K, Long]) extends Cache[K, V] {
+class TTLCache[K, V](ttl: Duration, cache: Map[K, V], keyToMillis: Map[K, Long])(clock: () => Long) extends Cache[K, V] {
   val ttlInMillis = ttl.inMillis
 
   override def get(k: K): Option[V] = if (contains(k)) cache.get(k) else None
   override def contains(k: K): Boolean =
     keyToMillis.get(k)
-      .filter { timestamp => (System.currentTimeMillis - timestamp) < ttlInMillis }
-      .isDefined
+      .exists { timestamp => (clock() - timestamp) < ttlInMillis }
 
   override def hit(k: K): Cache[K, V] = this
 
   protected def toRemove(currentMillis: Long): Set[K] =
-    keyToMillis.filter { case (_, timestamp) => timestamp < currentMillis }.keySet
+    keyToMillis.filter {
+      case (_, timestamp) =>
+        timestamp < (currentMillis - ttlInMillis)
+    }.keySet
 
-  override def put(kv: (K, V)): Cache[K, V] = {
-    val now = System.currentTimeMillis
+  override def put(kv: (K, V)) = {
+    val now = clock()
     val killKeys = toRemove(now)
-    new TTLCache(
-      ttl,
-      cache -- killKeys + kv,
-      keyToMillis -- killKeys + (kv._1 -> now))
+    val newCache = cache -- killKeys + kv
+    val newKeyToMillis = keyToMillis -- killKeys + (kv._1 -> now)
+    (killKeys, new TTLCache(ttl, newCache, newKeyToMillis)(clock))
   }
 
   override def evict(k: K): (Option[V], Cache[K, V]) =
     cache.get(k).map { v =>
-      (Some(v), new TTLCache(ttl, cache - k, keyToMillis - k))
+      (Some(v), new TTLCache(ttl, cache - k, keyToMillis - k)(clock))
     }.getOrElse((None, this))
+
+  override def empty = new TTLCache(ttl, Map.empty[K, V], Map.empty[K, Long])(clock)
+  override def iterator = cache.iterator
+  override def toMap = cache
 }

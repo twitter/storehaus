@@ -17,18 +17,23 @@
 package com.twitter.storehaus.cache
 
 /**
-  * Basic cache implementation using an immutable backing map.
-  *
-  * @author Sam Ritchie
-  */
+ * Basic cache implementation using an immutable backing map.
+ *
+ * @author Oscar Boykin
+ * @author Sam Ritchie
+ */
 
-class BasicCache[K, V](m: Map[K, V]) extends Cache[K, V] {
+class MapCache[K, V](m: Map[K, V]) extends Cache[K, V] {
   override def get(k: K) = m.get(k)
   override def contains(k: K) = m.contains(k)
   override def hit(k: K) = this
-  override def put(kv: (K, V)) = new BasicCache(m + kv)
+  override def put(kv: (K, V)) = (Set.empty[K], new MapCache(m + kv))
   override def evict(k: K) =
-    m.get(k).map { v => (Some(v), new BasicCache(m - k)) }
+    m.get(k).map { v => (Some(v), new MapCache(m - k)) }
       .getOrElse((None, this))
   override def toString = m.toString
+  override def toMap = m
+  override def iterator = m.iterator
+  override def empty = new MapCache(Map.empty)
+  override def seed(newPairs: Map[K, V]) = new MapCache(newPairs)
 }

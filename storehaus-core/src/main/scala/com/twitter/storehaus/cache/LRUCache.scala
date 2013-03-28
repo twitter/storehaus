@@ -51,23 +51,23 @@ class LRUCache[K, V](maxSize: Long, idx: Long, map: Map[K, (Long, V)], ord: Sort
         new LRUCache(maxSize, newIdx, newMap, newOrd)
     }.getOrElse(this)
 
-  override def put(kv: (K, V)): Cache[K, V] = {
+  override def put(kv: (K, V)) = {
     val (key, value) = kv
     val newIdx = idx + 1
-    val (newMap, newOrd) =
+    val (evictedKeys, newMap, newOrd) =
       if (ord.size >= maxSize) {
         val (idxToEvict, keyToEvict) =
           if (map.contains(key))
             (map(key)._1, key)
           else
             ord.min
-        (map - keyToEvict, ord - idxToEvict)
+        (Set(keyToEvict), map - keyToEvict, ord - idxToEvict)
       } else
-        (map, ord)
+        (Set.empty[K], map, ord)
 
-    new LRUCache(maxSize, newIdx,
+    (evictedKeys, new LRUCache(maxSize, newIdx,
       newMap + (key -> (newIdx, value)),
-      newOrd + (newIdx -> key))
+      newOrd + (newIdx -> key)))
   }
 
   override def evict(k: K): (Option[V], Cache[K, V]) =
@@ -80,4 +80,8 @@ class LRUCache[K, V](maxSize: Long, idx: Long, map: Map[K, (Long, V)], ord: Sort
     val pairStrings = map.map { case (k, (_, v)) => k + " -> " + v }
     "LRUCache(" + pairStrings.toList.mkString(", ") + ")"
   }
+
+  override def empty = new LRUCache(maxSize, 0, Map.empty, SortedMap.empty)
+  override def iterator = map.iterator.map { case (k, (_, v)) => k -> v }
+  override def toMap = map.mapValues { _._2 }
 }
