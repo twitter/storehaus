@@ -17,6 +17,7 @@
 package com.twitter.storehaus.cache
 
 import com.twitter.util.Duration
+import scala.collection.breakOut
 
 /**
  * Immutable implementation of a *T*ime *T*o *L*ive cache.
@@ -41,10 +42,9 @@ class TTLCache[K, V](ttl: Duration, cache: Map[K, V], keyToMillis: Map[K, Long])
   override def hit(k: K): Cache[K, V] = this
 
   protected def toRemove(currentMillis: Long): Set[K] =
-    keyToMillis.filter {
-      case (_, timestamp) =>
-        timestamp < (currentMillis - ttlInMillis)
-    }.keySet
+    keyToMillis.collect {
+      case (k, timestamp) if timestamp < (currentMillis - ttlInMillis) => k
+    }(breakOut)
 
   override def put(kv: (K, V)) = {
     val now = clock()
