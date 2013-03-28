@@ -27,7 +27,7 @@ import com.twitter.util.Duration
  * cache will evict all expired keys.
  *
  * @author Oscar Boykin
- *  @author Sam Ritchie
+ * @author Sam Ritchie
  */
 
 class TTLCache[K, V](ttl: Duration, cache: Map[K, V], keyToMillis: Map[K, Long])(clock: () => Long) extends Cache[K, V] {

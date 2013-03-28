@@ -30,7 +30,7 @@ object Cache {
    * Generate a Cache from the supplied Map. (Caveat emptor: this
    * will never evict keys!)
    */
-  def fromMap[K, V](m: Map[K, V] = Map.empty) = new MapCache(m)
+  def fromMap[K, V](m: Map[K, V] = Map.empty[K, V]) = new MapCache(m)
   def lru[K, V](maxSize: Long) = new LRUCache(maxSize, 0, Map.empty[K, (Long, V)], SortedMap.empty[Long, K])
   def ttl[K, V](ttl: Duration) = new TTLCache(ttl, Map.empty[K, V], Map.empty[K, Long])(() => System.currentTimeMillis)
 }
