@@ -19,7 +19,6 @@ package com.twitter.storehaus.cache
 import com.twitter.util.Duration
 
 import scala.collection.SortedMap
-import scala.collection.immutable.Queue
 
 /**
  * Companion object to Cache. Contains a number of methods for
@@ -32,7 +31,22 @@ object Cache {
    */
   def fromMap[K, V](m: Map[K, V] = Map.empty[K, V]) = new MapCache(m)
   def lru[K, V](maxSize: Long) = new LRUCache(maxSize, 0, Map.empty[K, (Long, V)], SortedMap.empty[Long, K])
-  def ttl[K, V](ttl: Duration) = new TTLCache(ttl, Map.empty[K, V], Map.empty[K, Long])(() => System.currentTimeMillis)
+  def ttl[K, V](ttl: Duration) = new TTLCache(ttl.inMillis, Map.empty[K, (Long, V)])(() => System.currentTimeMillis)
+
+  def toMutable[K, V](cache: Cache[K, V]): MutableCache[K, V] =
+    new MutableCache[K, V] {
+      protected val cacheRef = Atomic[Cache[K, V]](cache)
+
+      override def get(k: K): Option[V] = cacheRef.get.get(k)
+      override def +=(kv: (K, V)) = { cacheRef.update { _ + kv }; this }
+      override def hit(k: K) = { cacheRef.update { _.hit(k) }; this }
+      override def evict(k: K) = cacheRef.effect { _.evict(k) }._1
+      override def empty = toMutable(cache.empty)
+      override def clear = { cacheRef.update { _.empty }; this }
+      override def contains(k: K) = cache.contains(k)
+      override def -=(k: K) = { cacheRef.update { _ - k }; this }
+      override def touch(k: K, v: => V) = { cacheRef.update { _.touch(k, v) }; this }
+    }
 }
 
 /**
@@ -99,20 +113,9 @@ trait Cache[K, V] {
    * in the cache, the cache calls "hit" on the key. If the key is
    * missing, the cache adds fn(k) to itself.
    */
-  def touch(k: K)(fn: K => V): Cache[K, V] =
+  def touch(k: K, v: => V): Cache[K, V] =
     if (contains(k))
       hit(k)
     else
-      this + (k -> fn(k))
-
-  /**
-   * The same as touch for multiple keys.
-   */
-  def multiTouch(ks: Set[K])(fn: Set[K] => Map[K, V]): Cache[K, V] = {
-    val (hits, misses) =
-      ks.map { k => k -> contains(k) }
-        .partition { _._2 }
-    val hitCache = hits.foldLeft(this) { case (acc, (k, _)) => acc.hit(k) }
-    fn(misses.map { _._1 }.toSet).foldLeft(hitCache) { _ + _ }
-  }
+      this + (k -> v)
 }

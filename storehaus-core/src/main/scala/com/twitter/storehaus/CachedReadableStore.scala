@@ -16,10 +16,8 @@
 
 package com.twitter.storehaus
 
-import com.twitter.storehaus.cache.Cache
+import com.twitter.storehaus.cache.{ Atomic, Cache }
 import com.twitter.util.{ Future, Return, Throw }
-import java.util.concurrent.atomic.AtomicReference
-import scala.annotation.tailrec
 
 // TODO: Should we throw some special exception about a value that
 // never made it into the cache vs Future.None?
@@ -56,28 +54,4 @@ class CachedReadableStore[K, V](store: ReadableStore[K, V], cache: Cache[K, Futu
     }
     CollectionOps.zipWith(keys) { touched.get(_).getOrElse(Future.None) }
   }
-}
-
-// Thanks to http://blog.scala4java.com/2012/03/atomic-update-of-atomicreference.html
-object Atomic {
-  def apply[T](obj: T) = new Atomic(obj)
-}
-
-class Atomic[T](obj: T) {
-  protected val atomic: AtomicReference[T] = new AtomicReference(obj)
-
-  /**
-  * Update and return the new state
-  * NO GUARANTEE THAT update IS ONLY CALLED ONCE!!!!
-  * update should return a new state based on the old state
-  */
-
-  @tailrec
-  final def update(f: T => T): T = {
-    val oldValue = atomic.get()
-    val newValue = f(oldValue)
-    if (atomic.compareAndSet(oldValue, newValue)) newValue else update(f)
-  }
-
-  def get() = atomic.get()
 }

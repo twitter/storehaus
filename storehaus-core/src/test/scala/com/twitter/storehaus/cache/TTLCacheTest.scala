@@ -23,16 +23,16 @@ class TTLCacheTest extends Specification {
   val cache = Cache.ttl[String, Int](200.millis)
 
   "TTLCache exhibits proper TTL-ness" in {
-    val abCache = cache + ("a" -> 1) + ("b" -> 2)
-    abCache.toMap must be_==(Map("a" -> 1, "b" -> 2))
+    val abCache = cache.putClocked("a" -> 1)._2.putClocked("b" -> 2)._2
+    abCache.toNonExpiredMap must be_==(Map("a" -> 1, "b" -> 2))
     Thread.sleep(300)
-    (abCache + ("c" -> 3)).toMap must be_==(Map("c" -> 3))
+    (abCache.putClocked("c" -> 3)._2).toNonExpiredMap must be_==(Map("c" -> 3))
   }
 
   "TTLCache does not return an expired value" in {
-    val withV = cache + ("a" -> 10)
-    withV.get("a") must be_==(Some(10))
+    val withV = cache.putClocked("a" -> 10)._2
+    withV.getNonExpired("a") must be_==(Some(10))
     Thread.sleep(300)
-    withV.get("a") must be_==(None)
+    withV.getNonExpired("a") must be_==(None)
   }
 }

@@ -22,44 +22,58 @@ import scala.collection.breakOut
 /**
  * Immutable implementation of a *T*ime *T*o *L*ive cache.
  *
- * Every value placed into the cache will be assigned a time
- * (generated via the supplied clock function). After the supplied
- * time-to-live Duration has passed, placing any new pair into the
- * cache will evict all expired keys.
+ * Every value placed into the cache via "put" must have an
+ * accompanying expiration time. Alternatively, placing a (K, V) pair
+ * into the TTLCache via putWithTime will generate an expiration time
+ * via the supplied clock function. After the supplied time-to-live
+ * Duration has passed, placing any new pair into the cache with
+ * "put" will evict all expired keys.
  *
  * @author Oscar Boykin
  * @author Sam Ritchie
  */
 
-class TTLCache[K, V](ttl: Duration, cache: Map[K, V], keyToMillis: Map[K, Long])(clock: () => Long) extends Cache[K, V] {
-  val ttlInMillis = ttl.inMillis
+class TTLCache[K, V](val ttl: Long, cache: Map[K, (Long, V)])(val clock: () => Long) extends Cache[K, (Long, V)] {
+  override def get(k: K) = cache.get(k)
+  override def contains(k: K) = cache.contains(k)
+  override def hit(k: K) = this
 
-  override def get(k: K): Option[V] = if (contains(k)) cache.get(k) else None
-  override def contains(k: K): Boolean =
-    keyToMillis.get(k)
-      .exists { timestamp => (clock() - timestamp) < ttlInMillis }
+  override def put(kv: (K, (Long, V))) = putWithTime(kv, clock())
 
-  override def hit(k: K): Cache[K, V] = this
-
-  protected def toRemove(currentMillis: Long): Set[K] =
-    keyToMillis.collect {
-      case (k, timestamp) if timestamp < (currentMillis - ttlInMillis) => k
-    }(breakOut)
-
-  override def put(kv: (K, V)) = {
-    val now = clock()
-    val killKeys = toRemove(now)
-    val newCache = cache -- killKeys + kv
-    val newKeyToMillis = keyToMillis -- killKeys + (kv._1 -> now)
-    (killKeys, new TTLCache(ttl, newCache, newKeyToMillis)(clock))
-  }
-
-  override def evict(k: K): (Option[V], Cache[K, V]) =
-    cache.get(k).map { v =>
-      (Some(v), new TTLCache(ttl, cache - k, keyToMillis - k)(clock))
+  override def evict(k: K): (Option[(Long, V)], Cache[K, (Long, V)]) =
+    cache.get(k).map { pair: (Long, V) =>
+      (Some(pair), new TTLCache(ttl, cache - k)(clock))
     }.getOrElse((None, this))
 
-  override def empty = new TTLCache(ttl, Map.empty[K, V], Map.empty[K, Long])(clock)
+  override def empty = new TTLCache(ttl, Map.empty[K, (Long, V)])(clock)
   override def iterator = cache.iterator
   override def toMap = cache
+
+  protected def toRemove(currentMillis: Long): Set[K] =
+    cache.collect {
+      case (k, (expiration, _)) if expiration < currentMillis => k
+    }(breakOut)
+
+  protected def putWithTime(kv: (K, (Long, V)), currentMillis: Long): (Set[K], TTLCache[K, V]) = {
+    val killKeys = toRemove(currentMillis)
+    val newCache = cache -- killKeys + kv
+    (killKeys, new TTLCache(ttl, newCache)(clock))
+  }
+
+  def getNonExpired(k: K): Option[V] =
+    get(k).filter { case (expiration, _) => expiration > clock() }
+      .map { _._2 }
+
+  def toNonExpiredMap: Map[K, V] = {
+    val now = clock()
+    toMap.collect { case (k, (exp, v)) if exp > now => k -> v }
+  }
+
+  def expired(k: K): Boolean = getNonExpired(k).isDefined
+
+  def putClocked(kv: (K, V)): (Set[K], TTLCache[K, V]) = {
+    val (k, v) = kv
+    val now = clock()
+    putWithTime((k, (now + ttl, v)), now)
+  }
 }

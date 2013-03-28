@@ -46,5 +46,5 @@ object CacheProperties extends Properties("Cache") {
 
   property("LRUCache obeys the cache laws") = cacheLaws(Cache.lru[String,Int](10))
   property("TTLCache obeys the cache laws") =
-    cacheLaws(Cache.ttl[String,Int](10.millis))
+    cacheLaws[String, (Long, Int)](Cache.ttl[String, Int](10.millis))
 }
