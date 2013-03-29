@@ -16,20 +16,14 @@
 
 package com.twitter.storehaus
 
-import com.twitter.storehaus.cache.{ Atomic, Cache }
+import com.twitter.storehaus.cache.{ Atomic, Cache, MutableCache }
 import com.twitter.util.{ Future, Return, Throw }
 
 // TODO: Should we throw some special exception about a value that
 // never made it into the cache vs Future.None?
 
-class CachedReadableStore[K, V](store: ReadableStore[K, V], cache: Cache[K, Future[Option[V]]]) extends ReadableStore[K, V] {
-  val cacheRef = Atomic[Cache[K, Future[Option[V]]]](cache)
-
-  def swapCache(cache: Cache[K, Future[Option[V]]]) {
-    cacheRef.update { _ => cache }
-  }
-
-  protected def needsRefresh(cache: Cache[K, Future[Option[V]]], k: K): Boolean =
+class CachedReadableStore[K, V](store: ReadableStore[K, V], cache: MutableCache[K, Future[Option[V]]]) extends ReadableStore[K, V] {
+  protected def needsRefresh(k: K): Boolean =
     !(cache.get(k).exists { f => (!f.isDefined || f.isReturn) })
 
   /**
@@ -38,20 +32,8 @@ class CachedReadableStore[K, V](store: ReadableStore[K, V], cache: Cache[K, Futu
     * refresh the cache from the store.
     */
   override def get(k: K): Future[Option[V]] =
-    cacheRef.update { oldCache =>
-      oldCache.get(k) match {
-        case Some(Future(Return(_))) => oldCache.hit(k)
-        case Some(Future(Throw(_))) | None => oldCache + (k -> store.get(k))
-        case Some(_) => oldCache.hit(k)
-      }
-    }.get(k).getOrElse(Future.None)
+    cache.get(k).getOrElse(Future.None)
 
-  override def multiGet[K1 <: K](keys: Set[K1]): Map[K1, Future[Option[V]]] = {
-    val touched = cacheRef.update { oldCache =>
-      val (toReplace, toHit) = keys.partition { needsRefresh(oldCache, _) }
-      val withHits = toHit.foldLeft(oldCache)(_.hit(_))
-      store.multiGet(toReplace).foldLeft(withHits)(_ + _)
-    }
-    CollectionOps.zipWith(keys) { touched.get(_).getOrElse(Future.None) }
-  }
+  override def multiGet[K1 <: K](keys: Set[K1]): Map[K1, Future[Option[V]]] =
+    CollectionOps.zipWith(keys) { cache.get(_).getOrElse(Future.None) }
 }

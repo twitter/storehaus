@@ -31,6 +31,10 @@ import com.twitter.storehaus.cache._
 object MutableCacheAlgebra {
   implicit def enrich[K, V](cache: MutableCache[K, V]): AlgebraicMutableCache[K, V] =
     new AlgebraicMutableCache[K, V](cache)
+
+  def mutableFromTTL[K, V](ttlCache: TTLCache[K, V]): MutableCache[K, V] =
+    Cache.toMutable(ttlCache)
+      .inject(new TTLInjection[K, Long, V](ttlCache.ttl)(ttlCache.clock))
 }
 
 class AlgebraicMutableCache[K, V](cache: MutableCache[K, V]) {
