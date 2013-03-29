@@ -18,7 +18,11 @@ package com.twitter.storehaus.cache
 
 import com.twitter.util.Duration
 
-import scala.collection.SortedMap
+import scala.collection.mutable.{ Map => MutableMap }
+
+object MutableCache {
+  def fromMap[K, V](m: MutableMap[K, V]) = new MutableMapCache[K, V](m)
+}
 
 trait MutableCache[K, V] {
   /**
@@ -31,6 +35,12 @@ trait MutableCache[K, V] {
 
   /* Returns an option of the (potentially) evicted value. */
   def evict(k: K): Option[V]
+
+    /**
+   * Returns an iterator of all key-value pairs inside of this
+   * cache.
+   */
+  def iterator: Iterator[(K, V)]
 
   /** Returns an empty version of this specific cache implementation. */
   def empty: MutableCache[K, V]

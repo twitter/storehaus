@@ -46,6 +46,7 @@ object Cache {
       override def contains(k: K) = cache.contains(k)
       override def -=(k: K) = { cacheRef.update { _ - k }; this }
       override def touch(k: K, v: => V) = { cacheRef.update { _.touch(k, v) }; this }
+      override def iterator = cacheRef.get.iterator
     }
 }
 
