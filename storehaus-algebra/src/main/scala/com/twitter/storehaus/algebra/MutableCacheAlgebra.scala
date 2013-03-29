@@ -57,5 +57,6 @@ class AlgebraicMutableCache[K, V](cache: MutableCache[K, V]) {
       override def empty = new AlgebraicMutableCache(cache.empty).inject(injection)
 
       override def clear = { cache.clear; this }
+      override def iterator = cache.iterator
     }
 }
