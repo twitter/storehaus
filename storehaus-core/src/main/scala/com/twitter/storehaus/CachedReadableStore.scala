@@ -19,21 +19,39 @@ package com.twitter.storehaus
 import com.twitter.storehaus.cache.{ Atomic, Cache, MutableCache }
 import com.twitter.util.{ Future, Return, Throw }
 
-// TODO: Should we throw some special exception about a value that
-// never made it into the cache vs Future.None?
-
 class CachedReadableStore[K, V](store: ReadableStore[K, V], cache: MutableCache[K, Future[Option[V]]]) extends ReadableStore[K, V] {
-  protected def needsRefresh(k: K): Boolean =
-    !(cache.get(k).exists { f => (!f.isDefined || f.isReturn) })
-
   /**
     * If a key is present and successful in the cache, use the cache
     * value. Otherwise (in a missing cache value or failed future),
     * refresh the cache from the store.
     */
   override def get(k: K): Future[Option[V]] =
-    cache.get(k).getOrElse(Future.None)
+    cache.get(k) match {
+      case Some(cached@Future(Return(_))) => {
+        cache.hit(k)
+        cached
+      }
+      case Some(Future(Throw(_))) | None => {
+        val storeV = store.get(k)
+        cache += (k -> storeV)
+        storeV
+      }
+      case Some(cached) => {
+        cache.hit(k)
+        cached
+      }
+    }
 
-  override def multiGet[K1 <: K](keys: Set[K1]): Map[K1, Future[Option[V]]] =
-    CollectionOps.zipWith(keys) { cache.get(_).getOrElse(Future.None) }
+  protected def needsRefresh(opt: Option[Future[_]]): Boolean =
+    !opt.exists { f => f.isDefined && f.isThrow }
+
+  override def multiGet[K1 <: K](keys: Set[K1]): Map[K1, Future[Option[V]]] = {
+    type Pair = Set[(K1, Future[Option[V]])]
+    val (pairsToReplace, pairsToHit): (Pair, Pair)  =
+      keys.map { k => k -> cache.get(k) }.partition { case (_, f) => needsRefresh(f) }
+    pairsToHit.foreach { case (k, _) => cache.hit(k) }
+    val replaced = store.multiGet(pairsToReplace.map { _._1 })
+    replaced.foreach { cache += _ }
+    replaced ++ pairsToHit
+  }
 }
