@@ -26,6 +26,7 @@ import org.jboss.netty.buffer.{ ChannelBuffer, ChannelBuffers }
  *
  *  @author Doug Tangren
  */
+
 object RedisHashStore {
 
   def apply(client: Client, ttl: Option[Time] = RedisStore.Default.TTL) =
@@ -36,6 +37,9 @@ object RedisHashStore {
 }
 import RedisHashStore._
 
+/**
+ * A Store in which keys map to Maps of secondary keys and values
+ */
 class RedisHashStore(val client: Client, ttl: Option[Time])
   extends Store[ChannelBuffer, Map[ChannelBuffer, ChannelBuffer]] {
 

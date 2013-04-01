@@ -17,10 +17,13 @@
 package com.twitter.storehaus.redis
 
 import com.twitter.algebird.Monoid
-import com.twitter.util.Time
+import com.twitter.bijection.Injection
 import com.twitter.finagle.redis.Client
-import com.twitter.storehaus.algebra.MergeableStore
+import com.twitter.finagle.redis.util.CBToString
+import com.twitter.storehaus.algebra.{ ConvertedStore, MergeableStore }
+import com.twitter.util.Time
 import org.jboss.netty.buffer.{ ChannelBuffer, ChannelBuffers }
+import scala.util.control.Exception.allCatch
 
 /**
  * 
@@ -28,20 +31,32 @@ import org.jboss.netty.buffer.{ ChannelBuffer, ChannelBuffers }
  */
 
 object RedisIntStore {
-  implicit object IntChannelBuffered extends ChannelBuffered[Int] {
-    override def apply(cb: ChannelBuffer): Int = cb.readInt
-    override def invert(l: Int) = {
+  implicit object IntInjection
+   extends Injection[Int, ChannelBuffer] {
+    def apply(a: Int): ChannelBuffer = {
       val b = ChannelBuffers.buffer(4)
-      b.writeInt(l)
-      b 
+      b.writeInt(a)
+      b
     }
+   /** redis stores numerics as strings
+    *  so we have to decode them as such
+    *  http://redis.io/topics/data-types-intro
+    */
+    override def invert(b: ChannelBuffer): Option[Int] =
+      allCatch.opt(CBToString(b).toInt)
   }
+  def apply(client: Client, ttl: Option[Time] = RedisStore.Default.TTL) =
+    new RedisIntStore(RedisStore(client, ttl))
 }
 import RedisIntStore._
 
-class RedisIntStore(client: Client, ttl: Option[Time])
- extends RedisStore[Int](client, ttl)
-    with MergeableStore[ChannelBuffer, Int] {
+/**
+ * A MergableStore backed by redis which stores Int values.
+ * Values are merged with an incrBy operation.
+ */
+class RedisIntStore(underlying: RedisStore)
+  extends ConvertedStore[ChannelBuffer, ChannelBuffer, ChannelBuffer, Int](underlying)(identity)
+   with MergeableStore[ChannelBuffer, Int] {
   val monoid = implicitly[Monoid[Int]]
-  override def merge(kv: (ChannelBuffer, Int)) = client.incrBy(kv._1, kv._2).unit
+  override def merge(kv: (ChannelBuffer, Int)) = underlying.client.incrBy(kv._1, kv._2).unit
 }

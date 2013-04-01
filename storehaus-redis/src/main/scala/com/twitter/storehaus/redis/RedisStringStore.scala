@@ -17,11 +17,13 @@
 package com.twitter.storehaus.redis
 
 import com.twitter.algebird.Monoid
-import com.twitter.util.Time
+import com.twitter.bijection.Injection
 import com.twitter.finagle.redis.Client
 import com.twitter.finagle.redis.util.{ CBToString, StringToChannelBuffer }
-import com.twitter.storehaus.algebra.MergeableStore
+import com.twitter.storehaus.algebra.{ ConvertedStore, MergeableStore }
+import com.twitter.util.Time
 import org.jboss.netty.buffer.ChannelBuffer
+import scala.util.control.Exception.allCatch
 
 /**
  * 
@@ -29,17 +31,26 @@ import org.jboss.netty.buffer.ChannelBuffer
  */
 
 object RedisStringStore {
-  implicit object StringChannelBuffered extends ChannelBuffered[String] {
-    override def apply(cb: ChannelBuffer): String = CBToString(cb)
-    override def invert(in: String) = StringToChannelBuffer(in)
+  implicit object StringInjection
+   extends Injection[String, ChannelBuffer] {
+    def apply(a: String): ChannelBuffer = StringToChannelBuffer(a)
+    def invert(b: ChannelBuffer): Option[String] = allCatch.opt(CBToString(b))
   }
+
+  def apply(client: Client, ttl: Option[Time]) =
+    new RedisStringStore(RedisStore(client, ttl))
 }
 import RedisStringStore._
 
-class RedisStringStore(client: Client, ttl: Option[Time])
- extends RedisStore[String](client, ttl)
-    with MergeableStore[ChannelBuffer, String] {
+/**
+ * A MergableStore backed by redis which stores String values
+ * Values are merged by with an append operation.
+ */
+class RedisStringStore(underlying: RedisStore)
+  extends ConvertedStore[ChannelBuffer, ChannelBuffer, ChannelBuffer, String](underlying)(identity)
+     with MergeableStore[ChannelBuffer, String] {
   val monoid = implicitly[Monoid[String]]
-  override def merge(kv: (ChannelBuffer, String)) = client.append(kv._1, kv._2).unit
+  override def merge(kv: (ChannelBuffer, String)) = underlying.client.append(kv._1, kv._2).unit
 }
 
+                              

@@ -17,30 +17,46 @@
 package com.twitter.storehaus.redis
 
 import com.twitter.algebird.Monoid
-import com.twitter.util.Time
+import com.twitter.bijection.Injection
 import com.twitter.finagle.redis.Client
-import com.twitter.storehaus.algebra.MergeableStore
+import com.twitter.finagle.redis.util.CBToString
+import com.twitter.storehaus.algebra.{ ConvertedStore, MergeableStore }
+import com.twitter.util.Time
 import org.jboss.netty.buffer.{ ChannelBuffer, ChannelBuffers }
+import scala.util.control.Exception.allCatch
 
 /**
  * 
- *  @author Doug Tangren
+ * @author Doug Tangren
  */
+
 object RedisLongStore {
-  implicit object LongChannelBuffered extends ChannelBuffered[Long] {
-    override def apply(cb: ChannelBuffer): Long = cb.readLong
-    override def invert(l: Long) = {
+  implicit object LongInjection
+   extends Injection[Long, ChannelBuffer] {
+    def apply(a: Long): ChannelBuffer = {
       val b = ChannelBuffers.buffer(8)
-      b.writeLong(l)
-      b 
+      b.writeLong(a)
+      b
     }
+   /** redis stores numerics as strings
+    *  so we have to decode them as such
+    *  http://redis.io/topics/data-types-intro
+    */
+    override def invert(b: ChannelBuffer): Option[Long] =
+      allCatch.opt(CBToString(b).toLong)
   }
+  def apply(client: Client, ttl: Option[Time] = RedisStore.Default.TTL) =
+    new RedisLongStore(RedisStore(client, ttl))
 }
 import RedisLongStore._
 
-class RedisLongStore(client: Client, ttl: Option[Time])
- extends RedisStore[Long](client, ttl)
-    with MergeableStore[ChannelBuffer, Long] {
+/**
+ * A MergableStore backed by redis which stores Long values.
+ * Values are merged with an incrBy operation.
+ */
+class RedisLongStore(underlying: RedisStore)
+  extends ConvertedStore[ChannelBuffer, ChannelBuffer, ChannelBuffer, Long](underlying)(identity)
+     with MergeableStore[ChannelBuffer, Long] {
   val monoid = implicitly[Monoid[Long]]
-  override def merge(kv: (ChannelBuffer, Long)) = client.incrBy(kv._1, kv._2).unit
+  override def merge(kv: (ChannelBuffer, Long)) = underlying.client.incrBy(kv._1, kv._2).unit
 }
