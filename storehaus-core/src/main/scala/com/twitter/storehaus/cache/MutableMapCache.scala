@@ -24,7 +24,7 @@ import scala.collection.mutable.{ Map => MutableMap }
 class MutableMapCache[K, V](m: MutableMap[K, V]) extends MutableCache[K, V] {
   override def get(k: K) = m.get(k)
   override def +=(kv: (K, V)) = { m += kv; this }
-  override def hit(k: K) = this
+  override def hit(k: K) = m.get(k)
   override def evict(k: K) = {
     val ret = m.get(k)
     m -= k

@@ -31,7 +31,7 @@ trait MutableCache[K, V] {
     */
   def get(k: K): Option[V]
   def +=(kv: (K, V)): this.type
-  def hit(k: K): this.type
+  def hit(k: K): Option[V]
 
   /* Returns an option of the (potentially) evicted value. */
   def evict(k: K): Option[V]
@@ -62,8 +62,9 @@ trait MutableCache[K, V] {
    * missing, the cache adds fn(k) to itself.
    */
   def touch(k: K, v: => V): this.type =
-    if (contains(k))
-      hit(k)
+    if (contains(k)) {
+      hit(k); this
+    }
     else
       this += (k -> v)
 }

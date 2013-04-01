@@ -30,7 +30,7 @@ class FilteredMutableCache[K, V](cache: MutableCache[K, V])(fn: V => Boolean) ex
     if (fn(kv._2)) cache += kv
     this
   }
-  override def hit(k: K) = { cache.hit(k); this }
+  override def hit(k: K) = cache.hit(k)
   override def evict(k: K) = cache.evict(k)
   override def empty = new FilteredMutableCache(cache.empty)(fn)
   override def clear = { cache.clear; this }

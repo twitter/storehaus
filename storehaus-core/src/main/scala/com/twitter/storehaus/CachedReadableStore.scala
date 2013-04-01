@@ -26,20 +26,14 @@ class CachedReadableStore[K, V](store: ReadableStore[K, V], cache: MutableCache[
     * refresh the cache from the store.
     */
   override def get(k: K): Future[Option[V]] =
-    cache.get(k) match {
-      case Some(cached@Future(Return(_))) => {
-        cache.hit(k)
-        cached
-      }
+    cache.hit(k) match {
+      case Some(cached@Future(Return(_))) => cached
       case Some(Future(Throw(_))) | None => {
         val storeV = store.get(k)
         cache += (k -> storeV)
         storeV
       }
-      case Some(cached) => {
-        cache.hit(k)
-        cached
-      }
+      case Some(cached) => cached
     }
 
   protected def needsRefresh(opt: Option[Future[_]]): Boolean =
