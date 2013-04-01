@@ -32,7 +32,7 @@ import scala.collection.SortedMap
  * the minimum index.
  */
 
-class LRUCache[K, V](maxSize: Long, idx: Long, map: Map[K, (Long, V)], ord: SortedMap[Long, K]) extends Cache[K, V] {
+class LRUCache[K, V](maxSize: Long, idx: Long, map: Cache[K, (Long, V)], ord: SortedMap[Long, K]) extends Cache[K, V] {
   // Scala's SortedMap requires an ordering on pairs. To guarantee
   // sorting on index only, LRUCache defines an implicit ordering on K
   // that treats all K as equal.
@@ -57,10 +57,8 @@ class LRUCache[K, V](maxSize: Long, idx: Long, map: Map[K, (Long, V)], ord: Sort
     val (evictedKeys, newMap, newOrd) =
       if (ord.size >= maxSize) {
         val (idxToEvict, keyToEvict) =
-          if (map.contains(key))
-            (map(key)._1, key)
-          else
-            ord.min
+          map.get(key).map { case (idx, _) => (idx, key) }
+            .getOrElse(ord.min)
         (Set(keyToEvict), map - keyToEvict, ord - idxToEvict)
       } else
         (Set.empty[K], map, ord)
@@ -77,11 +75,11 @@ class LRUCache[K, V](maxSize: Long, idx: Long, map: Map[K, (Long, V)], ord: Sort
     }.getOrElse((None, this))
 
   override def toString = {
-    val pairStrings = map.map { case (k, (_, v)) => k + " -> " + v }
+    val pairStrings = map.toMap.map { case (k, (_, v)) => k + " -> " + v }
     "LRUCache(" + pairStrings.toList.mkString(", ") + ")"
   }
 
-  override def empty = new LRUCache(maxSize, 0, Map.empty, SortedMap.empty)
+  override def empty = new LRUCache(maxSize, 0, map.empty, ord.empty)
   override def iterator = map.iterator.map { case (k, (_, v)) => k -> v }
-  override def toMap = map.mapValues { _._2 }
+  override def toMap = map.toMap.mapValues { _._2 }
 }

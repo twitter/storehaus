@@ -33,7 +33,7 @@ import scala.collection.breakOut
  * @author Sam Ritchie
  */
 
-class TTLCache[K, V](val ttl: Long, cache: Map[K, (Long, V)])(val clock: () => Long) extends Cache[K, (Long, V)] {
+class TTLCache[K, V](val ttl: Long, cache: Cache[K, (Long, V)])(val clock: () => Long) extends Cache[K, (Long, V)] {
   override def get(k: K) = cache.get(k)
   override def contains(k: K) = cache.contains(k)
   override def hit(k: K) = this
@@ -45,12 +45,12 @@ class TTLCache[K, V](val ttl: Long, cache: Map[K, (Long, V)])(val clock: () => L
       (Some(pair), new TTLCache(ttl, cache - k)(clock))
     }.getOrElse((None, this))
 
-  override def empty = new TTLCache(ttl, Map.empty[K, (Long, V)])(clock)
+  override def empty = new TTLCache(ttl, cache.empty)(clock)
   override def iterator = cache.iterator
-  override def toMap = cache
+  override def toMap = cache.toMap
 
   protected def toRemove(currentMillis: Long): Set[K] =
-    cache.collect {
+    toMap.collect {
       case (k, (expiration, _)) if expiration < currentMillis => k
     }(breakOut)
 

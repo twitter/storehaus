@@ -30,8 +30,10 @@ object Cache {
    * will never evict keys!)
    */
   def fromMap[K, V](m: Map[K, V] = Map.empty[K, V]) = new MapCache(m)
-  def lru[K, V](maxSize: Long) = new LRUCache(maxSize, 0, Map.empty[K, (Long, V)], SortedMap.empty[Long, K])
-  def ttl[K, V](ttl: Duration) = new TTLCache(ttl.inMillis, Map.empty[K, (Long, V)])(() => System.currentTimeMillis)
+  def lru[K, V](maxSize: Long, backingCache: Cache[K, (Long, V)] = fromMap(Map.empty[K, (Long, V)])) =
+    new LRUCache(maxSize, 0, backingCache, SortedMap.empty[Long, K])
+  def ttl[K, V](ttl: Duration, backingCache: Cache[K, (Long, V)] = fromMap(Map.empty[K, (Long, V)])) =
+    new TTLCache(ttl.inMillis, backingCache)(() => System.currentTimeMillis)
 
   def toMutable[K, V](cache: Cache[K, V]): MutableCache[K, V] =
     new MutableCache[K, V] {
@@ -39,7 +41,7 @@ object Cache {
 
       override def get(k: K): Option[V] = cacheRef.get.get(k)
       override def +=(kv: (K, V)) = { cacheRef.update { _ + kv }; this }
-      override def hit(k: K) = { cacheRef.update { _.hit(k) }; this }
+      override def hit(k: K) = cacheRef.update { _.hit(k) }.get(k)
       override def evict(k: K) = cacheRef.effect { _.evict(k) }._1
       override def empty = toMutable(cache.empty)
       override def clear = { cacheRef.update { _.empty }; this }
@@ -104,6 +106,9 @@ trait Cache[K, V] {
 
   /* Returns a new Cache with this key evicted. */
   def -(k: K): Cache[K, V] = evict(k)._2
+
+  /* Returns a new Cache with this key evicted. */
+  def --(ks: Set[K]): Cache[K, V] = ks.foldLeft(this)(_ - _)
 
   /* Returns a new cache seeded with the kv-pairs in the supplied
    * map. */
