@@ -36,15 +36,14 @@ object CacheProperties extends Properties("Cache") {
       (newCache.toMap.keySet ++ evictedSet) == pairs.map { _._1 }.toSet
     }
 
-  property("MapCache obeys the cache laws") = cacheLaws(Cache.fromMap[String,Int]())
+  property("MapCache obeys the cache laws") = cacheLaws(MapCache.empty[String,Int])
 
   property("MapCache never evicts") =
     forAll { pairs: List[(Int, String)] =>
-      pairs.foldLeft(Cache.fromMap[Int, String](): Cache[Int, String])(_ + _)
+      pairs.foldLeft(MapCache.empty[Int, String]: Cache[Int, String])(_ + _)
         .toMap == pairs.toMap
     }
 
-  property("LRUCache obeys the cache laws") = cacheLaws(Cache.lru[String,Int](10))
-  property("TTLCache obeys the cache laws") =
-    cacheLaws[String, (Long, Int)](Cache.ttl[String, Int](10.millis))
+  property("LRUCache obeys the cache laws") = cacheLaws(LRUCache[String,Int](10))
+  property("TTLCache obeys the cache laws") = cacheLaws(TTLCache[String, Int](10.millis))
 }

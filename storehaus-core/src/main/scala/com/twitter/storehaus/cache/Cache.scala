@@ -18,8 +18,6 @@ package com.twitter.storehaus.cache
 
 import com.twitter.util.Duration
 
-import scala.collection.SortedMap
-
 /**
  * Companion object to Cache. Contains a number of methods for
  * generating various cache implementations.
@@ -29,27 +27,19 @@ object Cache {
    * Generate a Cache from the supplied Map. (Caveat emptor: this
    * will never evict keys!)
    */
-  def fromMap[K, V](m: Map[K, V] = Map.empty[K, V]) = new MapCache(m)
-  def lru[K, V](maxSize: Long, backingCache: Cache[K, (Long, V)] = fromMap(Map.empty[K, (Long, V)])) =
-    new LRUCache(maxSize, 0, backingCache, SortedMap.empty[Long, K])
-  def ttl[K, V](ttl: Duration, backingCache: Cache[K, (Long, V)] = fromMap(Map.empty[K, (Long, V)])) =
-    new TTLCache(ttl.inMillis, backingCache)(() => System.currentTimeMillis)
+  def fromMap[K, V](m: Map[K, V]) = MapCache(m)
 
-  def toMutable[K, V](cache: Cache[K, V]): MutableCache[K, V] =
-    new MutableCache[K, V] {
-      protected val cacheRef = Atomic[Cache[K, V]](cache)
+  /**
+   * Generate an LRUCache wrapping the supplied backingCache
+   * configured with the supplied maxSize.
+   */
+  def lru[K, V](maxSize: Long, backingCache: Cache[K, (Long, V)] = MapCache.empty[K, (Long, V)]) =
+    LRUCache(maxSize, backingCache)
 
-      override def get(k: K): Option[V] = cacheRef.get.get(k)
-      override def +=(kv: (K, V)) = { cacheRef.update { _ + kv }; this }
-      override def hit(k: K) = cacheRef.update { _.hit(k) }.get(k)
-      override def evict(k: K) = cacheRef.effect { _.evict(k) }._1
-      override def empty = toMutable(cache.empty)
-      override def clear = { cacheRef.update { _.empty }; this }
-      override def contains(k: K) = cache.contains(k)
-      override def -=(k: K) = { cacheRef.update { _ - k }; this }
-      override def touch(k: K, v: => V) = { cacheRef.update { _.touch(k, v) }; this }
-      override def iterator = cacheRef.get.iterator
-    }
+  def ttl[K, V](ttl: Duration, backingCache: Cache[K, (Long, V)] = MapCache.empty[K, (Long, V)]) =
+    TTLCache(ttl, backingCache)
+
+  def toMutable[K, V](cache: Cache[K, V]): MutableCache[K, V] = new MutableFromImmutableCache(cache)
 }
 
 /**

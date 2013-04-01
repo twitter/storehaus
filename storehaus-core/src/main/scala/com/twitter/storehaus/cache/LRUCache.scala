@@ -32,6 +32,11 @@ import scala.collection.SortedMap
  * the minimum index.
  */
 
+object LRUCache {
+  def apply[K, V](maxSize: Long, backingCache: Cache[K, (Long, V)] = MapCache.empty[K, (Long, V)]) =
+    new LRUCache(maxSize, 0, backingCache, SortedMap.empty[Long, K])
+}
+
 class LRUCache[K, V](maxSize: Long, idx: Long, map: Cache[K, (Long, V)], ord: SortedMap[Long, K]) extends Cache[K, V] {
   // Scala's SortedMap requires an ordering on pairs. To guarantee
   // sorting on index only, LRUCache defines an implicit ordering on K

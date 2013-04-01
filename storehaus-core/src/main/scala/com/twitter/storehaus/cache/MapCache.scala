@@ -23,6 +23,11 @@ package com.twitter.storehaus.cache
  * @author Sam Ritchie
  */
 
+object MapCache {
+  def empty[K, V] = MapCache(Map.empty[K, V])
+  def apply[K, V](m: Map[K, V]) = new MapCache(m)
+}
+
 class MapCache[K, V](m: Map[K, V]) extends Cache[K, V] {
   override def get(k: K) = m.get(k)
   override def contains(k: K) = m.contains(k)

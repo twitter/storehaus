@@ -33,6 +33,11 @@ import scala.collection.breakOut
  * @author Sam Ritchie
  */
 
+object TTLCache {
+  def apply[K, V](ttl: Duration, backingCache: Cache[K, (Long, V)] = MapCache.empty[K, (Long, V)]) =
+    new TTLCache(ttl.inMillis, backingCache)(() => System.currentTimeMillis)
+}
+
 class TTLCache[K, V](val ttl: Long, cache: Cache[K, (Long, V)])(val clock: () => Long) extends Cache[K, (Long, V)] {
   override def get(k: K) = cache.get(k)
   override def contains(k: K) = cache.contains(k)
