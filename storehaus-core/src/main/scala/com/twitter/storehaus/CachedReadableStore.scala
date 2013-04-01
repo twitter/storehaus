@@ -18,34 +18,25 @@ package com.twitter.storehaus
 
 import com.twitter.storehaus.cache.{ Atomic, Cache, MutableCache }
 import com.twitter.util.{ Future, Return, Throw }
+import scala.collection.breakOut
 
 class CachedReadableStore[K, V](store: ReadableStore[K, V], cache: MutableCache[K, Future[Option[V]]]) extends ReadableStore[K, V] {
+  val filteredCache = MutableCache.filter(cache){ f =>
+    !f.isDefined || f.isReturn
+  }
+
   /**
     * If a key is present and successful in the cache, use the cache
     * value. Otherwise (in a missing cache value or failed future),
     * refresh the cache from the store.
     */
-  override def get(k: K): Future[Option[V]] =
-    cache.hit(k) match {
-      case Some(cached@Future(Return(_))) => cached
-      case Some(Future(Throw(_))) | None => {
-        val storeV = store.get(k)
-        cache += (k -> storeV)
-        storeV
-      }
-      case Some(cached) => cached
-    }
-
-  protected def needsRefresh(opt: Option[Future[_]]): Boolean =
-    !opt.exists { f => f.isDefined && f.isThrow }
+  override def get(k: K) = filteredCache.getOrElseUpdate(k, store.get(k))
 
   override def multiGet[K1 <: K](keys: Set[K1]): Map[K1, Future[Option[V]]] = {
-    type Pair = Set[(K1, Future[Option[V]])]
-    val (pairsToReplace, pairsToHit): (Pair, Pair)  =
-      keys.map { k => k -> cache.get(k) }.partition { case (_, f) => needsRefresh(f) }
-    pairsToHit.foreach { case (k, _) => cache.hit(k) }
-    val replaced = store.multiGet(pairsToReplace.map { _._1 })
+    val present: Map[K1, Future[Option[V]]] =
+      keys.map { k => k -> filteredCache.hit(k) }.collect { case (k, Some(v)) => k -> v }(breakOut)
+    val replaced = store.multiGet(keys -- present.keySet)
     replaced.foreach { cache += _ }
-    replaced ++ pairsToHit
+    present ++ replaced
   }
 }

@@ -19,8 +19,7 @@ package com.twitter.storehaus.cache
 import org.specs._
 
 class LRUCacheTest extends Specification {
-  def checkCache[K, V](pairs: Seq[(K, V)], m: Map[K, V])
-    (implicit cache: Cache[K, V]) =
+  def checkCache[K, V](pairs: Seq[(K, V)], m: Map[K, V])(implicit cache: Cache[K, V]) =
     pairs.foldLeft(cache)(_ + _).toMap must be_==(m)
 
   "LRUCache works properly with threshold 2" in {

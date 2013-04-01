@@ -31,6 +31,9 @@ class MutableFromImmutableCache[K, V](cache: Cache[K, V]) extends MutableCache[K
   override def clear = { cacheRef.update { _.empty }; this }
   override def contains(k: K) = cache.contains(k)
   override def -=(k: K) = { cacheRef.update { _ - k }; this }
-  override def touch(k: K, v: => V) = { cacheRef.update { _.touch(k, v) }; this }
+  override def getOrElseUpdate(k: K, v: => V) = {
+    lazy val cachedV = v
+    cacheRef.update { _.touch(k, cachedV) }.get(k).getOrElse(cachedV)
+  }
   override def iterator = cacheRef.get.iterator
 }

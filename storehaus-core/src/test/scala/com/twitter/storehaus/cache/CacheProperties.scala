@@ -25,7 +25,12 @@ import org.scalacheck.Gen.choose
 import org.scalacheck.Prop._
 
 object CacheProperties extends Properties("Cache") {
-  def cacheLaws[K: Arbitrary, V: Arbitrary](cache: Cache[K, V]) =
+  /**
+    * After adding in a bunch of key-value pairs, the set of keys
+    * added is equivalent to the union of evicted keys and keys
+    * present in the final cache.
+    */
+  def unionLaw[K: Arbitrary, V: Arbitrary](cache: Cache[K, V]) =
     forAll { (pairs: List[(K, V)]) =>
       val (evictedSet, newCache) =
         pairs.foldLeft(Set.empty[K], cache) { (acc, pair) =>
@@ -35,6 +40,21 @@ object CacheProperties extends Properties("Cache") {
         }
       (newCache.toMap.keySet ++ evictedSet) == pairs.map { _._1 }.toSet
     }
+
+  /**
+    * Once a pair is placed into an immutable cache, it'll always be
+    * evicted immediately or available via get.
+    */
+  def presentLaw[K: Arbitrary, V: Arbitrary](cache: Cache[K, V]) =
+    forAll { (pairs: List[(K, V)]) =>
+      pairs.forall { case pair@(k, v) =>
+        val (evictedKeys, newCache) = cache.put(pair)
+        newCache.contains(k) || evictedKeys.contains(k)
+      }
+    }
+
+  def cacheLaws[K: Arbitrary, V: Arbitrary](cache: Cache[K, V]) =
+    unionLaw(cache) && presentLaw(cache)
 
   property("MapCache obeys the cache laws") = cacheLaws(MapCache.empty[String,Int])
 

@@ -22,6 +22,8 @@ import scala.collection.mutable.{ Map => MutableMap }
 
 object MutableCache {
   def fromMap[K, V](m: MutableMap[K, V]) = new MutableMapCache[K, V](m)
+  def filter[K, V](cache: MutableCache[K, V])(pred: V => Boolean) =
+    new FilteredMutableCache(cache)(pred)
 }
 
 trait MutableCache[K, V] {
@@ -56,15 +58,10 @@ trait MutableCache[K, V] {
   /* Returns the cache with the supplied key evicted. */
   def -=(k: K): this.type = { evict(k); this }
 
-  /**
-   * Touches the cache with the supplied key. If the key is present
-   * in the cache, the cache calls "hit" on the key. If the key is
-   * missing, the cache adds fn(k) to itself.
-   */
-  def touch(k: K, v: => V): this.type =
-    if (contains(k)) {
-      hit(k); this
+  def getOrElseUpdate(k: K, v: => V): V =
+    hit(k).getOrElse {
+      val realizedV = v
+      this += (k -> realizedV)
+      realizedV
     }
-    else
-      this += (k -> v)
 }
