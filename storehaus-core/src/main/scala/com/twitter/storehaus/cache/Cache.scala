@@ -39,7 +39,8 @@ object Cache {
   def ttl[K, V](ttl: Duration, backingCache: Cache[K, (Long, V)] = MapCache.empty[K, (Long, V)]) =
     TTLCache(ttl, backingCache)
 
-  def toMutable[K, V](cache: Cache[K, V]): MutableCache[K, V] = new MutableFromImmutableCache(cache)
+  def toMutable[K, V](cache: Cache[K, V])(exhaustFn: Set[K] => Unit): MutableCache[K, V] =
+    new MutableFromImmutableCache(cache)(exhaustFn)
 }
 
 /**
@@ -114,4 +115,6 @@ trait Cache[K, V] {
       hit(k)
     else
       this + (k -> v)
+
+  def toMutable(exhaustFn: Set[K] => Unit = _ => ()): MutableCache[K, V] = Cache.toMutable(this)(exhaustFn)
 }
