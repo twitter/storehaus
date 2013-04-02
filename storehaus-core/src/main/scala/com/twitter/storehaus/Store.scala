@@ -19,6 +19,7 @@ package com.twitter.storehaus
 import com.twitter.util.Future
 import java.io.Closeable
 import java.util.{ Map => JMap }
+import com.twitter.storehaus.cache.MutableCache
 
 /** Factory methods and some combinators on Stores */
 object Store {
@@ -32,6 +33,10 @@ object Store {
   def fromJMap[K, V](m: JMap[K, Option[V]]): Store[K, V] = new JMapStore[K, V] {
     override val jstore = m
   }
+
+  /** Generates a store from the supplied
+    * [[com.twitter.storehaus.cache.MutableCache]] */
+  def fromCache[K, V](cache: MutableCache[K, V]) = new CacheStore(cache)
 
   /**
    * Returns a new Store[K, V] that queries all of the stores on read
