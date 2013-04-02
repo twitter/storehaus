@@ -62,4 +62,6 @@ trait MutableCache[K, V] {
       this += (k -> realizedV)
       realizedV
     }
+
+  def filter(pred: V => Boolean): MutableCache[K, V] = MutableCache.filter(this)(pred)
 }

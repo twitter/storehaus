@@ -21,7 +21,7 @@ import com.twitter.util.{ Future, Return, Throw }
 import scala.collection.breakOut
 
 class CachedReadableStore[K, V](store: ReadableStore[K, V], cache: MutableCache[K, Future[Option[V]]]) extends ReadableStore[K, V] {
-  val filteredCache = MutableCache.filter(cache){ f =>
+  val filteredCache = cache.filter { f =>
     !f.isDefined || f.isReturn
   }
 
