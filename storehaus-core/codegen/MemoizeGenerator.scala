@@ -23,8 +23,8 @@ def memoizedFunction(i: Int): String = {
   val types = prefixed("T")
   val args = prefixed("t")
   val argsWithTypes = genParams(i) { i => "t%d: T%d".format(i, i) }
-  """class Memoize%d[%s, +R](cache: MutableCache[(%s), R], f: (%s) => R) extends ((%s) => R) {
-  override def apply(%s): R = cache.getOrElseUpdate((%s), f(%s))
+  """class Memoize%d[%s, +R](cache: MutableCache[(%s), R], val backingFn: (%s) => R) extends ((%s) => R) {
+  override def apply(%s): R = cache.getOrElseUpdate((%s), backingFn(%s))
 }""".format(i, covariants, types, types, types, argsWithTypes, args, args)
 }
 
@@ -44,11 +44,13 @@ println("""
   * sleepyToString: com.twitter.storehaus.cache.Memoize1[Int,String] = <function1>
   *
   * scala> sleepyToString(10)
-  * CALCULATING!
-  * res0: String = 10
-  *
-  * scala> sleepyToString(10)
   * res1: String = 10
+  *
+  * // Get the backing function back out with backingFn:
+  *
+  * scala> sleepyToString.backingFn(10)
+  * CALCULATING!
+  * res2: String = 10
   * }}}
   *
   */

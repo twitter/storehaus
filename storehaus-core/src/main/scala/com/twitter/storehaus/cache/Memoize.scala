@@ -19,7 +19,14 @@ package com.twitter.storehaus.cache
   *
   * scala> sleepyToString(10)
   * res1: String = 10
+  *
+  * // Get the backing function back out with backingFn:
+  *
+  * scala> sleepyToString.backingFn(10)
+  * CALCULATING!
+  * res2: String = 10
   * }}}
+  *
   *
   */
 
@@ -47,69 +54,69 @@ object Memoize {
   def apply[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, R](cache: MutableCache[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21), R])(f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21) => R) = new Memoize21(cache, f)
   def apply[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, R](cache: MutableCache[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22), R])(f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22) => R) = new Memoize22(cache, f)
 }
-class Memoize1[-T1, +R](cache: MutableCache[(T1), R], f: (T1) => R) extends ((T1) => R) {
-  override def apply(t1: T1): R = cache.getOrElseUpdate((t1), f(t1))
+class Memoize1[-T1, +R](cache: MutableCache[(T1), R], val backingFn: (T1) => R) extends ((T1) => R) {
+  override def apply(t1: T1): R = cache.getOrElseUpdate((t1), backingFn(t1))
 }
-class Memoize2[-T1, -T2, +R](cache: MutableCache[(T1, T2), R], f: (T1, T2) => R) extends ((T1, T2) => R) {
-  override def apply(t1: T1, t2: T2): R = cache.getOrElseUpdate((t1, t2), f(t1, t2))
+class Memoize2[-T1, -T2, +R](cache: MutableCache[(T1, T2), R], val backingFn: (T1, T2) => R) extends ((T1, T2) => R) {
+  override def apply(t1: T1, t2: T2): R = cache.getOrElseUpdate((t1, t2), backingFn(t1, t2))
 }
-class Memoize3[-T1, -T2, -T3, +R](cache: MutableCache[(T1, T2, T3), R], f: (T1, T2, T3) => R) extends ((T1, T2, T3) => R) {
-  override def apply(t1: T1, t2: T2, t3: T3): R = cache.getOrElseUpdate((t1, t2, t3), f(t1, t2, t3))
+class Memoize3[-T1, -T2, -T3, +R](cache: MutableCache[(T1, T2, T3), R], val backingFn: (T1, T2, T3) => R) extends ((T1, T2, T3) => R) {
+  override def apply(t1: T1, t2: T2, t3: T3): R = cache.getOrElseUpdate((t1, t2, t3), backingFn(t1, t2, t3))
 }
-class Memoize4[-T1, -T2, -T3, -T4, +R](cache: MutableCache[(T1, T2, T3, T4), R], f: (T1, T2, T3, T4) => R) extends ((T1, T2, T3, T4) => R) {
-  override def apply(t1: T1, t2: T2, t3: T3, t4: T4): R = cache.getOrElseUpdate((t1, t2, t3, t4), f(t1, t2, t3, t4))
+class Memoize4[-T1, -T2, -T3, -T4, +R](cache: MutableCache[(T1, T2, T3, T4), R], val backingFn: (T1, T2, T3, T4) => R) extends ((T1, T2, T3, T4) => R) {
+  override def apply(t1: T1, t2: T2, t3: T3, t4: T4): R = cache.getOrElseUpdate((t1, t2, t3, t4), backingFn(t1, t2, t3, t4))
 }
-class Memoize5[-T1, -T2, -T3, -T4, -T5, +R](cache: MutableCache[(T1, T2, T3, T4, T5), R], f: (T1, T2, T3, T4, T5) => R) extends ((T1, T2, T3, T4, T5) => R) {
-  override def apply(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5): R = cache.getOrElseUpdate((t1, t2, t3, t4, t5), f(t1, t2, t3, t4, t5))
+class Memoize5[-T1, -T2, -T3, -T4, -T5, +R](cache: MutableCache[(T1, T2, T3, T4, T5), R], val backingFn: (T1, T2, T3, T4, T5) => R) extends ((T1, T2, T3, T4, T5) => R) {
+  override def apply(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5): R = cache.getOrElseUpdate((t1, t2, t3, t4, t5), backingFn(t1, t2, t3, t4, t5))
 }
-class Memoize6[-T1, -T2, -T3, -T4, -T5, -T6, +R](cache: MutableCache[(T1, T2, T3, T4, T5, T6), R], f: (T1, T2, T3, T4, T5, T6) => R) extends ((T1, T2, T3, T4, T5, T6) => R) {
-  override def apply(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6): R = cache.getOrElseUpdate((t1, t2, t3, t4, t5, t6), f(t1, t2, t3, t4, t5, t6))
+class Memoize6[-T1, -T2, -T3, -T4, -T5, -T6, +R](cache: MutableCache[(T1, T2, T3, T4, T5, T6), R], val backingFn: (T1, T2, T3, T4, T5, T6) => R) extends ((T1, T2, T3, T4, T5, T6) => R) {
+  override def apply(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6): R = cache.getOrElseUpdate((t1, t2, t3, t4, t5, t6), backingFn(t1, t2, t3, t4, t5, t6))
 }
-class Memoize7[-T1, -T2, -T3, -T4, -T5, -T6, -T7, +R](cache: MutableCache[(T1, T2, T3, T4, T5, T6, T7), R], f: (T1, T2, T3, T4, T5, T6, T7) => R) extends ((T1, T2, T3, T4, T5, T6, T7) => R) {
-  override def apply(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7): R = cache.getOrElseUpdate((t1, t2, t3, t4, t5, t6, t7), f(t1, t2, t3, t4, t5, t6, t7))
+class Memoize7[-T1, -T2, -T3, -T4, -T5, -T6, -T7, +R](cache: MutableCache[(T1, T2, T3, T4, T5, T6, T7), R], val backingFn: (T1, T2, T3, T4, T5, T6, T7) => R) extends ((T1, T2, T3, T4, T5, T6, T7) => R) {
+  override def apply(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7): R = cache.getOrElseUpdate((t1, t2, t3, t4, t5, t6, t7), backingFn(t1, t2, t3, t4, t5, t6, t7))
 }
-class Memoize8[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, +R](cache: MutableCache[(T1, T2, T3, T4, T5, T6, T7, T8), R], f: (T1, T2, T3, T4, T5, T6, T7, T8) => R) extends ((T1, T2, T3, T4, T5, T6, T7, T8) => R) {
-  override def apply(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8): R = cache.getOrElseUpdate((t1, t2, t3, t4, t5, t6, t7, t8), f(t1, t2, t3, t4, t5, t6, t7, t8))
+class Memoize8[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, +R](cache: MutableCache[(T1, T2, T3, T4, T5, T6, T7, T8), R], val backingFn: (T1, T2, T3, T4, T5, T6, T7, T8) => R) extends ((T1, T2, T3, T4, T5, T6, T7, T8) => R) {
+  override def apply(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8): R = cache.getOrElseUpdate((t1, t2, t3, t4, t5, t6, t7, t8), backingFn(t1, t2, t3, t4, t5, t6, t7, t8))
 }
-class Memoize9[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, +R](cache: MutableCache[(T1, T2, T3, T4, T5, T6, T7, T8, T9), R], f: (T1, T2, T3, T4, T5, T6, T7, T8, T9) => R) extends ((T1, T2, T3, T4, T5, T6, T7, T8, T9) => R) {
-  override def apply(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8, t9: T9): R = cache.getOrElseUpdate((t1, t2, t3, t4, t5, t6, t7, t8, t9), f(t1, t2, t3, t4, t5, t6, t7, t8, t9))
+class Memoize9[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, +R](cache: MutableCache[(T1, T2, T3, T4, T5, T6, T7, T8, T9), R], val backingFn: (T1, T2, T3, T4, T5, T6, T7, T8, T9) => R) extends ((T1, T2, T3, T4, T5, T6, T7, T8, T9) => R) {
+  override def apply(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8, t9: T9): R = cache.getOrElseUpdate((t1, t2, t3, t4, t5, t6, t7, t8, t9), backingFn(t1, t2, t3, t4, t5, t6, t7, t8, t9))
 }
-class Memoize10[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, +R](cache: MutableCache[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10), R], f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10) => R) extends ((T1, T2, T3, T4, T5, T6, T7, T8, T9, T10) => R) {
-  override def apply(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8, t9: T9, t10: T10): R = cache.getOrElseUpdate((t1, t2, t3, t4, t5, t6, t7, t8, t9, t10), f(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10))
+class Memoize10[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, +R](cache: MutableCache[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10), R], val backingFn: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10) => R) extends ((T1, T2, T3, T4, T5, T6, T7, T8, T9, T10) => R) {
+  override def apply(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8, t9: T9, t10: T10): R = cache.getOrElseUpdate((t1, t2, t3, t4, t5, t6, t7, t8, t9, t10), backingFn(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10))
 }
-class Memoize11[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, +R](cache: MutableCache[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11), R], f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11) => R) extends ((T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11) => R) {
-  override def apply(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8, t9: T9, t10: T10, t11: T11): R = cache.getOrElseUpdate((t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11), f(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11))
+class Memoize11[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, +R](cache: MutableCache[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11), R], val backingFn: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11) => R) extends ((T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11) => R) {
+  override def apply(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8, t9: T9, t10: T10, t11: T11): R = cache.getOrElseUpdate((t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11), backingFn(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11))
 }
-class Memoize12[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, +R](cache: MutableCache[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12), R], f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12) => R) extends ((T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12) => R) {
-  override def apply(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8, t9: T9, t10: T10, t11: T11, t12: T12): R = cache.getOrElseUpdate((t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12), f(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12))
+class Memoize12[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, +R](cache: MutableCache[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12), R], val backingFn: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12) => R) extends ((T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12) => R) {
+  override def apply(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8, t9: T9, t10: T10, t11: T11, t12: T12): R = cache.getOrElseUpdate((t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12), backingFn(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12))
 }
-class Memoize13[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, +R](cache: MutableCache[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13), R], f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13) => R) extends ((T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13) => R) {
-  override def apply(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8, t9: T9, t10: T10, t11: T11, t12: T12, t13: T13): R = cache.getOrElseUpdate((t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13), f(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13))
+class Memoize13[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, +R](cache: MutableCache[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13), R], val backingFn: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13) => R) extends ((T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13) => R) {
+  override def apply(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8, t9: T9, t10: T10, t11: T11, t12: T12, t13: T13): R = cache.getOrElseUpdate((t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13), backingFn(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13))
 }
-class Memoize14[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, -T14, +R](cache: MutableCache[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14), R], f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14) => R) extends ((T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14) => R) {
-  override def apply(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8, t9: T9, t10: T10, t11: T11, t12: T12, t13: T13, t14: T14): R = cache.getOrElseUpdate((t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14), f(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14))
+class Memoize14[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, -T14, +R](cache: MutableCache[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14), R], val backingFn: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14) => R) extends ((T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14) => R) {
+  override def apply(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8, t9: T9, t10: T10, t11: T11, t12: T12, t13: T13, t14: T14): R = cache.getOrElseUpdate((t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14), backingFn(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14))
 }
-class Memoize15[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, -T14, -T15, +R](cache: MutableCache[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15), R], f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15) => R) extends ((T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15) => R) {
-  override def apply(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8, t9: T9, t10: T10, t11: T11, t12: T12, t13: T13, t14: T14, t15: T15): R = cache.getOrElseUpdate((t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15), f(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15))
+class Memoize15[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, -T14, -T15, +R](cache: MutableCache[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15), R], val backingFn: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15) => R) extends ((T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15) => R) {
+  override def apply(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8, t9: T9, t10: T10, t11: T11, t12: T12, t13: T13, t14: T14, t15: T15): R = cache.getOrElseUpdate((t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15), backingFn(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15))
 }
-class Memoize16[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, -T14, -T15, -T16, +R](cache: MutableCache[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16), R], f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16) => R) extends ((T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16) => R) {
-  override def apply(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8, t9: T9, t10: T10, t11: T11, t12: T12, t13: T13, t14: T14, t15: T15, t16: T16): R = cache.getOrElseUpdate((t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16), f(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16))
+class Memoize16[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, -T14, -T15, -T16, +R](cache: MutableCache[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16), R], val backingFn: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16) => R) extends ((T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16) => R) {
+  override def apply(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8, t9: T9, t10: T10, t11: T11, t12: T12, t13: T13, t14: T14, t15: T15, t16: T16): R = cache.getOrElseUpdate((t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16), backingFn(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16))
 }
-class Memoize17[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, -T14, -T15, -T16, -T17, +R](cache: MutableCache[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17), R], f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17) => R) extends ((T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17) => R) {
-  override def apply(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8, t9: T9, t10: T10, t11: T11, t12: T12, t13: T13, t14: T14, t15: T15, t16: T16, t17: T17): R = cache.getOrElseUpdate((t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17), f(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17))
+class Memoize17[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, -T14, -T15, -T16, -T17, +R](cache: MutableCache[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17), R], val backingFn: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17) => R) extends ((T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17) => R) {
+  override def apply(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8, t9: T9, t10: T10, t11: T11, t12: T12, t13: T13, t14: T14, t15: T15, t16: T16, t17: T17): R = cache.getOrElseUpdate((t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17), backingFn(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17))
 }
-class Memoize18[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, -T14, -T15, -T16, -T17, -T18, +R](cache: MutableCache[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18), R], f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18) => R) extends ((T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18) => R) {
-  override def apply(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8, t9: T9, t10: T10, t11: T11, t12: T12, t13: T13, t14: T14, t15: T15, t16: T16, t17: T17, t18: T18): R = cache.getOrElseUpdate((t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18), f(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18))
+class Memoize18[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, -T14, -T15, -T16, -T17, -T18, +R](cache: MutableCache[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18), R], val backingFn: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18) => R) extends ((T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18) => R) {
+  override def apply(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8, t9: T9, t10: T10, t11: T11, t12: T12, t13: T13, t14: T14, t15: T15, t16: T16, t17: T17, t18: T18): R = cache.getOrElseUpdate((t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18), backingFn(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18))
 }
-class Memoize19[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, -T14, -T15, -T16, -T17, -T18, -T19, +R](cache: MutableCache[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19), R], f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19) => R) extends ((T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19) => R) {
-  override def apply(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8, t9: T9, t10: T10, t11: T11, t12: T12, t13: T13, t14: T14, t15: T15, t16: T16, t17: T17, t18: T18, t19: T19): R = cache.getOrElseUpdate((t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19), f(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19))
+class Memoize19[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, -T14, -T15, -T16, -T17, -T18, -T19, +R](cache: MutableCache[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19), R], val backingFn: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19) => R) extends ((T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19) => R) {
+  override def apply(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8, t9: T9, t10: T10, t11: T11, t12: T12, t13: T13, t14: T14, t15: T15, t16: T16, t17: T17, t18: T18, t19: T19): R = cache.getOrElseUpdate((t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19), backingFn(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19))
 }
-class Memoize20[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, -T14, -T15, -T16, -T17, -T18, -T19, -T20, +R](cache: MutableCache[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20), R], f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20) => R) extends ((T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20) => R) {
-  override def apply(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8, t9: T9, t10: T10, t11: T11, t12: T12, t13: T13, t14: T14, t15: T15, t16: T16, t17: T17, t18: T18, t19: T19, t20: T20): R = cache.getOrElseUpdate((t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20), f(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20))
+class Memoize20[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, -T14, -T15, -T16, -T17, -T18, -T19, -T20, +R](cache: MutableCache[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20), R], val backingFn: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20) => R) extends ((T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20) => R) {
+  override def apply(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8, t9: T9, t10: T10, t11: T11, t12: T12, t13: T13, t14: T14, t15: T15, t16: T16, t17: T17, t18: T18, t19: T19, t20: T20): R = cache.getOrElseUpdate((t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20), backingFn(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20))
 }
-class Memoize21[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, -T14, -T15, -T16, -T17, -T18, -T19, -T20, -T21, +R](cache: MutableCache[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21), R], f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21) => R) extends ((T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21) => R) {
-  override def apply(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8, t9: T9, t10: T10, t11: T11, t12: T12, t13: T13, t14: T14, t15: T15, t16: T16, t17: T17, t18: T18, t19: T19, t20: T20, t21: T21): R = cache.getOrElseUpdate((t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21), f(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21))
+class Memoize21[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, -T14, -T15, -T16, -T17, -T18, -T19, -T20, -T21, +R](cache: MutableCache[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21), R], val backingFn: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21) => R) extends ((T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21) => R) {
+  override def apply(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8, t9: T9, t10: T10, t11: T11, t12: T12, t13: T13, t14: T14, t15: T15, t16: T16, t17: T17, t18: T18, t19: T19, t20: T20, t21: T21): R = cache.getOrElseUpdate((t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21), backingFn(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21))
 }
-class Memoize22[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, -T14, -T15, -T16, -T17, -T18, -T19, -T20, -T21, -T22, +R](cache: MutableCache[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22), R], f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22) => R) extends ((T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22) => R) {
-  override def apply(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8, t9: T9, t10: T10, t11: T11, t12: T12, t13: T13, t14: T14, t15: T15, t16: T16, t17: T17, t18: T18, t19: T19, t20: T20, t21: T21, t22: T22): R = cache.getOrElseUpdate((t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22), f(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22))
+class Memoize22[-T1, -T2, -T3, -T4, -T5, -T6, -T7, -T8, -T9, -T10, -T11, -T12, -T13, -T14, -T15, -T16, -T17, -T18, -T19, -T20, -T21, -T22, +R](cache: MutableCache[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22), R], val backingFn: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22) => R) extends ((T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22) => R) {
+  override def apply(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8, t9: T9, t10: T10, t11: T11, t12: T12, t13: T13, t14: T14, t15: T15, t16: T16, t17: T17, t18: T18, t19: T19, t20: T20, t21: T21, t22: T22): R = cache.getOrElseUpdate((t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22), backingFn(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22))
 }
