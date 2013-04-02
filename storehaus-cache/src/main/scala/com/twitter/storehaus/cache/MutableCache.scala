@@ -20,7 +20,7 @@ import scala.collection.mutable.{ Map => MutableMap }
 
 object MutableCache {
   def fromMap[K, V](m: MutableMap[K, V]) = new MutableMapCache[K, V](m)
-  def filter[K, V](cache: MutableCache[K, V])(pred: V => Boolean) =
+  def filter[K, V](cache: MutableCache[K, V])(pred: ((K, V)) => Boolean) =
     new FilteredMutableCache(cache)(pred)
 }
 
@@ -63,5 +63,5 @@ trait MutableCache[K, V] {
       realizedV
     }
 
-  def filter(pred: V => Boolean): MutableCache[K, V] = MutableCache.filter(this)(pred)
+  def filter(pred: ((K, V)) => Boolean): MutableCache[K, V] = MutableCache.filter(this)(pred)
 }

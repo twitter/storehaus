@@ -20,19 +20,19 @@ package com.twitter.storehaus.cache
   * MutableCache that applies a filter to each value.
   */
 
-class FilteredMutableCache[K, V](cache: MutableCache[K, V])(pred: V => Boolean) extends MutableCache[K, V] {
-  override def get(k: K) = cache.get(k).filter(pred)
+class FilteredMutableCache[K, V](cache: MutableCache[K, V])(pred: ((K, V)) => Boolean) extends MutableCache[K, V] {
+  override def get(k: K) = cache.get(k).filter(pred(k, _))
   override def contains(k: K) = get(k).isDefined
   override def +=(kv: (K, V)) = {
-    if (pred(kv._2)) cache += kv
+    if (pred(kv)) cache += kv
     this
   }
   override def hit(k: K) = cache.hit(k) match {
-    case opt@Some(v) => if (pred(v)) opt else { cache.evict(k); None }
+    case opt@Some(v) => if (pred(k, v)) opt else { cache.evict(k); None }
     case None => None
   }
   override def evict(k: K) = cache.evict(k)
   override def empty = new FilteredMutableCache(cache.empty)(pred)
   override def clear = { cache.clear; this }
-  override def iterator = cache.iterator
+  override def iterator = cache.iterator.filter(pred)
 }
