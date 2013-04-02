@@ -16,8 +16,8 @@
 
 package com.twitter.storehaus
 
-import com.twitter.storehaus.cache.{ Atomic, Cache, MutableCache }
-import com.twitter.util.{ Future, Return, Throw }
+import com.twitter.storehaus.cache.MutableCache
+import com.twitter.util.Future
 import scala.collection.breakOut
 
 class CachedReadableStore[K, V](store: ReadableStore[K, V], cache: MutableCache[K, Future[Option[V]]]) extends ReadableStore[K, V] {
