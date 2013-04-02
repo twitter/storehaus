@@ -51,21 +51,34 @@ object FutureOps {
       }
     }
 
-  /** Given a Seq of equivalent Futures, return the first non-exceptional, unless all are exceptions */
-  def selectFirstSuccessfulTrial[T](futures: Seq[Future[T]]): Future[T] =
+  /** Given a Seq of equivalent Futures, return the first
+    * non-exceptional that passes the supplied predicate. If all
+    * futures fail to succeed or pass the predicate, the final future
+    * to complete will be returned. */
+  def selectFirstSuccessfulTrial[T](futures: Seq[Future[T]])(pred: T => Boolean): Future[T] =
     Future.select(futures)
       .flatMap { case (completedTry, otherFutures) =>
-        completedTry match {
-          case Throw(e) => {
-            if (otherFutures.isEmpty) {
-              Future.exception(e)
-            } else {
-              selectFirstSuccessfulTrial(otherFutures)
-            }
+        if (otherFutures.isEmpty)
+          Future.const(completedTry)
+        else
+          completedTry.filter(pred) match {
+            case Throw(e) => selectFirstSuccessfulTrial(otherFutures)(pred)
+            case Return(t) => Future.value(t)
           }
-          case Return(similarUsers) => Future.value(similarUsers)
-        }
-      }
+    }
+
+  /**
+    * Given a Future, a lazy reference to a sequence of remaining
+    * futures and a predicate on T, tries each future in order and
+    * returns the first Future to both succeed and pass the supplied
+    * predicate.
+    */
+  def find[T](futures: Stream[Future[T]])(pred: T => Boolean): Future[T] =
+    futures match {
+      case Stream.Empty => Future.exception(new RuntimeException("Empty iterator in FutureOps.find"))
+      case last #:: Stream.Empty => last
+      case next #:: rest => next.filter(pred).rescue { case _: Throwable => find(rest)(pred) }
+    }
 
   /** Use the given future collector to produce a single Future of Map from a Map with Future values */
   def mapCollect[K, V](m: Map[K, Future[V]])(implicit fc: FutureCollector[(K, V)]): Future[Map[K, V]] =

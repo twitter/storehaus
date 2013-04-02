@@ -23,17 +23,17 @@ import CollectionOps.combineMaps
 
 /** Replicates reads to a seq of stores and returns the first successful value (empty or not)
  */
-class ReplicatedReadableStore[-K, +V](stores: Seq[ReadableStore[K, V]]) extends AbstractReadableStore[K, V] {
-  override def get(k: K) = selectFirst(stores.map { _.get(k) })
+class ReplicatedReadableStore[-K, +V](stores: Seq[ReadableStore[K, V]])(pred: Option[V] => Boolean) extends AbstractReadableStore[K, V] {
+  override def get(k: K) = selectFirst(stores.map { _.get(k) })(pred)
   override def multiGet[K1 <: K](ks: Set[K1]) =
-    combineMaps(stores.map { _.multiGet(ks) }).mapValues { selectFirst(_) }
+    combineMaps(stores.map { _.multiGet(ks) }).mapValues { selectFirst(_)(pred) }
 }
 
 /**
  * Replicates writes to all stores, and takes the first successful read.
  */
-class ReplicatedStore[-K, V](stores: Seq[Store[K, V]])(implicit collect: FutureCollector[Unit])
-  extends ReplicatedReadableStore[K, V](stores)
+class ReplicatedStore[-K, V](stores: Seq[Store[K, V]])(pred: Option[V] => Boolean)(implicit collect: FutureCollector[Unit])
+  extends ReplicatedReadableStore[K, V](stores)(pred)
   with Store[K, V] {
   override def put(kv: (K, Option[V])) =
     collect(stores.map { _.put(kv) }).map { _ => () }

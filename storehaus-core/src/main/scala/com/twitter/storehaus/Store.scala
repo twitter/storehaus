@@ -39,12 +39,30 @@ object Store {
   def lru[K, V](maxSize: Int = 1000): Store[K, V] = new LRUStore(maxSize)
 
   /**
+   * Returns a new Store[K, V] that queries all of the stores and
+   * returns the first values that are not exceptions and that pass
+   * the supplied predicate. Writes are routed to every store in the
+   * supplied sequence.
+   */
+  def select[K, V](stores: Seq[Store[K, V]])(pred: Option[V] => Boolean)(implicit collect: FutureCollector[Unit]): Store[K, V] =
+    new ReplicatedStore(stores)(pred)
+
+  /**
    * Returns a new Store[K, V] that queries all of the stores on read
    * and returns the first values that are not exceptions. Writes are
    * routed to every store in the supplied sequence.
    */
   def first[K, V](stores: Seq[Store[K, V]])(implicit collect: FutureCollector[Unit]): Store[K, V] =
-    new ReplicatedStore(stores)
+    select(stores)(_ => true)
+
+  /**
+   * Returns a new ReadableStore[K, V] that queries all of the stores
+   * and returns the first values that are not exceptions and that are
+   * present (ie, not equivalent to Future.None). Writes are routed to
+   * every store in the supplied sequence.
+   */
+  def firstPresent[K, V](stores: Seq[Store[K, V]]): Store[K, V] =
+    select(stores)(_.isDefined)
 
   /** Given a Store with values which are themselves Maps, unpivot/uncurry.
    * The values of the new store are the inner values of the original store.
