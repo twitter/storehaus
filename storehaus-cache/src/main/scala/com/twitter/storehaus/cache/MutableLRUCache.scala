@@ -17,24 +17,28 @@
 package com.twitter.storehaus.cache
 
 import scala.collection.mutable.{ Map => MutableMap }
+import java.util.{ LinkedHashMap => JLinkedHashMap, Map => JMap }
 
-object MutableMapCache {
-  def apply[K, V](m: MutableMap[K, V]) = new MutableMapCache(m)
-}
 /**
-  * MutableCache backed by a scala mutable Map.
+  * Creates a mutable LRU cache based on an insertion-order
+  * java.util.LinkedHashMap. As per the [[MutableCache]] contract,
+  * gets will NOT modify the underlying map.
   */
 
-class MutableMapCache[K, V](m: MutableMap[K, V]) extends MutableCache[K, V] {
-  override def get(k: K) = m.get(k)
-  override def +=(kv: (K, V)) = { m += kv; this }
-  override def hit(k: K) = m.get(k)
-  override def evict(k: K) = {
-    val ret = m.get(k)
-    m -= k
-    ret
+object MutableLRUCache {
+  def apply[K, V](capacity: Int) = new MutableLRUCache[K, V](capacity)
+}
+
+class MutableLRUCache[K, V](capacity: Int) extends JMapCache[K, V](() =>
+  new JLinkedHashMap[K, V](capacity + 1, 0.75f) {
+    override protected def removeEldestEntry(eldest: JMap.Entry[K, V]) =
+      super.size > capacity
+  }) {
+  override def hit(k: K) = {
+    get(k).map { v =>
+      evict(k)
+      this += (k, v)
+      v
+    }
   }
-  override def empty = new MutableMapCache(m.empty)
-  override def clear = { m.clear; this }
-  override def iterator = m.iterator
 }

@@ -33,11 +33,6 @@ object Store {
     override val jstore = m
   }
 
-  /** Create an LRUStore which has a given maximum capacity. Note this will just
-   * silently evict members that have not been used lately.
-   */
-  def lru[K, V](maxSize: Int = 1000): Store[K, V] = new LRUStore(maxSize)
-
   /**
    * Returns a new Store[K, V] that queries all of the stores on read
    * and returns the first values that are not exceptions. Writes are

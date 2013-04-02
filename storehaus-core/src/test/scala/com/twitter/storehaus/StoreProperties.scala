@@ -48,8 +48,6 @@ object StoreProperties extends Properties("Store") {
   property("ConcurrentHashMapStore test") =
     storeTest(new ConcurrentHashMapStore[String,Int]())
 
-  property("LRUStore test") = storeTest(Store.lru[String,Int](100000))
-
   property("Or works as expected") = forAll { (m1: Map[String, Int], m2: Map[String, Int]) =>
     val orRO = ReadableStore.first(Seq(ReadableStore.fromMap(m1), ReadableStore.fromMap(m2)))
    (m1.keySet ++ m2.keySet).forall { k =>

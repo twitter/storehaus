@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicReference
 import scala.annotation.tailrec
 
 // Thanks to http://blog.scala4java.com/2012/03/atomic-update-of-atomicreference.html
+
 object Atomic {
   def apply[T](obj: T) = new Atomic(obj)
 }
