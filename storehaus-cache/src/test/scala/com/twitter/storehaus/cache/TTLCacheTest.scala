@@ -16,11 +16,10 @@
 
 package com.twitter.storehaus.cache
 
-import com.twitter.conversions.time._
 import org.specs._
 
 class TTLCacheTest extends Specification {
-  val cache = Cache.ttl[String, Int](200.millis)
+  val cache = Cache.ttl[String, Int](200)
 
   "TTLCache exhibits proper TTL-ness" in {
     val abCache = cache.putClocked("a" -> 1)._2.putClocked("b" -> 2)._2

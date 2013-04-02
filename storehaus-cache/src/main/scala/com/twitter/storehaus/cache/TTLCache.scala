@@ -16,7 +16,6 @@
 
 package com.twitter.storehaus.cache
 
-import com.twitter.util.Duration
 import scala.collection.breakOut
 
 /**
@@ -34,8 +33,8 @@ import scala.collection.breakOut
  */
 
 object TTLCache {
-  def apply[K, V](ttl: Duration, backingCache: Cache[K, (Long, V)] = MapCache.empty[K, (Long, V)]) =
-    new TTLCache(ttl.inMillis, backingCache)(() => System.currentTimeMillis)
+  def apply[K, V](ttlInMillis: Long, backingCache: Cache[K, (Long, V)] = MapCache.empty[K, (Long, V)]) =
+    new TTLCache(ttlInMillis, backingCache)(() => System.currentTimeMillis)
 }
 
 class TTLCache[K, V](val ttl: Long, cache: Cache[K, (Long, V)])(val clock: () => Long) extends Cache[K, (Long, V)] {

@@ -16,8 +16,6 @@
 
 package com.twitter.storehaus.cache
 
-import com.twitter.util.Duration
-
 /**
  * Companion object to Cache. Contains a number of methods for
  * generating various cache implementations.
@@ -36,8 +34,8 @@ object Cache {
   def lru[K, V](maxSize: Long, backingCache: Cache[K, (Long, V)] = MapCache.empty[K, (Long, V)]) =
     LRUCache(maxSize, backingCache)
 
-  def ttl[K, V](ttl: Duration, backingCache: Cache[K, (Long, V)] = MapCache.empty[K, (Long, V)]) =
-    TTLCache(ttl, backingCache)
+  def ttl[K, V](ttlInMillis: Long, backingCache: Cache[K, (Long, V)] = MapCache.empty[K, (Long, V)]) =
+    TTLCache(ttlInMillis, backingCache)
 
   def toMutable[K, V](cache: Cache[K, V])(exhaustFn: Set[K] => Unit): MutableCache[K, V] =
     new MutableFromImmutableCache(cache)(exhaustFn)

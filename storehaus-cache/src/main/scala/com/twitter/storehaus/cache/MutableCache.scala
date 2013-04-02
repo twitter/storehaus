@@ -16,8 +16,6 @@
 
 package com.twitter.storehaus.cache
 
-import com.twitter.util.Duration
-
 import scala.collection.mutable.{ Map => MutableMap }
 
 object MutableCache {

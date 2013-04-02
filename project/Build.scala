@@ -77,9 +77,20 @@ object StorehausBuild extends Build {
     test := { },
     publish := { }, // skip publishing for this root project.
     publishLocal := { }
-  ).aggregate(storehausCore,
-              storehausAlgebra,
-              storehausMemcache)
+  ).aggregate(
+    storehausCache,
+    storehausCore,
+    storehausAlgebra,
+    storehausMemcache
+  )
+
+  lazy val storehausCache = Project(
+    id = "storehaus-cache",
+    base = file("storehaus-cache"),
+    settings = sharedSettings
+  ).settings(
+    name := "storehaus-cache"
+  )
 
   lazy val storehausCore = Project(
     id = "storehaus-core",
@@ -88,7 +99,7 @@ object StorehausBuild extends Build {
   ).settings(
     name := "storehaus-core",
     libraryDependencies += "com.twitter" %% "util-core" % "6.2.0"
-  )
+  ).dependsOn(storehausCache)
 
   lazy val storehausAlgebra = Project(
     id = "storehaus-algebra",
