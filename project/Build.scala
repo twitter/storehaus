@@ -3,9 +3,10 @@ package storehaus
 import sbt._
 import Keys._
 import sbtgitflow.ReleasePlugin._
+import spray.boilerplate.BoilerplatePlugin.Boilerplate
 
 object StorehausBuild extends Build {
-  val sharedSettings = Project.defaultSettings ++ releaseSettings ++ Seq(
+  val sharedSettings = Project.defaultSettings ++ releaseSettings ++ Boilerplate.settings ++ Seq(
     organization := "com.twitter",
     crossScalaVersions := Seq("2.9.2", "2.10.0"),
     libraryDependencies ++= Seq(

@@ -21,8 +21,9 @@ import java.util.{ LinkedHashMap => JLinkedHashMap, Map => JMap }
 
 /**
   * Creates a mutable LRU cache based on an insertion-order
-  * java.util.LinkedHashMap. As per the [[MutableCache]] contract,
-  * gets will NOT modify the underlying map.
+  * java.util.LinkedHashMap. As per the
+  * [[com.twitter.storehaus.cache.MutableCache]] contract, gets will
+  * NOT modify the underlying map.
   */
 
 object MutableLRUCache {

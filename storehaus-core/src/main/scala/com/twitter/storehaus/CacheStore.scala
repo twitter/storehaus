@@ -20,7 +20,7 @@ import com.twitter.storehaus.cache.MutableCache
 import com.twitter.util.Future
 
 /**
-  * Generates a [[Store]] backed by a
+  * Generates a [[com.twitter.storehaus.Store]] backed by a
   * [[com.twitter.storehaus.cache.MutableCache]].
   */
 
