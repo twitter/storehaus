@@ -41,11 +41,38 @@ object ReadableStore {
 
   /**
    * Returns a new ReadableStore[K, V] that queries all of the stores
+   * and returns the first values that are not exceptions and that
+   * pass the supplied predicate.
+   */
+  def select[K, V](stores: Seq[ReadableStore[K, V]])(pred: Option[V] => Boolean): ReadableStore[K, V] =
+    new ReplicatedReadableStore(stores)(pred)
+
+  /**
+   * Returns a ReadableStore[K, V] that attempts reads out of the
+   * supplied Seq[ReadableStore[K, V]] in order and returns the first
+   * successful value that passes the supplied predicate.
+   */
+  def find[K, V](stores: Seq[ReadableStore[K, V]])(pred: Option[V] => Boolean): ReadableStore[K, V] =
+    new SearchingReadableStore(stores)(pred)
+
+  /**
+   * Returns a new ReadableStore[K, V] that queries all of the stores
    * and returns the first values that are not exceptions.
    */
-  def first[K, V](stores: Seq[ReadableStore[K, V]]): ReadableStore[K, V] = new ReplicatedReadableStore(stores)
+  def first[K, V](stores: Seq[ReadableStore[K, V]]): ReadableStore[K, V] =
+    select(stores)(_ => true)
+
+  /**
+   * Returns a new ReadableStore[K, V] that queries all of the stores
+   * and returns the first values that are not exceptions and that are
+   * present (ie, not equivalent to Future.None).
+   */
+  def firstPresent[K, V](stores: Seq[ReadableStore[K, V]]): ReadableStore[K, V] =
+    select(stores)(_.isDefined)
+
   /** Factory method to create a ReadableStore from a Map. */
   def fromMap[K, V](m: Map[K, V]): ReadableStore[K, V] = new MapStore(m)
+
   /** Factory method to create a ReadableStore from an IndexedSeq. */
   def fromIndexedSeq[T](iseq: IndexedSeq[T]): ReadableStore[Int, T] = new IndexedSeqReadableStore(iseq)
 
