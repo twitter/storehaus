@@ -29,7 +29,7 @@ class MutableFromImmutableCache[K, V](cache: Cache[K, V])(exhaustFn: Set[K] => U
   override def evict(k: K) = cacheRef.effect { _.evict(k) }._1
   override def empty = new MutableFromImmutableCache(cache.empty)(exhaustFn)
   override def clear = { cacheRef.update { _.empty }; this }
-  override def contains(k: K) = cache.contains(k)
+  override def contains(k: K) = cacheRef.get.contains(k)
   override def -=(k: K) = { cacheRef.update { _ - k }; this }
   override def getOrElseUpdate(k: K, v: => V) = {
     lazy val cachedV = v
