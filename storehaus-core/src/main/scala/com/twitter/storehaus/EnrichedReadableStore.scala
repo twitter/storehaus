@@ -17,7 +17,21 @@
 package com.twitter.storehaus
 
 import com.twitter.util.Future
+import com.twitter.storehaus.cache.{ Cache, MutableCache }
 
+/**
+  * Enrichment on the [[com.twitter.storehaus.ReadableStore]]
+  * trait. Storehaus uses the enrichment pattern instead of adding
+  * these methods directly to the trait because many of the functions
+  * (mapValues, for example) have different meanings for
+  * ReadableStore, Store and MergeableStore.
+  *
+  * {{{ import ReadableStore.enrich }}}
+  *
+  * to get access to these methods.
+  *
+  * TODO: in scala 2.10 this should be a value class
+  */
 class EnrichedReadableStore[-K, +V](store: ReadableStore[K, V]) {
   def andThen[V2, K1 >: V](other: ReadableStore[K1, V2])(implicit fc: FutureCollector[K1]): ReadableStore[K, V2] =
     new ComposedStore[K, V, V2, K1](store, other)
@@ -48,4 +62,14 @@ class EnrichedReadableStore[-K, +V](store: ReadableStore[K, V]) {
 
   def convert[K1, V1](kfn: K1 => K)(vfn: V => Future[V1]): ReadableStore[K1, V1] =
     ReadableStore.convert(store)(kfn)(vfn)
+
+  /* Returns a new ReadableStore that caches reads from the underlying
+   * store using the supplied mutable cache.  */
+  def withCache(cache: MutableCache[K, Future[Option[V]]]): ReadableStore[K, V] =
+    new CachedReadableStore(store, cache)
+
+  /* Returns a new ReadableStore that caches reads from the underlying
+   * store using the supplied immutable cache.  */
+  def withCache(cache: Cache[K, Future[Option[V]]]): ReadableStore[K, V] =
+    new CachedReadableStore(store, cache.toMutable())
 }
