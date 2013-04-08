@@ -65,11 +65,11 @@ class EnrichedReadableStore[-K, +V](store: ReadableStore[K, V]) {
 
   /* Returns a new ReadableStore that caches reads from the underlying
    * store using the supplied mutable cache.  */
-  def withCache(cache: MutableCache[K, Future[Option[V]]]): ReadableStore[K, V] =
+  def withCache[K1 <: K, V1 >: V](cache: MutableCache[K1, Future[Option[V1]]]): ReadableStore[K1, V1] =
     new CachedReadableStore(store, cache)
 
   /* Returns a new ReadableStore that caches reads from the underlying
    * store using the supplied immutable cache.  */
-  def withCache(cache: Cache[K, Future[Option[V]]]): ReadableStore[K, V] =
+  def withCache[K1 <: K, V1 >: V](cache: Cache[K1, Future[Option[V1]]]): ReadableStore[K1, V1] =
     new CachedReadableStore(store, cache.toMutable())
 }
