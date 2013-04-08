@@ -22,10 +22,10 @@ import scala.annotation.tailrec
 // Thanks to http://blog.scala4java.com/2012/03/atomic-update-of-atomicreference.html
 
 object Atomic {
-  def apply[T](obj: T) = new Atomic(obj)
+  def apply[T <: AnyRef](obj: T) = new Atomic(obj)
 }
 
-class Atomic[T](obj: T) {
+class Atomic[T <: AnyRef](obj: T) {
   protected val atomic: AtomicReference[T] = new AtomicReference(obj)
 
   /**

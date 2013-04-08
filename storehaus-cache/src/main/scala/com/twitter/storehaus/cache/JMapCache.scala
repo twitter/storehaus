@@ -20,7 +20,7 @@ import java.util.{ Map => JMap }
 import scala.collection.JavaConverters._
 
 object JMapCache {
-  def apply[K, V](supplier: () => JMap[K, V]) = new JMapCache(supplier)
+  def apply[K, V](supplier: => JMap[K, V]) = new JMapCache(() => supplier)
 }
 
 /**

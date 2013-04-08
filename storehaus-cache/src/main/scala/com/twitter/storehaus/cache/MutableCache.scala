@@ -27,7 +27,7 @@ object MutableCache {
     * supplier is necessary because java maps don't provide a way of
     * returning an empty version of a specific map.
     */
-  def fromJMap[K, V](fn: () => JMap[K, V]) = JMapCache[K, V](fn)
+  def fromJMap[K, V](fn: => JMap[K, V]) = JMapCache[K, V](fn)
 }
 
 trait MutableCache[K, V] {
