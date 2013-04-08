@@ -64,17 +64,33 @@ class TTLCache[K, V](val ttl: Long, cache: Map[K, (Long, V)])(val clock: () => L
     (killKeys, new TTLCache(ttl, newCache)(clock))
   }
 
+  /* Returns Some(v) if the value is present in the cache and
+   * non-expired, None otherwise. */
   def getNonExpired(k: K): Option[V] =
     get(k).filter { case (expiration, _) => expiration > clock() }
       .map { _._2 }
 
+  /* Returns a [[scala.util.collection.immutable.Map]] containing all
+   * non-expired key-value pairs. */
   def toNonExpiredMap: Map[K, V] = {
     val now = clock()
     toMap.collect { case (k, (exp, v)) if exp > now => k -> v }
   }
 
+  /* Returns true if the supplied key has expired, false otherwise. */
   def expired(k: K): Boolean = getNonExpired(k).isDefined
 
+  /* Returns the set of entries from the cache with expiration dates
+   * older than the value produced by the supplied clock at call-time
+   * and a new cache with these entries evicted. */
+  def removeExpired: (Set[K], TTLCache[K,V]) = {
+    val killKeys = toRemove(clock())
+    val newCache = cache -- killKeys
+    (killKeys, new TTLCache(ttl, newCache)(clock))
+  }
+
+  /* Adds the supplied pair to the cache set to expire in (ttlInMillis +
+   * the value produced by the supplied clock at call-time). */
   def putClocked(kv: (K, V)): (Set[K], TTLCache[K, V]) = {
     val (k, v) = kv
     val now = clock()
