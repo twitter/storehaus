@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus.mysql
 
-import com.twitter.finagle.exp.mysql.{ Client, Result, StringValue }
+import com.twitter.finagle.exp.mysql.{ Client, PreparedStatement, Result, StringValue }
 import com.twitter.storehaus.Store
 import com.twitter.util.Future
 
@@ -24,37 +24,59 @@ import org.jboss.netty.buffer.ChannelBuffer
 import org.jboss.netty.buffer.ChannelBuffers
 import org.jboss.netty.util.CharsetUtil.UTF_8 
 
+/**
+ * @author Ruban Monu
+ */
+
 object MySQLStore {
 
   def apply(client: Client, table: String, kCol: String, vCol: String) = 
     new MySQLStore(client, table, kCol, vCol)
 }
 
+/**
+ * Simple MySQL wrapper.
+ * Assumes underlying key and value columns are string types.
+ * Value column is treated as a channelbuffer of UTF-8 string.
+ */
 class MySQLStore(client: Client, table: String, kCol: String, vCol: String)
     extends Store[String, ChannelBuffer] {
+
+  val SELECT_SQL = "SELECT " + g(vCol) + " FROM " + g(table) + " WHERE " + g(kCol) + "=?"
+  val MULTI_SELECT_SQL_PREFIX = "SELECT " + g(kCol) + ", " + g(vCol) + " FROM " + g(table) + " WHERE " + g(kCol) + " IN "
+  val INSERT_SQL = "INSERT INTO " + g(table) + "(" + g(kCol) + "," + g(vCol) + ")" + " VALUES (?,?)"
+  val UPDATE_SQL = "UPDATE " + g(table) + " SET " + g(vCol) + "=? WHERE " + g(kCol) + "=?"
+  val DELETE_SQL = "DELETE FROM " + g(table) + " WHERE " + g(kCol) + "=?"
 
   override def get(k: String): Future[Option[ChannelBuffer]] = {
     // finagle-mysql select() method lets you pass in a mapping function
     // to convert resultset into desired output format (ChannelBuffer in this case)
     // we assume here the mysql client already has the dbname/schema selected
-    val selectSql = "SELECT " + g(vCol) + " FROM " + g(table) + " WHERE " + g(kCol) + "=" + q(k)
-    val mysqlResult: Future[Seq[ChannelBuffer]] = client.select(selectSql) { row =>
+    val mysqlResult: Future[(PreparedStatement,Seq[ChannelBuffer])] = client.prepareAndSelect(SELECT_SQL, k) { row =>
       val StringValue(v) = row(vCol).get
+      // for finagle Value mappings, see:
+      // https://github.com/twitter/finagle/blob/master/finagle-mysql/src/main/scala/com/twitter/finagle/mysql/Value.scala
       ChannelBuffers.copiedBuffer(v, UTF_8)
     }
-    Future.value(mysqlResult.get.lift(0))
+    Future.value(mysqlResult.get._2.lift(0))
   }
 
   override def multiGet[K1 <: String](ks: Set[K1]): Map[K1, Future[Option[ChannelBuffer]]] = {
-    val keyList = ks.map(q(_)).mkString(",")
-    val selectSql = "SELECT " + g(kCol) + ", " + g(vCol) + " FROM " + g(table) + " WHERE " + g(kCol) + " IN (" + keyList + ")"
-    val mysqlResult: Future[Seq[(String, ChannelBuffer)]] = client.select(selectSql) { row =>
+    // build preparedstatement based on keyset size
+    val placeholders = new StringBuilder
+    for (i <- 1 to ks.size) {
+      placeholders.append('?')
+      if (i < ks.size) placeholders.append(',')
+    }
+    val selectSql = MULTI_SELECT_SQL_PREFIX + "(" + placeholders + ")" 
+    val mysqlResult: Future[(PreparedStatement,Seq[(String, ChannelBuffer)])] = client.prepareAndSelect(selectSql, ks.toSeq:_*) { row =>
       val StringValue(k) = row(kCol).get
       val StringValue(v) = row(vCol).get
       (k, ChannelBuffers.copiedBuffer(v, UTF_8))
+      // we return data in the form of channelbuffers of UTF-8 strings
     }
     val storehausResult = collection.mutable.Map.empty[K1, Future[Option[ChannelBuffer]]]
-    for ( row <- mysqlResult.get ) {
+    for ( row <- mysqlResult.get._2 ) {
       storehausResult += row._1.asInstanceOf[K1] -> Future.value(Some(row._2))
     }
     for ( key <- ks ) {
@@ -82,20 +104,16 @@ class MySQLStore(client: Client, table: String, kCol: String, vCol: String)
     // since we are not guaranteed that, we first check if key exists
     // and insert or update accordingly
     val getResult = get(k).get
-    val setSql = if (getResult.isEmpty) {
-        "INSERT INTO " + g(table) + "(" + g(kCol) + "," + g(vCol) + ")" + " VALUES (" + q(k) + "," + q(v.toString(UTF_8)) +")"
-      } else {
-        "UPDATE " + g(table) + " SET " + g(vCol) + "=" + q(v.toString(UTF_8)) + " WHERE " + g(kCol) + "=" + q(k)
-      }
-    client.query(setSql)
+    val (setSql, arg1, arg2) = if (getResult.isEmpty) { (INSERT_SQL, k, v.toString(UTF_8)) }
+        else { (UPDATE_SQL, v.toString(UTF_8), k) }
+    // prepareAndExecute returns Future[(PreparedStatement,Result)]
+    Future.value(client.prepareAndExecute(setSql, arg1, arg2).get._2)
   }
 
   protected def doDelete(k: String): Future[Result] = {
-    val deleteSql = "DELETE FROM " + g(table) + " WHERE " + g(kCol) + "=" + q(k)
-    client.query(deleteSql)
+    // prepareAndExecute returns Future[(PreparedStatement,Result)]
+    Future.value(client.prepareAndExecute(DELETE_SQL, k).get._2)
   }
-
-  protected def q(s: String)  = "'" + s + "'"
 
   protected def g(s: String)  = "`" + s + "`"
 }
