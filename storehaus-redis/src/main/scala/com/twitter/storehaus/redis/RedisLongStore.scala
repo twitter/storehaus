@@ -19,7 +19,7 @@ package com.twitter.storehaus.redis
 import com.twitter.algebird.Monoid
 import com.twitter.bijection.Injection
 import com.twitter.finagle.redis.Client
-import com.twitter.finagle.redis.util.CBToString
+import com.twitter.finagle.redis.util.{ CBToString, StringToChannelBuffer }
 import com.twitter.storehaus.algebra.{ ConvertedStore, MergeableStore }
 import com.twitter.util.Time
 import org.jboss.netty.buffer.{ ChannelBuffer, ChannelBuffers }
@@ -31,17 +31,14 @@ import scala.util.control.Exception.allCatch
  */
 
 object RedisLongStore {
-  implicit object LongInjection
-   extends Injection[Long, ChannelBuffer] {
-    def apply(a: Long): ChannelBuffer = {
-      val b = ChannelBuffers.buffer(8)
-      b.writeLong(a)
-      b
-    }
    /** redis stores numerics as strings
-    *  so we have to decode them as such
+    *  so we have to encode/decode them as such
     *  http://redis.io/topics/data-types-intro
     */
+  implicit object LongInjection
+   extends Injection[Long, ChannelBuffer] {
+    def apply(a: Long): ChannelBuffer =
+      StringToChannelBuffer(a.toString)
     override def invert(b: ChannelBuffer): Option[Long] =
       allCatch.opt(CBToString(b).toLong)
   }
