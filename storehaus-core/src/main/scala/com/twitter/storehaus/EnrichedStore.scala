@@ -16,9 +16,18 @@
 
 package com.twitter.storehaus
 
-/** Enrichment class to add method to Store[K, V]
- * TODO in scala 2.10 this should be a value class
- */
+/**
+  * Enrichment on the Store[K, V] trait. Storehaus uses the enrichment
+  * pattern instead of adding these methods directly to the trait
+  * because many of the functions (mapValues, for example) have
+  * different meanings for ReadableStore, Store and MergeableStore.
+  *
+  * {{{ import Store.enrich }}}
+  *
+  * to get access to these methods.
+  *
+  * TODO: in scala 2.10 this should be a value class
+  */
 class EnrichedStore[-K, V](store: Store[K, V]) {
   def unpivot[CombinedK, InnerK, InnerV](split: CombinedK => (K, InnerK))(implicit ev: V <:< Map[InnerK, InnerV]): Store[CombinedK, InnerV] =
     Store.unpivot(store.asInstanceOf[Store[K, Map[InnerK, InnerV]]])(split)
