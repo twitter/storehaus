@@ -35,7 +35,7 @@ object RedisLongStore {
     *  so we have to encode/decode them as such
     *  http://redis.io/topics/data-types-intro
     */
-  implicit object LongInjection
+  private [redis] implicit object LongInjection
    extends Injection[Long, ChannelBuffer] {
     def apply(a: Long): ChannelBuffer =
       StringToChannelBuffer(a.toString)
