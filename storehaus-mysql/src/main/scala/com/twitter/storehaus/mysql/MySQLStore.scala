@@ -52,7 +52,7 @@ class MySQLStore(client: Client, table: String, kCol: String, vCol: String)
     // finagle-mysql select() method lets you pass in a mapping function
     // to convert resultset into desired output format (ChannelBuffer in this case)
     // we assume here the mysql client already has the dbname/schema selected
-    val mysqlResult: Future[(PreparedStatement,Seq[ChannelBuffer])] = client.prepareAndSelect(SELECT_SQL, k) { row =>
+    val mysqlResult: Future[(PreparedStatement,Seq[ChannelBuffer])] = client.prepareAndSelect(SELECT_SQL, k.getBytes) { row =>
       val StringValue(v) = row(vCol).get
       // for finagle Value mappings, see:
       // https://github.com/twitter/finagle/blob/master/finagle-mysql/src/main/scala/com/twitter/finagle/mysql/Value.scala
@@ -62,20 +62,21 @@ class MySQLStore(client: Client, table: String, kCol: String, vCol: String)
   }
 
   override def multiGet[K1 <: String](ks: Set[K1]): Map[K1, Future[Option[ChannelBuffer]]] = {
+    val storehausResult = collection.mutable.Map.empty[K1, Future[Option[ChannelBuffer]]]
+    if (ks.isEmpty) return storehausResult.toMap
     // build preparedstatement based on keyset size
     val placeholders = new StringBuilder
     for (i <- 1 to ks.size) {
       placeholders.append('?')
       if (i < ks.size) placeholders.append(',')
     }
-    val selectSql = MULTI_SELECT_SQL_PREFIX + "(" + placeholders + ")" 
-    val mysqlResult: Future[(PreparedStatement,Seq[(String, ChannelBuffer)])] = client.prepareAndSelect(selectSql, ks.toSeq:_*) { row =>
+    val selectSql = MULTI_SELECT_SQL_PREFIX + "(" + placeholders + ")"
+    val mysqlResult: Future[(PreparedStatement,Seq[(String, ChannelBuffer)])] = client.prepareAndSelect(selectSql, ks.map(key => key.getBytes).toSeq:_*) { row =>
       val StringValue(k) = row(kCol).get
       val StringValue(v) = row(vCol).get
       (k, ChannelBuffers.copiedBuffer(v, UTF_8))
       // we return data in the form of channelbuffers of UTF-8 strings
     }
-    val storehausResult = collection.mutable.Map.empty[K1, Future[Option[ChannelBuffer]]]
     for ( row <- mysqlResult.get._2 ) {
       storehausResult += row._1.asInstanceOf[K1] -> Future.value(Some(row._2))
     }
@@ -107,12 +108,12 @@ class MySQLStore(client: Client, table: String, kCol: String, vCol: String)
     val (setSql, arg1, arg2) = if (getResult.isEmpty) { (INSERT_SQL, k, v.toString(UTF_8)) }
         else { (UPDATE_SQL, v.toString(UTF_8), k) }
     // prepareAndExecute returns Future[(PreparedStatement,Result)]
-    Future.value(client.prepareAndExecute(setSql, arg1, arg2).get._2)
+    Future.value(client.prepareAndExecute(setSql, arg1.getBytes, arg2.getBytes).get._2)
   }
 
   protected def doDelete(k: String): Future[Result] = {
     // prepareAndExecute returns Future[(PreparedStatement,Result)]
-    Future.value(client.prepareAndExecute(DELETE_SQL, k).get._2)
+    Future.value(client.prepareAndExecute(DELETE_SQL, k.getBytes).get._2)
   }
 
   protected def g(s: String)  = "`" + s + "`"
