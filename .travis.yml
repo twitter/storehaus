@@ -3,6 +3,6 @@ scala:
   - 2.10.0
   - 2.9.2
 before_script:
-  - mysql -e "create database `storehaus_test`;"
+  - mysql -e "create database storehaus_test;"
   - mysql -e "create user 'storehaususer'@'localhost' identified by 'test1234';"
-  - mysql -e "grant all on `storehaus_test`.* to 'storehaususer'@'localhost';"
+  - mysql -e "grant all on storehaus_test.* to 'storehaususer'@'localhost';"
