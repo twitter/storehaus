@@ -10,6 +10,7 @@ object StorehausBuild extends Build {
     crossScalaVersions := Seq("2.9.2", "2.10.0"),
     libraryDependencies ++= Seq(
       "org.scalacheck" %% "scalacheck" % "1.10.0" % "test" withSources(),
+      "org.scalatest" %% "scalatest" %"1.9.1" % "test" withSources(),
       "org.scala-tools.testing" %% "specs" % "1.6.9" % "test" withSources()
     ),
 
@@ -79,7 +80,8 @@ object StorehausBuild extends Build {
     publishLocal := { }
   ).aggregate(storehausCore,
               storehausAlgebra,
-              storehausMemcache)
+              storehausMemcache,
+              storehausMySQL)
 
   lazy val storehausCore = Project(
     id = "storehaus-core",
@@ -109,5 +111,14 @@ object StorehausBuild extends Build {
   ).settings(
     name := "storehaus-memcache",
     libraryDependencies += "com.twitter" %% "finagle-memcached" % "6.2.0"
+  ).dependsOn(storehausCore % "test->test;compile->compile")
+  
+  lazy val storehausMySQL = Project(
+    id = "storehaus-mysql",
+    base = file("storehaus-mysql"),
+    settings = sharedSettings
+  ).settings(
+    name := "storehaus-mysql",
+    libraryDependencies += "com.twitter" %% "finagle-mysql" % "6.2.1"
   ).dependsOn(storehausCore % "test->test;compile->compile")
 }
