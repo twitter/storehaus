@@ -32,7 +32,6 @@ object RedisSetStore {
   def members(client: Client, ttl: Option[Time] = RedisStore.Default.TTL) =
     new RedisSetMembershipStore(RedisSetStore(client, ttl))
 }
-import RedisSetStore._
 
 /**
  * A Store for sets of values backed by a Redis set.
