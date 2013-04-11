@@ -1,0 +1,83 @@
+/*
+ * Copyright 2013 Twitter Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.twitter.storehaus.cache
+
+/**
+  * Memoize supplies a number of functions for generating memoized
+  * versions of Scala's functions using a MutableCache instance.
+  *
+  * For example,
+  *
+  * {{{
+  * import com.twitter.storehaus.cache._
+  *
+  * scala> val sleepyToString = Memoize(MapCache.empty[Int, String].toMutable()) { i => println("CALCULATING!"); i.toString }
+  * sleepyToString: com.twitter.storehaus.cache.Memoize1[Int,String] = <function1>
+  *
+  * scala> sleepyToString(10)
+  * CALCULATING!
+  * res0: String = 10
+  *
+  * scala> sleepyToString(10)
+  * res1: String = 10
+  *
+  * // Get the backing function back out with backingFn:
+  *
+  * scala> sleepyToString.backingFn(10)
+  * CALCULATING!
+  * res2: String = 10
+  * }}}
+  *
+  *
+  */
+object Memoize {
+  [#/* Returns the supplied function, memoized using the supplied mutable cache.*/
+  def apply[[#T1#], R](cache: MutableCache[([#T1#]), R])(f: ([#T1#]) => R) = new Memoize1(cache, f)#
+  ]
+}
+
+[#
+/**
+  * Returns an instance of Function1 memoized using the supplied
+  * mutable cache.
+  *
+  * {{{
+  * scala> import com.twitter.storehaus.cache._
+  *
+  * scala> type Input = ([#Int#])
+  *
+  * scala> val cache = MapCache.empty[Input, String].toMutable()
+  * cache: <munged>
+  *
+  * scala> val memoFn = Memoize(cache) { ([#x1#]) =>
+  *      |   println("calculating!")
+  *      |   ([#x1#]).toString
+  *      | }
+  * memoFn: <munged>
+  *
+  * scala> memoFn([#1#])
+  * calculating!
+  * res0: String = ([#1#])
+
+  * scala> memoFn([#1#])
+  * res1: String = ([#1#])
+  * }}}
+  */
+class Memoize1[[#-T1#], +R](cache: MutableCache[([#T1#]), R], val backingFn: ([#T1#]) => R) extends (([#T1#]) => R) {
+  override def apply([#t1: T1#]): R = cache.getOrElseUpdate(([#t1#]), backingFn([#t1#]))
+}#
+]
