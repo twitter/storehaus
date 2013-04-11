@@ -16,17 +16,21 @@
 
 package com.twitter.storehaus
 
-import java.util.{ LinkedHashMap => JLinkedHashMap, Map => JMap }
+import com.twitter.storehaus.cache.MutableCache
+import com.twitter.util.Future
 
 /**
- *  @author Oscar Boykin
- *  @author Sam Ritchie
- */
+  * Generates a [[com.twitter.storehaus.Store]] backed by a
+  * [[com.twitter.storehaus.cache.MutableCache]].
+  */
 
-class LRUStore[K, V](maxSize: Int) extends JMapStore[K, V] {
-  // create a java linked hashmap with access-ordering (LRU)
-  protected override val jstore = new JLinkedHashMap[K, Option[V]](maxSize + 1, 0.75f, true) {
-    override protected def removeEldestEntry(eldest: JMap.Entry[K, Option[V]]) =
-      super.size > maxSize
+class CacheStore[K, V](cache: MutableCache[K, V]) extends Store[K, V] {
+  override def get(k: K): Future[Option[V]] = Future.value(cache.get(k))
+  override def put(kv: (K, Option[V])): Future[Unit] = {
+    kv match {
+      case (k, Some(v)) => cache += (k -> v)
+      case (k, None) => cache -= k
+    }
+    Future.Unit
   }
 }

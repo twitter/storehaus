@@ -3,9 +3,10 @@ package storehaus
 import sbt._
 import Keys._
 import sbtgitflow.ReleasePlugin._
+import spray.boilerplate.BoilerplatePlugin.Boilerplate
 
 object StorehausBuild extends Build {
-  val sharedSettings = Project.defaultSettings ++ releaseSettings ++ Seq(
+  val sharedSettings = Project.defaultSettings ++ releaseSettings ++ Boilerplate.settings ++ Seq(
     organization := "com.twitter",
     crossScalaVersions := Seq("2.9.2", "2.10.0"),
     libraryDependencies ++= Seq(
@@ -77,10 +78,21 @@ object StorehausBuild extends Build {
     test := { },
     publish := { }, // skip publishing for this root project.
     publishLocal := { }
-  ).aggregate(storehausCore,
-              storehausAlgebra,
-              storehausMemcache,
-              storehausMySQL)
+  ).aggregate(
+    storehausCache,
+    storehausCore,
+    storehausAlgebra,
+    storehausMemcache,
+    storehausMySQL
+  )
+
+  lazy val storehausCache = Project(
+    id = "storehaus-cache",
+    base = file("storehaus-cache"),
+    settings = sharedSettings
+  ).settings(
+    name := "storehaus-cache"
+  )
 
   lazy val storehausCore = Project(
     id = "storehaus-core",
@@ -89,7 +101,7 @@ object StorehausBuild extends Build {
   ).settings(
     name := "storehaus-core",
     libraryDependencies += "com.twitter" %% "util-core" % "6.2.0"
-  )
+  ).dependsOn(storehausCache)
 
   lazy val storehausAlgebra = Project(
     id = "storehaus-algebra",
