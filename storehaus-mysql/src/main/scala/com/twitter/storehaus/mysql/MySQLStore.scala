@@ -16,14 +16,14 @@
 
 package com.twitter.storehaus.mysql
 
-import com.twitter.finagle.exp.mysql.{ Client, PreparedStatement, Result, StringValue }
+import com.twitter.finagle.exp.mysql.{ Client, PreparedStatement, Result }
 import com.twitter.storehaus.FutureOps
 import com.twitter.storehaus.Store
 import com.twitter.util.Future
 
 import org.jboss.netty.buffer.ChannelBuffer
 import org.jboss.netty.buffer.ChannelBuffers
-import org.jboss.netty.util.CharsetUtil.UTF_8 
+import org.jboss.netty.util.CharsetUtil.UTF_8
 
 /**
   * @author Ruban Monu
@@ -40,7 +40,7 @@ object MySQLStore {
   * Simple storehaus wrapper over finagle-mysql.
   *
   * Assumes the underlying table's key and value columns are both strings.
-  * Supported MySQL column types are: STRING, VAR_STRING, VARCHAR.
+  * Supported MySQL column types are: BLOB, TEXT, VARCHAR.
   * Value column is treated as a channelbuffer of UTF-8 strings.
   *
   * The finagle-mysql client is required to set the user, database and create
@@ -77,13 +77,13 @@ class MySQLStore(client: Client, table: String, kCol: String, vCol: String)
     // finagle-mysql select() method lets you pass in a mapping function
     // to convert resultset into desired output format (ChannelBuffer in this case)
     // we assume here the mysql client already has the dbname/schema selected
-    val mysqlResult: Future[(PreparedStatement,Seq[ChannelBuffer])] = client.prepareAndSelect(SELECT_SQL, k.getBytes) { row =>
-      val StringValue(v) = row(vCol).get
-      // for finagle Value mappings, see:
-      // https://github.com/twitter/finagle/blob/master/finagle-mysql/src/main/scala/com/twitter/finagle/mysql/Value.scala
-      ChannelBuffers.copiedBuffer(v, UTF_8)
+    val mysqlResult: Future[(PreparedStatement,Seq[Option[ChannelBuffer]])] = client.prepareAndSelect(SELECT_SQL, k.getBytes) { row =>
+      ValueMapper.toChannelBuffer(row(vCol))
     }
-    mysqlResult.map { _._2.lift(0) }
+    mysqlResult.map { case(ps, result) =>
+      client.closeStatement(ps)
+      result.lift(0) match { case None => None; case Some(optV) => optV }
+    }
   }
 
   override def multiGet[K1 <: String](ks: Set[K1]): Map[K1, Future[Option[ChannelBuffer]]] = {
@@ -91,13 +91,18 @@ class MySQLStore(client: Client, table: String, kCol: String, vCol: String)
     // build preparedstatement based on keyset size
     val placeholders = Stream.continually("?").take(ks.size).mkString("(", ",", ")")
     val selectSql = MULTI_SELECT_SQL_PREFIX + placeholders
-    val mysqlResult: Future[(PreparedStatement,Seq[(String, Option[ChannelBuffer])])] = client.prepareAndSelect(selectSql, ks.map(key => key.getBytes).toSeq:_*) { row =>
-      val StringValue(k) = row(kCol).get
-      val StringValue(v) = row(vCol).get
-      (k, Option(ChannelBuffers.copiedBuffer(v, UTF_8)))
+    val mysqlResult: Future[(PreparedStatement,Seq[(Option[String], Option[ChannelBuffer])])] =
+        client.prepareAndSelect(selectSql, ks.map(key => key.getBytes).toSeq:_*) { row =>
+      (ValueMapper.toString(row(kCol)), ValueMapper.toChannelBuffer(row(vCol)))
       // we return data in the form of channelbuffers of UTF-8 strings
     }
-    FutureOps.liftValues(ks, mysqlResult.map { case (_, rows) => rows.toMap }, { (k: K1) => Future.value(Option.empty) })
+    FutureOps.liftValues(ks,
+      mysqlResult.map { case (ps, rows) =>
+        client.closeStatement(ps)
+        rows.toMap.filterKeys { _ != None }.map { case (optK, optV) => (optK.get, optV) }
+      },
+      { (k: K1) => Future.value(Option.empty) }
+    )
   }
 
   protected def set(k: String, v: ChannelBuffer) = doSet(k, v)
@@ -122,12 +127,14 @@ class MySQLStore(client: Client, table: String, kCol: String, vCol: String)
         case None => client.prepareAndExecute(INSERT_SQL, k.getBytes, v.toString(UTF_8).getBytes)
       }
       // prepareAndExecute returns Future[(PreparedStatement,Result)]
-    }.map { _._2 }
+    }.map { case (ps, result) => client.closeStatement(ps); result }
   }
 
   protected def doDelete(k: String): Future[Result] = {
     // prepareAndExecute returns Future[(PreparedStatement,Result)]
-    client.prepareAndExecute(DELETE_SQL, k.getBytes).map { _._2 }
+    client.prepareAndExecute(DELETE_SQL, k.getBytes).map {
+      case (ps, result) => client.closeStatement(ps); result
+    }
   }
 
   // enclose table or column names in backticks, in case they happen to be sql keywords

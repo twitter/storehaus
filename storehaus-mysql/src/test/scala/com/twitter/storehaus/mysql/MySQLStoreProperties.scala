@@ -32,8 +32,8 @@ object MySQLStoreProperties extends Properties("MySQLStore") {
   val validPairs = Arbitrary.arbitrary[List[(String, Option[String])]] suchThat {
     case Nil => false
     case xs => xs.forall {
-      case (k, Some(s)) => !k.isEmpty && k.length<40 && !s.isEmpty && s.length<100
-      case (k, None) => !k.isEmpty && k.length<40
+      case (k, Some(s)) => !k.isEmpty && !s.isEmpty
+      case (k, None) => !k.isEmpty
     }
   }
 
@@ -74,20 +74,24 @@ object MySQLStoreProperties extends Properties("MySQLStore") {
   def storeTest(store: MySQLStore) =
     putAndGetStoreTest(store) && putAndMultiGetStoreTest(store)
 
-  property("MySQLStore test") =
-    withStore(storeTest(_))
+  property("MySQLStore text->text") =
+    withStore(storeTest(_), "text", "text")
 
-  private def withStore[T](f: MySQLStore => T): T = {
+  property("MySQLStore blob->blob") =
+    withStore(storeTest(_), "blob", "blob")
+
+  property("MySQLStore text->blob") =
+    withStore(storeTest(_), "text", "blob")
+
+  private def withStore[T](f: MySQLStore => T, kColType: String, vColType: String): T = {
     val client = Client("localhost:3306", "storehaususer", "test1234", "storehaus_test")
     // these should match mysql setup used in .travis.yml
 
-    val schema = """CREATE TEMPORARY TABLE IF NOT EXISTS `storehaus-mysql-test` (
-          `key` varchar(40) DEFAULT NULL,
-          `value` varchar(100) DEFAULT NULL
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;"""
+    val tableName = "storehaus-mysql-"+kColType+"-"+vColType
+    val schema = "CREATE TEMPORARY TABLE IF NOT EXISTS `"+tableName+"` (`key` "+kColType+" DEFAULT NULL, `value` "+vColType+" DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8;"
     client.query(schema).get
 
-    val store = MySQLStore(client, "storehaus-mysql-test", "key", "value")
+    val store = MySQLStore(client, tableName, "key", "value")
     val result = f(store)
     store.close
     result
