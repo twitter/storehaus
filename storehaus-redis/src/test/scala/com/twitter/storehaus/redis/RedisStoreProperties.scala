@@ -21,8 +21,8 @@ import com.twitter.finagle.redis.Client
 import com.twitter.finagle.redis.util.{ CBToString, StringToChannelBuffer }
 import com.twitter.storehaus.FutureOps
 import org.jboss.netty.buffer.ChannelBuffer
-import org.scalacheck.Properties
-import org.scalacheck.Gen.choose
+import org.scalacheck.{ Arbitrary, Properties }
+import org.scalacheck.Gen.{ choose, listOf1 }
 import org.scalacheck.Prop._
 
 object RedisStoreProperties extends Properties("RedisStore")
@@ -35,20 +35,17 @@ object RedisStoreProperties extends Properties("RedisStore")
       StringToChannelBuffer(str)
   }
   
-  def validPairs(examples: List[(String, Option[String])]) =
-    !examples.isEmpty && examples.forall {
-      case (k, v) if (k.isEmpty || v.filter(_.isEmpty).isDefined) => false
-      case _ => true
-    }
+  def validPairs = listOf1(Arbitrary.arbitrary[((String, Option[String]))] suchThat {
+    case (k, v) if (k.isEmpty || v.filter(_.isEmpty).isDefined) => false
+    case _ => true
+  })
 
   def baseTest(store: RedisStore)
     (put: (RedisStore, List[(String, Option[String])]) => Unit) =
-    forAll { (examples: List[(String, Option[String])]) =>
-      validPairs(examples) ==> {
-        put(store, examples)
-        examples.toMap.forall { case (k, optV) =>
-          store.get(Strs.invert(k)).get.map(Strs.apply) == optV
-        }
+    forAll(validPairs) { (examples: List[(String, Option[String])]) =>
+      put(store, examples)
+      examples.toMap.forall { case (k, optV) =>
+        store.get(Strs.invert(k)).get.map(Strs.apply) == optV
       }
     }
 
