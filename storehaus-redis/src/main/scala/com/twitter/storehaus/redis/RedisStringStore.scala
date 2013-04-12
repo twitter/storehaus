@@ -37,7 +37,7 @@ object RedisStringStore {
     def invert(b: ChannelBuffer): Option[String] = allCatch.opt(CBToString(b))
   }
 
-  def apply(client: Client, ttl: Option[Time]) =
+  def apply(client: Client, ttl: Option[Time] = RedisStore.Default.TTL) =
     new RedisStringStore(RedisStore(client, ttl))
 }
 import RedisStringStore._
