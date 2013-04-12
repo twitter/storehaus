@@ -16,14 +16,16 @@
 
 package com.twitter.storehaus.redis
 
-import com.twitter.bijection.Bijection
+import com.twitter.bijection.{ Bijection, Injection }
 import com.twitter.finagle.redis.Client
 import com.twitter.finagle.redis.util.{ CBToString, StringToChannelBuffer }
-import com.twitter.storehaus.FutureOps
+import com.twitter.storehaus.{ FutureOps, Store }
+import com.twitter.storehaus.algebra.ConvertedStore
 import org.jboss.netty.buffer.ChannelBuffer
-import org.scalacheck.Properties
+import org.scalacheck.{ Arbitrary, Properties }
 import org.scalacheck.Gen.choose
 import org.scalacheck.Prop._
+import scala.util.control.Exception.allCatch
 
 object RedisStoreProperties extends Properties("RedisStore")
   with CloseableCleanup[RedisStore] {
@@ -41,35 +43,38 @@ object RedisStoreProperties extends Properties("RedisStore")
       case _ => true
     }
 
-  def baseTest(store: RedisStore)
-    (put: (RedisStore, List[(String, Option[String])]) => Unit) =
-    forAll { (examples: List[(String, Option[String])]) =>
-      validPairs(examples) ==> {
+  def baseTest[K : Arbitrary, V: Arbitrary: Equiv](store: Store[K, V], implication: List[(K, Option[V])] => Boolean)
+    (put: (Store[K, V], List[(K, Option[V])]) => Unit) =
+    forAll { (examples: List[(K, Option[V])]) =>
+      implication(examples) ==> {
         put(store, examples)
         examples.toMap.forall { case (k, optV) =>
-          store.get(Strs.invert(k)).get.map(Strs.apply) == optV
+          store.get(k).get == optV
         }
       }
     }
 
-  def putStoreTest(store: RedisStore) =
-    baseTest(store) { (s, pairs) =>
-      pairs.foreach { case (k, v) => s.put((Strs.invert(k), v.map(Strs.invert))).get }
+  def putStoreTest[K: Arbitrary, V: Arbitrary: Equiv](store: Store[K, V], implication: List[(K, Option[V])] => Boolean) =
+    baseTest(store, implication) { (s, pairs) =>
+      pairs.foreach { case (k, v) => s.put((k, v)).get }
     }
 
-  def multiPutStoreTest(store: RedisStore) =
-    baseTest(store) { (s, pairs) =>
-      FutureOps.mapCollect(s.multiPut(pairs.map({ case (k, v) => (Strs.invert(k), v.map(Strs.invert)) }).toMap)).get
+  def multiPutStoreTest[K: Arbitrary, V: Arbitrary: Equiv](store: Store[K, V], implication: List[(K, Option[V])] => Boolean) =
+    baseTest(store, implication) { (s, pairs) =>
+      FutureOps.mapCollect(s.multiPut(pairs.toMap)).get
     }
 
-  def storeTest(store: RedisStore) =
-    putStoreTest(store) && multiPutStoreTest(store)
+  def storeTest(store: Store[String, String]) =
+    putStoreTest(store, validPairs) && multiPutStoreTest(store, validPairs)
 
-  val closeable = {
+  val closeable: Store[String, String] = {
     val client = Client("localhost:6379")
     client.flushDB() // clean slate
-    val rs = RedisStore(client)
-    rs
+    new ConvertedStore(RedisStore(client))(StringToChannelBuffer(_: String))(
+      new Injection[String, ChannelBuffer] {
+        def apply(a: String): ChannelBuffer = StringToChannelBuffer(a)
+        def invert(b: ChannelBuffer): Option[String] = allCatch.opt(CBToString(b))
+      })
   }
 
   property("RedisStore test") =
