@@ -25,18 +25,18 @@ import org.scalacheck.Prop._
 
 import com.twitter.storehaus.redis.RedisStoreProperties.Strs
 
-object RedisLongStoreProperties extends Properties("RedisLongStore")
-  with CloseableCleanup[RedisLongStore] {
+object RedisStringStoreProperties extends Properties("RedisStringStore")
+  with CloseableCleanup[RedisStringStore] {
   
-  def validPairs(examples: List[(String, Option[Long])]) =
-    examples != null && !examples.isEmpty && examples.forall {
-      case (k, v) if (k.isEmpty) => false
+  def validPairs(examples: List[(String, Option[String])]) =
+    !examples.isEmpty && examples.forall {
+      case (k, v) if (k.isEmpty || v.filter(_.isEmpty).isDefined) => false
       case _ => true
     }
 
-  def baseTest(store: RedisLongStore)
-    (put: (RedisLongStore, List[(String, Option[Long])]) => Unit) =
-    forAll { (examples: List[(String, Option[Long])]) =>
+  def baseTest(store: RedisStringStore)
+    (put: (RedisStringStore, List[(String, Option[String])]) => Unit) =
+    forAll { (examples: List[(String, Option[String])]) =>
       validPairs(examples) ==> {
         put(store, examples)
         examples.toMap.forall { case (k, optV) =>
@@ -45,26 +45,26 @@ object RedisLongStoreProperties extends Properties("RedisLongStore")
       }
     }
 
-  def putStoreTest(store: RedisLongStore) =
+  def putStoreTest(store: RedisStringStore) =
     baseTest(store) { (s, pairs) =>
       pairs.foreach { case (k, v) => s.put((Strs.invert(k), v)).get }
     }
 
-  def multiPutStoreTest(store: RedisLongStore) =
+  def multiPutStoreTest(store: RedisStringStore) =
     baseTest(store) { (s, pairs) =>
       FutureOps.mapCollect(s.multiPut(pairs.map({ case (k, v) => (Strs.invert(k), v) }).toMap)).get
     }
 
-  def storeTest(store: RedisLongStore) =
+  def storeTest(store: RedisStringStore) =
     putStoreTest(store) && multiPutStoreTest(store)
 
   val closeable = {
     val client = Client("localhost:6379")
     client.flushDB() // clean slate
-    val rs = RedisLongStore(client)
+    val rs = RedisStringStore(client)
     rs
   }
 
-  property("RedisLongStore test") =
+  property("RedisStringStore test") =
     storeTest(closeable)
 }

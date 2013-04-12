@@ -65,13 +65,13 @@ object RedisStoreProperties extends Properties("RedisStore")
   def storeTest(store: RedisStore) =
     putStoreTest(store) && multiPutStoreTest(store)
 
-  property("RedisStore test") =
-    storeTest(closeable)
-
   val closeable = {
     val client = Client("localhost:6379")
     client.flushDB() // clean slate
     val rs = RedisStore(client)
     rs
   }
+
+  property("RedisStore test") =
+    storeTest(closeable)
 }
