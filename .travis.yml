@@ -4,3 +4,6 @@ scala:
   - 2.9.2
 services:
   - redis-server
+branches:
+  only:
+    - redis-testing
