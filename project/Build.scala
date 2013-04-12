@@ -130,7 +130,11 @@ object StorehausBuild extends Build {
     settings = sharedSettings
   ).settings(
     name := "storehaus-redis",
-    libraryDependencies += "com.twitter" %% "finagle-redis" % "6.2.0"
+    libraryDependencies += "com.twitter" %% "finagle-redis" % "6.2.0",
+    testOptions in Test += Tests.Cleanup { loader =>
+      val c = loader.loadClass("com.twitter.storehaus.redis.Cleanup$")
+      c.getMethod("cleanup").invoke(c.getField("MODULE$").get(c))
+    }
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
 }
