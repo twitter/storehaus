@@ -31,10 +31,13 @@ object MySQLStoreProperties extends Properties("MySQLStore") {
 
   val validPairs = Arbitrary.arbitrary[List[(String, Option[String])]] suchThat {
     case Nil => false
+    case _ => true
+    /*
     case xs => xs.forall {
       case (k, Some(s)) => !k.isEmpty && !s.isEmpty
       case (k, None) => !k.isEmpty
     }
+    */
   }
 
   def put(s: MySQLStore, pairs: List[(String, Option[String])]) {
