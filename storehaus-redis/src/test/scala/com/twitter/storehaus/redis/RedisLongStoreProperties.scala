@@ -18,60 +18,53 @@ package com.twitter.storehaus.redis
 
 import com.twitter.bijection.Bijection
 import com.twitter.finagle.redis.Client
-import com.twitter.finagle.redis.util.{ CBToString, StringToChannelBuffer }
 import com.twitter.storehaus.FutureOps
-import org.jboss.netty.buffer.ChannelBuffer
 import org.scalacheck.Properties
 import org.scalacheck.Gen.choose
 import org.scalacheck.Prop._
 
-object RedisStoreProperties extends Properties("RedisStore")
-  with CloseableCleanup[RedisStore] {
+import com.twitter.storehaus.redis.RedisStoreProperties.Strs
 
-  object Strs extends Bijection[ChannelBuffer, String] {
-    override def apply(cb: ChannelBuffer) =
-      CBToString(cb)
-    override def invert(str: String) =
-      StringToChannelBuffer(str)
-  }
+object RedisLongStoreProperties extends Properties("RedisLongStore")
+  with CloseableCleanup[RedisLongStore] {
   
-  def validPairs(examples: List[(String, Option[String])]) =
+  def validPairs(examples: List[(String, Option[Long])]) =
     !examples.isEmpty && examples.forall {
-      case (k, v) if (k.isEmpty || v.filter(_.isEmpty).isDefined) => false
+      case (k, v) if (k.isEmpty) => false
       case _ => true
     }
 
-  def baseTest(store: RedisStore)
-    (put: (RedisStore, List[(String, Option[String])]) => Unit) =
-    forAll { (examples: List[(String, Option[String])]) =>
+  def baseTest(store: RedisLongStore)
+    (put: (RedisLongStore, List[(String, Option[Long])]) => Unit) =
+    forAll { (examples: List[(String, Option[Long])]) =>
       validPairs(examples) ==> {
         put(store, examples)
         examples.toMap.forall { case (k, optV) =>
-          store.get(Strs.invert(k)).get.map(Strs.apply) == optV
+          store.get(Strs.invert(k)).get == optV
         }
       }
     }
 
-  def putStoreTest(store: RedisStore) =
+  def putStoreTest(store: RedisLongStore) =
     baseTest(store) { (s, pairs) =>
-      pairs.foreach { case (k, v) => s.put((Strs.invert(k), v.map(Strs.invert))).get }
+      pairs.foreach { case (k, v) => s.put((Strs.invert(k), v)).get }
     }
 
-  def multiPutStoreTest(store: RedisStore) =
+  def multiPutStoreTest(store: RedisLongStore) =
     baseTest(store) { (s, pairs) =>
-      FutureOps.mapCollect(s.multiPut(pairs.map({ case (k, v) => (Strs.invert(k), v.map(Strs.invert)) }).toMap)).get
+      FutureOps.mapCollect(s.multiPut(pairs.map({ case (k, v) => (Strs.invert(k), v) }).toMap)).get
     }
 
-  def storeTest(store: RedisStore) =
+  def storeTest(store: RedisLongStore) =
     putStoreTest(store) && multiPutStoreTest(store)
 
-  property("RedisStore test") =
+  property("RedisLongStore test") =
     storeTest(closeable)
 
   val closeable = {
     val client = Client("localhost:6379")
     client.flushDB() // clean slate
-    val rs = RedisStore(client)
+    val rs = RedisLongStore(client)
     rs
   }
 }
