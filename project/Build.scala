@@ -83,6 +83,7 @@ object StorehausBuild extends Build {
     storehausCore,
     storehausAlgebra,
     storehausMemcache,
+    storehausMySQL,
     storehausRedis
   )
 
@@ -123,6 +124,15 @@ object StorehausBuild extends Build {
     name := "storehaus-memcache",
     libraryDependencies += "com.twitter" %% "finagle-memcached" % "6.2.0"
   ).dependsOn(storehausCore % "test->test;compile->compile")
+  
+  lazy val storehausMySQL = Project(
+    id = "storehaus-mysql",
+    base = file("storehaus-mysql"),
+    settings = sharedSettings
+  ).settings(
+    name := "storehaus-mysql",
+    libraryDependencies += "com.twitter" %% "finagle-mysql" % "6.2.1"
+  ).dependsOn(storehausCore % "test->test;compile->compile")
 
   lazy val storehausRedis = Project(
     id = "storehaus-redis",
@@ -136,5 +146,4 @@ object StorehausBuild extends Build {
       c.getMethod("cleanup").invoke(c.getField("MODULE$").get(c))
     }
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
-
 }
