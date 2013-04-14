@@ -16,54 +16,23 @@
 
 package com.twitter.storehaus.redis
 
-import com.twitter.bijection.Bijection
-import com.twitter.finagle.redis.Client
-import com.twitter.storehaus.FutureOps
+import com.twitter.bijection.Injection
+import com.twitter.finagle.redis.util.StringToChannelBuffer
+import com.twitter.storehaus.{ FutureOps, Store }
+import com.twitter.storehaus.algebra.ConvertedStore
+import com.twitter.storehaus.redis.RedisStoreProperties.{ putStoreTest, multiPutStoreTest, validPairs }
 import org.scalacheck.Properties
-import org.scalacheck.Gen.choose
 import org.scalacheck.Prop._
 
-import com.twitter.storehaus.redis.RedisStoreProperties.Strs
-
 object RedisStringStoreProperties extends Properties("RedisStringStore")
-  with CloseableCleanup[RedisStringStore] {
-  
-  def validPairs(examples: List[(String, Option[String])]) =
-    !examples.isEmpty && examples.forall {
-      case (k, v) if (k.isEmpty || v.filter(_.isEmpty).isDefined) => false
-      case _ => true
-    }
+  with CloseableCleanup[Store[String, String]] 
+  with DefaultRedisClient {
 
-  def baseTest(store: RedisStringStore)
-    (put: (RedisStringStore, List[(String, Option[String])]) => Unit) =
-    forAll { (examples: List[(String, Option[String])]) =>
-      validPairs(examples) ==> {
-        put(store, examples)
-        examples.toMap.forall { case (k, optV) =>
-          store.get(Strs.invert(k)).get == optV
-        }
-      }
-    }
+  def storeTest(store: Store[String, String]) =
+    putStoreTest(store, validPairs) && multiPutStoreTest(store, validPairs)
 
-  def putStoreTest(store: RedisStringStore) =
-    baseTest(store) { (s, pairs) =>
-      pairs.foreach { case (k, v) => s.put((Strs.invert(k), v)).get }
-    }
-
-  def multiPutStoreTest(store: RedisStringStore) =
-    baseTest(store) { (s, pairs) =>
-      FutureOps.mapCollect(s.multiPut(pairs.map({ case (k, v) => (Strs.invert(k), v) }).toMap)).get
-    }
-
-  def storeTest(store: RedisStringStore) =
-    putStoreTest(store) && multiPutStoreTest(store)
-
-  val closeable = {
-    val client = Client("localhost:6379")
-    client.flushDB() // clean slate
-    val rs = RedisStringStore(client)
-    rs
-  }
+  val closeable =
+    new ConvertedStore(RedisStringStore(client))(StringToChannelBuffer(_: String))(Injection.identity)
 
   property("RedisStringStore test") =
     storeTest(closeable)
