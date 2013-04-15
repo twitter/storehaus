@@ -40,7 +40,7 @@ class ComposedStore[-K, V, V2, V3 >: V](l: ReadableStore[K, V], r: ReadableStore
       val v2s: Map[V, Future[Option[V2]]] = r.multiGet(vSet)
       k1vMap.mapValues { optV => optV.map { v2s(_) }.getOrElse(Future.None) }
     }
-    FutureOps.liftValues(ks, fmapf).mapValues { _.flatten }
+    FutureOps.liftFutureValues(ks, fmapf)
   }
   override def close { l.close; r.close }
 }
