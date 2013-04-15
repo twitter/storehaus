@@ -31,7 +31,7 @@ import scala.util.control.Exception.allCatch
  */
 
 object RedisStringStore {
-  implicit object StringInjection
+  private [redis] implicit object StringInjection
    extends Injection[String, ChannelBuffer] {
     def apply(a: String): ChannelBuffer = StringToChannelBuffer(a)
     def invert(b: ChannelBuffer): Option[String] = allCatch.opt(CBToString(b))
