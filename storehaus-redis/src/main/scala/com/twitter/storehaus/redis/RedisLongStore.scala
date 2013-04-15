@@ -19,11 +19,9 @@ package com.twitter.storehaus.redis
 import com.twitter.algebird.Monoid
 import com.twitter.bijection.{ Injection, NumericInjections }
 import com.twitter.finagle.redis.Client
-import com.twitter.finagle.redis.util.{ CBToString, StringToChannelBuffer }
 import com.twitter.storehaus.algebra.{ ConvertedStore, MergeableStore }
 import com.twitter.util.Time
-import org.jboss.netty.buffer.{ ChannelBuffer, ChannelBuffers }
-import scala.util.control.Exception.allCatch
+import org.jboss.netty.buffer.ChannelBuffer
 
 /**
  * 
