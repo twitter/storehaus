@@ -17,7 +17,7 @@
 package com.twitter.storehaus.memcache
 
 import com.twitter.algebird.Monoid
-import com.twitter.bijection.Injection
+import com.twitter.bijection.AbstractInjection
 import com.twitter.util.Time
 import com.twitter.finagle.memcached.Client
 import com.twitter.storehaus.algebra.{ ConvertedStore, MergeableStore }
@@ -30,7 +30,7 @@ import scala.util.control.Exception.allCatch
  */
 object MemcacheStringStore {
   object StringInjection
-   extends Injection[String, ChannelBuffer] {
+   extends AbstractInjection[String, ChannelBuffer] {
     def apply(value: String): ChannelBuffer = ChannelBuffers.wrappedBuffer(value.getBytes())
     def invert(arg: ChannelBuffer): Option[String] = allCatch.opt(new String(arg.array, CharsetUtil.UTF_8))
    }
