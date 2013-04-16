@@ -20,6 +20,7 @@ import java.util.logging.Level
 
 import com.twitter.finagle.exp.mysql.Client
 
+import org.jboss.netty.buffer.ChannelBuffer
 import org.jboss.netty.buffer.ChannelBuffers
 import org.jboss.netty.util.CharsetUtil.UTF_8
 
@@ -54,10 +55,8 @@ object MySQLStoreProperties extends Properties("MySQLStore") {
     forAll(validPairs) { (examples: List[(String, Option[String])]) =>
       put(store, examples)
       examples.toMap.forall { case (k, optV) =>
-        store.get(k).get match {
-          case Some(value) => (value.toString(UTF_8) == optV.get)
-          case None => optV.isEmpty
-        }
+        val foundOptV = store.get(k).get
+        compareValues(k, optV, foundOptV)
       }
     }
 
@@ -67,24 +66,42 @@ object MySQLStoreProperties extends Properties("MySQLStore") {
       val data = examples.toMap
       val result = store.multiGet(data.keySet)
       data.forall { case (k, optV) =>
-        optV match {
-          case Some(value) => !result.get(k).isEmpty && (result.get(k).get.get.get.toString(UTF_8) == optV.get)
-          case None => result.get(k).isEmpty
-        }
+        val foundOptV = result.get(k).get.get
+        compareValues(k, optV, foundOptV)
       }
     }
 
-  def storeTest(store: MySQLStore) =
-    putAndGetStoreTest(store) && putAndMultiGetStoreTest(store)
+  def compareValues(k: String, expectedOptV: Option[String], foundOptV: Option[ChannelBuffer]) = {
+    val isMatch = expectedOptV match {
+      case Some(value) => !foundOptV.isEmpty && foundOptV.get.toString(UTF_8) == value 
+      case None => foundOptV.isEmpty
+    }
+    if (!isMatch) printErr(k, expectedOptV, foundOptV)
+    isMatch
+  }
+
+  def printErr(k: String, expectedOptV: Option[String], foundOptV: Option[ChannelBuffer]) {
+    val found = if (foundOptV.isEmpty) { foundOptV } else { "Some("+foundOptV.get.toString(UTF_8)+")" }
+    println("FAILURE: Key \""+k+"\" - expected value "+expectedOptV+", but found "+found)
+  }
 
   property("MySQLStore text->text") =
-    withStore(storeTest(_), "text", "text")
+    withStore(putAndGetStoreTest(_), "text", "text")
 
   property("MySQLStore blob->blob") =
-    withStore(storeTest(_), "blob", "blob")
+    withStore(putAndGetStoreTest(_), "blob", "blob")
 
   property("MySQLStore text->blob") =
-    withStore(storeTest(_), "text", "blob")
+    withStore(putAndGetStoreTest(_), "text", "blob")
+
+  property("MySQLStore text->text multiget") =
+    withStore(putAndMultiGetStoreTest(_), "text", "text")
+
+  property("MySQLStore blob->blob mutiget") =
+    withStore(putAndMultiGetStoreTest(_), "blob", "blob")
+
+  property("MySQLStore text->blob multiget") =
+    withStore(putAndMultiGetStoreTest(_), "text", "blob")
 
   private def withStore[T](f: MySQLStore => T, kColType: String, vColType: String): T = {
     val client = Client("localhost:3306", "storehaususer", "test1234", "storehaus_test")
