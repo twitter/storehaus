@@ -29,7 +29,7 @@ import scala.util.control.Exception.allCatch
  *  @author Doug Tangren
  */
 object MemcacheStringStore {
-  // something like this belongs in bijection-netty. possibly release 0.3.1?
+  // TODO: move this into bijection-netty
   private [memcache] implicit object ByteArrayInjection
    extends Injection[Array[Byte],ChannelBuffer] {
     def apply(ary: Array[Byte]) = ChannelBuffers.wrappedBuffer(ary)
@@ -53,7 +53,7 @@ class MemcacheStringStore(underlying: MemcacheStore)
   /** Merges a key by appending a String value. This has no affect
    *  if there was no previous value for the provided key. */
   override def merge(kv: (String, String)) =
-    strings.append(kv._1, kv._2).unit
+    stringStore.append(kv._1, kv._2).unit
 
-  private val strings = underlying.client.withStrings
+  private val stringStore = underlying.client.withStrings
 }
