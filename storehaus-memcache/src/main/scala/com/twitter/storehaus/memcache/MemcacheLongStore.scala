@@ -17,35 +17,35 @@
 package com.twitter.storehaus.memcache
 
 import com.twitter.algebird.Monoid
-import com.twitter.bijection.{ Injection, NumericInjections }
+import com.twitter.bijection.NumericInjections
 import com.twitter.util.Time
 import com.twitter.finagle.memcached.Client
 import com.twitter.storehaus.algebra.{ ConvertedStore, MergeableStore }
-import org.jboss.netty.buffer.{ ChannelBuffer, ChannelBuffers }
-import org.jboss.netty.util.CharsetUtil
-import scala.util.control.Exception.allCatch
+import org.jboss.netty.buffer.ChannelBuffer
 
 /**
  *  @author Doug Tangren
  */
 object MemcacheLongStore extends NumericInjections {
   // Long => String => ChannelBuffer <= String <= Long
-  val LongInjection = long2String.andThen(MemcacheStringStore.StringInjection)
+  private [memcache] implicit val LongInjection =
+    long2String.andThen(MemcacheStringStore.StringInjection)
 
   def apply(client: Client, ttl: Time = MemcacheStore.DEFAULT_TTL, flag: Int = MemcacheStore.DEFAULT_FLAG) =
     new MemcacheLongStore(MemcacheStore(client, ttl, flag))
 }
+import MemcacheLongStore._
 
 /** A MergeableStore for Long values backed by memcache */
 class MemcacheLongStore(underlying: MemcacheStore) 
-  extends ConvertedStore[String, String, ChannelBuffer, Long](underlying)(identity)(MemcacheLongStore.LongInjection)
+  extends ConvertedStore[String, String, ChannelBuffer, Long](underlying)(identity)
   with MergeableStore[String, Long] {
 
   val monoid = implicitly[Monoid[Long]]
 
-  override def merge(kv: (String, Long)) = {
-    println("merging %s" format kv)
+  /** Merges a key by incrementing by a Long value. This operation
+   *  has no effect if there was no previous value for the provided key */
+  override def merge(kv: (String, Long)) =
     underlying.client.incr(kv._1, kv._2).unit
-  }
 }
 
