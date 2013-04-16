@@ -17,7 +17,7 @@
 package com.twitter.storehaus.memcache
 
 import com.twitter.algebird.Monoid
-import com.twitter.bijection.AbstractInjection
+import com.twitter.bijection.Injection
 import com.twitter.util.Time
 import com.twitter.finagle.memcached.Client
 import com.twitter.storehaus.algebra.{ ConvertedStore, MergeableStore }
@@ -29,24 +29,31 @@ import scala.util.control.Exception.allCatch
  *  @author Doug Tangren
  */
 object MemcacheStringStore {
-  object StringInjection
-   extends AbstractInjection[String, ChannelBuffer] {
-    def apply(value: String): ChannelBuffer = ChannelBuffers.wrappedBuffer(value.getBytes())
-    def invert(arg: ChannelBuffer): Option[String] = allCatch.opt(new String(arg.array, CharsetUtil.UTF_8))
-   }
+  // something like this belongs in bijection-netty. possibly release 0.3.1?
+  private [memcache] implicit object ByteArrayInjection
+   extends Injection[Array[Byte],ChannelBuffer] {
+    def apply(ary: Array[Byte]) = ChannelBuffers.wrappedBuffer(ary)
+    def invert(buf: ChannelBuffer) = allCatch.opt(buf.array)
+  }
+  private [memcache] implicit val StringInjection =
+    Injection.connect[String, Array[Byte], ChannelBuffer]
 
   def apply(client: Client, ttl: Time = MemcacheStore.DEFAULT_TTL, flag: Int = MemcacheStore.DEFAULT_FLAG) =
     new MemcacheStringStore(MemcacheStore(client, ttl, flag))
 }
+import MemcacheStringStore._
 
 /** A MergeableStore for String values backed by memcache */
 class MemcacheStringStore(underlying: MemcacheStore) 
-  extends ConvertedStore[String, String, ChannelBuffer, String](underlying)(identity)(MemcacheStringStore.StringInjection)
+  extends ConvertedStore[String, String, ChannelBuffer, String](underlying)(identity)
   with MergeableStore[String, String] {
 
   val monoid = implicitly[Monoid[String]]
 
-  override def merge(kv: (String, String)) = strings.append(kv._1, kv._2).unit
+  /** Merges a key by appending a String value. This has no affect
+   *  if there was no previous value for the provided key. */
+  override def merge(kv: (String, String)) =
+    strings.append(kv._1, kv._2).unit
 
   private val strings = underlying.client.withStrings
 }
