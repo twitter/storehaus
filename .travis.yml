@@ -8,6 +8,4 @@ before_script:
   - mysql -u root -e "grant all on storehaus_test.* to 'storehaususer'@'localhost';"
 services:
   - redis-server
-branches:
-  only:
-    - redis-testing
+  - memcache
