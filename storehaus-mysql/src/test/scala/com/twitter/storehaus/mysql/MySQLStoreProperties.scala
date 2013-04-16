@@ -66,7 +66,8 @@ object MySQLStoreProperties extends Properties("MySQLStore") {
       val data = examples.toMap
       val result = store.multiGet(data.keySet)
       data.forall { case (k, optV) =>
-        val foundOptV = result.get(k).get.get
+        // result.get(k) returns Option[Future[Option[ChannelBuffer]]]
+        val foundOptV = result.get(k) match { case Some(v) => result.get(k).get.get ; case None => None }
         compareValues(k, optV, foundOptV)
       }
     }
