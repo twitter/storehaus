@@ -50,7 +50,8 @@ class RedisStringStore(underlying: RedisStore)
   extends ConvertedStore[ChannelBuffer, ChannelBuffer, ChannelBuffer, String](underlying)(identity)
      with MergeableStore[ChannelBuffer, String] {
   val monoid = implicitly[Monoid[String]]
-  override def merge(kv: (ChannelBuffer, String)) = underlying.client.append(kv._1, kv._2).unit
+  override def merge(kv: (ChannelBuffer, String)) =
+    underlying.client.append(kv._1, kv._2).unit
 }
 
                               

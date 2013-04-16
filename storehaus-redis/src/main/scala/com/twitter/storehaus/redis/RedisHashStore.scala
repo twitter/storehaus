@@ -19,7 +19,7 @@ package com.twitter.storehaus.redis
 import com.twitter.algebird.Monoid
 import com.twitter.util.{ Future, Time }
 import com.twitter.finagle.redis.Client
-import com.twitter.storehaus.{ MissingValueException, Store, UnpivotedStore }
+import com.twitter.storehaus.{ Store, UnpivotedStore }
 import org.jboss.netty.buffer.{ ChannelBuffer, ChannelBuffers }
 
 /**
@@ -38,7 +38,8 @@ object RedisHashStore {
 import RedisHashStore._
 
 /**
- * A Store in which keys map to Maps of secondary keys and values
+ * A Store in which keys map to Maps of secondary keys and values backed
+ * by a redis hash
  */
 class RedisHashStore(val client: Client, ttl: Option[Time])
   extends Store[ChannelBuffer, Map[ChannelBuffer, ChannelBuffer]] {

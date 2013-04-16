@@ -49,5 +49,6 @@ class RedisLongStore(underlying: RedisStore)
   extends ConvertedStore[ChannelBuffer, ChannelBuffer, ChannelBuffer, Long](underlying)(identity)
      with MergeableStore[ChannelBuffer, Long] {
   val monoid = implicitly[Monoid[Long]]
-  override def merge(kv: (ChannelBuffer, Long)) = underlying.client.incrBy(kv._1, kv._2).unit
+  override def merge(kv: (ChannelBuffer, Long)) =
+    underlying.client.incrBy(kv._1, kv._2).unit
 }
