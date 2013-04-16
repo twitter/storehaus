@@ -16,18 +16,20 @@
 
 package com.twitter.storehaus.mysql
 
-import com.twitter.finagle.exp.mysql.{ Client, PreparedStatement, Result, StringValue }
+import com.twitter.finagle.exp.mysql.{ Client, PreparedStatement, Result }
+import com.twitter.storehaus.FutureOps
 import com.twitter.storehaus.Store
 import com.twitter.util.Future
 
 import org.jboss.netty.buffer.ChannelBuffer
 import org.jboss.netty.buffer.ChannelBuffers
-import org.jboss.netty.util.CharsetUtil.UTF_8 
+import org.jboss.netty.util.CharsetUtil.UTF_8
 
 /**
- * @author Ruban Monu
- */
+  * @author Ruban Monu
+  */
 
+/** Factory for [[com.twitter.storehaus.mysql.MySQLStore]] instances. */
 object MySQLStore {
 
   def apply(client: Client, table: String, kCol: String, vCol: String) = 
@@ -35,10 +37,33 @@ object MySQLStore {
 }
 
 /**
- * Simple MySQL wrapper.
- * Assumes underlying key and value columns are string types.
- * Value column is treated as a channelbuffer of UTF-8 string.
- */
+  * Simple storehaus wrapper over finagle-mysql.
+  *
+  * Assumes the underlying table's key and value columns are both strings.
+  * Supported MySQL column types are: BLOB, TEXT, VARCHAR.
+  * Value column is treated as a channelbuffer of UTF-8 strings.
+  *
+  * The finagle-mysql client is required to set the user, database and create
+  * the underlying table schema prior to this class being used.
+  *
+  * Storehaus-mysql also works with pre-populated MySQL tables, based on the assumption that the key column picked is unique.
+  * Any table columns other than the picked key and value columns are ignored during reads and writes.
+  *
+  * Example usage:
+  * {{{
+  * import com.twitter.finagle.exp.mysql.Client
+  * import com.twitter.storehaus.mysql.MySQLStore
+  *
+  * val client = Client("localhost:3306", "storehaususer", "test1234", "storehaus_test")
+  * val schema = """CREATE TABLE `storehaus-mysql-test` (
+  *       `key` varchar(40) DEFAULT NULL,
+  *       `value` varchar(100) DEFAULT NULL
+  *     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;"""
+  * // or, use an existing pre-populated table.
+  * client.query(schema).get
+  * val store = MySQLStore(client, "storehaus-mysql-test", "key", "value") 
+  * }}}
+  */
 class MySQLStore(client: Client, table: String, kCol: String, vCol: String)
     extends Store[String, ChannelBuffer] {
 
@@ -52,42 +77,35 @@ class MySQLStore(client: Client, table: String, kCol: String, vCol: String)
     // finagle-mysql select() method lets you pass in a mapping function
     // to convert resultset into desired output format (ChannelBuffer in this case)
     // we assume here the mysql client already has the dbname/schema selected
-    val mysqlResult: Future[(PreparedStatement,Seq[ChannelBuffer])] = client.prepareAndSelect(SELECT_SQL, k) { row =>
-      val StringValue(v) = row(vCol).get
-      // for finagle Value mappings, see:
-      // https://github.com/twitter/finagle/blob/master/finagle-mysql/src/main/scala/com/twitter/finagle/mysql/Value.scala
-      ChannelBuffers.copiedBuffer(v, UTF_8)
+    val mysqlResult: Future[(PreparedStatement,Seq[Option[ChannelBuffer]])] = client.prepareAndSelect(SELECT_SQL, k.getBytes) { row =>
+      ValueMapper.toChannelBuffer(row(vCol))
     }
-    Future.value(mysqlResult.get._2.lift(0))
+    mysqlResult.map { case(ps, result) =>
+      client.closeStatement(ps)
+      result.lift(0) match { case None => None; case Some(optV) => optV }
+    }
   }
 
   override def multiGet[K1 <: String](ks: Set[K1]): Map[K1, Future[Option[ChannelBuffer]]] = {
+    if (ks.isEmpty) return Map()
     // build preparedstatement based on keyset size
-    val placeholders = new StringBuilder
-    for (i <- 1 to ks.size) {
-      placeholders.append('?')
-      if (i < ks.size) placeholders.append(',')
-    }
-    val selectSql = MULTI_SELECT_SQL_PREFIX + "(" + placeholders + ")" 
-    val mysqlResult: Future[(PreparedStatement,Seq[(String, ChannelBuffer)])] = client.prepareAndSelect(selectSql, ks.toSeq:_*) { row =>
-      val StringValue(k) = row(kCol).get
-      val StringValue(v) = row(vCol).get
-      (k, ChannelBuffers.copiedBuffer(v, UTF_8))
+    val placeholders = Stream.continually("?").take(ks.size).mkString("(", ",", ")")
+    val selectSql = MULTI_SELECT_SQL_PREFIX + placeholders
+    val mysqlResult: Future[(PreparedStatement,Seq[(Option[String], Option[ChannelBuffer])])] =
+        client.prepareAndSelect(selectSql, ks.map(key => key.getBytes).toSeq:_*) { row =>
+      (ValueMapper.toString(row(kCol)), ValueMapper.toChannelBuffer(row(vCol)))
       // we return data in the form of channelbuffers of UTF-8 strings
     }
-    val storehausResult = collection.mutable.Map.empty[K1, Future[Option[ChannelBuffer]]]
-    for ( row <- mysqlResult.get._2 ) {
-      storehausResult += row._1.asInstanceOf[K1] -> Future.value(Some(row._2))
-    }
-    for ( key <- ks ) {
-      if (!storehausResult.contains(key)) {
-        storehausResult += key -> Future[Option[ChannelBuffer]](Option.empty)
-      }
-    }
-    storehausResult.toMap
+    FutureOps.liftValues(ks,
+      mysqlResult.map { case (ps, rows) =>
+        client.closeStatement(ps)
+        rows.toMap.filterKeys { _ != None }.map { case (optK, optV) => (optK.get, optV) }
+      },
+      { (k: K1) => Future.value(Option.empty) }
+    )
   }
 
-  protected def set(k: String, v: ChannelBuffer) = doSet(k, v).get
+  protected def set(k: String, v: ChannelBuffer) = doSet(k, v)
 
   override def put(kv: (String, Option[ChannelBuffer])): Future[Unit] = {
     kv match {
@@ -103,17 +121,22 @@ class MySQLStore(client: Client, table: String, kCol: String, vCol: String)
     // http://dev.mysql.com/doc/refman/5.1/en/insert-on-duplicate.html
     // since we are not guaranteed that, we first check if key exists
     // and insert or update accordingly
-    val getResult = get(k).get
-    val (setSql, arg1, arg2) = if (getResult.isEmpty) { (INSERT_SQL, k, v.toString(UTF_8)) }
-        else { (UPDATE_SQL, v.toString(UTF_8), k) }
-    // prepareAndExecute returns Future[(PreparedStatement,Result)]
-    Future.value(client.prepareAndExecute(setSql, arg1, arg2).get._2)
+    get(k).flatMap { optionV =>
+      optionV match {
+        case Some(value) => client.prepareAndExecute(UPDATE_SQL, v.toString(UTF_8).getBytes, k.getBytes)
+        case None => client.prepareAndExecute(INSERT_SQL, k.getBytes, v.toString(UTF_8).getBytes)
+      }
+      // prepareAndExecute returns Future[(PreparedStatement,Result)]
+    }.map { case (ps, result) => client.closeStatement(ps); result }
   }
 
   protected def doDelete(k: String): Future[Result] = {
     // prepareAndExecute returns Future[(PreparedStatement,Result)]
-    Future.value(client.prepareAndExecute(DELETE_SQL, k).get._2)
+    client.prepareAndExecute(DELETE_SQL, k.getBytes).map {
+      case (ps, result) => client.closeStatement(ps); result
+    }
   }
 
+  // enclose table or column names in backticks, in case they happen to be sql keywords
   protected def g(s: String)  = "`" + s + "`"
 }
