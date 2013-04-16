@@ -40,7 +40,7 @@ object MemcacheStore {
     new MemcacheStore(client, ttl, flag)
 }
 
-class MemcacheStore(client: Client, ttl: Time, flag: Int) extends Store[String, ChannelBuffer] {
+class MemcacheStore(val client: Client, ttl: Time, flag: Int) extends Store[String, ChannelBuffer] {
 
   override def get(k: String): Future[Option[ChannelBuffer]] = client.get(k)
 
