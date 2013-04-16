@@ -20,7 +20,7 @@ import com.twitter.algebird.Monoid
 import com.twitter.bijection.{ Injection, NumericInjections }
 import com.twitter.finagle.redis.Client
 import com.twitter.storehaus.algebra.{ ConvertedStore, MergeableStore }
-import com.twitter.util.Time
+import com.twitter.util.{ Future, Time }
 import org.jboss.netty.buffer.ChannelBuffer
 
 /**
@@ -49,6 +49,6 @@ class RedisLongStore(underlying: RedisStore)
   extends ConvertedStore[ChannelBuffer, ChannelBuffer, ChannelBuffer, Long](underlying)(identity)
      with MergeableStore[ChannelBuffer, Long] {
   val monoid = implicitly[Monoid[Long]]
-  override def merge(kv: (ChannelBuffer, Long)) =
+  override def merge(kv: (ChannelBuffer, Long)): Future[Unit] =
     underlying.client.incrBy(kv._1, kv._2).unit
 }

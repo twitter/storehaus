@@ -21,7 +21,7 @@ import com.twitter.bijection.Injection
 import com.twitter.finagle.redis.Client
 import com.twitter.finagle.redis.util.{ CBToString, StringToChannelBuffer }
 import com.twitter.storehaus.algebra.{ ConvertedStore, MergeableStore }
-import com.twitter.util.Time
+import com.twitter.util.{ Future, Time }
 import org.jboss.netty.buffer.ChannelBuffer
 import scala.util.control.Exception.allCatch
 
@@ -50,7 +50,7 @@ class RedisStringStore(underlying: RedisStore)
   extends ConvertedStore[ChannelBuffer, ChannelBuffer, ChannelBuffer, String](underlying)(identity)
      with MergeableStore[ChannelBuffer, String] {
   val monoid = implicitly[Monoid[String]]
-  override def merge(kv: (ChannelBuffer, String)) =
+  override def merge(kv: (ChannelBuffer, String)): Future[Unit] =
     underlying.client.append(kv._1, kv._2).unit
 }
 

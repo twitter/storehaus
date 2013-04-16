@@ -45,7 +45,7 @@ class RedisSetStore(val client: Client, ttl: Option[Time])
       case s => Some(s)
     }
 
-  override def put(kv: (ChannelBuffer, Option[Set[ChannelBuffer]])) =
+  override def put(kv: (ChannelBuffer, Option[Set[ChannelBuffer]])): Future[Unit] =
     kv match {
       case (k, Some(v)) =>
         client.del(Seq(k)) // put, not merge, semantics
@@ -56,7 +56,8 @@ class RedisSetStore(val client: Client, ttl: Option[Time])
     }
 
   /** Provides a view of this store for set membership */
-  def members = new RedisSetMembershipStore(this)
+  def members: RedisSetMembershipStore =
+    new RedisSetMembershipStore(this)
 
   protected [redis] def set(k: ChannelBuffer, v: List[ChannelBuffer]) = {
     ttl.map(exp => client.expire(k, exp.inSeconds))
