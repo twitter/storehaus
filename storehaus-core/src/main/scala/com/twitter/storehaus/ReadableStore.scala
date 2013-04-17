@@ -17,7 +17,7 @@
 package com.twitter.storehaus
 
 import com.twitter.storehaus.cache.{ Cache, MutableCache }
-import com.twitter.util.Future
+import com.twitter.util.{ Duration, Future, Timer }
 import java.io.Closeable
 
 /** Holds various factory and transformation functions for ReadableStore instances */
@@ -55,6 +55,9 @@ object ReadableStore {
    */
   def find[K, V](stores: Seq[ReadableStore[K, V]])(pred: Option[V] => Boolean): ReadableStore[K, V] =
     new SearchingReadableStore(stores)(pred)
+
+  def findWithRetry[K, V](store: ReadableStore[K, V], backoffs: Stream[Duration])(pred: Option[V] => Boolean)(implicit timer: Timer): ReadableStore[K, V] =
+    new RetriableReadableStore(store, backoffs)(pred)
 
   /**
    * Returns a new ReadableStore[K, V] that queries all of the stores
