@@ -56,6 +56,11 @@ object ReadableStore {
   def find[K, V](stores: Seq[ReadableStore[K, V]])(pred: Option[V] => Boolean): ReadableStore[K, V] =
     new SearchingReadableStore(stores)(pred)
 
+  /**
+   * Returns a ReadableStore[K, V] that attempts reads from a store
+   * multiple times until a predicate is met or timeout after a couple
+   * of retries.
+   */
   def findWithRetry[K, V](store: ReadableStore[K, V], backoffs: Stream[Duration])(pred: Option[V] => Boolean)(implicit timer: Timer): ReadableStore[K, V] =
     new RetriableReadableStore(store, backoffs)(pred)
 

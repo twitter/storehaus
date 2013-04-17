@@ -18,6 +18,11 @@ package com.twitter.storehaus
 
 import com.twitter.util.{ Duration, Future, Return, Throw, Timer }
 
+/**
+ * Use the ReadableStore abstraction when each read from the backend store involves
+ * a time-taking task. A stream of backoffs are passed in so that we only wait for a
+ * finite time period for the task to complete.
+ */
 class RetriableReadableStore[K, V](store: ReadableStore[K, V], backoffs: Stream[Duration])(pred: Option[V] => Boolean)(implicit timer: Timer) extends ReadableStore[K, V] {
 
   private[this] def getWithRetry(k: K, backoffs: Stream[Duration]): Future[Option[V]] =
