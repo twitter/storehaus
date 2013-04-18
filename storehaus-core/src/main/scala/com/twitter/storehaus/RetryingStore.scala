@@ -23,18 +23,21 @@ import com.twitter.util.{ Duration, Future, Return, Throw, Timer }
  * a time-taking task. A stream of backoffs are passed in so that we only wait for a
  * finite time period for the task to complete.
  */
-class RetriableReadableStore[K, V](store: ReadableStore[K, V], backoffs: Stream[Duration])(pred: Option[V] => Boolean)(implicit timer: Timer) extends ReadableStore[K, V] {
+class RetryingReadableStore[K, V](store: ReadableStore[K, V], backoffs: Stream[Duration])(pred: Option[V] => Boolean)(implicit timer: Timer) extends ReadableStore[K, V] {
 
   private[this] def getWithRetry(k: K, backoffs: Stream[Duration]): Future[Option[V]] =
     store.get(k).filter(pred) transform {
       case Return(t) => Future.value(t)
       case Throw(e) =>
-        if (backoffs.isEmpty) {
-          FutureOps.missingValueFor(k)
-        } else {
-          Future.flatten {
-            timer.doLater(backoffs.head) {
-              getWithRetry(k, backoffs.tail)
+        backoffs match {
+          case Stream.Empty => FutureOps.missingValueFor(k)
+          case interval #:: tail => interval match {
+            case Duration.Zero => getWithRetry(k, tail)
+            case Duration.Top => Future.None
+            case _ => Future.flatten {
+              timer.doLater(interval) {
+                getWithRetry(k, tail)
+              }
             }
           }
         }
@@ -46,8 +49,9 @@ class RetriableReadableStore[K, V](store: ReadableStore[K, V], backoffs: Stream[
 /**
  * Delegate put to the underlying store and allow retriable semantics for get.
  */
-class RetriableStore[K, V](store: Store[K, V], backoffs: Stream[Duration])(pred: Option[V] => Boolean)(implicit timer: Timer)
-  extends RetriableReadableStore[K, V](store, backoffs)(pred)
+class RetryingStore[K, V](store: Store[K, V], backoffs: Stream[Duration])(pred: Option[V] => Boolean)(implicit timer: Timer)
+  extends RetryingReadableStore[K, V](store, backoffs)(pred)
   with Store[K, V] {
   override def put(kv: (K, Option[V])) = store.put(kv)
+  override def multiPut[K1 <: K](kvs: Map[K1, Option[V]]): Map[K1, Future[Unit]] = store.multiPut(kvs)
 }

@@ -135,11 +135,13 @@ object ReadableStore {
 
   /**
    * Returns a ReadableStore[K, V] that attempts reads from a store
-   * multiple times until a predicate is met or timeout after a couple
-   * of retries.
+   * multiple times until a predicate is met. The stream of backoffs
+   * defines the time interval between two read attempts. If there is
+   * not read result satisfying the given predicate after all read
+   * attempts, a NotFoundException will be thrown.
    */
   def withRetry[K, V](store: ReadableStore[K, V], backoffs: Stream[Duration])(pred: Option[V] => Boolean)(implicit timer: Timer): ReadableStore[K, V] =
-    new RetriableReadableStore(store, backoffs)(pred)
+    new RetryingReadableStore(store, backoffs)(pred)
 }
 
 /** Main trait to represent asynchronous readable stores

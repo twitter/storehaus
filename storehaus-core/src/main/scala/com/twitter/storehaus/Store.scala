@@ -75,10 +75,13 @@ object Store {
 
   /**
    * Returns a Store[K, V] that attempts reads from a store multiple
-   * times until a predicate is met or timeout after a couple of retries.
+   * times until a predicate is met. The stream of backoffs defines
+   * the time interval between two read attempts. If there is not
+   * read result satisfying the given predicate after all read
+   * attempts, a NotFoundException will be thrown.
    */
   def withRetry[K, V](store: Store[K, V], backoffs: Stream[Duration])(pred: Option[V] => Boolean)(implicit timer: Timer): Store[K, V] =
-    new RetriableStore(store, backoffs)(pred)
+    new RetryingStore(store, backoffs)(pred)
 }
 
 /** Main trait for mutable stores.
