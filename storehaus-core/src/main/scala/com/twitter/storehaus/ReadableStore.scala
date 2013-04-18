@@ -57,14 +57,6 @@ object ReadableStore {
     new SearchingReadableStore(stores)(pred)
 
   /**
-   * Returns a ReadableStore[K, V] that attempts reads from a store
-   * multiple times until a predicate is met or timeout after a couple
-   * of retries.
-   */
-  def findWithRetry[K, V](store: ReadableStore[K, V], backoffs: Stream[Duration])(pred: Option[V] => Boolean)(implicit timer: Timer): ReadableStore[K, V] =
-    new RetriableReadableStore(store, backoffs)(pred)
-
-  /**
    * Returns a new ReadableStore[K, V] that queries all of the stores
    * and returns the first values that are not exceptions.
    */
@@ -140,6 +132,14 @@ object ReadableStore {
    * store using the supplied immutable cache.  */
   def withCache[K, V](store: ReadableStore[K, V], cache: Cache[K, Future[Option[V]]]): ReadableStore[K, V] =
     new CachedReadableStore(store, cache.toMutable())
+
+  /**
+   * Returns a ReadableStore[K, V] that attempts reads from a store
+   * multiple times until a predicate is met or timeout after a couple
+   * of retries.
+   */
+  def withRetry[K, V](store: ReadableStore[K, V], backoffs: Stream[Duration])(pred: Option[V] => Boolean)(implicit timer: Timer): ReadableStore[K, V] =
+    new RetriableReadableStore(store, backoffs)(pred)
 }
 
 /** Main trait to represent asynchronous readable stores

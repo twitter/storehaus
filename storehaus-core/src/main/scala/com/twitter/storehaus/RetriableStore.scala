@@ -30,7 +30,7 @@ class RetriableReadableStore[K, V](store: ReadableStore[K, V], backoffs: Stream[
       case Return(t) => Future.value(t)
       case Throw(e) =>
         if (backoffs.isEmpty) {
-          Future.exception(new MissingValueException(k))
+          FutureOps.missingValueFor(k)
         } else {
           Future.flatten {
             timer.doLater(backoffs.head) {
@@ -41,4 +41,13 @@ class RetriableReadableStore[K, V](store: ReadableStore[K, V], backoffs: Stream[
     }
 
   override def get(k: K) = getWithRetry(k, backoffs)
+}
+
+/**
+ * Delegate put to the underlying store and allow retriable semantics for get.
+ */
+class RetriableStore[K, V](store: Store[K, V], backoffs: Stream[Duration])(pred: Option[V] => Boolean)(implicit timer: Timer)
+  extends RetriableReadableStore[K, V](store, backoffs)(pred)
+  with Store[K, V] {
+  override def put(kv: (K, Option[V])) = store.put(kv)
 }
