@@ -23,20 +23,20 @@ import com.twitter.util.{ Duration, Future, Return, Throw, Timer }
  * a time-taking task. A stream of backoffs are passed in so that we only wait for a
  * finite time period for the task to complete.
  */
-class RetryingReadableStore[K, V](store: ReadableStore[K, V], backoffs: Stream[Duration])(pred: Option[V] => Boolean)(implicit timer: Timer) extends ReadableStore[K, V] {
+class RetryingReadableStore[-K, +V](store: ReadableStore[K, V], backoffs: Iterable[Duration])(pred: Option[V] => Boolean)(implicit timer: Timer) extends ReadableStore[K, V] {
 
-  private[this] def getWithRetry(k: K, backoffs: Stream[Duration]): Future[Option[V]] =
+  private[this] def getWithRetry(k: K, backoffs: Iterable[Duration]): Future[Option[V]] =
     store.get(k).filter(pred) transform {
       case Return(t) => Future.value(t)
       case Throw(e) =>
-        backoffs match {
-          case Stream.Empty => FutureOps.missingValueFor(k)
-          case interval #:: tail => interval match {
-            case Duration.Zero => getWithRetry(k, tail)
-            case Duration.Top => Future.None
+        backoffs.headOption match {
+          case None => FutureOps.missingValueFor(k)
+          case Some(interval) => interval match {
+            case Duration.Zero => getWithRetry(k, backoffs.tail)
+            case Duration.Top => FutureOps.missingValueFor(k)
             case _ => Future.flatten {
               timer.doLater(interval) {
-                getWithRetry(k, tail)
+                getWithRetry(k, backoffs.tail)
               }
             }
           }
@@ -49,7 +49,7 @@ class RetryingReadableStore[K, V](store: ReadableStore[K, V], backoffs: Stream[D
 /**
  * Delegate put to the underlying store and allow retriable semantics for get.
  */
-class RetryingStore[K, V](store: Store[K, V], backoffs: Stream[Duration])(pred: Option[V] => Boolean)(implicit timer: Timer)
+class RetryingStore[-K, V](store: Store[K, V], backoffs: Iterable[Duration])(pred: Option[V] => Boolean)(implicit timer: Timer)
   extends RetryingReadableStore[K, V](store, backoffs)(pred)
   with Store[K, V] {
   override def put(kv: (K, Option[V])) = store.put(kv)
