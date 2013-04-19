@@ -101,7 +101,7 @@ class MySQLStore(client: Client, table: String, kCol: String, vCol: String)
         client.closeStatement(ps)
         rows.toMap.filterKeys { _ != None }.map { case (optK, optV) => (optK.get, optV) }
       },
-      { (k: K1) => Future.value(Option.empty) }
+      { (k: K1) => Future.None }
     )
   }
 
