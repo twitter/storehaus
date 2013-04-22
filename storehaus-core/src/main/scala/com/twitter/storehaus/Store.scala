@@ -16,10 +16,10 @@
 
 package com.twitter.storehaus
 
-import com.twitter.util.Future
+import com.twitter.storehaus.cache.MutableCache
+import com.twitter.util.{Duration, Future, Timer}
 import java.io.Closeable
 import java.util.{ Map => JMap }
-import com.twitter.storehaus.cache.MutableCache
 
 /** Factory methods and some combinators on Stores */
 object Store {
@@ -72,6 +72,16 @@ object Store {
   def unpivot[K, OuterK, InnerK, V](store: Store[OuterK, Map[InnerK, V]])
     (split: K => (OuterK, InnerK)): Store[K, V] =
     new UnpivotedStore(store)(split)
+
+  /**
+   * Returns a Store[K, V] that attempts reads from a store multiple
+   * times until a predicate is met. The iterable of backoffs defines
+   * the time interval between two read attempts. If there is not
+   * read result satisfying the given predicate after all read
+   * attempts, a NotFoundException will be thrown.
+   */
+  def withRetry[K, V](store: Store[K, V], backoffs: Iterable[Duration])(pred: Option[V] => Boolean)(implicit timer: Timer): Store[K, V] =
+    new RetryingStore(store, backoffs)(pred)
 }
 
 /** Main trait for mutable stores.
