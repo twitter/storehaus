@@ -17,7 +17,7 @@
 package com.twitter.storehaus
 
 import com.twitter.storehaus.cache.{ Cache, MutableCache }
-import com.twitter.util.Future
+import com.twitter.util.{ Duration, Future, Timer }
 import java.io.Closeable
 
 /** Holds various factory and transformation functions for ReadableStore instances */
@@ -132,6 +132,16 @@ object ReadableStore {
    * store using the supplied immutable cache.  */
   def withCache[K, V](store: ReadableStore[K, V], cache: Cache[K, Future[Option[V]]]): ReadableStore[K, V] =
     new CachedReadableStore(store, cache.toMutable())
+
+  /**
+   * Returns a ReadableStore[K, V] that attempts reads from a store
+   * multiple times until a predicate is met. The iterable of backoffs
+   * defines the time interval between two read attempts. If there is
+   * not read result satisfying the given predicate after all read
+   * attempts, a NotFoundException will be thrown.
+   */
+  def withRetry[K, V](store: ReadableStore[K, V], backoffs: Iterable[Duration])(pred: Option[V] => Boolean)(implicit timer: Timer): ReadableStore[K, V] =
+    new RetryingReadableStore(store, backoffs)(pred)
 }
 
 /** Main trait to represent asynchronous readable stores
