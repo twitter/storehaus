@@ -37,8 +37,8 @@ object RetryingReadableStoreProperties extends Properties("RetryingStore") {
   property("RetryingReadableStore obeys the ReadableStore laws, assuming the underlying ReadableStore always returns results before timeout") =
     readableStoreLaws[Int, String] { m =>
       ReadableStore.withRetry(
-        store = ReadableStore.fromFn(fromMapWithRandomLatency(20)(m)),
-        backoffs = for (i <- 0 until 6) yield 4.milliseconds
+        store = ReadableStore.fromFn(fromMapWithRandomLatency(2)(m)),
+        backoffs = for (i <- 0 until 3) yield 1.milliseconds
       )(_ => true)
     }
 }
