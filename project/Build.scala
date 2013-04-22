@@ -130,6 +130,6 @@ object StorehausBuild extends Build {
     settings = sharedSettings
   ).settings(
     name := "storehaus-mysql",
-    libraryDependencies += "com.twitter" %% "finagle-mysql" % "6.3.0"
+    libraryDependencies += "com.twitter" %% "finagle-mysql" % "6.2.1"
   ).dependsOn(storehausCore % "test->test;compile->compile")
 }
