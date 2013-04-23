@@ -96,19 +96,19 @@ object MySQLStoreProperties extends Properties("MySQLStore") {
     withStore(putAndGetStoreTest(_), "text", "blob")
 
   property("MySQLStore text->text multiget") =
-    withStore(putAndMultiGetStoreTest(_), "text", "text")
+    withStore(putAndMultiGetStoreTest(_), "text", "text", true)
 
   property("MySQLStore blob->blob mutiget") =
-    withStore(putAndMultiGetStoreTest(_), "blob", "blob")
+    withStore(putAndMultiGetStoreTest(_), "blob", "blob", true)
 
   property("MySQLStore text->blob multiget") =
-    withStore(putAndMultiGetStoreTest(_), "text", "blob")
+    withStore(putAndMultiGetStoreTest(_), "text", "blob", true)
 
-  private def withStore[T](f: MySQLStore => T, kColType: String, vColType: String): T = {
+  private def withStore[T](f: MySQLStore => T, kColType: String, vColType: String, multiGet: Boolean = false): T = {
     val client = Client("localhost:3306", "storehaususer", "test1234", "storehaus_test")
     // these should match mysql setup used in .travis.yml
 
-    val tableName = "storehaus-mysql-"+kColType+"-"+vColType
+    val tableName = "storehaus-mysql-"+kColType+"-"+vColType + ( if (multiGet) { "-multiget" } else { "" } )
     val schema = "CREATE TEMPORARY TABLE IF NOT EXISTS `"+tableName+"` (`key` "+kColType+" DEFAULT NULL, `value` "+vColType+" DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8;"
     client.query(schema).get
 
