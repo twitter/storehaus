@@ -21,6 +21,12 @@ import com.twitter.util.{ Future, Promise }
 import com.twitter.storehaus.{ FutureOps, FutureCollector }
 import scala.collection.mutable.{ Map => MMap }
 
+/** A Mergeable that sits on top of another mergeable and pre-aggregates before pushing into merge/multiMerge
+ * This is very useful for cases where you have some keys that are very hot, or you have a remote store that
+ * you don't want to constantly hit.
+ * Note that calling a get/put forces a flush on this store.  Also note that the Futures returned by merge
+ * are completed only when the underlying store is finally merged.
+ */
 class BufferingStore[K, V](store: MergeableStore[K, V], summerCons: Monoid[V] => StatefulSummer[Map[K, V]])
   extends MergeableStore[K, V] {
   private val promiseMap = MMap[Any, Promise[Unit]]()

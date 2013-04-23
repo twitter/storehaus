@@ -18,7 +18,8 @@ package com.twitter.storehaus
 
 import com.twitter.util.Future
 
-/**
+/** Convert the keys/values of a store.
+ *
  * Value conversion returns a Future because V1 => V2 may fail, and we
  * are going to convert to a future anyway (so, a Try is kind of a
  * Future that is not async). Thus we might as well add the

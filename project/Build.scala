@@ -3,9 +3,14 @@ package storehaus
 import sbt._
 import Keys._
 import sbtgitflow.ReleasePlugin._
+import spray.boilerplate.BoilerplatePlugin.Boilerplate
+import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
+import com.typesafe.tools.mima.plugin.MimaKeys.previousArtifact
 
 object StorehausBuild extends Build {
-  val sharedSettings = Project.defaultSettings ++ releaseSettings ++ Seq(
+  val extraSettings =
+    Project.defaultSettings ++ releaseSettings ++ Boilerplate.settings ++ mimaDefaultSettings
+  val sharedSettings =  extraSettings ++ Seq(
     organization := "com.twitter",
     crossScalaVersions := Seq("2.9.2", "2.10.0"),
     libraryDependencies ++= Seq(
@@ -15,7 +20,8 @@ object StorehausBuild extends Build {
 
     resolvers ++= Seq(
       "snapshots" at "http://oss.sonatype.org/content/repositories/snapshots",
-      "releases"  at "http://oss.sonatype.org/content/repositories/releases"
+      "releases"  at "http://oss.sonatype.org/content/repositories/releases",
+      "Twitter Maven" at "http://maven.twttr.com"
     ),
 
     parallelExecution in Test := true,
@@ -65,7 +71,18 @@ object StorehausBuild extends Build {
       </developers>)
   )
 
-  val algebirdVersion = "0.1.11"
+  /**
+    * This returns the youngest jar we released that is compatible with
+    * the current.
+    *
+    * TODO: Remove mysql, redis and cache after their release.
+    */
+  def youngestForwardCompatible(subProj: String) =
+    Some(subProj)
+      .filterNot(Set("mysql", "redis", "cache").contains(_))
+      .map { s => "com.twitter" % ("storehaus-" + s + "_2.9.2") % "0.2.0" }
+
+  val algebirdVersion = "0.1.12"
   val bijectionVersion = "0.3.0"
 
   lazy val storehaus = Project(
@@ -76,9 +93,23 @@ object StorehausBuild extends Build {
     test := { },
     publish := { }, // skip publishing for this root project.
     publishLocal := { }
-  ).aggregate(storehausCore,
-              storehausAlgebra,
-              storehausMemcache)
+  ).aggregate(
+    storehausCache,
+    storehausCore,
+    storehausAlgebra,
+    storehausMemcache,
+    storehausMySQL,
+    storehausRedis
+  )
+
+  lazy val storehausCache = Project(
+    id = "storehaus-cache",
+    base = file("storehaus-cache"),
+    settings = sharedSettings
+  ).settings(
+    name := "storehaus-cache",
+    previousArtifact := youngestForwardCompatible("cache")
+  )
 
   lazy val storehausCore = Project(
     id = "storehaus-core",
@@ -86,8 +117,9 @@ object StorehausBuild extends Build {
     settings = sharedSettings
   ).settings(
     name := "storehaus-core",
-    libraryDependencies += "com.twitter" %% "util-core" % "6.2.0"
-  )
+    previousArtifact := youngestForwardCompatible("core"),
+    libraryDependencies += "com.twitter" %% "util-core" % "6.3.0"
+  ).dependsOn(storehausCache)
 
   lazy val storehausAlgebra = Project(
     id = "storehaus-algebra",
@@ -95,6 +127,7 @@ object StorehausBuild extends Build {
     settings = sharedSettings
   ).settings(
     name := "storehaus-algebra",
+    previousArtifact := youngestForwardCompatible("algebra"),
     libraryDependencies += "com.twitter" %% "algebird-core" % algebirdVersion,
     libraryDependencies += "com.twitter" %% "algebird-util" % algebirdVersion,
     libraryDependencies += "com.twitter" %% "bijection-core" % bijectionVersion,
@@ -107,6 +140,31 @@ object StorehausBuild extends Build {
     settings = sharedSettings
   ).settings(
     name := "storehaus-memcache",
-    libraryDependencies += "com.twitter" %% "finagle-memcached" % "6.2.0"
+    previousArtifact := youngestForwardCompatible("memcache"),
+    libraryDependencies += "com.twitter" %% "finagle-memcached" % "6.3.0"
+  ).dependsOn(storehausAlgebra % "test->test;compile->compile")
+
+  lazy val storehausMySQL = Project(
+    id = "storehaus-mysql",
+    base = file("storehaus-mysql"),
+    settings = sharedSettings
+  ).settings(
+    name := "storehaus-mysql",
+    previousArtifact := youngestForwardCompatible("mysql"),
+    libraryDependencies += "com.twitter" %% "finagle-mysql" % "6.2.1"
   ).dependsOn(storehausCore % "test->test;compile->compile")
+
+  lazy val storehausRedis = Project(
+    id = "storehaus-redis",
+    base = file("storehaus-redis"),
+    settings = sharedSettings
+  ).settings(
+    name := "storehaus-redis",
+    previousArtifact := youngestForwardCompatible("redis"),
+    libraryDependencies += "com.twitter" %% "finagle-redis" % "6.2.0",
+    testOptions in Test += Tests.Cleanup { loader =>
+      val c = loader.loadClass("com.twitter.storehaus.redis.Cleanup$")
+      c.getMethod("cleanup").invoke(c.getField("MODULE$").get(c))
+    }
+  ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 }

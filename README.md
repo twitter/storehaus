@@ -76,7 +76,9 @@ The [`MergeableStore`](http://twitter.github.com/storehaus/#com.twitter.storehau
 
 Storehaus provides a number of modules wrapping existing key-value stores. Enriching these key-value stores with Storehaus's combinators has been hugely helpful to us here at Twitter. Writing your jobs in terms of Storehaus stores makes it easy to test your jobs; use an in-memory `JMapStore` in testing and a `MemcacheStore` in production.
 
-* [Storehaus-memcache](http://twitter.github.com/storehaus/#com.twitter.storehaus.memcache.MemcacheStore) (wraps Twitter's [finagle-memcached](https://github.com/twitter/finagle/tree/master/finagle-memcached) library)
+  * [Storehaus-memcache](http://twitter.github.com/storehaus/#com.twitter.storehaus.memcache.MemcacheStore) (wraps Twitter's [finagle-memcached](https://github.com/twitter/finagle/tree/master/finagle-memcached) library)
+  * [Storehaus-mysql](http://twitter.github.com/storehaus/#com.twitter.storehaus.mysql.MySQLStore) (wraps Twitter's [finagle-mysql](https://github.com/twitter/finagle/tree/master/finagle-mysql) library)
+  * [Storehaus-redis](http://twitter.github.com/storehaus/#com.twitter.storehaus.redis.RedisStore) (wraps Twitter's [finagle-redis](https://github.com/twitter/finagle/tree/master/finagle-redis) library)
 
 #### Planned Modules
 
@@ -84,8 +86,6 @@ Here's a list of modules we plan in implementing, with links to the github issue
 
 * [storehaus-leveldb](https://github.com/twitter/storehaus/issues/51)
 * [storehaus-berkeleydb](https://github.com/twitter/storehaus/issues/52)
-* [storehaus-redis](https://github.com/twitter/storehaus/issues/53)
-* [storehaus-mysql](https://github.com/twitter/storehaus/issues/59)
 * [storehaus-dynamodb](https://github.com/twitter/storehaus/issues/60)
 
 ### Documentation
@@ -94,7 +94,7 @@ See the [current API documentation](http://twitter.github.com/storehaus) for mor
 
 ## Maven
 
-Storehaus modules are available on maven central. The current groupid and version for all modules is, respectively, `"com.twitter"` and  `0.2.0`.
+Storehaus modules are available on maven central. The current groupid and version for all modules is, respectively, `"com.twitter"` and  `0.3.0`.
 
 Current published artifacts are
 
@@ -104,13 +104,35 @@ Current published artifacts are
 * `storehaus-algebra_2.10`
 * `storehaus-memcache_2.9.2`
 * `storehaus-memcache_2.10`
+* `storehaus-mysql_2.9.2`
+* `storehaus-mysql_2.10`
+* `storehaus-redis_2.9.2`
+* `storehaus-redis_2.10`
+* `storehaus-cache_2.9.2`
+* `storehaus-cache_2.10`
 
 The suffix denotes the scala version.
+
+## Testing notes
+
+We use travis-ci to set up any underlying stores (e.g. MySQL and REdis) for the tests. In order for these tests to pass on your local machine, you may need additional setup.
+
+### MySQL tests
+
+You will need MySQL installed on your local machine.
+Once installed, run the `mysql` commands listed in [.travis.yml](https://github.com/twitter/storehaus/blob/develop/.travis.yml) file.
 
 ## Authors
 
 * Oscar Boykin <https://twitter.com/posco>
 * Sam Ritchie <https://twitter.com/sritchie>
+
+## Contributors
+
+Here are a few that shine among the many:
+
+* Ruban Monu <https://twitter.com/rubanm>, for `storehaus-mysql`
+* Doug Tangren <https://twitter.com/softprops>, for `storehaus-redis`
 
 ## License
 

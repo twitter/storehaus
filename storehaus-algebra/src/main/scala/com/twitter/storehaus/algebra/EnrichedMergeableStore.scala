@@ -19,6 +19,19 @@ package com.twitter.storehaus.algebra
 import com.twitter.algebird.{ Monoid, StatefulSummer }
 import com.twitter.bijection.ImplicitBijection
 
+/**
+  * Enrichment on the [[com.twitter.storehaus.algebra.MergeableStore]]
+  * trait. Storehaus uses the enrichment pattern instead of adding
+  * these methods directly to the trait because many of the functions
+  * (mapValues, for example) have different meanings for
+  * ReadableStore, Store and MergeableStore.
+  *
+  * {{{ import MergeableStore.enrich }}}
+  *
+  * to get access to these methods.
+  *
+  * TODO: in scala 2.10 this should be a value class
+  */
 class EnrichedMergeableStore[K, V](store: MergeableStore[K, V]) {
   def unpivot[CombinedK, InnerK, InnerV](split: CombinedK => (K, InnerK))
     (implicit ev: V <:< Map[InnerK, InnerV], monoid: Monoid[InnerV])

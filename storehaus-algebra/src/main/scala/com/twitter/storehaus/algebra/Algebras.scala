@@ -23,11 +23,13 @@ import com.twitter.util.Future
 
 import UtilAlgebras._
 
+/** import Algebras._ to get Monoid/Semigroup on ReadableStore */
 object Algebras {
   implicit def semigroup[K, V: Semigroup]: Semigroup[ReadableStore[K, V]] = new ReadableStoreSemigroup[K, V]
   implicit def monoid[K, V: Monoid]: Monoid[ReadableStore[K, V]] = new ReadableStoreMonoid[K, V]
 }
 
+/** A semigroup that uses the future semigroup to add results of both gets */
 class ReadableStoreSemigroup[K, V: Semigroup] extends Semigroup[ReadableStore[K, V]] {
   override def plus(l: ReadableStore[K, V], r: ReadableStore[K,V]) =
     new AbstractReadableStore[K,V] {
@@ -36,6 +38,7 @@ class ReadableStoreSemigroup[K, V: Semigroup] extends Semigroup[ReadableStore[K,
     }
 }
 
+/** Same as a ReadableStoreSemigroup except with a zero that the constant store always returning Monoid.zero[V] */
 class ReadableStoreMonoid[K, V: Monoid] extends ReadableStoreSemigroup[K, V] with Monoid[ReadableStore[K, V]] {
   override def zero = ReadableStore.const(Monoid.zero[V])
 }

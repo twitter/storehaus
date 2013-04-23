@@ -1,5 +1,15 @@
 # storehaus #
 
+### Version.0.3.0 ###
+
+* Adds storehaus-mysql
+* Adds storehaus-cache
+* Adds storehaus-redis
+* RetryingReadableStore
+* CachedReadableStore
+* CachedReadableStore
+* ReadableStore.find (and SearchingReadableStore)
+
 ### Version.0.2.0 ###
 
 * Move `MergeableStore` into storehaus-core

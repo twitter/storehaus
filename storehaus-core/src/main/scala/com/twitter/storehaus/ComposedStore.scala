@@ -19,6 +19,10 @@ package com.twitter.storehaus
 import com.twitter.util.Future
 import java.io.Closeable
 
+/** A store that is made from looking up values in the first store, then using that as the key in the second
+ * When used with [[com.twitter.storehaus.ConvertedStore]] you can do some powerful sequential processing
+ * of stores
+ */
 class ComposedStore[-K, V, V2, V3 >: V](l: ReadableStore[K, V], r: ReadableStore[V3, V2])(implicit fc: FutureCollector[V3])
   extends AbstractReadableStore[K, V2] {
   override def get(k: K) =
@@ -36,7 +40,7 @@ class ComposedStore[-K, V, V2, V3 >: V](l: ReadableStore[K, V], r: ReadableStore
       val v2s: Map[V, Future[Option[V2]]] = r.multiGet(vSet)
       k1vMap.mapValues { optV => optV.map { v2s(_) }.getOrElse(Future.None) }
     }
-    FutureOps.liftValues(ks, fmapf).mapValues { _.flatten }
+    FutureOps.liftFutureValues(ks, fmapf)
   }
   override def close { l.close; r.close }
 }

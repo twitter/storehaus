@@ -18,11 +18,13 @@ package com.twitter.storehaus
 
 import com.twitter.util.Future
 import java.util.{ Map => JMap, HashMap => JHashMap }
-/**
+/** A Store instance which is backed by a Java Map (by default JHashMap)
+ * Obviously, there is no optimization of the multiGet/multiPut methods on this
+ * store and these are just implemented using the default implementation from Store.
+ *
  *  @author Oscar Boykin
  *  @author Sam Ritchie
  */
-
 class JMapStore[K, V] extends Store[K, V] {
   protected val jstore: JMap[K, Option[V]] = new JHashMap[K, Option[V]]()
   protected def storeGet(k: K): Option[V] = {
