@@ -1,0 +1,618 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html>
+        <head>
+          <title>com.twitter.storehaus.cache</title>
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link type="text/css" media="screen" rel="stylesheet" href="../../../../lib/template.css" />
+      <script type="text/javascript" src="../../../../lib/jquery.js"></script>
+      <script type="text/javascript" src="../../../../lib/jquery-ui.js"></script>
+      <script type="text/javascript" src="../../../../lib/template.js"></script>
+      <script type="text/javascript" src="../../../../lib/tools.tooltip.js"></script>
+    
+        </head>
+        <body onload="sh_highlightDocument('../lib/', '.min.js');" class="value">
+      <div id="definition">
+        <img src="../../../../lib/package_big.png" />
+        <p id="owner"><a name="com" class="extype" href="../../../package.html">com</a>.<a name="com.twitter" class="extype" href="../../package.html">twitter</a>.<a name="com.twitter.storehaus" class="extype" href="../package.html">storehaus</a></p>
+        <h1>cache</h1>
+      </div>
+
+      <h4 class="signature" id="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <span class="name">cache</span>
+      </span>
+      </h4>
+      
+      <div class="fullcommenttop" id="comment"></div>
+    
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input accesskey="/" type="text" /></span><span class="post"></span></div>
+        
+        
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
+
+      <div id="template">
+        <div id="allMembers">
+        
+
+        <div class="types members" id="types">
+              <h3>Type Members</h3>
+              <ol><li visbl="pub" name="com.twitter.storehaus.cache.Atomic" data-isabs="false">
+      <a id="Atomic:Atomic[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Atomic.html"><span class="name">Atomic</span></a><span class="tparams">[<span name="T">T &lt;: AnyRef</span>]</span><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.Cache" data-isabs="true">
+      <a id="Cache:Cache[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="Cache.html"><span class="name">Cache</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Immutable Cache trait for use with Storehaus stores.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.FilteredMutableCache" data-isabs="false">
+      <a id="FilteredMutableCache:FilteredMutableCache[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="FilteredMutableCache.html"><span class="name">FilteredMutableCache</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends MutableCache[K, V]</span>
+      </span>
+      </h4>
+      <p class="comment cmt">MutableCache that applies a filter to each value.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.JMapCache" data-isabs="false">
+      <a id="JMapCache:JMapCache[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="JMapCache.html"><span class="name">JMapCache</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends MutableCache[K, V]</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Returns a MutableCache instance backed by the supplied
+java.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.LRUCache" data-isabs="false">
+      <a id="LRUCache:LRUCache[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="LRUCache.html"><span class="name">LRUCache</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends Cache[K, V]</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.MapCache" data-isabs="false">
+      <a id="MapCache:MapCache[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="MapCache.html"><span class="name">MapCache</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends Cache[K, V]</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.Memoize1" data-isabs="false">
+      <a id="Memoize1:Memoize1[T1, R]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Memoize1.html"><span class="name">Memoize1</span></a><span class="tparams">[<span name="T1">-T1</span>, <span name="R">+R</span>]</span><span class="result"> extends (T1) ⇒ R</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Returns an instance of Function1 memoized using the supplied
+mutable cache.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.Memoize10" data-isabs="false">
+      <a id="Memoize10:Memoize10[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, R]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Memoize10.html"><span class="name">Memoize10</span></a><span class="tparams">[<span name="T1">-T1</span>, <span name="T2">-T2</span>, <span name="T3">-T3</span>, <span name="T4">-T4</span>, <span name="T5">-T5</span>, <span name="T6">-T6</span>, <span name="T7">-T7</span>, <span name="T8">-T8</span>, <span name="T9">-T9</span>, <span name="T10">-T10</span>, <span name="R">+R</span>]</span><span class="result"> extends (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10) ⇒ R</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Returns an instance of Function10 memoized using the supplied
+mutable cache.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.Memoize11" data-isabs="false">
+      <a id="Memoize11:Memoize11[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, R]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Memoize11.html"><span class="name">Memoize11</span></a><span class="tparams">[<span name="T1">-T1</span>, <span name="T2">-T2</span>, <span name="T3">-T3</span>, <span name="T4">-T4</span>, <span name="T5">-T5</span>, <span name="T6">-T6</span>, <span name="T7">-T7</span>, <span name="T8">-T8</span>, <span name="T9">-T9</span>, <span name="T10">-T10</span>, <span name="T11">-T11</span>, <span name="R">+R</span>]</span><span class="result"> extends (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11) ⇒ R</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Returns an instance of Function11 memoized using the supplied
+mutable cache.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.Memoize12" data-isabs="false">
+      <a id="Memoize12:Memoize12[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, R]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Memoize12.html"><span class="name">Memoize12</span></a><span class="tparams">[<span name="T1">-T1</span>, <span name="T2">-T2</span>, <span name="T3">-T3</span>, <span name="T4">-T4</span>, <span name="T5">-T5</span>, <span name="T6">-T6</span>, <span name="T7">-T7</span>, <span name="T8">-T8</span>, <span name="T9">-T9</span>, <span name="T10">-T10</span>, <span name="T11">-T11</span>, <span name="T12">-T12</span>, <span name="R">+R</span>]</span><span class="result"> extends (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12) ⇒ R</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Returns an instance of Function12 memoized using the supplied
+mutable cache.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.Memoize13" data-isabs="false">
+      <a id="Memoize13:Memoize13[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, R]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Memoize13.html"><span class="name">Memoize13</span></a><span class="tparams">[<span name="T1">-T1</span>, <span name="T2">-T2</span>, <span name="T3">-T3</span>, <span name="T4">-T4</span>, <span name="T5">-T5</span>, <span name="T6">-T6</span>, <span name="T7">-T7</span>, <span name="T8">-T8</span>, <span name="T9">-T9</span>, <span name="T10">-T10</span>, <span name="T11">-T11</span>, <span name="T12">-T12</span>, <span name="T13">-T13</span>, <span name="R">+R</span>]</span><span class="result"> extends (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13) ⇒ R</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Returns an instance of Function13 memoized using the supplied
+mutable cache.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.Memoize14" data-isabs="false">
+      <a id="Memoize14:Memoize14[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, R]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Memoize14.html"><span class="name">Memoize14</span></a><span class="tparams">[<span name="T1">-T1</span>, <span name="T2">-T2</span>, <span name="T3">-T3</span>, <span name="T4">-T4</span>, <span name="T5">-T5</span>, <span name="T6">-T6</span>, <span name="T7">-T7</span>, <span name="T8">-T8</span>, <span name="T9">-T9</span>, <span name="T10">-T10</span>, <span name="T11">-T11</span>, <span name="T12">-T12</span>, <span name="T13">-T13</span>, <span name="T14">-T14</span>, <span name="R">+R</span>]</span><span class="result"> extends (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14) ⇒ R</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Returns an instance of Function14 memoized using the supplied
+mutable cache.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.Memoize15" data-isabs="false">
+      <a id="Memoize15:Memoize15[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, R]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Memoize15.html"><span class="name">Memoize15</span></a><span class="tparams">[<span name="T1">-T1</span>, <span name="T2">-T2</span>, <span name="T3">-T3</span>, <span name="T4">-T4</span>, <span name="T5">-T5</span>, <span name="T6">-T6</span>, <span name="T7">-T7</span>, <span name="T8">-T8</span>, <span name="T9">-T9</span>, <span name="T10">-T10</span>, <span name="T11">-T11</span>, <span name="T12">-T12</span>, <span name="T13">-T13</span>, <span name="T14">-T14</span>, <span name="T15">-T15</span>, <span name="R">+R</span>]</span><span class="result"> extends (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15) ⇒ R</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Returns an instance of Function15 memoized using the supplied
+mutable cache.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.Memoize16" data-isabs="false">
+      <a id="Memoize16:Memoize16[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, R]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Memoize16.html"><span class="name">Memoize16</span></a><span class="tparams">[<span name="T1">-T1</span>, <span name="T2">-T2</span>, <span name="T3">-T3</span>, <span name="T4">-T4</span>, <span name="T5">-T5</span>, <span name="T6">-T6</span>, <span name="T7">-T7</span>, <span name="T8">-T8</span>, <span name="T9">-T9</span>, <span name="T10">-T10</span>, <span name="T11">-T11</span>, <span name="T12">-T12</span>, <span name="T13">-T13</span>, <span name="T14">-T14</span>, <span name="T15">-T15</span>, <span name="T16">-T16</span>, <span name="R">+R</span>]</span><span class="result"> extends (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16) ⇒ R</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Returns an instance of Function16 memoized using the supplied
+mutable cache.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.Memoize17" data-isabs="false">
+      <a id="Memoize17:Memoize17[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, R]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Memoize17.html"><span class="name">Memoize17</span></a><span class="tparams">[<span name="T1">-T1</span>, <span name="T2">-T2</span>, <span name="T3">-T3</span>, <span name="T4">-T4</span>, <span name="T5">-T5</span>, <span name="T6">-T6</span>, <span name="T7">-T7</span>, <span name="T8">-T8</span>, <span name="T9">-T9</span>, <span name="T10">-T10</span>, <span name="T11">-T11</span>, <span name="T12">-T12</span>, <span name="T13">-T13</span>, <span name="T14">-T14</span>, <span name="T15">-T15</span>, <span name="T16">-T16</span>, <span name="T17">-T17</span>, <span name="R">+R</span>]</span><span class="result"> extends (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17) ⇒ R</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Returns an instance of Function17 memoized using the supplied
+mutable cache.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.Memoize18" data-isabs="false">
+      <a id="Memoize18:Memoize18[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, R]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Memoize18.html"><span class="name">Memoize18</span></a><span class="tparams">[<span name="T1">-T1</span>, <span name="T2">-T2</span>, <span name="T3">-T3</span>, <span name="T4">-T4</span>, <span name="T5">-T5</span>, <span name="T6">-T6</span>, <span name="T7">-T7</span>, <span name="T8">-T8</span>, <span name="T9">-T9</span>, <span name="T10">-T10</span>, <span name="T11">-T11</span>, <span name="T12">-T12</span>, <span name="T13">-T13</span>, <span name="T14">-T14</span>, <span name="T15">-T15</span>, <span name="T16">-T16</span>, <span name="T17">-T17</span>, <span name="T18">-T18</span>, <span name="R">+R</span>]</span><span class="result"> extends (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18) ⇒ R</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Returns an instance of Function18 memoized using the supplied
+mutable cache.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.Memoize19" data-isabs="false">
+      <a id="Memoize19:Memoize19[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, R]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Memoize19.html"><span class="name">Memoize19</span></a><span class="tparams">[<span name="T1">-T1</span>, <span name="T2">-T2</span>, <span name="T3">-T3</span>, <span name="T4">-T4</span>, <span name="T5">-T5</span>, <span name="T6">-T6</span>, <span name="T7">-T7</span>, <span name="T8">-T8</span>, <span name="T9">-T9</span>, <span name="T10">-T10</span>, <span name="T11">-T11</span>, <span name="T12">-T12</span>, <span name="T13">-T13</span>, <span name="T14">-T14</span>, <span name="T15">-T15</span>, <span name="T16">-T16</span>, <span name="T17">-T17</span>, <span name="T18">-T18</span>, <span name="T19">-T19</span>, <span name="R">+R</span>]</span><span class="result"> extends (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19) ⇒ R</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Returns an instance of Function19 memoized using the supplied
+mutable cache.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.Memoize2" data-isabs="false">
+      <a id="Memoize2:Memoize2[T1, T2, R]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Memoize2.html"><span class="name">Memoize2</span></a><span class="tparams">[<span name="T1">-T1</span>, <span name="T2">-T2</span>, <span name="R">+R</span>]</span><span class="result"> extends (T1, T2) ⇒ R</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Returns an instance of Function2 memoized using the supplied
+mutable cache.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.Memoize20" data-isabs="false">
+      <a id="Memoize20:Memoize20[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, R]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Memoize20.html"><span class="name">Memoize20</span></a><span class="tparams">[<span name="T1">-T1</span>, <span name="T2">-T2</span>, <span name="T3">-T3</span>, <span name="T4">-T4</span>, <span name="T5">-T5</span>, <span name="T6">-T6</span>, <span name="T7">-T7</span>, <span name="T8">-T8</span>, <span name="T9">-T9</span>, <span name="T10">-T10</span>, <span name="T11">-T11</span>, <span name="T12">-T12</span>, <span name="T13">-T13</span>, <span name="T14">-T14</span>, <span name="T15">-T15</span>, <span name="T16">-T16</span>, <span name="T17">-T17</span>, <span name="T18">-T18</span>, <span name="T19">-T19</span>, <span name="T20">-T20</span>, <span name="R">+R</span>]</span><span class="result"> extends (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20) ⇒ R</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Returns an instance of Function20 memoized using the supplied
+mutable cache.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.Memoize21" data-isabs="false">
+      <a id="Memoize21:Memoize21[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, R]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Memoize21.html"><span class="name">Memoize21</span></a><span class="tparams">[<span name="T1">-T1</span>, <span name="T2">-T2</span>, <span name="T3">-T3</span>, <span name="T4">-T4</span>, <span name="T5">-T5</span>, <span name="T6">-T6</span>, <span name="T7">-T7</span>, <span name="T8">-T8</span>, <span name="T9">-T9</span>, <span name="T10">-T10</span>, <span name="T11">-T11</span>, <span name="T12">-T12</span>, <span name="T13">-T13</span>, <span name="T14">-T14</span>, <span name="T15">-T15</span>, <span name="T16">-T16</span>, <span name="T17">-T17</span>, <span name="T18">-T18</span>, <span name="T19">-T19</span>, <span name="T20">-T20</span>, <span name="T21">-T21</span>, <span name="R">+R</span>]</span><span class="result"> extends (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21) ⇒ R</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Returns an instance of Function21 memoized using the supplied
+mutable cache.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.Memoize22" data-isabs="false">
+      <a id="Memoize22:Memoize22[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, R]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Memoize22.html"><span class="name">Memoize22</span></a><span class="tparams">[<span name="T1">-T1</span>, <span name="T2">-T2</span>, <span name="T3">-T3</span>, <span name="T4">-T4</span>, <span name="T5">-T5</span>, <span name="T6">-T6</span>, <span name="T7">-T7</span>, <span name="T8">-T8</span>, <span name="T9">-T9</span>, <span name="T10">-T10</span>, <span name="T11">-T11</span>, <span name="T12">-T12</span>, <span name="T13">-T13</span>, <span name="T14">-T14</span>, <span name="T15">-T15</span>, <span name="T16">-T16</span>, <span name="T17">-T17</span>, <span name="T18">-T18</span>, <span name="T19">-T19</span>, <span name="T20">-T20</span>, <span name="T21">-T21</span>, <span name="T22">-T22</span>, <span name="R">+R</span>]</span><span class="result"> extends (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22) ⇒ R</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Returns an instance of Function22 memoized using the supplied
+mutable cache.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.Memoize3" data-isabs="false">
+      <a id="Memoize3:Memoize3[T1, T2, T3, R]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Memoize3.html"><span class="name">Memoize3</span></a><span class="tparams">[<span name="T1">-T1</span>, <span name="T2">-T2</span>, <span name="T3">-T3</span>, <span name="R">+R</span>]</span><span class="result"> extends (T1, T2, T3) ⇒ R</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Returns an instance of Function3 memoized using the supplied
+mutable cache.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.Memoize4" data-isabs="false">
+      <a id="Memoize4:Memoize4[T1, T2, T3, T4, R]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Memoize4.html"><span class="name">Memoize4</span></a><span class="tparams">[<span name="T1">-T1</span>, <span name="T2">-T2</span>, <span name="T3">-T3</span>, <span name="T4">-T4</span>, <span name="R">+R</span>]</span><span class="result"> extends (T1, T2, T3, T4) ⇒ R</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Returns an instance of Function4 memoized using the supplied
+mutable cache.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.Memoize5" data-isabs="false">
+      <a id="Memoize5:Memoize5[T1, T2, T3, T4, T5, R]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Memoize5.html"><span class="name">Memoize5</span></a><span class="tparams">[<span name="T1">-T1</span>, <span name="T2">-T2</span>, <span name="T3">-T3</span>, <span name="T4">-T4</span>, <span name="T5">-T5</span>, <span name="R">+R</span>]</span><span class="result"> extends (T1, T2, T3, T4, T5) ⇒ R</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Returns an instance of Function5 memoized using the supplied
+mutable cache.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.Memoize6" data-isabs="false">
+      <a id="Memoize6:Memoize6[T1, T2, T3, T4, T5, T6, R]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Memoize6.html"><span class="name">Memoize6</span></a><span class="tparams">[<span name="T1">-T1</span>, <span name="T2">-T2</span>, <span name="T3">-T3</span>, <span name="T4">-T4</span>, <span name="T5">-T5</span>, <span name="T6">-T6</span>, <span name="R">+R</span>]</span><span class="result"> extends (T1, T2, T3, T4, T5, T6) ⇒ R</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Returns an instance of Function6 memoized using the supplied
+mutable cache.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.Memoize7" data-isabs="false">
+      <a id="Memoize7:Memoize7[T1, T2, T3, T4, T5, T6, T7, R]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Memoize7.html"><span class="name">Memoize7</span></a><span class="tparams">[<span name="T1">-T1</span>, <span name="T2">-T2</span>, <span name="T3">-T3</span>, <span name="T4">-T4</span>, <span name="T5">-T5</span>, <span name="T6">-T6</span>, <span name="T7">-T7</span>, <span name="R">+R</span>]</span><span class="result"> extends (T1, T2, T3, T4, T5, T6, T7) ⇒ R</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Returns an instance of Function7 memoized using the supplied
+mutable cache.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.Memoize8" data-isabs="false">
+      <a id="Memoize8:Memoize8[T1, T2, T3, T4, T5, T6, T7, T8, R]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Memoize8.html"><span class="name">Memoize8</span></a><span class="tparams">[<span name="T1">-T1</span>, <span name="T2">-T2</span>, <span name="T3">-T3</span>, <span name="T4">-T4</span>, <span name="T5">-T5</span>, <span name="T6">-T6</span>, <span name="T7">-T7</span>, <span name="T8">-T8</span>, <span name="R">+R</span>]</span><span class="result"> extends (T1, T2, T3, T4, T5, T6, T7, T8) ⇒ R</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Returns an instance of Function8 memoized using the supplied
+mutable cache.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.Memoize9" data-isabs="false">
+      <a id="Memoize9:Memoize9[T1, T2, T3, T4, T5, T6, T7, T8, T9, R]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Memoize9.html"><span class="name">Memoize9</span></a><span class="tparams">[<span name="T1">-T1</span>, <span name="T2">-T2</span>, <span name="T3">-T3</span>, <span name="T4">-T4</span>, <span name="T5">-T5</span>, <span name="T6">-T6</span>, <span name="T7">-T7</span>, <span name="T8">-T8</span>, <span name="T9">-T9</span>, <span name="R">+R</span>]</span><span class="result"> extends (T1, T2, T3, T4, T5, T6, T7, T8, T9) ⇒ R</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Returns an instance of Function9 memoized using the supplied
+mutable cache.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.MutableCache" data-isabs="true">
+      <a id="MutableCache:MutableCache[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="MutableCache.html"><span class="name">MutableCache</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.MutableFromImmutableCache" data-isabs="false">
+      <a id="MutableFromImmutableCache:MutableFromImmutableCache[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="MutableFromImmutableCache.html"><span class="name">MutableFromImmutableCache</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends MutableCache[K, V]</span>
+      </span>
+      </h4>
+      <p class="comment cmt">A Mutable cache generated by wrapping an immutable cache.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.MutableLRUCache" data-isabs="false">
+      <a id="MutableLRUCache:MutableLRUCache[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="MutableLRUCache.html"><span class="name">MutableLRUCache</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends JMapCache[K, V]</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.MutableMapCache" data-isabs="false">
+      <a id="MutableMapCache:MutableMapCache[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="MutableMapCache.html"><span class="name">MutableMapCache</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends MutableCache[K, V]</span>
+      </span>
+      </h4>
+      <p class="comment cmt">MutableCache backed by a scala mutable Map.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.TTLCache" data-isabs="false">
+      <a id="TTLCache:TTLCache[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="TTLCache.html"><span class="name">TTLCache</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends Cache[K, (Long, V)]</span>
+      </span>
+      </h4>
+      
+    </li></ol>
+            </div>
+
+        
+
+        <div class="values members" id="values">
+              <h3>Value Members</h3>
+              <ol><li visbl="pub" name="com.twitter.storehaus.cache.Atomic" data-isabs="false">
+      <a id="Atomic:Atomic"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Atomic$.html"><span class="name">Atomic</span></a><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.Cache" data-isabs="false">
+      <a id="Cache:Cache"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Cache$.html"><span class="name">Cache</span></a><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Companion object to Cache.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.JMapCache" data-isabs="false">
+      <a id="JMapCache:JMapCache"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="JMapCache$.html"><span class="name">JMapCache</span></a><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.LRUCache" data-isabs="false">
+      <a id="LRUCache:LRUCache"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="LRUCache$.html"><span class="name">LRUCache</span></a><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <p class="comment cmt">&quot;map&quot; is the backing store used to hold key -&gt; (index,value)
+pairs.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.MapCache" data-isabs="false">
+      <a id="MapCache:MapCache"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="MapCache$.html"><span class="name">MapCache</span></a><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Basic cache implementation using an immutable backing map.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.Memoize" data-isabs="false">
+      <a id="Memoize:Memoize"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Memoize$.html"><span class="name">Memoize</span></a><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Memoize supplies a number of functions for generating memoized
+versions of Scala's functions using a MutableCache instance.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.MutableCache" data-isabs="false">
+      <a id="MutableCache:MutableCache"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="MutableCache$.html"><span class="name">MutableCache</span></a><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.MutableLRUCache" data-isabs="false">
+      <a id="MutableLRUCache:MutableLRUCache"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="MutableLRUCache$.html"><span class="name">MutableLRUCache</span></a><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Creates a mutable LRU cache based on an insertion-order
+java.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.MutableMapCache" data-isabs="false">
+      <a id="MutableMapCache:MutableMapCache"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="MutableMapCache$.html"><span class="name">MutableMapCache</span></a><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.cache.TTLCache" data-isabs="false">
+      <a id="TTLCache:TTLCache"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="TTLCache$.html"><span class="name">TTLCache</span></a><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Immutable implementation of a *T*ime *T*o *L*ive cache.</p>
+    </li></ol>
+            </div>
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        
+        </div>
+
+      </div>
+
+      <div id="tooltip"></div>
+
+      <div id="footer">  </div>
+
+
+    </body>
+      </html>

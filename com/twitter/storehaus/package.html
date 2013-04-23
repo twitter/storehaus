@@ -60,6 +60,31 @@
       </span>
       </h4>
       <p class="comment cmt">Abstract extension of the defined trait to minimize trait bloat.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.CacheStore" data-isabs="false">
+      <a id="CacheStore:CacheStore[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="CacheStore.html"><span class="name">CacheStore</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends Store[K, V]</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Generates a <a name="com.twitter.storehaus.Store" class="extype" href="Store.html">Store</a> backed by a
+<a name="com.twitter.storehaus.cache.MutableCache" class="extype" href="cache/MutableCache.html">MutableCache</a>.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.CachedReadableStore" data-isabs="false">
+      <a id="CachedReadableStore:CachedReadableStore[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="CachedReadableStore.html"><span class="name">CachedReadableStore</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends ReadableStore[K, V]</span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="com.twitter.storehaus.ComposedStore" data-isabs="false">
       <a id="ComposedStore:ComposedStore[K, V, V2, V3]"></a>
       <h4 class="signature">
@@ -113,7 +138,8 @@ safe for that.</p>
         <a href="EnrichedReadableStore.html"><span class="name">EnrichedReadableStore</span></a><span class="tparams">[<span name="K">-K</span>, <span name="V">+V</span>]</span><span class="result"> extends AnyRef</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">Enrichment on the <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a>
+trait.</p>
     </li><li visbl="pub" name="com.twitter.storehaus.EnrichedStore" data-isabs="false">
       <a id="EnrichedStore:EnrichedStore[K, V]"></a>
       <h4 class="signature">
@@ -125,8 +151,7 @@ safe for that.</p>
         <a href="EnrichedStore.html"><span class="name">EnrichedStore</span></a><span class="tparams">[<span name="K">-K</span>, <span name="V">V</span>]</span><span class="result"> extends AnyRef</span>
       </span>
       </h4>
-      <p class="comment cmt">Enrichment class to add method to Store[K, V]
-TODO in scala 2.</p>
+      <p class="comment cmt">Enrichment on the Store[K, V] trait.</p>
     </li><li visbl="pub" name="com.twitter.storehaus.FutureCollector" data-isabs="true">
       <a id="FutureCollector:FutureCollector[T]"></a>
       <h4 class="signature">
@@ -165,18 +190,6 @@ TODO in scala 2.</p>
       <p class="comment cmt">A Store instance which is backed by a Java Map (by default JHashMap)
 Obviously, there is no optimization of the multiGet/multiPut methods on this
 store and these are just implemented using the default implementation from Store.</p>
-    </li><li visbl="pub" name="com.twitter.storehaus.LRUStore" data-isabs="false">
-      <a id="LRUStore:LRUStore[K, V]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">class</span>
-      </span>
-      <span class="symbol">
-        <a href="LRUStore.html"><span class="name">LRUStore</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends JMapStore[K, V]</span>
-      </span>
-      </h4>
-      <p class="comment cmt"></p>
     </li><li visbl="pub" name="com.twitter.storehaus.MapStore" data-isabs="false">
       <a id="MapStore:MapStore[K, V]"></a>
       <h4 class="signature">
@@ -251,6 +264,45 @@ Here you see the tri-state logic:</p>
       </span>
       </h4>
       <p class="comment cmt">Replicates writes to all stores, and takes the first successful read.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.RetryingReadableStore" data-isabs="false">
+      <a id="RetryingReadableStore:RetryingReadableStore[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="RetryingReadableStore.html"><span class="name">RetryingReadableStore</span></a><span class="tparams">[<span name="K">-K</span>, <span name="V">+V</span>]</span><span class="result"> extends ReadableStore[K, V]</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Use the ReadableStore abstraction when each read from the backend store involves
+a time-taking task.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.RetryingStore" data-isabs="false">
+      <a id="RetryingStore:RetryingStore[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="RetryingStore.html"><span class="name">RetryingStore</span></a><span class="tparams">[<span name="K">-K</span>, <span name="V">V</span>]</span><span class="result"> extends RetryingReadableStore[K, V] with Store[K, V]</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Delegate put to the underlying store and allow retriable semantics for get.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.SearchingReadableStore" data-isabs="false">
+      <a id="SearchingReadableStore:SearchingReadableStore[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="SearchingReadableStore.html"><span class="name">SearchingReadableStore</span></a><span class="tparams">[<span name="K">-K</span>, <span name="V">+V</span>]</span><span class="result"> extends ReadableStore[K, V]</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Returns a ReadableStore that attempts reads out of the supplied
+Seq[ReadableStore] in order and returns the first non-exceptional
+value that satisfies the supplied predicate.</p>
     </li><li visbl="pub" name="com.twitter.storehaus.ShardedReadableStore" data-isabs="false">
       <a id="ShardedReadableStore:ShardedReadableStore[K1, K2, V, S]"></a>
       <h4 class="signature">
@@ -443,6 +495,18 @@ These should arguably exist in util-core.</p>
       </span>
       </h4>
       
+    </li><li visbl="pub" name="com.twitter.storehaus.cache" data-isabs="false">
+      <a id="cache:cache"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="cache/package.html"><span class="name">cache</span></a>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="com.twitter.storehaus.memcache" data-isabs="false">
       <a id="memcache:memcache"></a>
       <h4 class="signature">
@@ -452,6 +516,30 @@ These should arguably exist in util-core.</p>
       </span>
       <span class="symbol">
         <a href="memcache/package.html"><span class="name">memcache</span></a>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.mysql" data-isabs="false">
+      <a id="mysql:mysql"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="mysql/package.html"><span class="name">mysql</span></a>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.redis" data-isabs="false">
+      <a id="redis:redis"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="redis/package.html"><span class="name">redis</span></a>
       </span>
       </h4>
       

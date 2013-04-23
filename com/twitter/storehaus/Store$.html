@@ -29,7 +29,7 @@
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>Factory methods and some combinators on Stores</p></div><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.2.0/storehaus-core/src/main/scala/com/twitter/storehaus/Store.scala">Store.scala</a></dd></dl><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>Factory methods and some combinators on Stores</p></div><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.3.0/storehaus-core/src/main/scala/com/twitter/storehaus/Store.scala">Store.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent">AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
@@ -219,6 +219,37 @@ and returns the first values that are not exceptions.</p><div class="fullcomment
 and returns the first values that are not exceptions. Writes are
 routed to every store in the supplied sequence.
 </p></div></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.Store#firstPresent" data-isabs="false">
+      <a id="firstPresent[K, V](Seq[Store[K, V]]):Store[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">firstPresent</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="params">(<span name="stores">stores: Seq[<a name="com.twitter.storehaus.Store" class="extype" href="Store.html">Store</a>[K, V]]</span>)</span><span class="result">: <a name="com.twitter.storehaus.Store" class="extype" href="Store.html">Store</a>[K, V]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Returns a new ReadableStore[K, V] that queries all of the stores
+and returns the first values that are not exceptions and that are
+present (ie, not equivalent to Future.</p><div class="fullcomment"><div class="comment cmt"><p>Returns a new ReadableStore[K, V] that queries all of the stores
+and returns the first values that are not exceptions and that are
+present (ie, not equivalent to Future.None). Writes are routed to
+every store in the supplied sequence.
+</p></div></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.Store#fromCache" data-isabs="false">
+      <a id="fromCache[K, V](MutableCache[K, V]):CacheStore[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">fromCache</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="params">(<span name="cache">cache: <a name="com.twitter.storehaus.cache.MutableCache" class="extype" href="cache/MutableCache.html">MutableCache</a>[K, V]</span>)</span><span class="result">: <a name="com.twitter.storehaus.CacheStore" class="extype" href="CacheStore.html">CacheStore</a>[K, V]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Generates a store from the supplied
+<a name="com.twitter.storehaus.cache.MutableCache" class="extype" href="cache/MutableCache.html">MutableCache</a></p>
     </li><li visbl="pub" name="com.twitter.storehaus.Store#fromJMap" data-isabs="false">
       <a id="fromJMap[K, V](Map[K, Option[V]]):Store[K, V]"></a>
       <h4 class="signature">
@@ -267,20 +298,6 @@ routed to every store in the supplied sequence.
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.Store#lru" data-isabs="false">
-      <a id="lru[K, V](Int):Store[K, V]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">lru</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="params">(<span name="maxSize">maxSize: <span name="scala.Int" class="extype">Int</span> = <span class="symbol">1000</span></span>)</span><span class="result">: <a name="com.twitter.storehaus.Store" class="extype" href="Store.html">Store</a>[K, V]</span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">Create an LRUStore which has a given maximum capacity.</p><div class="fullcomment"><div class="comment cmt"><p>Create an LRUStore which has a given maximum capacity. Note this will just
-silently evict members that have not been used lately.
-</p></div></div>
     </li><li visbl="pub" name="scala.AnyRef#ne" data-isabs="false">
       <a id="ne(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -317,6 +334,24 @@ silently evict members that have not been used lately.
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.Store#select" data-isabs="false">
+      <a id="select[K, V](Seq[Store[K, V]])((Option[V]) ⇒ Boolean)(FutureCollector[Unit]):Store[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">select</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="params">(<span name="stores">stores: Seq[<a name="com.twitter.storehaus.Store" class="extype" href="Store.html">Store</a>[K, V]]</span>)</span><span class="params">(<span name="pred">pred: (<span name="scala.Option" class="extype">Option</span>[V]) ⇒ <span name="scala.Boolean" class="extype">Boolean</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="collect">collect: <a name="com.twitter.storehaus.FutureCollector" class="extype" href="FutureCollector.html">FutureCollector</a>[<span name="scala.Unit" class="extype">Unit</span>]</span>)</span><span class="result">: <a name="com.twitter.storehaus.Store" class="extype" href="Store.html">Store</a>[K, V]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Returns a new Store[K, V] that queries all of the stores and
+returns the first values that are not exceptions and that pass
+the supplied predicate.</p><div class="fullcomment"><div class="comment cmt"><p>Returns a new Store[K, V] that queries all of the stores and
+returns the first values that are not exceptions and that pass
+the supplied predicate. Writes are routed to every store in the
+supplied sequence.
+</p></div></div>
     </li><li visbl="pub" name="scala.AnyRef#synchronized" data-isabs="false">
       <a id="synchronized[T0](⇒ T0):T0"></a>
       <h4 class="signature">
@@ -402,6 +437,24 @@ minimum number of multiGets/multiPuts on the underlying store
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.Store#withRetry" data-isabs="false">
+      <a id="withRetry[K, V](Store[K, V],Iterable[Duration])((Option[V]) ⇒ Boolean)(Timer):Store[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">withRetry</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="params">(<span name="store">store: <a name="com.twitter.storehaus.Store" class="extype" href="Store.html">Store</a>[K, V]</span>, <span name="backoffs">backoffs: Iterable[<span name="com.twitter.util.Duration" class="extype">Duration</span>]</span>)</span><span class="params">(<span name="pred">pred: (<span name="scala.Option" class="extype">Option</span>[V]) ⇒ <span name="scala.Boolean" class="extype">Boolean</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="timer">timer: <span name="com.twitter.util.Timer" class="extype">Timer</span></span>)</span><span class="result">: <a name="com.twitter.storehaus.Store" class="extype" href="Store.html">Store</a>[K, V]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Returns a Store[K, V] that attempts reads from a store multiple
+times until a predicate is met.</p><div class="fullcomment"><div class="comment cmt"><p>Returns a Store[K, V] that attempts reads from a store multiple
+times until a predicate is met. The iterable of backoffs defines
+the time interval between two read attempts. If there is not
+read result satisfying the given predicate after all read
+attempts, a NotFoundException will be thrown.
+</p></div></div>
     </li></ol>
             </div>
 

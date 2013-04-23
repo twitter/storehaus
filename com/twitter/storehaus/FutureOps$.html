@@ -31,7 +31,7 @@
       
       <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>Some combinators on Futures or Seqs of Futures that are used internally
 These should arguably exist in util-core.
-</p></div><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.2.0/storehaus-core/src/main/scala/com/twitter/storehaus/FutureOps.scala">FutureOps.scala</a></dd></dl><div class="toggleContainer block">
+</p></div><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.3.0/storehaus-core/src/main/scala/com/twitter/storehaus/FutureOps.scala">FutureOps.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent">AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
@@ -203,6 +203,21 @@ These should arguably exist in util-core.
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.FutureOps#find" data-isabs="false">
+      <a id="find[T](Stream[Future[T]])((T) ⇒ Boolean):Future[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">find</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span name="futures">futures: Stream[<span name="com.twitter.util.Future" class="extype">Future</span>[T]]</span>)</span><span class="params">(<span name="pred">pred: (T) ⇒ <span name="scala.Boolean" class="extype">Boolean</span></span>)</span><span class="result">: <span name="com.twitter.util.Future" class="extype">Future</span>[T]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Given a Future, a lazy reference to a sequence of remaining
+futures and a predicate on T, tries each future in order and
+returns the first Future to both succeed and pass the supplied
+predicate.</p>
     </li><li visbl="pub" name="com.twitter.storehaus.FutureOps#flatMapValue" data-isabs="false">
       <a id="flatMapValue[V, V2](Future[Option[V]])((V) ⇒ Future[V2]):Future[Option[V2]]"></a>
       <h4 class="signature">
@@ -337,17 +352,21 @@ Useful for putting finagle memcache into the same API as storehaus.</p>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
     </li><li visbl="pub" name="com.twitter.storehaus.FutureOps#selectFirstSuccessfulTrial" data-isabs="false">
-      <a id="selectFirstSuccessfulTrial[T](Seq[Future[T]]):Future[T]"></a>
+      <a id="selectFirstSuccessfulTrial[T](Seq[Future[T]])((T) ⇒ Boolean):Future[T]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">selectFirstSuccessfulTrial</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span name="futures">futures: Seq[<span name="com.twitter.util.Future" class="extype">Future</span>[T]]</span>)</span><span class="result">: <span name="com.twitter.util.Future" class="extype">Future</span>[T]</span>
+        <span class="name">selectFirstSuccessfulTrial</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span name="futures">futures: Seq[<span name="com.twitter.util.Future" class="extype">Future</span>[T]]</span>)</span><span class="params">(<span name="pred">pred: (T) ⇒ <span name="scala.Boolean" class="extype">Boolean</span></span>)</span><span class="result">: <span name="com.twitter.util.Future" class="extype">Future</span>[T]</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">Given a Seq of equivalent Futures, return the first non-exceptional, unless all are exceptions</p>
+      <p class="shortcomment cmt">Given a Seq of equivalent Futures, return the first
+non-exceptional that passes the supplied predicate.</p><div class="fullcomment"><div class="comment cmt"><p>Given a Seq of equivalent Futures, return the first
+non-exceptional that passes the supplied predicate. If all
+futures fail to succeed or pass the predicate, the final future
+to complete will be returned.</p></div></div>
     </li><li visbl="pub" name="scala.AnyRef#synchronized" data-isabs="false">
       <a id="synchronized[T0](⇒ T0):T0"></a>
       <h4 class="signature">

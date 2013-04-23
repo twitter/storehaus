@@ -29,7 +29,14 @@
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.2.0/storehaus-core/src/main/scala/com/twitter/storehaus/EnrichedReadableStore.scala">EnrichedReadableStore.scala</a></dd></dl><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>Enrichment on the <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a>
+trait. Storehaus uses the enrichment pattern instead of adding
+these methods directly to the trait because many of the functions
+(mapValues, for example) have different meanings for
+ReadableStore, Store and MergeableStore.</p><pre>
+ <span class="kw">import</span> ReadableStore.enrich 
+</pre><p>to get access to these methods.</p><p>TODO: in scala 2.10 this should be a value class
+</p></div><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.3.0/storehaus-core/src/main/scala/com/twitter/storehaus/EnrichedReadableStore.scala">EnrichedReadableStore.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent">AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
@@ -421,6 +428,30 @@ throws, it will be caught in the Future.
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.EnrichedReadableStore#withCache" data-isabs="false">
+      <a id="withCache[K1&lt;:K, V1&gt;:V](Cache[K1, Future[Option[V1]]]):ReadableStore[K1, V1]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">withCache</span><span class="tparams">[<span name="K1">K1 &lt;: K</span>, <span name="V1">V1 &gt;: V</span>]</span><span class="params">(<span name="cache">cache: <a name="com.twitter.storehaus.cache.Cache" class="extype" href="cache/Cache.html">Cache</a>[K1, <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Option" class="extype">Option</span>[V1]]]</span>)</span><span class="result">: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a>[K1, V1]</span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.EnrichedReadableStore#withCache" data-isabs="false">
+      <a id="withCache[K1&lt;:K, V1&gt;:V](MutableCache[K1, Future[Option[V1]]]):ReadableStore[K1, V1]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">withCache</span><span class="tparams">[<span name="K1">K1 &lt;: K</span>, <span name="V1">V1 &gt;: V</span>]</span><span class="params">(<span name="cache">cache: <a name="com.twitter.storehaus.cache.MutableCache" class="extype" href="cache/MutableCache.html">MutableCache</a>[K1, <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Option" class="extype">Option</span>[V1]]]</span>)</span><span class="result">: <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a>[K1, V1]</span>
+      </span>
+      </h4>
+      
     </li></ol>
             </div>
 

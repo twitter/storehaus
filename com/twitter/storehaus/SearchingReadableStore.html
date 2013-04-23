@@ -2,7 +2,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html>
         <head>
-          <title>com.twitter.storehaus.LRUStore</title>
+          <title>com.twitter.storehaus.SearchingReadableStore</title>
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
       <link type="text/css" media="screen" rel="stylesheet" href="../../../lib/template.css" />
@@ -16,7 +16,7 @@
       <div id="definition">
         <img src="../../../lib/class_big.png" />
         <p id="owner"><a name="com" class="extype" href="../../package.html">com</a>.<a name="com.twitter" class="extype" href="../package.html">twitter</a>.<a name="com.twitter.storehaus" class="extype" href="package.html">storehaus</a></p>
-        <h1>LRUStore</h1>
+        <h1>SearchingReadableStore</h1>
       </div>
 
       <h4 class="signature" id="signature">
@@ -25,13 +25,19 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">LRUStore</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends <a name="com.twitter.storehaus.JMapStore" class="extype" href="JMapStore.html">JMapStore</a>[K, V]</span>
+        <span class="name">SearchingReadableStore</span><span class="tparams">[<span name="K">-K</span>, <span name="V">+V</span>]</span><span class="result"> extends <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a>[K, V]</span>
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><div class="comment cmt"></div><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.2.0/storehaus-core/src/main/scala/com/twitter/storehaus/LRUStore.scala">LRUStore.scala</a></dd></dl><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>Returns a ReadableStore that attempts reads out of the supplied
+Seq[ReadableStore] in order and returns the first non-exceptional
+value that satisfies the supplied predicate.</p><p>multiGet attempts a full multiGet of the first store, then follows
+up on missing or failed keys with individual gets to the
+underlying stores (as failures for each key can happen at
+different times).
+</p></div><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.3.0/storehaus-core/src/main/scala/com/twitter/storehaus/SearchingReadableStore.scala">SearchingReadableStore.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><a name="com.twitter.storehaus.JMapStore" class="extype" href="JMapStore.html">JMapStore</a>[K, V], <a name="com.twitter.storehaus.Store" class="extype" href="Store.html">Store</a>[K, V], <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a>[K, V], <span name="java.io.Closeable" class="extype">Closeable</span>, <span name="java.lang.AutoCloseable" class="extype">AutoCloseable</span>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
+          <div class="superTypes hiddenContent"><a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a>[K, V], <span name="java.io.Closeable" class="extype">Closeable</span>, <span name="java.lang.AutoCloseable" class="extype">AutoCloseable</span>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
     
 
@@ -45,7 +51,7 @@
               <span class="filtertype">Inherited</span>
               <ol><li class="hideall out"><span>Hide All</span></li>
               <li class="showall in"><span>Show all</span></li></ol>
-              <ol id="linearization"><li name="com.twitter.storehaus.LRUStore" class="in"><span>LRUStore</span></li><li name="com.twitter.storehaus.JMapStore" class="in"><span>JMapStore</span></li><li name="com.twitter.storehaus.Store" class="in"><span>Store</span></li><li name="com.twitter.storehaus.ReadableStore" class="in"><span>ReadableStore</span></li><li name="java.io.Closeable" class="in"><span>Closeable</span></li><li name="java.lang.AutoCloseable" class="in"><span>AutoCloseable</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
+              <ol id="linearization"><li name="com.twitter.storehaus.SearchingReadableStore" class="in"><span>SearchingReadableStore</span></li><li name="com.twitter.storehaus.ReadableStore" class="in"><span>ReadableStore</span></li><li name="java.io.Closeable" class="in"><span>Closeable</span></li><li name="java.lang.AutoCloseable" class="in"><span>AutoCloseable</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
             </div>
         <div id="visbl">
             <span class="filtertype">Visibility</span>
@@ -57,15 +63,15 @@
         <div id="allMembers">
         <div class="members" id="constructors">
               <h3>Instance Constructors</h3>
-              <ol><li visbl="pub" name="com.twitter.storehaus.LRUStore#this" data-isabs="false">
-      <a id="this:LRUStore[K, V]"></a>
+              <ol><li visbl="pub" name="com.twitter.storehaus.SearchingReadableStore#this" data-isabs="false">
+      <a id="this:SearchingReadableStore[K, V]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">LRUStore</span><span class="params">(<span name="maxSize">maxSize: <span name="scala.Int" class="extype">Int</span></span>)</span>
+        <span class="name">SearchingReadableStore</span><span class="params">(<span name="stores">stores: Seq[<a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a>[K, V]]</span>)</span><span class="params">(<span name="pred">pred: (<span name="scala.Option" class="extype">Option</span>[V]) ⇒ <span name="scala.Boolean" class="extype">Boolean</span></span>)</span>
       </span>
       </h4>
       
@@ -218,7 +224,7 @@ It is undefined what happens on get/multiGet after close
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.JMapStore#get" data-isabs="false">
+    </li><li visbl="pub" name="com.twitter.storehaus.SearchingReadableStore#get" data-isabs="false">
       <a id="get(K):Future[Option[V]]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -231,7 +237,7 @@ It is undefined what happens on get/multiGet after close
       </h4>
       <p class="shortcomment cmt">get a single key from the store.</p><div class="fullcomment"><div class="comment cmt"><p>get a single key from the store.
 Prefer multiGet if you are getting more than one key at a time
-</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.JMapStore" class="extype" href="JMapStore.html">JMapStore</a> → <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a></dd></dl></div>
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.SearchingReadableStore" class="extype" href="">SearchingReadableStore</a> → <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#getClass" data-isabs="false">
       <a id="getClass():java.lang.Class[_]"></a>
       <h4 class="signature">
@@ -268,19 +274,7 @@ Prefer multiGet if you are getting more than one key at a time
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li visbl="prt" name="com.twitter.storehaus.LRUStore#jstore" data-isabs="false">
-      <a id="jstore:LinkedHashMap[K, Option[V]]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">jstore</span><span class="result">: <span name="java.util.LinkedHashMap" class="extype">LinkedHashMap</span>[K, <span name="scala.Option" class="extype">Option</span>[V]]</span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.LRUStore" class="extype" href="">LRUStore</a> → <a name="com.twitter.storehaus.JMapStore" class="extype" href="JMapStore.html">JMapStore</a></dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.ReadableStore#multiGet" data-isabs="false">
+    </li><li visbl="pub" name="com.twitter.storehaus.SearchingReadableStore#multiGet" data-isabs="false">
       <a id="multiGet[K1&lt;:K](Set[K1]):Map[K1, Future[Option[V]]]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -295,19 +289,7 @@ Prefer multiGet if you are getting more than one key at a time
 Important: all keys in the input set are in the resulting map. If the store
 fails to return a value for a given key, that should be represented by a
 Future.exception.
-</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a></dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.Store#multiPut" data-isabs="false">
-      <a id="multiPut[K1&lt;:K](Map[K1, Option[V]]):Map[K1, Future[Unit]]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">multiPut</span><span class="tparams">[<span name="K1">K1 &lt;: K</span>]</span><span class="params">(<span name="kvs">kvs: Map[K1, <span name="scala.Option" class="extype">Option</span>[V]]</span>)</span><span class="result">: Map[K1, <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Unit" class="extype">Unit</span>]]</span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">Replace a set of keys at one time</p><div class="fullcomment"><div class="comment cmt"><p>Replace a set of keys at one time</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.Store" class="extype" href="Store.html">Store</a></dd></dl></div>
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.SearchingReadableStore" class="extype" href="">SearchingReadableStore</a> → <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#ne" data-isabs="false">
       <a id="ne(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -344,34 +326,6 @@ Future.exception.
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.JMapStore#put" data-isabs="false">
-      <a id="put((K, Option[V])):Future[Unit]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">put</span><span class="params">(<span name="kv">kv: (K, <span name="scala.Option" class="extype">Option</span>[V])</span>)</span><span class="result">: <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Unit" class="extype">Unit</span>]</span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">replace a value
-Delete is the same as put((k,None))
-</p><div class="fullcomment"><div class="comment cmt"><p>replace a value
-Delete is the same as put((k,None))
-</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.JMapStore" class="extype" href="JMapStore.html">JMapStore</a> → <a name="com.twitter.storehaus.Store" class="extype" href="Store.html">Store</a></dd></dl></div>
-    </li><li visbl="prt" name="com.twitter.storehaus.JMapStore#storeGet" data-isabs="false">
-      <a id="storeGet(K):Option[V]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">storeGet</span><span class="params">(<span name="k">k: K</span>)</span><span class="result">: <span name="scala.Option" class="extype">Option</span>[V]</span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd><dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.JMapStore" class="extype" href="JMapStore.html">JMapStore</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#synchronized" data-isabs="false">
       <a id="synchronized[T0](⇒ T0):T0"></a>
       <h4 class="signature">
@@ -448,11 +402,7 @@ Delete is the same as put((k,None))
         </div>
 
         <div id="inheritedMembers">
-        <div name="com.twitter.storehaus.JMapStore" class="parent">
-              <h3>Inherited from <a name="com.twitter.storehaus.JMapStore" class="extype" href="JMapStore.html">JMapStore</a>[K, V]</h3>
-            </div><div name="com.twitter.storehaus.Store" class="parent">
-              <h3>Inherited from <a name="com.twitter.storehaus.Store" class="extype" href="Store.html">Store</a>[K, V]</h3>
-            </div><div name="com.twitter.storehaus.ReadableStore" class="parent">
+        <div name="com.twitter.storehaus.ReadableStore" class="parent">
               <h3>Inherited from <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a>[K, V]</h3>
             </div><div name="java.io.Closeable" class="parent">
               <h3>Inherited from <span name="java.io.Closeable" class="extype">Closeable</span></h3>

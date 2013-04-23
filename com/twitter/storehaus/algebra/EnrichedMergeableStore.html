@@ -29,10 +29,14 @@
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>Enrichment class to add methods to MergeableStore</p><pre>
+      <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>Enrichment on the <a name="com.twitter.storehaus.algebra.MergeableStore" class="extype" href="MergeableStore.html">MergeableStore</a>
+trait. Storehaus uses the enrichment pattern instead of adding
+these methods directly to the trait because many of the functions
+(mapValues, for example) have different meanings for
+ReadableStore, Store and MergeableStore.</p><pre>
  <span class="kw">import</span> MergeableStore.enrich 
-</pre><p>to get access to these methods
-</p></div><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.2.0/storehaus-algebra/src/main/scala/com/twitter/storehaus/algebra/EnrichedMergeableStore.scala">EnrichedMergeableStore.scala</a></dd></dl><div class="toggleContainer block">
+</pre><p>to get access to these methods.</p><p>TODO: in scala 2.10 this should be a value class
+</p></div><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.3.0/storehaus-algebra/src/main/scala/com/twitter/storehaus/algebra/EnrichedMergeableStore.scala">EnrichedMergeableStore.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent">AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>

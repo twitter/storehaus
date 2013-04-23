@@ -32,7 +32,7 @@
       <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>A store that is made from looking up values in the first store, then using that as the key in the second
 When used with com.twitter.storehaus.ConvertedStore you can do some powerful sequential processing
 of stores
-</p></div><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.2.0/storehaus-core/src/main/scala/com/twitter/storehaus/ComposedStore.scala">ComposedStore.scala</a></dd></dl><div class="toggleContainer block">
+</p></div><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.3.0/storehaus-core/src/main/scala/com/twitter/storehaus/ComposedStore.scala">ComposedStore.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><a name="com.twitter.storehaus.AbstractReadableStore" class="extype" href="AbstractReadableStore.html">AbstractReadableStore</a>[K, V2], <a name="com.twitter.storehaus.ReadableStore" class="extype" href="ReadableStore.html">ReadableStore</a>[K, V2], <span name="java.io.Closeable" class="extype">Closeable</span>, <span name="java.lang.AutoCloseable" class="extype">AutoCloseable</span>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
@@ -279,7 +279,7 @@ Prefer multiGet if you are getting more than one key at a time
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">multiGet</span><span class="tparams">[<span name="K1">K1 &lt;: K</span>]</span><span class="params">(<span name="ks">ks: Set[K1]</span>)</span><span class="result">: <span name="scala.collection.immutable.Map" class="extype">Map</span>[K1, <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Option" class="extype">Option</span>[V2]]]</span>
+        <span class="name">multiGet</span><span class="tparams">[<span name="K1">K1 &lt;: K</span>]</span><span class="params">(<span name="ks">ks: Set[K1]</span>)</span><span class="result">: Map[K1, <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Option" class="extype">Option</span>[V2]]]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Get a set of keys from the store.</p><div class="fullcomment"><div class="comment cmt"><p>Get a set of keys from the store.
