@@ -19,6 +19,7 @@ package com.twitter.storehaus.mysql
 import java.util.logging.Level
 
 import com.twitter.finagle.exp.mysql.Client
+import com.twitter.util.Await
 
 import org.jboss.netty.buffer.ChannelBuffer
 import org.jboss.netty.buffer.ChannelBuffers
@@ -43,11 +44,11 @@ object MySQLStoreProperties extends Properties("MySQLStore") {
 
   def put(s: MySQLStore, pairs: List[(String, Option[String])]) {
     pairs.foreach { case (k, v) =>
-      s.put((k, v match {
+      Await.result(s.put((k, v match {
           case Some(value) => Some(ChannelBuffers.copiedBuffer(value, UTF_8))
           case None => None
         }
-      )).get
+      )))
     }
   }
 
@@ -55,7 +56,7 @@ object MySQLStoreProperties extends Properties("MySQLStore") {
     forAll(validPairs) { (examples: List[(String, Option[String])]) =>
       put(store, examples)
       examples.toMap.forall { case (k, optV) =>
-        val foundOptV = store.get(k).get
+        val foundOptV = Await.result(store.get(k))
         compareValues(k, optV, foundOptV)
       }
     }
@@ -67,7 +68,7 @@ object MySQLStoreProperties extends Properties("MySQLStore") {
       val result = store.multiGet(data.keySet)
       data.forall { case (k, optV) =>
         // result.get(k) returns Option[Future[Option[ChannelBuffer]]]
-        val foundOptV = result.get(k) match { case Some(v) => result.get(k).get.get ; case None => None }
+        val foundOptV = result.get(k) match { case Some(v) => Await.result(result.get(k).get) ; case None => None }
         compareValues(k, optV, foundOptV)
       }
     }
@@ -96,21 +97,21 @@ object MySQLStoreProperties extends Properties("MySQLStore") {
     withStore(putAndGetStoreTest(_), "text", "blob")
 
   property("MySQLStore text->text multiget") =
-    withStore(putAndMultiGetStoreTest(_), "text", "text")
+    withStore(putAndMultiGetStoreTest(_), "text", "text", true)
 
   property("MySQLStore blob->blob mutiget") =
-    withStore(putAndMultiGetStoreTest(_), "blob", "blob")
+    withStore(putAndMultiGetStoreTest(_), "blob", "blob", true)
 
   property("MySQLStore text->blob multiget") =
-    withStore(putAndMultiGetStoreTest(_), "text", "blob")
+    withStore(putAndMultiGetStoreTest(_), "text", "blob", true)
 
-  private def withStore[T](f: MySQLStore => T, kColType: String, vColType: String): T = {
-    val client = Client("localhost:3306", "storehaususer", "test1234", "storehaus_test")
+  private def withStore[T](f: MySQLStore => T, kColType: String, vColType: String, multiGet: Boolean = false): T = {
+    val client = Client("localhost:3306", "storehaususer", "test1234", "storehaus_test", Level.WARNING)
     // these should match mysql setup used in .travis.yml
 
-    val tableName = "storehaus-mysql-"+kColType+"-"+vColType
+    val tableName = "storehaus-mysql-"+kColType+"-"+vColType + ( if (multiGet) { "-multiget" } else { "" } )
     val schema = "CREATE TEMPORARY TABLE IF NOT EXISTS `"+tableName+"` (`key` "+kColType+" DEFAULT NULL, `value` "+vColType+" DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8;"
-    client.query(schema).get
+    Await.result(client.query(schema))
 
     val store = MySQLStore(client, tableName, "key", "value")
     val result = f(store)
