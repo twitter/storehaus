@@ -106,7 +106,7 @@ object MySQLStoreProperties extends Properties("MySQLStore") {
     withStore(putAndMultiGetStoreTest(_), "text", "blob", true)
 
   private def withStore[T](f: MySQLStore => T, kColType: String, vColType: String, multiGet: Boolean = false): T = {
-    val client = Client("localhost:3306", "storehaususer", "test1234", "storehaus_test")
+    val client = Client("localhost:3306", "storehaususer", "test1234", "storehaus_test", Level.WARNING)
     // these should match mysql setup used in .travis.yml
 
     val tableName = "storehaus-mysql-"+kColType+"-"+vColType + ( if (multiGet) { "-multiget" } else { "" } )
