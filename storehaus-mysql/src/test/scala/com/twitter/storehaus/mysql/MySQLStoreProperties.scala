@@ -42,6 +42,29 @@ object MySQLStoreProperties extends Properties("MySQLStore") {
     */
   }
 
+  val validIntPairs = Arbitrary.arbitrary[List[(Int, Option[Int])]] suchThat {
+    case Nil => false
+    case _ => true
+  }
+
+  val validLongPairs = Arbitrary.arbitrary[List[(Long, Option[Long])]] suchThat {
+    case Nil => false
+    case _ => true
+  }
+
+  val validShortPairs = Arbitrary.arbitrary[List[(Short, Option[Short])]] suchThat {
+    case Nil => false
+    case _ => true
+  }
+
+  def getValidPairs(datatype: String) = datatype match {
+      case "string" => validPairs
+      case "int" => validIntPairs
+      case "long" => validLongPairs
+      case "short" => validShortPairs
+      case _ => validPairs
+    }
+
   def put(s: MySQLStore, pairs: List[(String, Option[String])]) {
     pairs.foreach { case (k, v) =>
       Await.result(s.put((k, v match {
@@ -52,19 +75,31 @@ object MySQLStoreProperties extends Properties("MySQLStore") {
     }
   }
 
-  def putAndGetStoreTest(store: MySQLStore) =
-    forAll(validPairs) { (examples: List[(String, Option[String])]) =>
-      put(store, examples)
-      examples.toMap.forall { case (k, optV) =>
+  def putAndGetStoreTest(store: MySQLStore, datatype: String = "string") =
+    forAll(getValidPairs(datatype)) { (examples: List[(Any, Option[Any])]) =>
+      val stringified = examples.map { case (k, v) =>
+          (k.toString, v match {
+            case Some(d) => Some(d.toString)
+            case None => None
+          })
+        }
+      put(store, stringified)
+      stringified.toMap.forall { case (k, optV) =>
         val foundOptV = Await.result(store.get(k))
         compareValues(k, optV, foundOptV)
       }
     }
 
-  def putAndMultiGetStoreTest(store: MySQLStore) =
-    forAll(validPairs) { (examples: List[(String, Option[String])]) =>
-      put(store, examples)
-      val data = examples.toMap
+  def putAndMultiGetStoreTest(store: MySQLStore, datatype: String = "string") =
+    forAll(getValidPairs(datatype)) { (examples: List[(Any, Option[Any])]) =>
+      val stringified = examples.map { case (k, v) =>
+          (k.toString, v match {
+            case Some(d) => Some(d.toString)
+            case None => None
+          })
+        }
+      put(store, stringified)
+      val data = stringified.toMap
       val result = store.multiGet(data.keySet)
       data.forall { case (k, optV) =>
         // result.get(k) returns Option[Future[Option[ChannelBuffer]]]
@@ -99,11 +134,29 @@ object MySQLStoreProperties extends Properties("MySQLStore") {
   property("MySQLStore text->text multiget") =
     withStore(putAndMultiGetStoreTest(_), "text", "text", true)
 
-  property("MySQLStore blob->blob mutiget") =
+  property("MySQLStore blob->blob multiget") =
     withStore(putAndMultiGetStoreTest(_), "blob", "blob", true)
 
   property("MySQLStore text->blob multiget") =
     withStore(putAndMultiGetStoreTest(_), "text", "blob", true)
+
+  property("MySQLStore int->int") =
+    withStore(putAndGetStoreTest(_, "int"), "int", "int")
+
+  property("MySQLStore int->int multiget") =
+    withStore(putAndMultiGetStoreTest(_, "int"), "int", "int", true)
+
+  property("MySQLStore bigint->bigint") =
+    withStore(putAndGetStoreTest(_, "long"), "bigint", "bigint")
+
+  property("MySQLStore bigint->bigint multiget") =
+    withStore(putAndMultiGetStoreTest(_, "long"), "bigint", "bigint", true)
+
+  property("MySQLStore smallint->smallint") =
+    withStore(putAndGetStoreTest(_, "short"), "smallint", "smallint")
+
+  property("MySQLStore smallint->smallint multiget") =
+    withStore(putAndMultiGetStoreTest(_, "short"), "smallint", "smallint", true)
 
   private def withStore[T](f: MySQLStore => T, kColType: String, vColType: String, multiGet: Boolean = false): T = {
     val client = Client("localhost:3306", "storehaususer", "test1234", "storehaus_test", Level.WARNING)
