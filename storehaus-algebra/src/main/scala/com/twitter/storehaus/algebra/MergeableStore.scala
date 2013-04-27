@@ -18,7 +18,7 @@ package com.twitter.storehaus.algebra
 
 import com.twitter.algebird.{ Semigroup, Monoid, StatefulSummer }
 import com.twitter.bijection.ImplicitBijection
-import com.twitter.storehaus.{ FutureCollector, Store }
+import com.twitter.storehaus.{ CollectionOps, FutureCollector, Store }
 import com.twitter.util.Future
 
 /** Main trait to represent stores that are used for aggregation */
