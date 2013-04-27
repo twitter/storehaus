@@ -46,16 +46,14 @@ object MergeableStore {
     val keySet = kvs.keySet
     val collected: Future[Map[K, Future[Unit]]] =
       collect {
-        store.multiGet(keySet).map {
+        store.multiGet(keySet).view.map {
           case (k, futureOptV) =>
             futureOptV.map { v =>
               k -> Semigroup.plus(v, kvs.get(k)).flatMap { Monoid.nonZeroOption(_) }
             }
         }.toSeq
       }.map { pairs: Seq[(K, Option[V])] => store.multiPut(pairs.toMap) }
-    keySet.map { k =>
-      k -> collected.flatMap { _.apply(k) }
-    }.toMap
+    CollectionOps.zipWith(keySet) { k => collected.flatMap { _.apply(k) } }
   }
 
   /** unpivot or uncurry this MergeableStore
