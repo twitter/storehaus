@@ -31,6 +31,12 @@ import org.scalacheck.Prop.forAll
 
 object MySQLStoreProperties extends Properties("MySQLStore") {
 
+  object DType extends Enumeration {
+    type DType = Value
+    val DInt, DString, DLong, DShort = Value
+  }
+  import DType._
+
   val validPairs = Arbitrary.arbitrary[List[(String, Option[String])]] suchThat {
     case Nil => false
     case _ => true
@@ -57,11 +63,11 @@ object MySQLStoreProperties extends Properties("MySQLStore") {
     case _ => true
   }
 
-  def getValidPairs(datatype: String) = datatype match {
-      case "string" => validPairs
-      case "int" => validIntPairs
-      case "long" => validLongPairs
-      case "short" => validShortPairs
+  def getValidPairs(datatype: DType) = datatype match {
+      case DString => validPairs
+      case DInt => validIntPairs
+      case DLong => validLongPairs
+      case DShort => validShortPairs
       case _ => validPairs
     }
 
@@ -75,7 +81,7 @@ object MySQLStoreProperties extends Properties("MySQLStore") {
     }
   }
 
-  def putAndGetStoreTest(store: MySQLStore, datatype: String = "string") =
+  def putAndGetStoreTest(store: MySQLStore, datatype: DType = DString) =
     forAll(getValidPairs(datatype)) { (examples: List[(Any, Option[Any])]) =>
       val stringified = examples.map { case (k, v) =>
           (k.toString, v match {
@@ -90,7 +96,7 @@ object MySQLStoreProperties extends Properties("MySQLStore") {
       }
     }
 
-  def putAndMultiGetStoreTest(store: MySQLStore, datatype: String = "string") =
+  def putAndMultiGetStoreTest(store: MySQLStore, datatype: DType = DString) =
     forAll(getValidPairs(datatype)) { (examples: List[(Any, Option[Any])]) =>
       val stringified = examples.map { case (k, v) =>
           (k.toString, v match {
@@ -141,22 +147,22 @@ object MySQLStoreProperties extends Properties("MySQLStore") {
     withStore(putAndMultiGetStoreTest(_), "text", "blob", true)
 
   property("MySQLStore int->int") =
-    withStore(putAndGetStoreTest(_, "int"), "int", "int")
+    withStore(putAndGetStoreTest(_, DInt), "int", "int")
 
   property("MySQLStore int->int multiget") =
-    withStore(putAndMultiGetStoreTest(_, "int"), "int", "int", true)
+    withStore(putAndMultiGetStoreTest(_, DInt), "int", "int", true)
 
   property("MySQLStore bigint->bigint") =
-    withStore(putAndGetStoreTest(_, "long"), "bigint", "bigint")
+    withStore(putAndGetStoreTest(_, DLong), "bigint", "bigint")
 
   property("MySQLStore bigint->bigint multiget") =
-    withStore(putAndMultiGetStoreTest(_, "long"), "bigint", "bigint", true)
+    withStore(putAndMultiGetStoreTest(_, DLong), "bigint", "bigint", true)
 
   property("MySQLStore smallint->smallint") =
-    withStore(putAndGetStoreTest(_, "short"), "smallint", "smallint")
+    withStore(putAndGetStoreTest(_, DShort), "smallint", "smallint")
 
   property("MySQLStore smallint->smallint multiget") =
-    withStore(putAndMultiGetStoreTest(_, "short"), "smallint", "smallint", true)
+    withStore(putAndMultiGetStoreTest(_, DShort), "smallint", "smallint", true)
 
   private def withStore[T](f: MySQLStore => T, kColType: String, vColType: String, multiGet: Boolean = false): T = {
     val client = Client("localhost:3306", "storehaususer", "test1234", "storehaus_test", Level.WARNING)
