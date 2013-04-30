@@ -26,50 +26,14 @@ import org.jboss.netty.buffer.ChannelBuffers
 import org.jboss.netty.util.CharsetUtil.UTF_8
 
 import org.scalacheck.Arbitrary
+import org.scalacheck.Gen
 import org.scalacheck.Properties
 import org.scalacheck.Prop.forAll
 
 object MySQLStoreProperties extends Properties("MySQLStore") {
 
-  object DType extends Enumeration {
-    type DType = Value
-    val DInt, DString, DLong, DShort = Value
-  }
-  import DType._
-
-  val validPairs = Arbitrary.arbitrary[List[(String, Option[String])]] suchThat {
-    case Nil => false
-    case _ => true
-    /*
-    case xs => xs.forall {
-      case (k, Some(s)) => !k.isEmpty && !s.isEmpty
-      case (k, None) => !k.isEmpty
-    }
-    */
-  }
-
-  val validIntPairs = Arbitrary.arbitrary[List[(Int, Option[Int])]] suchThat {
-    case Nil => false
-    case _ => true
-  }
-
-  val validLongPairs = Arbitrary.arbitrary[List[(Long, Option[Long])]] suchThat {
-    case Nil => false
-    case _ => true
-  }
-
-  val validShortPairs = Arbitrary.arbitrary[List[(Short, Option[Short])]] suchThat {
-    case Nil => false
-    case _ => true
-  }
-
-  def getValidPairs(datatype: DType) = datatype match {
-      case DString => validPairs
-      case DInt => validIntPairs
-      case DLong => validLongPairs
-      case DShort => validShortPairs
-      case _ => validPairs
-    }
+  // used to generate arbitrary pairs of types we want to test
+  def validPairs[T: Arbitrary] = Arbitrary.arbitrary[List[(T, Option[T])]] suchThat(!_.isEmpty)
 
   def put(s: MySQLStore, pairs: List[(String, Option[String])]) {
     pairs.foreach { case (k, v) =>
@@ -81,8 +45,8 @@ object MySQLStoreProperties extends Properties("MySQLStore") {
     }
   }
 
-  def putAndGetStoreTest(store: MySQLStore, datatype: DType = DString) =
-    forAll(getValidPairs(datatype)) { (examples: List[(Any, Option[Any])]) =>
+  def putAndGetStoreTest(store: MySQLStore, pairs: Gen[List[(Any, Option[Any])]] = validPairs[String]) =
+    forAll(pairs) { (examples: List[(Any, Option[Any])]) =>
       val stringified = examples.map { case (k, v) =>
           (k.toString, v match {
             case Some(d) => Some(d.toString)
@@ -96,8 +60,8 @@ object MySQLStoreProperties extends Properties("MySQLStore") {
       }
     }
 
-  def putAndMultiGetStoreTest(store: MySQLStore, datatype: DType = DString) =
-    forAll(getValidPairs(datatype)) { (examples: List[(Any, Option[Any])]) =>
+  def putAndMultiGetStoreTest(store: MySQLStore, pairs: Gen[List[(Any, Option[Any])]] = validPairs[String]) =
+    forAll(pairs) { (examples: List[(Any, Option[Any])]) =>
       val stringified = examples.map { case (k, v) =>
           (k.toString, v match {
             case Some(d) => Some(d.toString)
@@ -147,22 +111,22 @@ object MySQLStoreProperties extends Properties("MySQLStore") {
     withStore(putAndMultiGetStoreTest(_), "text", "blob", true)
 
   property("MySQLStore int->int") =
-    withStore(putAndGetStoreTest(_, DInt), "int", "int")
+    withStore(putAndGetStoreTest(_, validPairs[Int]), "int", "int")
 
   property("MySQLStore int->int multiget") =
-    withStore(putAndMultiGetStoreTest(_, DInt), "int", "int", true)
+    withStore(putAndMultiGetStoreTest(_, validPairs[Int]), "int", "int", true)
 
   property("MySQLStore bigint->bigint") =
-    withStore(putAndGetStoreTest(_, DLong), "bigint", "bigint")
+    withStore(putAndGetStoreTest(_, validPairs[Long]), "bigint", "bigint")
 
   property("MySQLStore bigint->bigint multiget") =
-    withStore(putAndMultiGetStoreTest(_, DLong), "bigint", "bigint", true)
+    withStore(putAndMultiGetStoreTest(_, validPairs[Long]), "bigint", "bigint", true)
 
   property("MySQLStore smallint->smallint") =
-    withStore(putAndGetStoreTest(_, DShort), "smallint", "smallint")
+    withStore(putAndGetStoreTest(_, validPairs[Short]), "smallint", "smallint")
 
   property("MySQLStore smallint->smallint multiget") =
-    withStore(putAndMultiGetStoreTest(_, DShort), "smallint", "smallint", true)
+    withStore(putAndMultiGetStoreTest(_, validPairs[Short]), "smallint", "smallint", true)
 
   private def withStore[T](f: MySQLStore => T, kColType: String, vColType: String, multiGet: Boolean = false): T = {
     val client = Client("localhost:3306", "storehaususer", "test1234", "storehaus_test", Level.WARNING)
