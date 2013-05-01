@@ -18,6 +18,9 @@ package com.twitter.storehaus.mysql
 
 import java.lang.UnsupportedOperationException
 
+import scala.util.control.Exception.allCatch
+
+import com.twitter.bijection.Injection
 import com.twitter.finagle.exp.mysql.{
   EmptyValue,
   IntValue,
@@ -48,39 +51,58 @@ object ValueMapper {
   // TEXT => RawStringValue
   // CHAR/VARCHAR => StringValue
 
-  def toChannelBuffer(optV: Option[Value]): Option[ChannelBuffer] = {
-    optV match {
-      case None => None
-      case Some(v) => v match {
-        case IntValue(d) => Some(ChannelBuffers.copiedBuffer(d.toString, UTF_8))
-        case LongValue(d) => Some(ChannelBuffers.copiedBuffer(d.toString, UTF_8))
-        case RawBinaryValue(d) => Some(ChannelBuffers.copiedBuffer(d)) // from byte array
-        case RawStringValue(d) => Some(ChannelBuffers.copiedBuffer(d, UTF_8))
-        case ShortValue(d) => Some(ChannelBuffers.copiedBuffer(d.toString, UTF_8))
-        case StringValue(d) => Some(ChannelBuffers.copiedBuffer(d, UTF_8))
-        case EmptyValue => Some(ChannelBuffers.EMPTY_BUFFER)
-        case NullValue => None
-        // all other types are currently unsupported
-        case _ => throw new UnsupportedOperationException(v.getClass.getName + " is currently not supported.")
-      }
+  def toChannelBuffer(v: Value): Option[ChannelBuffer] = {
+    v match {
+      case IntValue(d) => Some(ChannelBuffers.copiedBuffer(d.toString, UTF_8))
+      case LongValue(d) => Some(ChannelBuffers.copiedBuffer(d.toString, UTF_8))
+      case RawBinaryValue(d) => Some(ChannelBuffers.copiedBuffer(d)) // from byte array
+      case RawStringValue(d) => Some(ChannelBuffers.copiedBuffer(d, UTF_8))
+      case ShortValue(d) => Some(ChannelBuffers.copiedBuffer(d.toString, UTF_8))
+      case StringValue(d) => Some(ChannelBuffers.copiedBuffer(d, UTF_8))
+      case EmptyValue => Some(ChannelBuffers.EMPTY_BUFFER)
+      case NullValue => None
+      // all other types are currently unsupported
+      case _ => throw new UnsupportedOperationException(v.getClass.getName + " is currently not supported.")
     }
   }
 
-  def toString(optV: Option[Value]): Option[String] = {
-    optV match {
-      case None => None
-      case Some(v) => v match {
-        case IntValue(v) => Some(v.toString)
-        case LongValue(v) => Some(v.toString)
-        case RawBinaryValue(v) => Some(new String(v)) // from byte array
-        case RawStringValue(v) => Some(v)
-        case ShortValue(v) => Some(v.toString)
-        case StringValue(v) => Some(v)
-        case EmptyValue => Some("")
-        case NullValue => None
-        // all other types are currently unsupported
-        case _ => throw new UnsupportedOperationException(v.getClass.getName + " is currently not supported.")
-      }
+  def toString(v: Value): Option[String] = {
+    v match {
+      case IntValue(v) => Some(v.toString)
+      case LongValue(v) => Some(v.toString)
+      case RawBinaryValue(v) => Some(new String(v)) // from byte array
+      case RawStringValue(v) => Some(v)
+      case ShortValue(v) => Some(v.toString)
+      case StringValue(v) => Some(v)
+      case EmptyValue => Some("")
+      case NullValue => None
+      // all other types are currently unsupported
+      case _ => throw new UnsupportedOperationException(v.getClass.getName + " is currently not supported.")
     }
   }
+}
+
+object MySqlValue {
+  def apply(v: Value) = new MySqlValue(v)
+}
+
+class MySqlValue(val v: Value) {
+  override def equals(o: Any) = o match {
+    // we consider two values to be equal if their underlying string representation are equal
+    case o: MySqlValue => ValueMapper.toString(o.v) == ValueMapper.toString(this.v)
+    case _ => false
+  }
+  override def hashCode: Int = {
+    ValueMapper.toString(this.v).hashCode
+  }
+}
+
+object MySqlStringInjection extends Injection[MySqlValue, String] {
+  def apply(a: MySqlValue): String = ValueMapper.toString(a.v).getOrElse("")
+  def invert(b: String): Option[MySqlValue] = allCatch.opt(MySqlValue(RawStringValue(b)))
+}
+
+object MySqlCbInjection extends Injection[MySqlValue, ChannelBuffer] {
+  def apply(a: MySqlValue): ChannelBuffer = ValueMapper.toChannelBuffer(a.v).getOrElse(ChannelBuffers.EMPTY_BUFFER)
+  def invert(b: ChannelBuffer): Option[MySqlValue] = allCatch.opt(MySqlValue(RawStringValue(b.toString(UTF_8))))
 }

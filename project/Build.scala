@@ -151,6 +151,7 @@ object StorehausBuild extends Build {
   ).settings(
     name := "storehaus-mysql",
     previousArtifact := youngestForwardCompatible("mysql"),
+    libraryDependencies += "com.twitter" %% "bijection-core" % bijectionVersion,
     libraryDependencies += "com.twitter" %% "finagle-mysql" % "6.2.1"
   ).dependsOn(storehausCore % "test->test;compile->compile")
 
