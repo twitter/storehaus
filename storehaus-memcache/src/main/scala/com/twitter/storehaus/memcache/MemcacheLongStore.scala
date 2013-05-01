@@ -18,7 +18,7 @@ package com.twitter.storehaus.memcache
 
 import com.twitter.algebird.Monoid
 import com.twitter.bijection.NumericInjections
-import com.twitter.util.Time
+import com.twitter.util.Duration
 import com.twitter.finagle.memcached.Client
 import com.twitter.storehaus.algebra.{ ConvertedStore, MergeableStore }
 import org.jboss.netty.buffer.ChannelBuffer
@@ -31,7 +31,7 @@ object MemcacheLongStore extends NumericInjections {
   private [memcache] implicit val LongInjection =
     long2String.andThen(MemcacheStringStore.StringInjection)
 
-  def apply(client: Client, ttl: Time = MemcacheStore.DEFAULT_TTL, flag: Int = MemcacheStore.DEFAULT_FLAG) =
+  def apply(client: Client, ttl: Duration = MemcacheStore.DEFAULT_TTL, flag: Int = MemcacheStore.DEFAULT_FLAG) =
     new MemcacheLongStore(MemcacheStore(client, ttl, flag))
 }
 import MemcacheLongStore._
