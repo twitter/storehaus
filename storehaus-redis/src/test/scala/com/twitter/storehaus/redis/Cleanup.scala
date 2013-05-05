@@ -25,7 +25,7 @@ trait Cleanup {
   def cleanup()
 }
 
-trait CloseableCleanup[C <: Closeable] {
+trait CloseableCleanup[C <: Closeable] extends Cleanup {
   def closeable: C
   def cleanup() {
     closeable.close()
