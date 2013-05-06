@@ -24,7 +24,6 @@ import com.twitter.storehaus.algebra.ConvertedStore
 import com.twitter.util.Await
 import org.jboss.netty.buffer.ChannelBuffer
 import org.scalacheck.{ Arbitrary, Gen, Properties }
-import org.scalacheck.Gen.{ alphaStr, choose, listOf1, oneOf }
 import org.scalacheck.Prop._
 import scala.util.control.Exception.allCatch
 
@@ -63,7 +62,7 @@ object RedisStoreProperties extends Properties("RedisStore")
   def storeTest(store: Store[String, String]) =
     putStoreTest(store, validPairs) && multiPutStoreTest(store, validPairs)
 
-  val closeable =    
+  val closeable =
     new ConvertedStore(RedisStore(client))(StringToChannelBuffer(_: String))(
       new Injection[String, ChannelBuffer] {
         def apply(a: String): ChannelBuffer = StringToChannelBuffer(a)
