@@ -55,10 +55,7 @@ object MySqlStoreProperties extends Properties("MySqlStore") {
   def putAndMultiGetStoreTest(store: MySqlStore, pairs: Gen[List[(Any, Option[Any])]] = validPairs[String]) =
     forAll(pairs) { (examples: List[(Any, Option[Any])]) =>
       val stringified = examples.map { case (k, v) =>
-          (MySqlStringInjection.invert(k.toString).get, v match {
-            case Some(d) => Some(MySqlStringInjection.invert(d.toString).get)
-            case None => None
-          })
+          (MySqlStringInjection.invert(k.toString).get, v.map { case value => MySqlStringInjection.invert(value.toString).get })
         }
       put(store, stringified)
       val data = stringified.toMap

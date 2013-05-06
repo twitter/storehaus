@@ -77,7 +77,7 @@ class MySqlStore(client: Client, table: String, kCol: String, vCol: String)
     }
     mysqlResult.map { case(ps, result) =>
       client.closeStatement(ps)
-      result.lift(0).getOrElse(Option.empty)
+      result.lift(0).flatten.headOption
     }
   }
 
@@ -88,8 +88,7 @@ class MySqlStore(client: Client, table: String, kCol: String, vCol: String)
     val selectSql = MULTI_SELECT_SQL_PREFIX + placeholders
     val mysqlResult: Future[(PreparedStatement,Seq[(Option[MySqlValue], Option[MySqlValue])])] =
         client.prepareAndSelect(selectSql, ks.map(key => MySqlStringInjection(key).getBytes).toSeq:_* ) { row =>
-      (row(kCol) match { case None => None; case Some(k) => Some(MySqlValue(k)) },
-       row(vCol) match { case None => None; case Some(v) => Some(MySqlValue(v)) })
+      (row(kCol).map(MySqlValue(_)), row(vCol).map(MySqlValue(_)))
     }
     FutureOps.liftValues(ks,
       mysqlResult.map { case (ps, rows) =>

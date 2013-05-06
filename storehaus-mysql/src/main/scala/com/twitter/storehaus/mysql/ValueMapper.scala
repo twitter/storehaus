@@ -74,6 +74,8 @@ object ValueMapper {
       case RawStringValue(v) => Some(v)
       case ShortValue(v) => Some(v.toString)
       case StringValue(v) => Some(v)
+      // finagle-mysql text protocol wraps null strings as NullValue
+      // and empty strings as EmptyValue
       case EmptyValue => Some("")
       case NullValue => None
       // all other types are currently unsupported
@@ -82,10 +84,27 @@ object ValueMapper {
   }
 }
 
+/** Factory for [[com.twitter.storehaus.mysql.MySqlValue]] instances. */
 object MySqlValue {
-  def apply(v: Value) = new MySqlValue(v)
+  def apply(v: Any) = v match {
+    case v: Value => new MySqlValue(v)
+    case v: String => new MySqlValue(RawStringValue(v))
+    case v: Int => new MySqlValue(IntValue(v))
+    case v: Long => new MySqlValue(LongValue(v))
+    case v: Short => new MySqlValue(ShortValue(v))
+    case v: ChannelBuffer => new MySqlValue(RawStringValue(v.toString(UTF_8)))
+    case _ => throw new UnsupportedOperationException(v.getClass.getName + " is currently not supported.")
+  }
 }
 
+/**
+ * Wraps finagle-mysql Value ADT.
+ *
+ * Since finagle maps MySQL column types to specific Value types,
+ * we use this type class as an abstraction.
+ * MySqlValue objects can then be converted to string, channelbuffer or any other type
+ * without having to worry about the underlying finagle type.
+ */
 class MySqlValue(val v: Value) {
   override def equals(o: Any) = o match {
     // we consider two values to be equal if their underlying string representation are equal
@@ -97,11 +116,21 @@ class MySqlValue(val v: Value) {
   }
 }
 
+/**
+ * Injection from MySqlValue to String.
+ * Returns string representation of the finagle-mysql Value wrapped by MySqlValue
+ * Both null values and empty values map to empty string.
+ */
 object MySqlStringInjection extends Injection[MySqlValue, String] {
-  def apply(a: MySqlValue): String = ValueMapper.toString(a.v).getOrElse("")
+  def apply(a: MySqlValue): String = ValueMapper.toString(a.v).getOrElse("") // should this be null: String instead?
   def invert(b: String): Option[MySqlValue] = allCatch.opt(MySqlValue(RawStringValue(b)))
 }
 
+/**
+ * Injection from MySqlValue to ChannelBuffer.
+ * Returns a channel buffer containing the Value wrapped by MySqlValue.
+ * Both null values and empty values map to empty channel buffer.
+ */
 object MySqlCbInjection extends Injection[MySqlValue, ChannelBuffer] {
   def apply(a: MySqlValue): ChannelBuffer = ValueMapper.toChannelBuffer(a.v).getOrElse(ChannelBuffers.EMPTY_BUFFER)
   def invert(b: ChannelBuffer): Option[MySqlValue] = allCatch.opt(MySqlValue(RawStringValue(b.toString(UTF_8))))

@@ -153,7 +153,7 @@ object StorehausBuild extends Build {
     previousArtifact := youngestForwardCompatible("mysql"),
     libraryDependencies += "com.twitter" %% "bijection-core" % bijectionVersion,
     libraryDependencies += "com.twitter" %% "finagle-mysql" % "6.2.1"
-  ).dependsOn(storehausCore % "test->test;compile->compile")
+  ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
   lazy val storehausRedis = Project(
     id = "storehaus-redis",
