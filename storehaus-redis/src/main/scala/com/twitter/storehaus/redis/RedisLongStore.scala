@@ -20,7 +20,7 @@ import com.twitter.algebird.Monoid
 import com.twitter.bijection.{ Injection, NumericInjections }
 import com.twitter.finagle.redis.Client
 import com.twitter.storehaus.algebra.{ ConvertedStore, MergeableStore }
-import com.twitter.util.{ Future, Time }
+import com.twitter.util.{ Duration, Future }
 import org.jboss.netty.buffer.ChannelBuffer
 
 /**
@@ -36,7 +36,7 @@ object RedisLongStore extends NumericInjections {
   private [redis] implicit val LongInjection =
     long2String.andThen(RedisStringStore.StringInjection)
 
-  def apply(client: Client, ttl: Option[Time] = RedisStore.Default.TTL) =
+  def apply(client: Client, ttl: Option[Duration] = RedisStore.Default.TTL) =
     new RedisLongStore(RedisStore(client, ttl))
 }
 import RedisLongStore._
