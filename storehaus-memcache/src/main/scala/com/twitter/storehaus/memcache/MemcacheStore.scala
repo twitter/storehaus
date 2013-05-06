@@ -19,7 +19,7 @@ package com.twitter.storehaus.memcache
 import com.twitter.conversions.time._
 import com.twitter.util.{ Duration, Future }
 import com.twitter.finagle.memcached.{ GetResult, Client }
-import com.twitter.storehaus.{ FutureOps, Store }
+import com.twitter.storehaus.{ FutureOps, Store, WithPutTtl }
 import org.jboss.netty.buffer.ChannelBuffer
 
 /**
@@ -40,7 +40,11 @@ object MemcacheStore {
     new MemcacheStore(client, ttl, flag)
 }
 
-class MemcacheStore(val client: Client, ttl: Duration, flag: Int) extends Store[String, ChannelBuffer] {
+class MemcacheStore(val client: Client, ttl: Duration, flag: Int)
+  extends Store[String, ChannelBuffer]
+  with WithPutTtl[String, ChannelBuffer, MemcacheStore]
+{
+  override def withTtl(ttl: Duration) = new MemcacheStore(client, ttl, flag)
 
   override def get(k: String): Future[Option[ChannelBuffer]] = client.get(k)
 

@@ -98,3 +98,10 @@ trait Store[-K, V] extends ReadableStore[K, V] { self =>
   def multiPut[K1 <: K](kvs: Map[K1, Option[V]]): Map[K1, Future[Unit]] =
     kvs.map { kv => (kv._1, put(kv)) }
 }
+
+/**
+ * Trait for building mutable store with TTL.
+ */
+trait WithPutTtl[K, V, S <: Store[K, V]] {
+  def withTtl(ttl: Duration): S
+}

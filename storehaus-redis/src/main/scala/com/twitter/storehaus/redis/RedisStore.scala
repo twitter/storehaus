@@ -20,7 +20,7 @@ import com.twitter.algebird.Monoid
 import com.twitter.conversions.time._
 import com.twitter.util.{ Duration, Future }
 import com.twitter.finagle.redis.Client
-import com.twitter.storehaus.{ FutureOps, MissingValueException, Store }
+import com.twitter.storehaus.{ FutureOps, MissingValueException, Store, WithPutTtl }
 import org.jboss.netty.buffer.ChannelBuffer
 
 /**
@@ -37,7 +37,10 @@ object RedisStore {
 }
 
 class RedisStore(val client: Client, ttl: Option[Duration])
-  extends Store[ChannelBuffer, ChannelBuffer] {
+  extends Store[ChannelBuffer, ChannelBuffer]
+  with WithPutTtl[ChannelBuffer, ChannelBuffer, RedisStore]
+{
+  override def withTtl(ttl: Duration) = new RedisStore(client, Some(ttl))
 
   override def get(k: ChannelBuffer): Future[Option[ChannelBuffer]] =
     client.get(k)
