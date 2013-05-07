@@ -17,12 +17,15 @@
 package com.twitter.storehaus
 
 import com.twitter.storehaus.cache.MutableCache
-import com.twitter.util.Future
+import com.twitter.util.{ Future, Return }
 import scala.collection.breakOut
 
 class CachedReadableStore[K, V](store: ReadableStore[K, V], cache: MutableCache[K, Future[Option[V]]]) extends ReadableStore[K, V] {
-  val filteredCache = cache.filter { case (_, f) =>
-    !f.isDefined || f.isReturn
+  val filteredCache = cache.filter {
+    _._2.poll match {
+      case None | Some(Return(_)) => true
+      case _ => false
+    }
   }
 
   /**
