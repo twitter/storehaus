@@ -20,6 +20,7 @@ import com.twitter.algebird.{ MapAlgebra, Monoid, SummingQueue }
 import com.twitter.bijection.algebird.AlgebirdBijections._
 import com.twitter.bijection.Injection
 import com.twitter.storehaus._
+import com.twitter.util.Await
 import org.scalacheck.{ Arbitrary, Properties }
 import org.scalacheck.Prop._
 import org.scalacheck.Properties
@@ -54,7 +55,7 @@ object MergeableStoreProperties extends Properties("MergeableStore") {
   def baseTest[K: Arbitrary, V: Arbitrary: Monoid: Equiv](store: MergeableStore[K, V])(put: (MergeableStore[K, V], List[(K, V)]) => Unit) =
     forAll { examples: List[(K, V)] =>
       val inputMap = MapAlgebra.sumByKey(examples).mapValues { Monoid.nonZeroOption(_) }
-      val preResult = FutureOps.mapCollect(store.multiGet(inputMap.keySet)).get
+      val preResult = Await.result(FutureOps.mapCollect(store.multiGet(inputMap.keySet)))
       val expectedResult = Monoid.plus(inputMap, preResult)
         .mapValues { _.flatMap { Monoid.nonZeroOption(_) } }
 
@@ -62,7 +63,7 @@ object MergeableStoreProperties extends Properties("MergeableStore") {
 
       Equiv[Map[K, Option[V]]].equiv(
         expectedResult,
-        FutureOps.mapCollect(store.multiGet(expectedResult.keySet)).get
+        Await.result(FutureOps.mapCollect(store.multiGet(expectedResult.keySet)))
       )
     }
 
