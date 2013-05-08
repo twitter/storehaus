@@ -17,7 +17,6 @@
 package com.twitter.storehaus
 
 import com.twitter.bijection.Injection
-import com.twitter.storehaus.{ ConvertedReadableStore, Store }
 import com.twitter.util.Future
 
 /** Use an injection on V2,V1 to convert a store of values V2.
