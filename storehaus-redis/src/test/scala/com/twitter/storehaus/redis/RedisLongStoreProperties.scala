@@ -39,7 +39,7 @@ object RedisLongStoreProperties extends Properties("RedisLongStore")
     putStoreTest(store, validPairs) && multiPutStoreTest(store, validPairs)
 
   val closeable =
-    new ConvertedStore(RedisLongStore(client))(StringToChannelBuffer(_: String))(Injection.identity)
+    RedisLongStore(client).convert(StringToChannelBuffer(_: String))
 
   property("RedisLongStore test") =
     storeTest(closeable)
