@@ -141,7 +141,7 @@ object StorehausBuild extends Build {
   ).settings(
     name := "storehaus-memcache",
     previousArtifact := youngestForwardCompatible("memcache"),
-    libraryDependencies += Finagle.module("memcached"),
+    libraryDependencies += Finagle.module("memcached")
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
   lazy val storehausMySQL = Project(
