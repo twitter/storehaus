@@ -4,12 +4,14 @@ import com.twitter.finagle.redis.Client
 
 trait RedisClient {
   def client: Client
+  def host: String = "localhost"
+  def port: Int = 6379
 }
 
 trait DefaultRedisClient extends RedisClient {
   def client = {
-    val client = Client("localhost:6379")
-    client.flushDB() // clean slate
-    client
+    val cli = Client("%s:%d" format(host, port))
+    cli.flushDB // clean slate
+    cli
   }
 }
