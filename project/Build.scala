@@ -151,7 +151,7 @@ object StorehausBuild extends Build {
   ).settings(
     name := "storehaus-mysql",
     previousArtifact := youngestForwardCompatible("mysql"),
-    libraryDependencies += Finagle.module("mysql")
+    libraryDependencies += Finagle.module("mysql", "6.2.1") // tests fail with the latest
   ).dependsOn(storehausCore % "test->test;compile->compile")
 
   lazy val storehausRedis = Project(

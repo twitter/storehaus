@@ -5,7 +5,7 @@ package storehaus
  *  dependency */
 object Finagle {
   import sbt._
-  val version = "6.3.0"
-  def module(name: String) =
+  val LatestVersion = "6.3.0"
+  def module(name: String, version: String = LatestVersion) =
     "com.twitter" %% "finagle-%s".format(name) % version
 }
