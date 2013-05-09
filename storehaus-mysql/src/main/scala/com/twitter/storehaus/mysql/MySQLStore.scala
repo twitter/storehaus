@@ -21,19 +21,15 @@ import com.twitter.storehaus.FutureOps
 import com.twitter.storehaus.Store
 import com.twitter.util.Future
 
-import org.jboss.netty.buffer.ChannelBuffer
-import org.jboss.netty.buffer.ChannelBuffers
-import org.jboss.netty.util.CharsetUtil.UTF_8
-
 /**
   * @author Ruban Monu
   */
 
-/** Factory for [[com.twitter.storehaus.mysql.MySQLStore]] instances. */
-object MySQLStore {
+/** Factory for [[com.twitter.storehaus.mysql.MySqlStore]] instances. */
+object MySqlStore {
 
   def apply(client: Client, table: String, kCol: String, vCol: String) = 
-    new MySQLStore(client, table, kCol, vCol)
+    new MySqlStore(client, table, kCol, vCol)
 }
 
 /**
@@ -41,7 +37,6 @@ object MySQLStore {
   *
   * Assumes the underlying table's key and value columns are both strings.
   * Supported MySQL column types are: BLOB, TEXT, VARCHAR.
-  * Value column is treated as a channelbuffer of UTF-8 strings.
   *
   * The finagle-mysql client is required to set the user, database and create
   * the underlying table schema prior to this class being used.
@@ -52,7 +47,7 @@ object MySQLStore {
   * Example usage:
   * {{{
   * import com.twitter.finagle.exp.mysql.Client
-  * import com.twitter.storehaus.mysql.MySQLStore
+  * import com.twitter.storehaus.mysql.MySqlStore
   *
   * val client = Client("localhost:3306", "storehaususer", "test1234", "storehaus_test")
   * val schema = """CREATE TABLE `storehaus-mysql-test` (
@@ -61,11 +56,11 @@ object MySQLStore {
   *     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;"""
   * // or, use an existing pre-populated table.
   * client.query(schema).get
-  * val store = MySQLStore(client, "storehaus-mysql-test", "key", "value") 
+  * val store = MySqlStore(client, "storehaus-mysql-test", "key", "value") 
   * }}}
   */
-class MySQLStore(client: Client, table: String, kCol: String, vCol: String)
-    extends Store[String, ChannelBuffer] {
+class MySqlStore(client: Client, table: String, kCol: String, vCol: String)
+    extends Store[MySqlValue, MySqlValue] {
 
   val SELECT_SQL = "SELECT " + g(vCol) + " FROM " + g(table) + " WHERE " + g(kCol) + "=?"
   val MULTI_SELECT_SQL_PREFIX = "SELECT " + g(kCol) + ", " + g(vCol) + " FROM " + g(table) + " WHERE " + g(kCol) + " IN "
@@ -73,28 +68,27 @@ class MySQLStore(client: Client, table: String, kCol: String, vCol: String)
   val UPDATE_SQL = "UPDATE " + g(table) + " SET " + g(vCol) + "=? WHERE " + g(kCol) + "=?"
   val DELETE_SQL = "DELETE FROM " + g(table) + " WHERE " + g(kCol) + "=?"
 
-  override def get(k: String): Future[Option[ChannelBuffer]] = {
+  override def get(k: MySqlValue): Future[Option[MySqlValue]] = {
     // finagle-mysql select() method lets you pass in a mapping function
-    // to convert resultset into desired output format (ChannelBuffer in this case)
+    // to convert resultset into desired output format
     // we assume here the mysql client already has the dbname/schema selected
-    val mysqlResult: Future[(PreparedStatement,Seq[Option[ChannelBuffer]])] = client.prepareAndSelect(SELECT_SQL, k.getBytes) { row =>
-      ValueMapper.toChannelBuffer(row(vCol))
+    val mysqlResult: Future[(PreparedStatement,Seq[Option[MySqlValue]])] = client.prepareAndSelect(SELECT_SQL, MySqlStringInjection(k).getBytes) { row =>
+      row(vCol) match { case None => None; case Some(v) => Some(MySqlValue(v)) }
     }
     mysqlResult.map { case(ps, result) =>
       client.closeStatement(ps)
-      result.lift(0) match { case None => None; case Some(optV) => optV }
+      result.lift(0).flatten.headOption
     }
   }
 
-  override def multiGet[K1 <: String](ks: Set[K1]): Map[K1, Future[Option[ChannelBuffer]]] = {
+  override def multiGet[K1 <: MySqlValue](ks: Set[K1]): Map[K1, Future[Option[MySqlValue]]] = {
     if (ks.isEmpty) return Map()
     // build preparedstatement based on keyset size
     val placeholders = Stream.continually("?").take(ks.size).mkString("(", ",", ")")
     val selectSql = MULTI_SELECT_SQL_PREFIX + placeholders
-    val mysqlResult: Future[(PreparedStatement,Seq[(Option[String], Option[ChannelBuffer])])] =
-        client.prepareAndSelect(selectSql, ks.map(key => key.getBytes).toSeq:_*) { row =>
-      (ValueMapper.toString(row(kCol)), ValueMapper.toChannelBuffer(row(vCol)))
-      // we return data in the form of channelbuffers of UTF-8 strings
+    val mysqlResult: Future[(PreparedStatement,Seq[(Option[MySqlValue], Option[MySqlValue])])] =
+        client.prepareAndSelect(selectSql, ks.map(key => MySqlStringInjection(key).getBytes).toSeq:_* ) { row =>
+      (row(kCol).map(MySqlValue(_)), row(vCol).map(MySqlValue(_)))
     }
     FutureOps.liftValues(ks,
       mysqlResult.map { case (ps, rows) =>
@@ -105,9 +99,9 @@ class MySQLStore(client: Client, table: String, kCol: String, vCol: String)
     )
   }
 
-  protected def set(k: String, v: ChannelBuffer) = doSet(k, v)
+  protected def set(k: MySqlValue, v: MySqlValue) = doSet(k, v)
 
-  override def put(kv: (String, Option[ChannelBuffer])): Future[Unit] = {
+  override def put(kv: (MySqlValue, Option[MySqlValue])): Future[Unit] = {
     kv match {
       case (key, Some(value)) => doSet(key, value).unit
       case (key, None) => doDelete(key).unit
@@ -116,23 +110,23 @@ class MySQLStore(client: Client, table: String, kCol: String, vCol: String)
   
   override def close { client.close }
 
-  protected def doSet(k: String, v: ChannelBuffer): Future[Result] = {
+  protected def doSet(k: MySqlValue, v: MySqlValue): Future[Result] = {
     // mysql's insert-or-update syntax works only when a primary key is defined:
     // http://dev.mysql.com/doc/refman/5.1/en/insert-on-duplicate.html
     // since we are not guaranteed that, we first check if key exists
     // and insert or update accordingly
     get(k).flatMap { optionV =>
       optionV match {
-        case Some(value) => client.prepareAndExecute(UPDATE_SQL, v.toString(UTF_8).getBytes, k.getBytes)
-        case None => client.prepareAndExecute(INSERT_SQL, k.getBytes, v.toString(UTF_8).getBytes)
+        case Some(value) => client.prepareAndExecute(UPDATE_SQL, MySqlStringInjection(v).getBytes, MySqlStringInjection(k).getBytes)
+        case None => client.prepareAndExecute(INSERT_SQL, MySqlStringInjection(k).getBytes, MySqlStringInjection(v).getBytes)
       }
       // prepareAndExecute returns Future[(PreparedStatement,Result)]
     }.map { case (ps, result) => client.closeStatement(ps); result }
   }
 
-  protected def doDelete(k: String): Future[Result] = {
+  protected def doDelete(k: MySqlValue): Future[Result] = {
     // prepareAndExecute returns Future[(PreparedStatement,Result)]
-    client.prepareAndExecute(DELETE_SQL, k.getBytes).map {
+    client.prepareAndExecute(DELETE_SQL, MySqlStringInjection(k).getBytes).map {
       case (ps, result) => client.closeStatement(ps); result
     }
   }
