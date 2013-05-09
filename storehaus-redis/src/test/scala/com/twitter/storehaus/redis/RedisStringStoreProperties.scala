@@ -32,7 +32,7 @@ object RedisStringStoreProperties extends Properties("RedisStringStore")
     putStoreTest(store, validPairs) && multiPutStoreTest(store, validPairs)
 
   val closeable =
-    new ConvertedStore(RedisStringStore(client))(StringToChannelBuffer(_: String))(Injection.identity)
+    RedisStringStore(client).convert(StringToChannelBuffer(_: String))
 
   property("RedisStringStore test") =
     storeTest(closeable)

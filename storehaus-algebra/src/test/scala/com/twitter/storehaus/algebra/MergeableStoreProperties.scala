@@ -72,7 +72,7 @@ object MergeableStoreProperties extends Properties("MergeableStore") {
 
   def newConvertedStore[K,V1,V2](implicit inj: Injection[V2,V1], monoid: Monoid[V2]): MergeableStore[K,V2] = {
     val store = new JMapStore[K, V1]
-    val cstore = new ConvertedStore[K,K,V1,V2](store)(identity[K])
+    val cstore = new com.twitter.storehaus.ConvertedStore[K,K,V1,V2](store)(identity[K])
     MergeableStore.fromStore(cstore)
   }
 

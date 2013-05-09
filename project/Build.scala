@@ -118,7 +118,8 @@ object StorehausBuild extends Build {
   ).settings(
     name := "storehaus-core",
     previousArtifact := youngestForwardCompatible("core"),
-    libraryDependencies += "com.twitter" %% "util-core" % "6.3.0"
+    libraryDependencies += "com.twitter" %% "util-core" % "6.3.0",
+    libraryDependencies += "com.twitter" %% "bijection-core" % bijectionVersion
   ).dependsOn(storehausCache)
 
   lazy val storehausAlgebra = Project(
@@ -130,7 +131,6 @@ object StorehausBuild extends Build {
     previousArtifact := youngestForwardCompatible("algebra"),
     libraryDependencies += "com.twitter" %% "algebird-core" % algebirdVersion,
     libraryDependencies += "com.twitter" %% "algebird-util" % algebirdVersion,
-    libraryDependencies += "com.twitter" %% "bijection-core" % bijectionVersion,
     libraryDependencies += "com.twitter" %% "bijection-algebird" % bijectionVersion
   ).dependsOn(storehausCore % "test->test;compile->compile")
 
