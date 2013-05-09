@@ -162,6 +162,8 @@ object StorehausBuild extends Build {
     name := "storehaus-redis",
     previousArtifact := youngestForwardCompatible("redis"),
     libraryDependencies += "com.twitter" %% "finagle-redis" % "6.2.0",
+    // we don't want various tests clobbering each others keys
+    parallelExecution in Test := false,
     testOptions in Test += Tests.Cleanup { loader =>
       val c = loader.loadClass("com.twitter.storehaus.redis.Cleanup$")
       c.getMethod("cleanup").invoke(c.getField("MODULE$").get(c))

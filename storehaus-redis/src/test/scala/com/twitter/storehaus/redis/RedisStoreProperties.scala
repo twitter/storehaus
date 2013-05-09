@@ -21,38 +21,42 @@ import com.twitter.finagle.redis.Client
 import com.twitter.finagle.redis.util.{ CBToString, StringToChannelBuffer }
 import com.twitter.storehaus.{ FutureOps, Store }
 import com.twitter.storehaus.algebra.ConvertedStore
+import com.twitter.util.Await
 import org.jboss.netty.buffer.ChannelBuffer
 import org.scalacheck.{ Arbitrary, Gen, Properties }
-import org.scalacheck.Gen.{ choose, listOf1 }
 import org.scalacheck.Prop._
 import scala.util.control.Exception.allCatch
 
 object RedisStoreProperties extends Properties("RedisStore")
   with CloseableCleanup[Store[String, String]]
   with DefaultRedisClient {
-  
-  val validPairs = listOf1(Arbitrary.arbitrary[((String, Option[String]))] suchThat {
-    case (k, v) if (k.isEmpty || v.filter(_.isEmpty).isDefined) => false
-    case _ => true
-  })
+
+  def paired: Gen[(String, Option[String])] = for {
+    str <- Generators.nonEmptyAlphaStr
+    opt <- Generators.nonEmptyAlphaStrOpt
+  } yield (str, opt)
+
+  def validPairs: Gen[List[(String, Option[String])]] =
+    Gen.listOfN(10,paired)
 
   def baseTest[K : Arbitrary, V: Arbitrary: Equiv](store: Store[K, V], validPairs: Gen[List[(K, Option[V])]])
     (put: (Store[K, V], List[(K, Option[V])]) => Unit) =
     forAll(validPairs) { (examples: List[(K, Option[V])]) =>
       put(store, examples)
       examples.toMap.forall { case (k, optV) =>
-        Equiv[Option[V]].equiv(store.get(k).get, optV)
+        val res = Await.result(store.get(k))
+        Equiv[Option[V]].equiv(res, optV)
       }
     }
 
   def putStoreTest[K: Arbitrary, V: Arbitrary: Equiv](store: Store[K, V],validPairs: Gen[List[(K, Option[V])]]) =
     baseTest(store, validPairs) { (s, pairs) =>
-      pairs.foreach { case (k, v) => s.put((k, v)).get }
+      pairs.foreach { case (k, v) => Await.result(s.put((k, v))) }
     }
 
   def multiPutStoreTest[K: Arbitrary, V: Arbitrary: Equiv](store: Store[K, V], validPairs: Gen[List[(K, Option[V])]]) =
     baseTest(store, validPairs) { (s, pairs) =>
-      FutureOps.mapCollect(s.multiPut(pairs.toMap)).get
+      Await.result(FutureOps.mapCollect(s.multiPut(pairs.toMap)))
     }
 
   def storeTest(store: Store[String, String]) =
@@ -64,6 +68,7 @@ object RedisStoreProperties extends Properties("RedisStore")
   }
   val closeable =
     RedisStore(client).convert(StringToChannelBuffer(_: String))
+
 
  property("RedisStore test") =
    storeTest(closeable)
