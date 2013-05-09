@@ -19,14 +19,14 @@ object StorehausBuild extends Build {
     ),
 
     resolvers ++= Seq(
-      "snapshots" at "http://oss.sonatype.org/content/repositories/snapshots",
-      "releases"  at "http://oss.sonatype.org/content/repositories/releases",
+      Opts.resolver.sonatypeSnapshots,
+      Opts.resolver.sonatypeReleases,
       "Twitter Maven" at "http://maven.twttr.com"
     ),
 
     parallelExecution in Test := true,
 
-    scalacOptions ++= Seq("-unchecked", "-deprecation"),
+    scalacOptions ++= Seq(Opts.compile.unchecked, Opts.compile.deprecation),
 
     // Publishing options:
     publishMavenStyle := true,
@@ -35,12 +35,9 @@ object StorehausBuild extends Build {
 
     pomIncludeRepository := { x => false },
 
-    publishTo <<= version { (v: String) =>
-      val nexus = "https://oss.sonatype.org/"
-      if (v.trim.endsWith("SNAPSHOT"))
-        Some("sonatype-snapshots" at nexus + "content/repositories/snapshots")
-      else
-        Some("sonatype-releases"  at nexus + "service/local/staging/deploy/maven2")
+    publishTo <<= version { v =>
+      Some(if (v.trim.toUpperCase.endsWith("SNAPSHOT")) Opts.resolver.sonatypeSnapshots
+           else Opts.resolver.sonatypeStaging)
     },
 
     pomExtra := (
