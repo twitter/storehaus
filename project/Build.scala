@@ -141,7 +141,7 @@ object StorehausBuild extends Build {
   ).settings(
     name := "storehaus-memcache",
     previousArtifact := youngestForwardCompatible("memcache"),
-    libraryDependencies += "com.twitter" %% "finagle-memcached" % "6.3.0"
+    libraryDependencies += Finagle.module("memcached")
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
   lazy val storehausMySQL = Project(
@@ -151,7 +151,7 @@ object StorehausBuild extends Build {
   ).settings(
     name := "storehaus-mysql",
     previousArtifact := youngestForwardCompatible("mysql"),
-    libraryDependencies += "com.twitter" %% "finagle-mysql" % "6.2.1"
+    libraryDependencies += Finagle.module("mysql", "6.2.1") // tests fail with the latest
   ).dependsOn(storehausCore % "test->test;compile->compile")
 
   lazy val storehausRedis = Project(
@@ -161,7 +161,7 @@ object StorehausBuild extends Build {
   ).settings(
     name := "storehaus-redis",
     previousArtifact := youngestForwardCompatible("redis"),
-    libraryDependencies += "com.twitter" %% "finagle-redis" % "6.2.0",
+    libraryDependencies += Finagle.module("redis"),
     // we don't want various tests clobbering each others keys
     parallelExecution in Test := false,
     testOptions in Test += Tests.Cleanup { loader =>
