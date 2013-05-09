@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package com.twitter.storehaus.algebra
+package com.twitter.storehaus
 
 import com.twitter.bijection.Injection
-import com.twitter.storehaus.{ ConvertedReadableStore, Store }
 import com.twitter.util.Future
 
 /** Use an injection on V2,V1 to convert a store of values V2.
@@ -25,7 +24,6 @@ import com.twitter.util.Future
  * containing the string "cannot be converted"
  * TODO: we should add a specific exception type here so we can safely filter these cases to Future.None if we so choose.
  */
-@deprecated("Use com.twitter.storehaus.ConvertedStore instead", "0.3.1")
 class ConvertedStore[K1, -K2, V1, V2](store: Store[K1, V1])(kfn: K2 => K1)(implicit inj: Injection[V2, V1])
   extends ConvertedReadableStore[K1, K2, V1, V2](store)(kfn)({ v1: V1 =>
     inj.invert(v1).map { Future.value(_) }

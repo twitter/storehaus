@@ -20,7 +20,8 @@ import com.twitter.algebird.Monoid
 import com.twitter.bijection.Injection
 import com.twitter.finagle.redis.Client
 import com.twitter.finagle.redis.util.{ CBToString, StringToChannelBuffer }
-import com.twitter.storehaus.algebra.{ ConvertedStore, MergeableStore }
+import com.twitter.storehaus.ConvertedStore
+import com.twitter.storehaus.algebra.MergeableStore
 import com.twitter.util.{ Future, Time }
 import org.jboss.netty.buffer.ChannelBuffer
 import scala.util.control.Exception.allCatch

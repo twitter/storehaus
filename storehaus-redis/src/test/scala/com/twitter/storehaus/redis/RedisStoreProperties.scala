@@ -62,12 +62,13 @@ object RedisStoreProperties extends Properties("RedisStore")
   def storeTest(store: Store[String, String]) =
     putStoreTest(store, validPairs) && multiPutStoreTest(store, validPairs)
 
+  implicit def strToCb = new Injection[String, ChannelBuffer] {
+    def apply(a: String): ChannelBuffer = StringToChannelBuffer(a)
+    def invert(b: ChannelBuffer): Option[String] = allCatch.opt(CBToString(b))
+  }
   val closeable =
-    new ConvertedStore(RedisStore(client))(StringToChannelBuffer(_: String))(
-      new Injection[String, ChannelBuffer] {
-        def apply(a: String): ChannelBuffer = StringToChannelBuffer(a)
-        def invert(b: ChannelBuffer): Option[String] = allCatch.opt(CBToString(b))
-      })
+    RedisStore(client).convert(StringToChannelBuffer(_: String))
+
 
  property("RedisStore test") =
    storeTest(closeable)
