@@ -21,67 +21,26 @@ import java.util.logging.Level
 import com.twitter.finagle.exp.mysql.Client
 import com.twitter.util.Await
 
-import org.jboss.netty.buffer.ChannelBuffer
-import org.jboss.netty.buffer.ChannelBuffers
-import org.jboss.netty.util.CharsetUtil.UTF_8
-
 import org.scalacheck.Arbitrary
+import org.scalacheck.Gen
 import org.scalacheck.Properties
 import org.scalacheck.Prop.forAll
 
-object MySQLStoreProperties extends Properties("MySQLStore") {
+object MySqlStoreProperties extends Properties("MySqlStore") {
 
-  val validPairs = Arbitrary.arbitrary[List[(String, Option[String])]] suchThat {
-    case Nil => false
-    case _ => true
-    /*
-    case xs => xs.forall {
-      case (k, Some(s)) => !k.isEmpty && !s.isEmpty
-      case (k, None) => !k.isEmpty
-    }
-    */
-  }
+  // used to generate arbitrary pairs of types we want to test
+  def validPairs[T: Arbitrary] = Arbitrary.arbitrary[List[(T, Option[T])]] suchThat(!_.isEmpty)
 
-  val validIntPairs = Arbitrary.arbitrary[List[(Int, Option[Int])]] suchThat {
-    case Nil => false
-    case _ => true
-  }
-
-  val validLongPairs = Arbitrary.arbitrary[List[(Long, Option[Long])]] suchThat {
-    case Nil => false
-    case _ => true
-  }
-
-  val validShortPairs = Arbitrary.arbitrary[List[(Short, Option[Short])]] suchThat {
-    case Nil => false
-    case _ => true
-  }
-
-  def getValidPairs(datatype: String) = datatype match {
-      case "string" => validPairs
-      case "int" => validIntPairs
-      case "long" => validLongPairs
-      case "short" => validShortPairs
-      case _ => validPairs
-    }
-
-  def put(s: MySQLStore, pairs: List[(String, Option[String])]) {
+  def put(s: MySqlStore, pairs: List[(MySqlValue, Option[MySqlValue])]) {
     pairs.foreach { case (k, v) =>
-      Await.result(s.put((k, v match {
-          case Some(value) => Some(ChannelBuffers.copiedBuffer(value, UTF_8))
-          case None => None
-        }
-      )))
+      Await.result(s.put((k, v)))
     }
   }
 
-  def putAndGetStoreTest(store: MySQLStore, datatype: String = "string") =
-    forAll(getValidPairs(datatype)) { (examples: List[(Any, Option[Any])]) =>
+  def putAndGetStoreTest(store: MySqlStore, pairs: Gen[List[(Any, Option[Any])]] = validPairs[String]) =
+    forAll(pairs) { (examples: List[(Any, Option[Any])]) =>
       val stringified = examples.map { case (k, v) =>
-          (k.toString, v match {
-            case Some(d) => Some(d.toString)
-            case None => None
-          })
+          (MySqlStringInjection.invert(k.toString).get, v.flatMap { d => MySqlStringInjection.invert(d.toString) })
         }
       put(store, stringified)
       stringified.toMap.forall { case (k, optV) =>
@@ -90,75 +49,76 @@ object MySQLStoreProperties extends Properties("MySQLStore") {
       }
     }
 
-  def putAndMultiGetStoreTest(store: MySQLStore, datatype: String = "string") =
-    forAll(getValidPairs(datatype)) { (examples: List[(Any, Option[Any])]) =>
+  def putAndMultiGetStoreTest(store: MySqlStore, pairs: Gen[List[(Any, Option[Any])]] = validPairs[String]) =
+    forAll(pairs) { (examples: List[(Any, Option[Any])]) =>
       val stringified = examples.map { case (k, v) =>
-          (k.toString, v match {
-            case Some(d) => Some(d.toString)
-            case None => None
-          })
+          (MySqlStringInjection.invert(k.toString).get, v.map { case value => MySqlStringInjection.invert(value.toString).get })
         }
       put(store, stringified)
       val data = stringified.toMap
       val result = store.multiGet(data.keySet)
       data.forall { case (k, optV) =>
-        // result.get(k) returns Option[Future[Option[ChannelBuffer]]]
-        val foundOptV = result.get(k) match { case Some(v) => Await.result(result.get(k).get) ; case None => None }
+        // result.get(k) returns Option[Future[Option[MySqlValue]]]
+        val foundOptV = result.get(k) match {
+          case Some(v) => Await.result(v)
+          case None => None
+        }
         compareValues(k, optV, foundOptV)
       }
     }
 
-  def compareValues(k: String, expectedOptV: Option[String], foundOptV: Option[ChannelBuffer]) = {
+  def compareValues(k: MySqlValue, expectedOptV: Option[MySqlValue], foundOptV: Option[MySqlValue]) = {
     val isMatch = expectedOptV match {
-      case Some(value) => !foundOptV.isEmpty && foundOptV.get.toString(UTF_8) == value 
+      case Some(value) => !foundOptV.isEmpty && foundOptV.get == value 
       case None => foundOptV.isEmpty
     }
     if (!isMatch) printErr(k, expectedOptV, foundOptV)
     isMatch
   }
 
-  def printErr(k: String, expectedOptV: Option[String], foundOptV: Option[ChannelBuffer]) {
-    val found = if (foundOptV.isEmpty) { foundOptV } else { "Some("+foundOptV.get.toString(UTF_8)+")" }
-    println("FAILURE: Key \""+k+"\" - expected value "+expectedOptV+", but found "+found)
+  def printErr(k: MySqlValue, expectedOptV: Option[MySqlValue], foundOptV: Option[MySqlValue]) {
+    val expected = if (expectedOptV.isEmpty) { expectedOptV } else { "Some("+MySqlStringInjection(expectedOptV.get)+")" }
+    val found = if (foundOptV.isEmpty) { foundOptV } else { "Some("+MySqlStringInjection(foundOptV.get)+")" }
+    println("FAILURE: Key \""+MySqlStringInjection(k)+"\" - expected value "+expected+", but found "+found)
   }
 
-  property("MySQLStore text->text") =
+  property("MySqlStore text->text") =
     withStore(putAndGetStoreTest(_), "text", "text")
 
-  property("MySQLStore blob->blob") =
+  property("MySqlStore blob->blob") =
     withStore(putAndGetStoreTest(_), "blob", "blob")
 
-  property("MySQLStore text->blob") =
+  property("MySqlStore text->blob") =
     withStore(putAndGetStoreTest(_), "text", "blob")
 
-  property("MySQLStore text->text multiget") =
+  property("MySqlStore text->text multiget") =
     withStore(putAndMultiGetStoreTest(_), "text", "text", true)
 
-  property("MySQLStore blob->blob multiget") =
+  property("MySqlStore blob->blob multiget") =
     withStore(putAndMultiGetStoreTest(_), "blob", "blob", true)
 
-  property("MySQLStore text->blob multiget") =
+  property("MySqlStore text->blob multiget") =
     withStore(putAndMultiGetStoreTest(_), "text", "blob", true)
 
-  property("MySQLStore int->int") =
-    withStore(putAndGetStoreTest(_, "int"), "int", "int")
+  property("MySqlStore int->int") =
+    withStore(putAndGetStoreTest(_, validPairs[Int]), "int", "int")
 
-  property("MySQLStore int->int multiget") =
-    withStore(putAndMultiGetStoreTest(_, "int"), "int", "int", true)
+  property("MySqlStore int->int multiget") =
+    withStore(putAndMultiGetStoreTest(_, validPairs[Int]), "int", "int", true)
 
-  property("MySQLStore bigint->bigint") =
-    withStore(putAndGetStoreTest(_, "long"), "bigint", "bigint")
+  property("MySqlStore bigint->bigint") =
+    withStore(putAndGetStoreTest(_, validPairs[Long]), "bigint", "bigint")
 
-  property("MySQLStore bigint->bigint multiget") =
-    withStore(putAndMultiGetStoreTest(_, "long"), "bigint", "bigint", true)
+  property("MySqlStore bigint->bigint multiget") =
+    withStore(putAndMultiGetStoreTest(_, validPairs[Long]), "bigint", "bigint", true)
 
-  property("MySQLStore smallint->smallint") =
-    withStore(putAndGetStoreTest(_, "short"), "smallint", "smallint")
+  property("MySqlStore smallint->smallint") =
+    withStore(putAndGetStoreTest(_, validPairs[Short]), "smallint", "smallint")
 
-  property("MySQLStore smallint->smallint multiget") =
-    withStore(putAndMultiGetStoreTest(_, "short"), "smallint", "smallint", true)
-
-  private def withStore[T](f: MySQLStore => T, kColType: String, vColType: String, multiGet: Boolean = false): T = {
+  property("MySqlStore smallint->smallint multiget") =
+    withStore(putAndMultiGetStoreTest(_, validPairs[Short]), "smallint", "smallint", true)
+  
+  private def withStore[T](f: MySqlStore => T, kColType: String, vColType: String, multiGet: Boolean = false): T = {
     val client = Client("localhost:3306", "storehaususer", "test1234", "storehaus_test", Level.WARNING)
     // these should match mysql setup used in .travis.yml
 
@@ -166,7 +126,7 @@ object MySQLStoreProperties extends Properties("MySQLStore") {
     val schema = "CREATE TEMPORARY TABLE IF NOT EXISTS `"+tableName+"` (`key` "+kColType+" DEFAULT NULL, `value` "+vColType+" DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8;"
     Await.result(client.query(schema))
 
-    val store = MySQLStore(client, tableName, "key", "value")
+    val store = MySqlStore(client, tableName, "key", "value")
     val result = f(store)
     store.close
     result

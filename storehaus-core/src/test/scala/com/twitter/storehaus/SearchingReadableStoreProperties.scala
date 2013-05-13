@@ -16,6 +16,8 @@
 
 package com.twitter.storehaus
 
+import com.twitter.util.Await
+
 import org.scalacheck.Properties
 import org.scalacheck.Prop._
 
@@ -28,8 +30,8 @@ object SearchingReadableStoreProperties extends Properties("SearchingReadableSto
   property("ReadableStore.find works as expected") =
     forAll { (m1: Map[String, Int], m2: Map[String, Int]) =>
       val store = ReadableStore.find(Seq(ReadableStore.fromMap(m1), ReadableStore.fromMap(m2)))(_.isDefined)
-      val leftGet = store.multiGet(m1.keySet).mapValues(_.get)
-      val rightGet = store.multiGet(m2.keySet).mapValues(_.get)
+      val leftGet = store.multiGet(m1.keySet).mapValues(Await.result(_))
+      val rightGet = store.multiGet(m2.keySet).mapValues(Await.result(_))
       leftGet == m1.mapValues(Some(_)) && rightGet.forall { case (k, v) => v == (m2 ++ m1).get(k) }
     }
 }

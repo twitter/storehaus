@@ -21,25 +21,29 @@ import com.twitter.finagle.redis.util.StringToChannelBuffer
 import com.twitter.storehaus.{ FutureOps, Store }
 import com.twitter.storehaus.algebra.ConvertedStore
 import com.twitter.storehaus.redis.RedisStoreProperties.{ putStoreTest, multiPutStoreTest }
+
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalacheck.Properties
+import org.scalacheck.Gen
 import org.scalacheck.Gen.listOf1
 import org.scalacheck.Prop._
+import org.scalacheck.Properties
 
 object RedisLongStoreProperties extends Properties("RedisLongStore")
   with CloseableCleanup[Store[String, Long]]
   with DefaultRedisClient {
-  
-  val validPairs = listOf1(arbitrary[((String, Option[Long]))] suchThat {
-    case (k, v) if (k.isEmpty) => false
-    case _ => true
-  })
+
+  def paired: Gen[(String, Option[Long])] = for {
+    str <- Generators.nonEmptyAlphaStr
+    opt <- Generators.posLongOpt
+  } yield (str, opt)
+
+  def validPairs: Gen[List[(String, Option[Long])]] = Gen.listOfN(10,paired)
 
   def storeTest(store: Store[String, Long]) =
     putStoreTest(store, validPairs) && multiPutStoreTest(store, validPairs)
 
   val closeable =
-    new ConvertedStore(RedisLongStore(client))(StringToChannelBuffer(_: String))(Injection.identity)
+    RedisLongStore(client).convert(StringToChannelBuffer(_: String))
 
   property("RedisLongStore test") =
     storeTest(closeable)
