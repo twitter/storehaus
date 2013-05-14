@@ -99,65 +99,36 @@ object StorehausBuild extends Build {
     storehausRedis
   )
 
-  lazy val storehausCache = Project(
-    id = "storehaus-cache",
-    base = file("storehaus-cache"),
-    settings = sharedSettings
-  ).settings(
-    name := "storehaus-cache",
-    previousArtifact := youngestForwardCompatible("cache")
-  )
+  def module(name: String) = {
+    val id = "storehaus-%s".format(name)
+    Project(id = id, base = file(id), settings = sharedSettings ++ Seq(
+      Keys.name := id,
+      previousArtifact := youngestForwardCompatible(name))
+    )
+  }
 
-  lazy val storehausCore = Project(
-    id = "storehaus-core",
-    base = file("storehaus-core"),
-    settings = sharedSettings
-  ).settings(
-    name := "storehaus-core",
-    previousArtifact := youngestForwardCompatible("core"),
+  lazy val storehausCache = module("cache")
+
+  lazy val storehausCore = module("core").settings(
     libraryDependencies += "com.twitter" %% "util-core" % "6.3.0",
     libraryDependencies += "com.twitter" %% "bijection-core" % bijectionVersion
   ).dependsOn(storehausCache)
 
-  lazy val storehausAlgebra = Project(
-    id = "storehaus-algebra",
-    base = file("storehaus-algebra"),
-    settings = sharedSettings
-  ).settings(
-    name := "storehaus-algebra",
-    previousArtifact := youngestForwardCompatible("algebra"),
+  lazy val storehausAlgebra = module("algebra").settings(
     libraryDependencies += "com.twitter" %% "algebird-core" % algebirdVersion,
     libraryDependencies += "com.twitter" %% "algebird-util" % algebirdVersion,
     libraryDependencies += "com.twitter" %% "bijection-algebird" % bijectionVersion
   ).dependsOn(storehausCore % "test->test;compile->compile")
 
-  lazy val storehausMemcache = Project(
-    id = "storehaus-memcache",
-    base = file("storehaus-memcache"),
-    settings = sharedSettings
-  ).settings(
-    name := "storehaus-memcache",
-    previousArtifact := youngestForwardCompatible("memcache"),
+  lazy val storehausMemcache = module("memcache").settings(
     libraryDependencies += Finagle.module("memcached")
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
-  lazy val storehausMySQL = Project(
-    id = "storehaus-mysql",
-    base = file("storehaus-mysql"),
-    settings = sharedSettings
-  ).settings(
-    name := "storehaus-mysql",
-    previousArtifact := youngestForwardCompatible("mysql"),
+  lazy val storehausMySQL = module("mysql").settings(
     libraryDependencies += Finagle.module("mysql", "6.2.1") // tests fail with the latest
   ).dependsOn(storehausCore % "test->test;compile->compile")
 
-  lazy val storehausRedis = Project(
-    id = "storehaus-redis",
-    base = file("storehaus-redis"),
-    settings = sharedSettings
-  ).settings(
-    name := "storehaus-redis",
-    previousArtifact := youngestForwardCompatible("redis"),
+  lazy val storehausRedis = module("redis").settings(
     libraryDependencies += Finagle.module("redis"),
     // we don't want various tests clobbering each others keys
     parallelExecution in Test := false,
