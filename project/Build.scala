@@ -10,11 +10,18 @@ import com.typesafe.tools.mima.plugin.MimaKeys.previousArtifact
 object StorehausBuild extends Build {
   val extraSettings =
     Project.defaultSettings ++ releaseSettings ++ Boilerplate.settings ++ mimaDefaultSettings
-  val sharedSettings =  extraSettings ++ Seq(
+
+  val testCleanup = extraSettings ++ Seq(
+    testOptions in Test += Tests.Cleanup { loader =>
+      val c = loader.loadClass("com.twitter.storehaus.testing.Cleanup$")
+      c.getMethod("cleanup").invoke(c.getField("MODULE$").get(c))
+    }
+  )
+
+  val sharedSettings = extraSettings ++ Seq(
     organization := "com.twitter",
     crossScalaVersions := Seq("2.9.2", "2.10.0"),
     libraryDependencies ++= Seq(
-      "org.scalacheck" %% "scalacheck" % "1.10.0" % "test" withSources(),
       "org.scala-tools.testing" %% "specs" % "1.6.9" % "test" withSources()
     ),
 
@@ -96,15 +103,16 @@ object StorehausBuild extends Build {
     storehausAlgebra,
     storehausMemcache,
     storehausMySQL,
-    storehausRedis
+    storehausRedis,
+    storehausTesting
   )
 
   def module(name: String) = {
     val id = "storehaus-%s".format(name)
     Project(id = id, base = file(id), settings = sharedSettings ++ Seq(
       Keys.name := id,
-      previousArtifact := youngestForwardCompatible(name))
-    )
+      previousArtifact := youngestForwardCompatible(name)) ++ testCleanup
+    ).dependsOn(storehausTesting % "test->test")
   }
 
   lazy val storehausCache = module("cache")
@@ -112,7 +120,7 @@ object StorehausBuild extends Build {
   lazy val storehausCore = module("core").settings(
     libraryDependencies += "com.twitter" %% "util-core" % "6.3.0",
     libraryDependencies += "com.twitter" %% "bijection-core" % bijectionVersion
-  ).dependsOn(storehausCache)
+  ).dependsOn(storehausCache %  "test->test;compile->compile")
 
   lazy val storehausAlgebra = module("algebra").settings(
     libraryDependencies += "com.twitter" %% "algebird-core" % algebirdVersion,
@@ -131,10 +139,18 @@ object StorehausBuild extends Build {
   lazy val storehausRedis = module("redis").settings(
     libraryDependencies += Finagle.module("redis"),
     // we don't want various tests clobbering each others keys
-    parallelExecution in Test := false,
-    testOptions in Test += Tests.Cleanup { loader =>
-      val c = loader.loadClass("com.twitter.storehaus.redis.Cleanup$")
-      c.getMethod("cleanup").invoke(c.getField("MODULE$").get(c))
-    }
+    parallelExecution in Test := false 
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
+
+  val storehausTesting = Project(
+    id = "storehaus-testing",
+    base = file("storehaus-testing"),
+    settings = sharedSettings ++ Seq(
+      name := "storehaus-testing",
+      previousArtifact := youngestForwardCompatible("testing"),
+      libraryDependencies ++= Seq(
+        "org.scalacheck" %% "scalacheck" % "1.10.0" withSources()
+      )
+    )
+  )
 }

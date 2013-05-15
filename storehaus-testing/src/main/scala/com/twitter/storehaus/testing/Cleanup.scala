@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package com.twitter.storehaus.redis
+package com.twitter.storehaus.testing
 
 import java.io.Closeable
 import scala.collection.mutable.{ HashSet, SynchronizedSet }
 
-// TODO: this should get moved into a common test module 
 trait Cleanup {
   Cleanup.instances += this
   def cleanup()

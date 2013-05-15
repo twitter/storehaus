@@ -21,6 +21,7 @@ import com.twitter.finagle.redis.Client
 import com.twitter.finagle.redis.util.{ CBToString, StringToChannelBuffer }
 import com.twitter.storehaus.{ FutureOps, Store }
 import com.twitter.storehaus.algebra.ConvertedStore
+import com.twitter.storehaus.testing.{ CloseableCleanup, Generators }
 import com.twitter.util.Await
 import org.jboss.netty.buffer.ChannelBuffer
 import org.scalacheck.{ Arbitrary, Gen, Properties }

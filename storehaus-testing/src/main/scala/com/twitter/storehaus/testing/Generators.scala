@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.twitter.storehaus.redis
+package com.twitter.storehaus.testing
 
 import org.scalacheck.Gen
 
