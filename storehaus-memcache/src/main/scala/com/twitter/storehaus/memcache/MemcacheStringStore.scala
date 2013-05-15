@@ -20,7 +20,8 @@ import com.twitter.algebird.Monoid
 import com.twitter.bijection.Injection
 import com.twitter.util.Time
 import com.twitter.finagle.memcached.Client
-import com.twitter.storehaus.algebra.{ ConvertedStore, MergeableStore }
+import com.twitter.storehaus.ConvertedStore
+import com.twitter.storehaus.algebra.MergeableStore
 import org.jboss.netty.buffer.{ ChannelBuffer, ChannelBuffers }
 import org.jboss.netty.util.CharsetUtil
 import scala.util.control.Exception.allCatch

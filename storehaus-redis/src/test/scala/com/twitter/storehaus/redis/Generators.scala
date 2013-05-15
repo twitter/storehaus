@@ -16,30 +16,19 @@
 
 package com.twitter.storehaus.redis
 
-import java.io.Closeable
-import scala.collection.mutable.{ HashSet, SynchronizedSet }
+import org.scalacheck.Gen
 
-// TODO: this should get moved into a common test module 
-trait Cleanup {
-  Cleanup.instances += this
-  def cleanup()
-}
+object Generators {
 
-trait CloseableCleanup[C <: Closeable] extends Cleanup {
-  def closeable: C
-  def cleanup() {
-    closeable.close()
-  }
-}
+  /** Generator for non-empty alpha strings of random length */
+  def nonEmptyAlphaStr: Gen[String] =
+   for(cs <- Gen.listOf1(Gen.alphaChar)) yield cs.mkString
 
-object Cleanup {
-  private val instances = new HashSet[Cleanup] with SynchronizedSet[Cleanup]
-  def cleanup() {
-    try instances.foreach { _.cleanup() }
-    catch {
-      case e: Exception =>
-        println("Error on cleanup")
-        e.printStackTrace
-    }
-  }
+  /** Generator for Options of non-empty alpha strings of random length */
+  def nonEmptyAlphaStrOpt: Gen[Option[String]] =
+    nonEmptyAlphaStr.flatMap(str => Gen.oneOf(Some(str), None))
+
+  /** Generator for Options of postive long values */
+  def posLongOpt: Gen[Option[Long]] =
+    Gen.posNum[Long].flatMap(l => Gen.oneOf(Some(l), None))
 }

@@ -16,6 +16,8 @@
 
 package com.twitter.storehaus
 
+import com.twitter.bijection.Injection
+
 /**
   * Enrichment on the Store[K, V] trait. Storehaus uses the enrichment
   * pattern instead of adding these methods directly to the trait
@@ -31,4 +33,13 @@ package com.twitter.storehaus
 class EnrichedStore[-K, V](store: Store[K, V]) {
   def unpivot[CombinedK, InnerK, InnerV](split: CombinedK => (K, InnerK))(implicit ev: V <:< Map[InnerK, InnerV]): Store[CombinedK, InnerV] =
     Store.unpivot(store.asInstanceOf[Store[K, Map[InnerK, InnerV]]])(split)
+
+  def convert[K2, V2](kfn: K2 => K)(implicit inj: Injection[V2, V]): Store[K2, V2] =
+    Store.convert[K, K2, V, V2](store)(kfn)(inj)
+
+  def composeKeyMapping[K1](fn: K1 => K): Store[K1, V] =
+    Store.convert(store)(fn)
+
+  def mapValues[V1](implicit inj: Injection[V1, V]): Store[K, V1] =
+    Store.convert(store)(identity[K])
 }

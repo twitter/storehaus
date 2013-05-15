@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus
 
-import com.twitter.util.Future
+import com.twitter.util.{ Await, Future }
 
 import org.scalacheck.{ Arbitrary, Properties }
 import org.scalacheck.Gen.choose
@@ -28,18 +28,18 @@ object StoreProperties extends Properties("Store") {
     forAll { (examples: List[(K, Option[V])]) =>
       put(store, examples)
       examples.toMap.forall { case (k, optV) =>
-          Equiv[Option[V]].equiv(store.get(k).get, optV)
+          Equiv[Option[V]].equiv(Await.result(store.get(k)), optV)
       }
     }
 
   def putStoreTest[K: Arbitrary, V: Arbitrary: Equiv](store: Store[K, V]) =
     baseTest(store) { (s, pairs) =>
-      pairs.foreach { s.put(_).get }
+      pairs.foreach { p => Await.result(s.put(p)) }
     }
 
   def multiPutStoreTest[K: Arbitrary, V: Arbitrary: Equiv](store: Store[K, V]) =
     baseTest(store) { (s, pairs) =>
-      FutureOps.mapCollect(s.multiPut(pairs.toMap)).get
+      Await.result(FutureOps.mapCollect(s.multiPut(pairs.toMap)))
     }
 
   def storeTest[K: Arbitrary, V: Arbitrary: Equiv](store: Store[K, V]) =
@@ -51,8 +51,8 @@ object StoreProperties extends Properties("Store") {
   property("Or works as expected") = forAll { (m1: Map[String, Int], m2: Map[String, Int]) =>
     val orRO = ReadableStore.first(Seq(ReadableStore.fromMap(m1), ReadableStore.fromMap(m2)))
    (m1.keySet ++ m2.keySet).forall { k =>
-     (orRO.get(k).get == m1.get(k)) ||
-       (orRO.get(k).get == m2.get(k))
+     (Await.result(orRO.get(k)) == m1.get(k)) ||
+       (Await.result(orRO.get(k)) == m2.get(k))
    }
   }
 }
