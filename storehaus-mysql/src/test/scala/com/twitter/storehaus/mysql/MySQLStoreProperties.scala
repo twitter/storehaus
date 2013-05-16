@@ -19,6 +19,7 @@ package com.twitter.storehaus.mysql
 import java.util.logging.Level
 
 import com.twitter.finagle.exp.mysql.Client
+import com.twitter.storehaus.testing.SelfAggregatingCloseableCleanup
 import com.twitter.util.Await
 
 import org.scalacheck.Arbitrary
@@ -26,7 +27,8 @@ import org.scalacheck.Gen
 import org.scalacheck.Properties
 import org.scalacheck.Prop.forAll
 
-object MySqlStoreProperties extends Properties("MySqlStore") {
+object MySqlStoreProperties extends Properties("MySqlStore")
+  with SelfAggregatingCloseableCleanup[MySqlStore] {
 
   // used to generate arbitrary pairs of types we want to test
   def validPairs[T: Arbitrary] = Arbitrary.arbitrary[List[(T, Option[T])]] suchThat(!_.isEmpty)
@@ -126,9 +128,9 @@ object MySqlStoreProperties extends Properties("MySqlStore") {
     val schema = "CREATE TEMPORARY TABLE IF NOT EXISTS `"+tableName+"` (`key` "+kColType+" DEFAULT NULL, `value` "+vColType+" DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8;"
     Await.result(client.query(schema))
 
-    val store = MySqlStore(client, tableName, "key", "value")
-    val result = f(store)
-    store.close
-    result
+    f(newStore(client, tableName))
   }
+
+  def newStore(client: Client, tableName: String) =
+    aggregateCloseable(MySqlStore(client, tableName, "key", "value"))
 }
