@@ -74,13 +74,13 @@ object StorehausBuild extends Build {
   /**
     * This returns the youngest jar we released that is compatible with
     * the current.
-    *
-    * TODO: Remove mysql, redis and cache after their release.
     */
+  val unreleasedModules = Set[String]()
+
   def youngestForwardCompatible(subProj: String) =
     Some(subProj)
-      .filterNot(Set("mysql", "redis", "cache").contains(_))
-      .map { s => "com.twitter" % ("storehaus-" + s + "_2.9.2") % "0.2.0" }
+      .filterNot(unreleasedModules.contains(_))
+      .map { s => "com.twitter" % ("storehaus-" + s + "_2.9.2") % "0.3.0" }
 
   val algebirdVersion = "0.1.12"
   val bijectionVersion = "0.3.0"
