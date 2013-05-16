@@ -30,7 +30,7 @@ object Cleanup {
   /** Clean up all instances capturing ( and logging ) errors */
   def cleanup() {
     instances.map(c => allCatch.either(c.cleanup()).left.map((c, _))).map(_.fold({
-      case (closeable, error) => println("failed to close %s cleanly: %s".format(closeable, error.getMessage))
+      case (closeable, error) => println("failed to cleanup %s: %s".format(closeable, error.getMessage))
     }, identity))
   }
 }
