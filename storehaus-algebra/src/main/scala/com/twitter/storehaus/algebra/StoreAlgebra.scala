@@ -22,25 +22,29 @@ import com.twitter.storehaus.{ FutureCollector, Store }
 import com.twitter.util.Future
 
 /**
-  * Enrichments on Store.
+  * Algebraic Enrichments on Store.
   */
 object StoreAlgebra {
   implicit def enrich[K, V](store: Store[K, V]): AlgebraicStore[K, V] =
     new AlgebraicStore(store)
 
+  @deprecated("Use com.twitter.storehaus.Store#convert", "0.3.1")
   def convert[K1, K2, V1, V2](store: Store[K1, V1])(kfn: K2 => K1)
     (implicit inj: Injection[V2, V1]): Store[K2, V2] =
-    new ConvertedStore(store)(kfn)
+    new com.twitter.storehaus.ConvertedStore(store)(kfn)
 }
 
 class AlgebraicStore[K, V](store: Store[K, V]) {
   def toMergeable(implicit mon: Monoid[V], fc: FutureCollector[(K, Option[V])]): MergeableStore[K, V] =
     MergeableStore.fromStore(store)
 
+  @deprecated("Use com.twitter.storehaus.EnrichedStore#composeKeyMapping", "0.3.1")
   def composeKeyMapping[K1](fn: K1 => K): Store[K1, V] = StoreAlgebra.convert(store)(fn)
 
+  @deprecated("Use com.twitter.storehaus.EnrichedStore#mapValues", "0.3.1")
   def mapValues[V1](implicit inj: Injection[V1, V]): Store[K, V1] = StoreAlgebra.convert(store)(identity[K])
 
+  @deprecated("Use com.twitter.storehaus.EnrichedStore#convert", "0.3.1")
   def convert[K1, V1](fn: K1 => K)(implicit inj: Injection[V1, V]): Store[K1, V1] =
     StoreAlgebra.convert(store)(fn)
 }

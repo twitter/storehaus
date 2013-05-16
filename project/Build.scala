@@ -24,14 +24,14 @@ object StorehausBuild extends Build {
     ),
 
     resolvers ++= Seq(
-      "snapshots" at "http://oss.sonatype.org/content/repositories/snapshots",
-      "releases"  at "http://oss.sonatype.org/content/repositories/releases",
+      Opts.resolver.sonatypeSnapshots,
+      Opts.resolver.sonatypeReleases,
       "Twitter Maven" at "http://maven.twttr.com"
     ),
 
     parallelExecution in Test := true,
 
-    scalacOptions ++= Seq("-unchecked", "-deprecation"),
+    scalacOptions ++= Seq(Opts.compile.unchecked, Opts.compile.deprecation),
 
     // Publishing options:
     publishMavenStyle := true,
@@ -40,12 +40,9 @@ object StorehausBuild extends Build {
 
     pomIncludeRepository := { x => false },
 
-    publishTo <<= version { (v: String) =>
-      val nexus = "https://oss.sonatype.org/"
-      if (v.trim.endsWith("SNAPSHOT"))
-        Some("sonatype-snapshots" at nexus + "content/repositories/snapshots")
-      else
-        Some("sonatype-releases"  at nexus + "service/local/staging/deploy/maven2")
+    publishTo <<= version { v =>
+      Some(if (v.trim.toUpperCase.endsWith("SNAPSHOT")) Opts.resolver.sonatypeSnapshots
+           else Opts.resolver.sonatypeStaging)
     },
 
     pomExtra := (
@@ -87,8 +84,8 @@ object StorehausBuild extends Build {
       .filterNot(unreleasedModules.contains(_))
       .map { s => "com.twitter" % ("storehaus-" + s + "_2.9.2") % "0.3.0" }
 
-  val algebirdVersion = "0.1.12"
-  val bijectionVersion = "0.3.0"
+  val algebirdVersion = "0.1.13"
+  val bijectionVersion = "0.4.0"
 
   lazy val storehaus = Project(
     id = "storehaus",
@@ -123,7 +120,8 @@ object StorehausBuild extends Build {
   ).settings(
     name := "storehaus-core",
     previousArtifact := youngestForwardCompatible("core"),
-    libraryDependencies += "com.twitter" %% "util-core" % "6.3.0"
+    libraryDependencies += "com.twitter" %% "util-core" % "6.3.0",
+    libraryDependencies += "com.twitter" %% "bijection-core" % bijectionVersion
   ).dependsOn(storehausCache)
 
   lazy val storehausAlgebra = Project(
@@ -135,7 +133,6 @@ object StorehausBuild extends Build {
     previousArtifact := youngestForwardCompatible("algebra"),
     libraryDependencies += "com.twitter" %% "algebird-core" % algebirdVersion,
     libraryDependencies += "com.twitter" %% "algebird-util" % algebirdVersion,
-    libraryDependencies += "com.twitter" %% "bijection-core" % bijectionVersion,
     libraryDependencies += "com.twitter" %% "bijection-algebird" % bijectionVersion
   ).dependsOn(storehausCore % "test->test;compile->compile")
 
@@ -146,7 +143,7 @@ object StorehausBuild extends Build {
   ).settings(
     name := "storehaus-memcache",
     previousArtifact := youngestForwardCompatible("memcache"),
-    libraryDependencies += "com.twitter" %% "finagle-memcached" % "6.3.0"
+    libraryDependencies += Finagle.module("memcached")
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
   lazy val storehausMySQL = Project(
@@ -156,7 +153,7 @@ object StorehausBuild extends Build {
   ).settings(
     name := "storehaus-mysql",
     previousArtifact := youngestForwardCompatible("mysql"),
-    libraryDependencies += "com.twitter" %% "finagle-mysql" % "6.2.1"
+    libraryDependencies += Finagle.module("mysql", "6.2.1") // tests fail with the latest
   ).dependsOn(storehausCore % "test->test;compile->compile")
 
   lazy val storehausRedis = Project(
@@ -166,7 +163,9 @@ object StorehausBuild extends Build {
   ).settings(
     name := "storehaus-redis",
     previousArtifact := youngestForwardCompatible("redis"),
-    libraryDependencies += "com.twitter" %% "finagle-redis" % "6.2.0",
+    libraryDependencies += Finagle.module("redis"),
+    // we don't want various tests clobbering each others keys
+    parallelExecution in Test := false,
     testOptions in Test += Tests.Cleanup { loader =>
       val c = loader.loadClass("com.twitter.storehaus.redis.Cleanup$")
       c.getMethod("cleanup").invoke(c.getField("MODULE$").get(c))
