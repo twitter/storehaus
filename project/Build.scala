@@ -11,6 +11,13 @@ object StorehausBuild extends Build {
   val extraSettings =
     Project.defaultSettings ++ releaseSettings ++ Boilerplate.settings ++ mimaDefaultSettings
 
+  def ciSettings: Seq[Project.Setting[_]] =
+    if (sys.env.getOrElse("TRAVIS", "false").toBoolean) Seq(
+      logLevel in Global := Level.Warn,
+      logLevel in Compile := Level.Warn,
+      logLevel in Test := Level.Info
+    ) else Seq.empty[Project.Setting[_]]
+
   val testCleanup = extraSettings ++ Seq(
     testOptions in Test += Tests.Cleanup { loader =>
       val c = loader.loadClass("com.twitter.storehaus.testing.Cleanup$")
@@ -18,7 +25,7 @@ object StorehausBuild extends Build {
     }
   )
 
-  val sharedSettings = extraSettings ++ Seq(
+  val sharedSettings = extraSettings ++ ciSettings ++ Seq(
     organization := "com.twitter",
     crossScalaVersions := Seq("2.9.2", "2.10.0"),
     libraryDependencies ++= Seq(
