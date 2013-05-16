@@ -84,8 +84,8 @@ object StorehausBuild extends Build {
       .filterNot(unreleasedModules.contains(_))
       .map { s => "com.twitter" % ("storehaus-" + s + "_2.9.2") % "0.3.0" }
 
-  val algebirdVersion = "0.1.12"
-  val bijectionVersion = "0.3.0"
+  val algebirdVersion = "0.1.13"
+  val bijectionVersion = "0.4.0"
 
   lazy val storehaus = Project(
     id = "storehaus",
