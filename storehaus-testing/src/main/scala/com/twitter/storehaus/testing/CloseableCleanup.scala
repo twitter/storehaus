@@ -16,21 +16,12 @@
 
 package com.twitter.storehaus.testing
 
-import scala.collection.mutable.{ HashSet, SynchronizedSet }
-import scala.util.control.Exception.allCatch
+import java.io.Closeable
 
-trait Cleanup {
-  Cleanup.instances += this
-  def cleanup(): Unit
-}
-
-/** object resolved dynamically by sbt during test cleanup  */
-object Cleanup {
-  private val instances = new HashSet[Cleanup] with SynchronizedSet[Cleanup]
-  /** Clean up all instances capturing ( and logging ) errors */
+/** Cleanup for Closeable types */
+trait CloseableCleanup[C <: Closeable] extends Cleanup {
+  def closeable: C
   def cleanup() {
-    instances.map(c => allCatch.either(c.cleanup()).left.map((c, _))).map(_.fold({
-      case (closeable, error) => println("failed to close %s cleanly: %s".format(closeable, error.getMessage))
-    }, identity))
+    closeable.close()
   }
 }
