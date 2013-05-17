@@ -13,6 +13,11 @@ object StorehausBuild extends Build {
   val sharedSettings =  extraSettings ++ Seq(
     organization := "com.twitter",
     crossScalaVersions := Seq("2.9.2", "2.10.0"),
+
+    javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
+
+    javacOptions in doc := Seq("-source", "1.6"),
+
     libraryDependencies ++= Seq(
       "org.scalacheck" %% "scalacheck" % "1.10.0" % "test" withSources(),
       "org.scala-tools.testing" %% "specs" % "1.6.9" % "test" withSources()
@@ -71,16 +76,16 @@ object StorehausBuild extends Build {
   /**
     * This returns the youngest jar we released that is compatible with
     * the current.
-    *
-    * TODO: Remove mysql, redis and cache after their release.
     */
+  val unreleasedModules = Set[String]()
+
   def youngestForwardCompatible(subProj: String) =
     Some(subProj)
-      .filterNot(Set("mysql", "redis", "cache").contains(_))
-      .map { s => "com.twitter" % ("storehaus-" + s + "_2.9.2") % "0.2.0" }
+      .filterNot(unreleasedModules.contains(_))
+      .map { s => "com.twitter" % ("storehaus-" + s + "_2.9.2") % "0.3.0" }
 
-  val algebirdVersion = "0.1.12"
-  val bijectionVersion = "0.3.0"
+  val algebirdVersion = "0.1.13"
+  val bijectionVersion = "0.4.0"
 
   lazy val storehaus = Project(
     id = "storehaus",
