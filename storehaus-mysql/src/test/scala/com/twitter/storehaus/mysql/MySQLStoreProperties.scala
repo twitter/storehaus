@@ -117,7 +117,7 @@ object MySqlStoreProperties extends Properties("MySqlStore") {
 
   property("MySqlStore smallint->smallint multiget") =
     withStore(putAndMultiGetStoreTest(_, validPairs[Short]), "smallint", "smallint", true)
-  
+
   private def withStore[T](f: MySqlStore => T, kColType: String, vColType: String, multiGet: Boolean = false): T = {
     val client = Client("localhost:3306", "storehaususer", "test1234", "storehaus_test", Level.WARNING)
     // these should match mysql setup used in .travis.yml
@@ -128,7 +128,12 @@ object MySqlStoreProperties extends Properties("MySqlStore") {
 
     val store = MySqlStore(client, tableName, "key", "value")
     val result = f(store)
-    store.close
+
+    // TODO: fix below once storehaus-testing module is ready
+    // as of now, store.close gets called before all test cases finish running
+    // so we comment this out
+    // store.close
+
     result
   }
 }
