@@ -1,5 +1,10 @@
 # storehaus #
 
+### Version.0.4.0 ###
+
+* Storehaus-Mysql support for numeric types
+* Name change in mysql store
+
 ### Version.0.3.0 ###
 
 * Adds storehaus-mysql
