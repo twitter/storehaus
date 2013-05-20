@@ -58,6 +58,6 @@ object NonEmpty {
 
     /** Genrator for non-empty lists of numerics (T, Option[T])'s */
     def numerics[T : Numeric : Choose](n: Int = 10) =
-      Gen.listOfN(n, numericPair)
+      Gen.listOfN(n, numericPair[T])
   }
 }
