@@ -22,6 +22,7 @@ import com.twitter.storehaus.{ FutureOps, Store }
 import com.twitter.storehaus.algebra.ConvertedStore
 import com.twitter.storehaus.redis.RedisStoreProperties.{ putStoreTest, multiPutStoreTest }
 import com.twitter.storehaus.testing.{ CloseableCleanup, Generators }
+import com.twitter.storehaus.testing.generator.NonEmpty
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 import org.scalacheck.Gen.listOf1
@@ -32,12 +33,8 @@ object RedisLongStoreProperties extends Properties("RedisLongStore")
   with CloseableCleanup[Store[String, Long]]
   with DefaultRedisClient {
 
-  def paired: Gen[(String, Option[Long])] = for {
-    str <- Generators.nonEmptyAlphaStr
-    opt <- Generators.posLongOpt
-  } yield (str, opt)
-
-  def validPairs: Gen[List[(String, Option[Long])]] = Gen.listOfN(10,paired)
+  def validPairs: Gen[List[(String, Option[Long])]] =
+    NonEmpty.Pairing.alphaStrNumerics[Long](10)
 
   def storeTest(store: Store[String, Long]) =
     putStoreTest(store, validPairs) && multiPutStoreTest(store, validPairs)
