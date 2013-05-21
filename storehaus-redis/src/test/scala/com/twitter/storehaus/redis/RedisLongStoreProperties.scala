@@ -21,7 +21,7 @@ import com.twitter.finagle.redis.util.StringToChannelBuffer
 import com.twitter.storehaus.{ FutureOps, Store }
 import com.twitter.storehaus.algebra.ConvertedStore
 import com.twitter.storehaus.redis.RedisStoreProperties.{ putStoreTest, multiPutStoreTest }
-import com.twitter.storehaus.testing.{ CloseableCleanup, Generators }
+import com.twitter.storehaus.testing.CloseableCleanup
 import com.twitter.storehaus.testing.generator.NonEmpty
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
