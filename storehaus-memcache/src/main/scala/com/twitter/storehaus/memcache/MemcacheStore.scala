@@ -29,6 +29,8 @@ import org.jboss.netty.buffer.ChannelBuffer
 
 object MemcacheStore {
   // Default Memcached TTL is one day.
+  // For more details of setting expiration time for items in Memcached, please refer to
+  // https://github.com/memcached/memcached/blob/master/doc/protocol.txt#L79
   val DEFAULT_TTL = 1.day
 
   // This flag used on "set" operations. Search this page for "flag"

@@ -28,6 +28,8 @@ import org.jboss.netty.buffer.ChannelBuffer
  */
 
 object RedisStore {
+  // For more details of setting expiration time for items in Redis, please refer to
+  // http://redis.io/commands/expire
   object Default {
     val TTL: Option[Duration] = None
   }
