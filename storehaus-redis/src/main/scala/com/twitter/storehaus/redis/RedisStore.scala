@@ -40,7 +40,7 @@ class RedisStore(val client: Client, ttl: Option[Duration])
   extends Store[ChannelBuffer, ChannelBuffer]
   with WithPutTtl[ChannelBuffer, ChannelBuffer, RedisStore]
 {
-  override def withTtl(ttl: Duration) = new RedisStore(client, Some(ttl))
+  override def withPutTtl(ttl: Duration) = new RedisStore(client, Some(ttl))
 
   override def get(k: ChannelBuffer): Future[Option[ChannelBuffer]] =
     client.get(k)

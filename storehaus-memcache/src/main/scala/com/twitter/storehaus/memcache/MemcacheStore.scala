@@ -44,7 +44,7 @@ class MemcacheStore(val client: Client, ttl: Duration, flag: Int)
   extends Store[String, ChannelBuffer]
   with WithPutTtl[String, ChannelBuffer, MemcacheStore]
 {
-  override def withTtl(ttl: Duration) = new MemcacheStore(client, ttl, flag)
+  override def withPutTtl(ttl: Duration) = new MemcacheStore(client, ttl, flag)
 
   override def get(k: String): Future[Option[ChannelBuffer]] = client.get(k)
 

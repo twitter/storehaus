@@ -103,5 +103,5 @@ trait Store[-K, V] extends ReadableStore[K, V] { self =>
  * Trait for building mutable store with TTL.
  */
 trait WithPutTtl[K, V, S <: Store[K, V]] {
-  def withTtl(ttl: Duration): S
+  def withPutTtl(ttl: Duration): S
 }
