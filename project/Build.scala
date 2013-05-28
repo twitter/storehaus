@@ -13,6 +13,7 @@ object StorehausBuild extends Build {
 
   def ciSettings: Seq[Project.Setting[_]] =
     if (sys.env.getOrElse("TRAVIS", "false").toBoolean) Seq(
+      ivyLoggingLevel := UpdateLogging.Quiet,
       logLevel in Global := Level.Warn,
       logLevel in Compile := Level.Warn,
       logLevel in Test := Level.Info
