@@ -16,6 +16,8 @@
 
 package com.twitter.storehaus
 
+import scala.collection.breakOut
+
 /** Helpful transformations on maps and collections.
  * These are combinators or transformers on collections that should probably be somewhere in the
  * scala collection API, but are not.
@@ -33,7 +35,7 @@ object CollectionOps {
         (outerK -> (innerK -> v))
     }
       .groupBy { _._1 }
-      .mapValues { _.map { _._2 }.toMap }
+      .map { case (k, v) => k -> v.map { _._2 }.toMap }(breakOut)
 
   /** create a Map from a Set of keys and a lookup function */
   def zipWith[K, V](keys: Set[K])(lookup: K => V): Map[K, V] =
@@ -50,5 +52,6 @@ object CollectionOps {
       mkv.foldLeft(oldM) { (seqm, kv) =>
         seqm + (kv._1 -> (kv._2 :: seqm.getOrElse(kv._1, Nil)))
       }
-    }.mapValues { _.reverse }
+    }.map { case (k, v) => k -> v.reverse }(breakOut)
 }
+
