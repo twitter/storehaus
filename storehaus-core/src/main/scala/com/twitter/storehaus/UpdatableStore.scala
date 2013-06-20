@@ -16,6 +16,8 @@
 
 package com.twitter.storehaus
 
+import com.twitter.util.Future
+
 trait UpdatableStore[K,V] extends Store[K,V] {
   def update(k : K)(fn : Option[V] => Option[V]) : Future[Unit]
 }

@@ -16,6 +16,7 @@
 
 package com.twitter.storehaus
 
+import com.twitter.util.Future
 import java.util.concurrent.{ ConcurrentHashMap => JConcurrentHashMap }
 
 /** A simple JMapStore whose underlying store is a Java ConcurrentHashMap
@@ -37,9 +38,9 @@ class ConcurrentHashMapStore[K, V] extends JMapStore[K, V] {
     val updated = fn(original)
     val success =
       (original, updated) match {
-        case (Some(from), Some(to)) => jstore.replace(k, from, to)
-        case (Some(from), None) => jstore.remove(k, from)
-        case (None, Some(to)) => jstore.putIfAbsent(k, to) == null
+        case (Some(_), Some(_)) => jstore.replace(k, original, updated)
+        case (Some(_), None) => jstore.remove(k, original)
+        case (None, Some(_)) => jstore.putIfAbsent(k, updated) == null
         case (None, None) => !jstore.containsKey(k)
       }
 
