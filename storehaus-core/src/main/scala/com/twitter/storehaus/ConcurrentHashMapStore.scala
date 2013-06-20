@@ -26,6 +26,26 @@ import java.util.concurrent.{ ConcurrentHashMap => JConcurrentHashMap }
  *  @author Oscar Boykin
  *  @author Sam Ritchie
  */
+
+class ConcurrentUpdateException[K](val key: K) extends RuntimeException("Concurrent modification of " + key)
+
 class ConcurrentHashMapStore[K, V] extends JMapStore[K, V] {
   protected override val jstore = new JConcurrentHashMap[K, Option[V]]
+
+  override def update(k : K)(fn : Option[V] => Option[V]) = {
+    val original = storeGet(k)
+    val updated = fn(original)
+    val success =
+      (original, updated) match {
+        case (Some(from), Some(to)) => jstore.replace(k, from, to)
+        case (Some(from), None) => jstore.remove(k, from)
+        case (None, Some(to)) => jstore.putIfAbsent(k, to) == null
+        case (None, None) => !jstore.containsKey(k)
+      }
+
+    if(success)
+      Future.Unit
+    else
+      Future.exception(new ConcurrentUpdateException(k))
+  }
 }
