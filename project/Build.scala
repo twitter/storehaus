@@ -143,7 +143,12 @@ object StorehausBuild extends Build {
   ).settings(
     name := "storehaus-memcache",
     previousArtifact := youngestForwardCompatible("memcache"),
-    libraryDependencies += Finagle.module("memcached")
+    libraryDependencies ++= Seq(
+      "com.twitter" %% "algebird-core" % algebirdVersion,
+      "com.twitter" %% "bijection-core" % bijectionVersion,
+      "com.twitter" %% "bijection-netty" % bijectionVersion,
+      Finagle.module("memcached")
+    )
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
   lazy val storehausMySQL = Project(
