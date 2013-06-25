@@ -14,21 +14,14 @@
  * limitations under the License.
  */
 
-package com.twitter.storehaus.redis
+package com.twitter.storehaus.testing
 
-import org.scalacheck.Gen
+import java.io.Closeable
 
-object Generators {
-
-  /** Generator for non-empty alpha strings of random length */
-  def nonEmptyAlphaStr: Gen[String] =
-   for(cs <- Gen.listOf1(Gen.alphaChar)) yield cs.mkString
-
-  /** Generator for Options of non-empty alpha strings of random length */
-  def nonEmptyAlphaStrOpt: Gen[Option[String]] =
-    nonEmptyAlphaStr.flatMap(str => Gen.oneOf(Some(str), None))
-
-  /** Generator for Options of postive long values */
-  def posLongOpt: Gen[Option[Long]] =
-    Gen.posNum[Long].flatMap(l => Gen.oneOf(Some(l), None))
+/** Cleanup for Closeable types */
+trait CloseableCleanup[C <: Closeable] extends Cleanup {
+  def closeable: C
+  def cleanup() {
+    closeable.close()
+  }
 }

@@ -20,6 +20,7 @@ import com.twitter.bijection.Injection
 import com.twitter.finagle.redis.util.StringToChannelBuffer
 import com.twitter.storehaus.{ FutureOps, Store }
 import com.twitter.storehaus.algebra.ConvertedStore
+import com.twitter.storehaus.testing.CloseableCleanup
 import com.twitter.storehaus.redis.RedisStoreProperties.{ putStoreTest, multiPutStoreTest, validPairs }
 import org.scalacheck.Properties
 import org.scalacheck.Prop._
