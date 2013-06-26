@@ -19,7 +19,8 @@ package com.twitter.storehaus.redis
 import com.twitter.algebird.Monoid
 import com.twitter.bijection.{ Injection, NumericInjections }
 import com.twitter.finagle.redis.Client
-import com.twitter.storehaus.algebra.{ ConvertedStore, MergeableStore }
+import com.twitter.storehaus.ConvertedStore
+import com.twitter.storehaus.algebra.MergeableStore
 import com.twitter.util.{ Duration, Future }
 import org.jboss.netty.buffer.ChannelBuffer
 

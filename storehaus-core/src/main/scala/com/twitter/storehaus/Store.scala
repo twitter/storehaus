@@ -16,6 +16,7 @@
 
 package com.twitter.storehaus
 
+import com.twitter.bijection.Injection
 import com.twitter.storehaus.cache.MutableCache
 import com.twitter.util.{Duration, Future, Timer}
 import java.io.Closeable
@@ -72,6 +73,9 @@ object Store {
   def unpivot[K, OuterK, InnerK, V](store: Store[OuterK, Map[InnerK, V]])
     (split: K => (OuterK, InnerK)): Store[K, V] =
     new UnpivotedStore(store)(split)
+
+  def convert[K1, K2, V1, V2](store: Store[K1, V1])(kfn: K2 => K1)(implicit inj: Injection[V2, V1]): Store[K2, V2] =
+    new ConvertedStore(store)(kfn)(inj)
 
   /**
    * Returns a Store[K, V] that attempts reads from a store multiple

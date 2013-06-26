@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus
 
-import com.twitter.util.Future
+import com.twitter.util.{ Await, Future }
 
 import org.scalacheck.{ Arbitrary, Properties }
 import org.scalacheck.Gen.choose
@@ -32,7 +32,7 @@ object ReadableStoreProperties extends Properties("ReadableStore") {
       val expanded: Set[K] = keys ++ others
       val store = fn(m)
       val multiGetReturn = store.multiGet(expanded)
-      expanded.forall { k: K => store.get(k).get == multiGetReturn(k).get }
+      expanded.forall { k: K => Await.result(store.get(k)) == Await.result(multiGetReturn(k)) }
     }
 
   /**
@@ -43,8 +43,8 @@ object ReadableStoreProperties extends Properties("ReadableStore") {
       val store = fn(m)
       val retM = store.multiGet(m.keySet)
       retM.forall { case (k, v) =>
-          (store.get(k).get == v.get) && (m.get(k) == v.get)
-      } && m.keySet.forall { k => (store.get(k).get == m.get(k)) }
+          (Await.result(store.get(k)) == Await.result(v)) && (m.get(k) == Await.result(v))
+      } && m.keySet.forall { k => (Await.result(store.get(k)) == m.get(k)) }
     }
 
   /**

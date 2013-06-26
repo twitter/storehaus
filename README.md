@@ -94,7 +94,7 @@ See the [current API documentation](http://twitter.github.com/storehaus) for mor
 
 ## Maven
 
-Storehaus modules are available on maven central. The current groupid and version for all modules is, respectively, `"com.twitter"` and  `0.3.0`.
+Storehaus modules are available on maven central. The current groupid and version for all modules is, respectively, `"com.twitter"` and  `0.4.0`.
 
 Current published artifacts are
 
@@ -115,12 +115,16 @@ The suffix denotes the scala version.
 
 ## Testing notes
 
-We use travis-ci to set up any underlying stores (e.g. MySQL and REdis) for the tests. In order for these tests to pass on your local machine, you may need additional setup.
+We use travis-ci to set up any underlying stores (e.g. MySQL and Redis) for the tests. In order for these tests to pass on your local machine, you may need additional setup.
 
 ### MySQL tests
 
 You will need MySQL installed on your local machine.
 Once installed, run the `mysql` commands listed in [.travis.yml](https://github.com/twitter/storehaus/blob/develop/.travis.yml) file.
+
+### Redis tests
+
+You will need [redis](http://redis.io/) installed on your local machine. Redis comes bundled with an executable for spinning up a server called `redis-server`. The Storehaus redis tests expect the factory defaults for connecting to one of these redis server instances, resolvable on `localhost` port `6379`.
 
 ## Authors
 
