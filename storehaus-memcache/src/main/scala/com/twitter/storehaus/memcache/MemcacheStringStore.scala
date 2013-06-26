@@ -18,7 +18,7 @@ package com.twitter.storehaus.memcache
 
 import com.twitter.algebird.Monoid
 import com.twitter.bijection.Injection
-import com.twitter.util.Time
+import com.twitter.util.Duration
 import com.twitter.finagle.memcached.Client
 import com.twitter.storehaus.ConvertedStore
 import com.twitter.storehaus.algebra.MergeableStore
@@ -39,7 +39,7 @@ object MemcacheStringStore {
   private [memcache] implicit val StringInjection =
     Injection.connect[String, Array[Byte], ChannelBuffer]
 
-  def apply(client: Client, ttl: Time = MemcacheStore.DEFAULT_TTL, flag: Int = MemcacheStore.DEFAULT_FLAG) =
+  def apply(client: Client, ttl: Duration = MemcacheStore.DEFAULT_TTL, flag: Int = MemcacheStore.DEFAULT_FLAG) =
     new MemcacheStringStore(MemcacheStore(client, ttl, flag))
 }
 import MemcacheStringStore._
