@@ -23,10 +23,9 @@ import com.twitter.conversions.time._
 import com.twitter.finagle.builder.ClientBuilder
 import com.twitter.finagle.memcached.KetamaClientBuilder
 import com.twitter.finagle.memcached.protocol.text.Memcached
-import com.twitter.util.Duration
-import com.twitter.util.{ Future, Time }
+import com.twitter.util.{ Duration, Future }
 import com.twitter.finagle.memcached.{ GetResult, Client }
-import com.twitter.storehaus.{ FutureOps, Store }
+import com.twitter.storehaus.{ FutureOps, Store, WithPutTtl }
 import com.twitter.storehaus.algebra.MergeableStore
 import org.jboss.netty.buffer.ChannelBuffer
 
@@ -41,7 +40,9 @@ object MemcacheStore {
   import HashEncoder.{ keyEncoder, Codec }
 
   // Default Memcached TTL is one day.
-  val DEFAULT_TTL = Time.fromSeconds(24 * 60 * 60)
+  // For more details of setting expiration time for items in Memcached, please refer to
+  // https://github.com/memcached/memcached/blob/master/doc/protocol.txt#L79
+  val DEFAULT_TTL = 1.day
 
   // This flag used on "set" operations. Search this page for "flag"
   // for more info on the following variable:
@@ -52,7 +53,7 @@ object MemcacheStore {
   val DEFAULT_TIMEOUT = 1.seconds
   val DEFAULT_RETRIES = 2
 
-  def apply(client: Client, ttl: Time = DEFAULT_TTL, flag: Int = DEFAULT_FLAG) =
+  def apply(client: Client, ttl: Duration = DEFAULT_TTL, flag: Int = DEFAULT_FLAG) =
     new MemcacheStore(client, ttl, flag)
 
   def defaultClient(
@@ -83,7 +84,7 @@ object MemcacheStore {
     * Array[Byte] to manage type conversion.
     */
   def typed[K: Codec, V: Codec](client: Client, keyPrefix: String,
-    ttl: Time = DEFAULT_TTL, flag: Int = DEFAULT_FLAG): Store[K, V] = {
+    ttl: Duration = DEFAULT_TTL, flag: Int = DEFAULT_FLAG): Store[K, V] = {
     implicit val valueToBuf = Injection.connect[V, Array[Byte], ChannelBuffer]
     MemcacheStore(client, ttl, flag).convert(keyEncoder[K](keyPrefix))
   }
@@ -95,13 +96,17 @@ object MemcacheStore {
     * pulled in implicitly.
     */
   def mergeable[K: Codec, V: Codec: Monoid](client: Client, keyPrefix: String,
-    ttl: Time = DEFAULT_TTL, flag: Int = DEFAULT_FLAG): MergeableStore[K, V] =
+    ttl: Duration = DEFAULT_TTL, flag: Int = DEFAULT_FLAG): MergeableStore[K, V] =
     MergeableStore.fromStore(
       MemcacheStore.typed(client, keyPrefix, ttl, flag)
     )
 }
 
-class MemcacheStore(val client: Client, ttl: Time, flag: Int) extends Store[String, ChannelBuffer] {
+class MemcacheStore(val client: Client, ttl: Duration, flag: Int)
+  extends Store[String, ChannelBuffer]
+  with WithPutTtl[String, ChannelBuffer, MemcacheStore]
+{
+  override def withPutTtl(ttl: Duration) = new MemcacheStore(client, ttl, flag)
 
   override def get(k: String): Future[Option[ChannelBuffer]] = client.get(k)
 
@@ -115,11 +120,11 @@ class MemcacheStore(val client: Client, ttl: Time, flag: Int) extends Store[Stri
       .mapValues { _.flatten }
   }
 
-  protected def set(k: String, v: ChannelBuffer) = client.set(k, flag, ttl, v)
+  protected def set(k: String, v: ChannelBuffer) = client.set(k, flag, ttl.fromNow, v)
 
   override def put(kv: (String, Option[ChannelBuffer])): Future[Unit] =
     kv match {
-      case (key, Some(value)) => client.set(key, flag, ttl, value)
+      case (key, Some(value)) => client.set(key, flag, ttl.fromNow, value)
       case (key, None) => client.delete(key).unit
     }
 
