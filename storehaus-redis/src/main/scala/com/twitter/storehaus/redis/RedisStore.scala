@@ -18,9 +18,9 @@ package com.twitter.storehaus.redis
 
 import com.twitter.algebird.Monoid
 import com.twitter.conversions.time._
-import com.twitter.util.{ Future, Time }
+import com.twitter.util.{ Duration, Future }
 import com.twitter.finagle.redis.Client
-import com.twitter.storehaus.{ FutureOps, MissingValueException, Store }
+import com.twitter.storehaus.{ FutureOps, MissingValueException, Store, WithPutTtl }
 import org.jboss.netty.buffer.ChannelBuffer
 
 /**
@@ -28,16 +28,21 @@ import org.jboss.netty.buffer.ChannelBuffer
  */
 
 object RedisStore {
+  // For more details of setting expiration time for items in Redis, please refer to
+  // http://redis.io/commands/expire
   object Default {
-    val TTL: Option[Time] = None
+    val TTL: Option[Duration] = None
   }
 
-  def apply(client: Client, ttl: Option[Time] = Default.TTL) =
+  def apply(client: Client, ttl: Option[Duration] = Default.TTL) =
     new RedisStore(client, ttl)
 }
 
-class RedisStore(val client: Client, ttl: Option[Time])
-  extends Store[ChannelBuffer, ChannelBuffer] {
+class RedisStore(val client: Client, ttl: Option[Duration])
+  extends Store[ChannelBuffer, ChannelBuffer]
+  with WithPutTtl[ChannelBuffer, ChannelBuffer, RedisStore]
+{
+  override def withPutTtl(ttl: Duration) = new RedisStore(client, Some(ttl))
 
   override def get(k: ChannelBuffer): Future[Option[ChannelBuffer]] =
     client.get(k)
