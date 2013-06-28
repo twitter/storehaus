@@ -129,15 +129,6 @@ object MySqlStoreProperties extends Properties("MySqlStore")
     val schema = "CREATE TEMPORARY TABLE IF NOT EXISTS `"+tableName+"` (`key` "+kColType+" DEFAULT NULL, `value` "+vColType+" DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8;"
     Await.result(client.query(schema))
 
-    // val store = MySqlStore(client, tableName, "key", "value")
-    // val result = f(store)
-
-    // TODO: fix below once storehaus-testing module is ready
-    // as of now, store.close gets called before all test cases finish running
-    // so we comment this out
-    // store.close
-
-    //result
     f(newStore(client, tableName))
   }
 
