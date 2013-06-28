@@ -22,7 +22,7 @@ import com.twitter.finagle.redis.Client
 import com.twitter.finagle.redis.util.{ CBToString, StringToChannelBuffer }
 import com.twitter.storehaus.ConvertedStore
 import com.twitter.storehaus.algebra.MergeableStore
-import com.twitter.util.{ Future, Time }
+import com.twitter.util.{ Duration, Future }
 import org.jboss.netty.buffer.ChannelBuffer
 import scala.util.control.Exception.allCatch
 
@@ -38,7 +38,7 @@ object RedisStringStore {
     def invert(b: ChannelBuffer): Option[String] = allCatch.opt(CBToString(b))
   }
 
-  def apply(client: Client, ttl: Option[Time] = RedisStore.Default.TTL) =
+  def apply(client: Client, ttl: Option[Duration] = RedisStore.Default.TTL) =
     new RedisStringStore(RedisStore(client, ttl))
 }
 import RedisStringStore._
