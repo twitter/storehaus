@@ -19,7 +19,7 @@ package com.twitter.storehaus.mysql
 import com.twitter.finagle.exp.mysql.{ Client, PreparedStatement, Result }
 import com.twitter.storehaus.FutureOps
 import com.twitter.storehaus.Store
-import com.twitter.util.Future
+import com.twitter.util.{Future, Time}
 
 /**
   * @author Ruban Monu
@@ -108,7 +108,7 @@ class MySqlStore(client: Client, table: String, kCol: String, vCol: String)
     }
   }
   
-  override def close { client.close }
+  override def close { client.close(Time.Bottom) }
 
   protected def doSet(k: MySqlValue, v: MySqlValue): Future[Result] = {
     // mysql's insert-or-update syntax works only when a primary key is defined:
