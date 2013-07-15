@@ -152,7 +152,7 @@ object StorehausBuild extends Build {
   lazy val storehausRedis = module("redis").settings(
     libraryDependencies += Finagle.module("redis"),
     // we don't want various tests clobbering each others keys
-    parallelExecution in Test := false 
+    parallelExecution in Test := false
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
   val storehausTesting = Project(
