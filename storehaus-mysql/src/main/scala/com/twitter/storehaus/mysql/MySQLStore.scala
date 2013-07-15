@@ -19,7 +19,7 @@ package com.twitter.storehaus.mysql
 import com.twitter.finagle.exp.mysql.{ Client, PreparedStatement, Result }
 import com.twitter.storehaus.FutureOps
 import com.twitter.storehaus.Store
-import com.twitter.util.{ Await, Future }
+import com.twitter.util.{ Await, Future, Time }
 
 /**
   * @author Ruban Monu
@@ -121,7 +121,7 @@ class MySqlStore(client: Client, table: String, kCol: String, vCol: String)
     client.closeStatement(insertStmt)
     client.closeStatement(updateStmt)
     client.closeStatement(deleteStmt)
-    client.close
+    client.close(Time.Bottom)
   }
 
   protected def doSet(k: MySqlValue, v: MySqlValue): Future[Result] = {

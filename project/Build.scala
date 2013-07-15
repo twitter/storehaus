@@ -131,7 +131,7 @@ object StorehausBuild extends Build {
   lazy val storehausCache = module("cache")
 
   lazy val storehausCore = module("core").settings(
-    libraryDependencies += "com.twitter" %% "util-core" % "6.3.0",
+    libraryDependencies += "com.twitter" %% "util-core" % "6.3.7",
     libraryDependencies += "com.twitter" %% "bijection-core" % bijectionVersion
   ).dependsOn(storehausCache %  "test->test;compile->compile")
 
