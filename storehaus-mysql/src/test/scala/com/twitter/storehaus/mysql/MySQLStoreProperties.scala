@@ -41,7 +41,7 @@ object MySqlStoreProperties extends Properties("MySqlStore")
    *  we lowercase key's here for normalization */
   def stringify(examples: List[(Any, Option[Any])]) =
     examples.map { case (k, v) =>
-      (MySqlStringInjection.invert(k.toString.toLowerCase).get, v.flatMap { d => MySqlStringInjection.invert(d.toString) })
+      (MySqlStringInjection.invert(k.toString.toLowerCase).get, v.flatMap { d => MySqlStringInjection.invert(d.toString).toOption })
     }
 
   def putAndGetStoreTest(store: MySqlStore, pairs: Gen[List[(Any, Option[Any])]] = NonEmpty.Pairing.alphaStrs()) =
@@ -72,7 +72,7 @@ object MySqlStoreProperties extends Properties("MySqlStore")
 
   def compareValues(k: MySqlValue, expectedOptV: Option[MySqlValue], foundOptV: Option[MySqlValue]) = {
     val isMatch = expectedOptV match {
-      case Some(value) => !foundOptV.isEmpty && foundOptV.get == value 
+      case Some(value) => !foundOptV.isEmpty && foundOptV.get == value
       case None => foundOptV.isEmpty
     }
     if (!isMatch) printErr(k, expectedOptV, foundOptV)
