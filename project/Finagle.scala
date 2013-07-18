@@ -7,5 +7,5 @@ object Finagle {
   import sbt._
   val LatestVersion = "6.5.1"
   def module(name: String, version: String = LatestVersion) =
-    "com.twitter" %% "finagle-%s".format(name) % version
+    StorehausBuild.withCross("com.twitter" %% "finagle-%s".format(name) % version)
 }
