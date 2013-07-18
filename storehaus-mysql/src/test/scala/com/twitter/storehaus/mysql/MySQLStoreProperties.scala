@@ -41,7 +41,7 @@ object MySqlStoreProperties extends Properties("MySqlStore")
    *  we lowercase key's here for normalization */
   def stringify(examples: List[(Any, Option[Any])]) =
     examples.map { case (k, v) =>
-      (MySqlStringInjection.invert(k.toString.toLowerCase).get, v.flatMap { d => MySqlStringInjection.invert(d.toString) })
+      (MySqlStringInjection.invert(k.toString.toLowerCase).get, v.flatMap { d => MySqlStringInjection.invert(d.toString).toOption })
     }
 
   def putAndGetStoreTest(store: MySqlStore, pairs: Gen[List[(Any, Option[Any])]] = NonEmpty.Pairing.alphaStrs()) =
@@ -72,7 +72,7 @@ object MySqlStoreProperties extends Properties("MySqlStore")
 
   def compareValues(k: MySqlValue, expectedOptV: Option[MySqlValue], foundOptV: Option[MySqlValue]) = {
     val isMatch = expectedOptV match {
-      case Some(value) => !foundOptV.isEmpty && foundOptV.get == value 
+      case Some(value) => !foundOptV.isEmpty && foundOptV.get == value
       case None => foundOptV.isEmpty
     }
     if (!isMatch) printErr(k, expectedOptV, foundOptV)
@@ -120,7 +120,7 @@ object MySqlStoreProperties extends Properties("MySqlStore")
 
   property("MySqlStore smallint->smallint multiget") =
     withStore(putAndMultiGetStoreTest(_, NonEmpty.Pairing.numerics[Short]()), "smallint", "smallint", true)
-  
+
   private def withStore[T](f: MySqlStore => T, kColType: String, vColType: String, multiGet: Boolean = false): T = {
     val client = Client("localhost:3306", "storehaususer", "test1234", "storehaus_test", Level.WARNING)
     // these should match mysql setup used in .travis.yml
