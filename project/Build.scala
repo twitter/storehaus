@@ -110,7 +110,7 @@ object StorehausBuild extends Build {
       .map { s => "com.twitter" % ("storehaus-" + s + "_2.9.2") % "0.3.0" }
 
   val algebirdVersion = "0.2.0"
-  val bijectionVersion = "0.4.0"
+  val bijectionVersion = "0.5.2"
 
   lazy val storehaus = Project(
     id = "storehaus",
@@ -141,14 +141,17 @@ object StorehausBuild extends Build {
   lazy val storehausCache = module("cache")
 
   lazy val storehausCore = module("core").settings(
-    libraryDependencies += withCross("com.twitter" %% "util-core" % "6.3.7"),
-    libraryDependencies += withCross("com.twitter" %% "bijection-core" % bijectionVersion)
+    libraryDependencies ++= Seq(
+      withCross("com.twitter" %% "util-core" % "6.3.7"),
+      "com.twitter" %% "bijection-core" % bijectionVersion,
+      "com.twitter" %% "bijection-util" % bijectionVersion
+    )
   ).dependsOn(storehausCache %  "test->test;compile->compile")
 
   lazy val storehausAlgebra = module("algebra").settings(
     libraryDependencies += "com.twitter" %% "algebird-core" % algebirdVersion,
     libraryDependencies += "com.twitter" %% "algebird-util" % algebirdVersion,
-    libraryDependencies += withCross("com.twitter" %% "bijection-algebird" % bijectionVersion)
+    libraryDependencies += "com.twitter" %% "bijection-algebird" % bijectionVersion
   ).dependsOn(storehausCore % "test->test;compile->compile")
 
   lazy val storehausMemcache = module("memcache").settings(
