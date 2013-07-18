@@ -8,6 +8,13 @@ import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
 import com.typesafe.tools.mima.plugin.MimaKeys.previousArtifact
 
 object StorehausBuild extends Build {
+  def withCross(dep: ModuleID) =
+    dep cross CrossVersion.binaryMapped {
+      case "2.9.3" => "2.9.2" // TODO: hack because twitter hasn't built things against 2.9.3
+      case version if version startsWith "2.10" => "2.10" // TODO: hack because sbt is broken
+      case x => x
+    }
+
   val extraSettings =
     Project.defaultSettings ++ releaseSettings ++ Boilerplate.settings ++ mimaDefaultSettings
 
@@ -28,7 +35,10 @@ object StorehausBuild extends Build {
 
   val sharedSettings = extraSettings ++ ciSettings ++ Seq(
     organization := "com.twitter",
-    crossScalaVersions := Seq("2.9.2", "2.10.0"),
+
+    scalaVersion := "2.9.3",
+
+    crossScalaVersions := Seq("2.9.3", "2.10.0"),
 
     javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
 
@@ -99,7 +109,7 @@ object StorehausBuild extends Build {
       .filterNot(unreleasedModules.contains(_))
       .map { s => "com.twitter" % ("storehaus-" + s + "_2.9.2") % "0.3.0" }
 
-  val algebirdVersion = "0.1.13"
+  val algebirdVersion = "0.2.0"
   val bijectionVersion = "0.4.0"
 
   lazy val storehaus = Project(
@@ -131,14 +141,14 @@ object StorehausBuild extends Build {
   lazy val storehausCache = module("cache")
 
   lazy val storehausCore = module("core").settings(
-    libraryDependencies += "com.twitter" %% "util-core" % "6.3.7",
-    libraryDependencies += "com.twitter" %% "bijection-core" % bijectionVersion
+    libraryDependencies += withCross("com.twitter" %% "util-core" % "6.3.7"),
+    libraryDependencies += withCross("com.twitter" %% "bijection-core" % bijectionVersion)
   ).dependsOn(storehausCache %  "test->test;compile->compile")
 
   lazy val storehausAlgebra = module("algebra").settings(
     libraryDependencies += "com.twitter" %% "algebird-core" % algebirdVersion,
     libraryDependencies += "com.twitter" %% "algebird-util" % algebirdVersion,
-    libraryDependencies += "com.twitter" %% "bijection-algebird" % bijectionVersion
+    libraryDependencies += withCross("com.twitter" %% "bijection-algebird" % bijectionVersion)
   ).dependsOn(storehausCore % "test->test;compile->compile")
 
   lazy val storehausMemcache = module("memcache").settings(
