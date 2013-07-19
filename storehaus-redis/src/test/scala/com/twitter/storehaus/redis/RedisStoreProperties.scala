@@ -21,23 +21,20 @@ import com.twitter.finagle.redis.Client
 import com.twitter.finagle.redis.util.{ CBToString, StringToChannelBuffer }
 import com.twitter.storehaus.{ FutureOps, Store }
 import com.twitter.storehaus.algebra.ConvertedStore
+import com.twitter.storehaus.testing.CloseableCleanup
+import com.twitter.storehaus.testing.generator.NonEmpty
 import com.twitter.util.Await
 import org.jboss.netty.buffer.ChannelBuffer
 import org.scalacheck.{ Arbitrary, Gen, Properties }
 import org.scalacheck.Prop._
-import scala.util.control.Exception.allCatch
+import scala.util.Try
 
 object RedisStoreProperties extends Properties("RedisStore")
   with CloseableCleanup[Store[String, String]]
   with DefaultRedisClient {
 
-  def paired: Gen[(String, Option[String])] = for {
-    str <- Generators.nonEmptyAlphaStr
-    opt <- Generators.nonEmptyAlphaStrOpt
-  } yield (str, opt)
-
   def validPairs: Gen[List[(String, Option[String])]] =
-    Gen.listOfN(10,paired)
+    NonEmpty.Pairing.alphaStrs()
 
   def baseTest[K : Arbitrary, V: Arbitrary: Equiv](store: Store[K, V], validPairs: Gen[List[(K, Option[V])]])
     (put: (Store[K, V], List[(K, Option[V])]) => Unit) =
@@ -64,7 +61,7 @@ object RedisStoreProperties extends Properties("RedisStore")
 
   implicit def strToCb = new Injection[String, ChannelBuffer] {
     def apply(a: String): ChannelBuffer = StringToChannelBuffer(a)
-    def invert(b: ChannelBuffer): Option[String] = allCatch.opt(CBToString(b))
+    override def invert(b: ChannelBuffer) = Try(CBToString(b))
   }
   val closeable =
     RedisStore(client).convert(StringToChannelBuffer(_: String))

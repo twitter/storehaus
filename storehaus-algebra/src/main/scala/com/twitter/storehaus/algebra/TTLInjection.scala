@@ -18,6 +18,7 @@ package com.twitter.storehaus.algebra
 
 import com.twitter.algebird.Semigroup
 import com.twitter.bijection.Injection
+import scala.util.{ Success, Failure }
 
 /**
   * Injection that maps values paired with stale values of T => None
@@ -27,17 +28,19 @@ import com.twitter.bijection.Injection
   * @author Sam Ritchie
   */
 
+case class ExpiredException[K, V](pair: (K, V)) extends RuntimeException(pair.toString)
+
 class TTLInjection[K, T: Ordering: Semigroup, V](delta: T)(clock: () => T) extends Injection[(K, V), (K, (T, V))] {
   def apply(pair: (K, V)): (K, (T, V)) = {
     val (k, v) = pair
     (k, (Semigroup.plus(clock(), delta), v))
   }
 
-  override def invert(pair: (K, (T, V))): Option[(K, V)] = {
+  override def invert(pair: (K, (T, V))) = {
     val (k, (expiration, v)) = pair
     if (Ordering[T].gteq(expiration, clock()))
-      Some((k, v))
+      Success(k -> v)
     else
-      None
+      Failure(ExpiredException(k -> v))
   }
 }
