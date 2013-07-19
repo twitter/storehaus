@@ -26,7 +26,7 @@ object StorehausBuild extends Build {
       logLevel in Test := Level.Info
     ) else Seq.empty[Project.Setting[_]]
 
-  val testCleanup = extraSettings ++ Seq(
+  val testCleanup = Seq(
     testOptions in Test += Tests.Cleanup { loader =>
       val c = loader.loadClass("com.twitter.storehaus.testing.Cleanup$")
       c.getMethod("cleanup").invoke(c.getField("MODULE$").get(c))
@@ -35,41 +35,27 @@ object StorehausBuild extends Build {
 
   val sharedSettings = extraSettings ++ ciSettings ++ Seq(
     organization := "com.twitter",
-
     scalaVersion := "2.9.3",
-
     crossScalaVersions := Seq("2.9.3", "2.10.0"),
-
     javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
-
     javacOptions in doc := Seq("-source", "1.6"),
-
-    libraryDependencies ++= Seq(
-      "org.scala-tools.testing" %% "specs" % "1.6.9" % "test" withSources()
-    ),
-
+    libraryDependencies += "org.scala-tools.testing" %% "specs" % "1.6.9" % "test" withSources(),
     resolvers ++= Seq(
       Opts.resolver.sonatypeSnapshots,
       Opts.resolver.sonatypeReleases,
       "Twitter Maven" at "http://maven.twttr.com"
     ),
-
     parallelExecution in Test := true,
-
     scalacOptions ++= Seq(Opts.compile.unchecked, Opts.compile.deprecation),
 
     // Publishing options:
     publishMavenStyle := true,
-
     publishArtifact in Test := false,
-
     pomIncludeRepository := { x => false },
-
     publishTo <<= version { v =>
       Some(if (v.trim.toUpperCase.endsWith("SNAPSHOT")) Opts.resolver.sonatypeSnapshots
            else Opts.resolver.sonatypeStaging)
     },
-
     pomExtra := (
       <url>https://github.com/twitter/storehaus</url>
       <licenses>
@@ -102,12 +88,12 @@ object StorehausBuild extends Build {
     * This returns the youngest jar we released that is compatible with
     * the current.
     */
-  val unreleasedModules = Set[String]()
+  val unreleasedModules = Set[String]("testing")
 
   def youngestForwardCompatible(subProj: String) =
     Some(subProj)
       .filterNot(unreleasedModules.contains(_))
-      .map { s => "com.twitter" % ("storehaus-" + s + "_2.9.2") % "0.3.0" }
+      .map { s => "com.twitter" % ("storehaus-" + s + "_2.9.2") % "0.4.0" }
 
   val algebirdVersion = "0.2.0"
   val bijectionVersion = "0.5.2"
@@ -132,9 +118,9 @@ object StorehausBuild extends Build {
 
   def module(name: String) = {
     val id = "storehaus-%s".format(name)
-    Project(id = id, base = file(id), settings = sharedSettings ++ Seq(
+    Project(id = id, base = file(id), settings = sharedSettings ++ testCleanup ++ Seq(
       Keys.name := id,
-      previousArtifact := youngestForwardCompatible(name)) ++ testCleanup
+      previousArtifact := youngestForwardCompatible(name))
     ).dependsOn(storehausTesting % "test->test")
   }
 
@@ -179,9 +165,7 @@ object StorehausBuild extends Build {
     settings = sharedSettings ++ Seq(
       name := "storehaus-testing",
       previousArtifact := youngestForwardCompatible("testing"),
-      libraryDependencies ++= Seq(
-        "org.scalacheck" %% "scalacheck" % "1.10.0" withSources()
-      )
+      libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.10.0" withSources()
     )
   )
 }
