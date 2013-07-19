@@ -29,7 +29,7 @@
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>Factory methods and some combinators on Stores</p></div><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.3.0/storehaus-core/src/main/scala/com/twitter/storehaus/Store.scala">Store.scala</a></dd></dl><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>Factory methods and some combinators on Stores</p></div><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.5.0/storehaus-core/src/main/scala/com/twitter/storehaus/Store.scala">Store.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent">AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
@@ -150,6 +150,18 @@
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.Store#convert" data-isabs="false">
+      <a id="convert[K1, K2, V1, V2](Store[K1, V1])((K2) ⇒ K1)(Injection[V2, V1]):Store[K2, V2]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">convert</span><span class="tparams">[<span name="K1">K1</span>, <span name="K2">K2</span>, <span name="V1">V1</span>, <span name="V2">V2</span>]</span><span class="params">(<span name="store">store: <a name="com.twitter.storehaus.Store" class="extype" href="Store.html">Store</a>[K1, V1]</span>)</span><span class="params">(<span name="kfn">kfn: (K2) ⇒ K1</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="inj">inj: <span name="com.twitter.bijection.Injection" class="extype">Injection</span>[V2, V1]</span>)</span><span class="result">: <a name="com.twitter.storehaus.Store" class="extype" href="Store.html">Store</a>[K2, V2]</span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="com.twitter.storehaus.Store#enrich" data-isabs="false">
       <a id="enrich[K, V](Store[K, V]):EnrichedStore[K, V]"></a>
       <h4 class="signature">

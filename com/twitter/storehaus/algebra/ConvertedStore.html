@@ -25,7 +25,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">ConvertedStore</span><span class="tparams">[<span name="K1">K1</span>, <span name="K2">-K2</span>, <span name="V1">V1</span>, <span name="V2">V2</span>]</span><span class="result"> extends <a name="com.twitter.storehaus.ConvertedReadableStore" class="extype" href="../ConvertedReadableStore.html">ConvertedReadableStore</a>[K1, K2, V1, V2] with <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[K2, V2]</span>
+        <span class="name deprecated" title="Deprecated: (Since version 0.3.1) Use com.twitter.storehaus.ConvertedStore instead">ConvertedStore</span><span class="tparams">[<span name="K1">K1</span>, <span name="K2">-K2</span>, <span name="V1">V1</span>, <span name="V2">V2</span>]</span><span class="result"> extends <a name="com.twitter.storehaus.ConvertedReadableStore" class="extype" href="../ConvertedReadableStore.html">ConvertedReadableStore</a>[K1, K2, V1, V2] with <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[K2, V2]</span>
       </span>
       </h4>
       
@@ -33,12 +33,12 @@
 If the value stored in the underlying store cannot be converted back to V2, then you will get a Future.exception
 containing the string &quot;cannot be converted&quot;
 TODO: we should add a specific exception type here so we can safely filter these cases to Future.None if we so choose.
-</p></div><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.3.0/storehaus-algebra/src/main/scala/com/twitter/storehaus/algebra/ConvertedStore.scala">ConvertedStore.scala</a></dd></dl><div class="toggleContainer block">
+</p></div><dl class="attributes block"> <dt>Annotations</dt><dd>
+                <span class="name">@deprecated</span>
+              
+        </dd><dt>Deprecated</dt><dd class="cmt"><p><i>(Since version 0.3.1)</i> Use com.twitter.storehaus.ConvertedStore instead</p></dd><dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.5.0/storehaus-algebra/src/main/scala/com/twitter/storehaus/algebra/ConvertedStore.scala">ConvertedStore.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[K2, V2], <a name="com.twitter.storehaus.ConvertedReadableStore" class="extype" href="../ConvertedReadableStore.html">ConvertedReadableStore</a>[K1, K2, V1, V2], <a name="com.twitter.storehaus.AbstractReadableStore" class="extype" href="../AbstractReadableStore.html">AbstractReadableStore</a>[K2, V2], <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[K2, V2], <span name="java.io.Closeable" class="extype">Closeable</span>, <span name="java.lang.AutoCloseable" class="extype">AutoCloseable</span>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
-        </div><div class="toggleContainer block">
-          <span class="toggle">Known Subclasses</span>
-          <div class="subClasses hiddenContent"><a name="com.twitter.storehaus.algebra.ConvertedMergeableStore" class="extype" href="ConvertedMergeableStore.html">ConvertedMergeableStore</a>, <a name="com.twitter.storehaus.memcache.MemcacheLongStore" class="extype" href="../memcache/MemcacheLongStore.html">MemcacheLongStore</a>, <a name="com.twitter.storehaus.memcache.MemcacheStringStore" class="extype" href="../memcache/MemcacheStringStore.html">MemcacheStringStore</a>, <a name="com.twitter.storehaus.redis.RedisLongStore" class="extype" href="../redis/RedisLongStore.html">RedisLongStore</a>, <a name="com.twitter.storehaus.redis.RedisStringStore" class="extype" href="../redis/RedisStringStore.html">RedisStringStore</a></div>
         </div></div>
     
 

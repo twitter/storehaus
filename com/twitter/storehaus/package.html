@@ -97,7 +97,7 @@
       </span>
       </h4>
       <p class="comment cmt">A store that is made from looking up values in the first store, then using that as the key in the second
-When used with com.twitter.storehaus.ConvertedStore you can do some powerful sequential processing
+When used with <a name="com.twitter.storehaus.ConvertedStore" class="extype" href="ConvertedStore.html">ConvertedStore</a> you can do some powerful sequential processing
 of stores
 </p>
     </li><li visbl="pub" name="com.twitter.storehaus.ConcurrentHashMapStore" data-isabs="false">
@@ -127,6 +127,18 @@ safe for that.</p>
       </span>
       </h4>
       <p class="comment cmt">Convert the keys/values of a store.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.ConvertedStore" data-isabs="false">
+      <a id="ConvertedStore:ConvertedStore[K1, K2, V1, V2]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="ConvertedStore.html"><span class="name">ConvertedStore</span></a><span class="tparams">[<span name="K1">K1</span>, <span name="K2">-K2</span>, <span name="V1">V1</span>, <span name="V2">V2</span>]</span><span class="result"> extends ConvertedReadableStore[K1, K2, V1, V2] with Store[K2, V2]</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Use an injection on V2,V1 to convert a store of values V2.</p>
     </li><li visbl="pub" name="com.twitter.storehaus.EnrichedReadableStore" data-isabs="false">
       <a id="EnrichedReadableStore:EnrichedReadableStore[K, V]"></a>
       <h4 class="signature">
@@ -367,6 +379,18 @@ top of a packed ReadableStore[OuterK, Map[InnerK, V]].</p>
       </h4>
       <p class="comment cmt">Store enrichment which presents a Store[K, V] over top of a packed
 Store[OuterK, Map[InnerK, V]].</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.WithPutTtl" data-isabs="true">
+      <a id="WithPutTtl:WithPutTtl[K, V, S]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="WithPutTtl.html"><span class="name">WithPutTtl</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>, <span name="S">S &lt;: Store[K, V]</span>]</span><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Trait for building mutable store with TTL.</p>
     </li></ol>
             </div>
 
@@ -540,6 +564,18 @@ These should arguably exist in util-core.</p>
       </span>
       <span class="symbol">
         <a href="redis/package.html"><span class="name">redis</span></a>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.testing" data-isabs="false">
+      <a id="testing:testing"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="testing/package.html"><span class="name">testing</span></a>
       </span>
       </h4>
       

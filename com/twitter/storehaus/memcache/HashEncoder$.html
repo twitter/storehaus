@@ -29,7 +29,7 @@
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.3.0/storehaus-memcache/src/main/scala/com/twitter/storehaus/memcache/HashEncoder.scala">HashEncoder.scala</a></dd></dl><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.5.0/storehaus-memcache/src/main/scala/com/twitter/storehaus/memcache/HashEncoder.scala">HashEncoder.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent">AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
@@ -123,6 +123,18 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.memcache.HashEncoder#DEFAULT_HASH_FUNC" data-isabs="false">
+      <a id="DEFAULT_HASH_FUNC:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">DEFAULT_HASH_FUNC</span><span class="result">: <span name="java.lang.String" class="extype">String</span></span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="com.twitter.storehaus.memcache.HashEncoder#apply" data-isabs="false">
       <a id="apply(String):HashEncoder"></a>
       <h4 class="signature">
@@ -131,19 +143,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">apply</span><span class="params">(<span name="hashFunc">hashFunc: String</span>)</span><span class="result">: <a name="com.twitter.storehaus.memcache.HashEncoder" class="extype" href="HashEncoder.html">HashEncoder</a></span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="com.twitter.storehaus.memcache.HashEncoder#apply" data-isabs="false">
-      <a id="apply():HashEncoder"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">apply</span><span class="params">()</span><span class="result">: <a name="com.twitter.storehaus.memcache.HashEncoder" class="extype" href="HashEncoder.html">HashEncoder</a></span>
+        <span class="name">apply</span><span class="params">(<span name="hashFunc">hashFunc: String = <span class="symbol"><span class="name"><a href="#DEFAULT_HASH_FUNC:String">DEFAULT_HASH_FUNC</a></span></span></span>)</span><span class="result">: <a name="com.twitter.storehaus.memcache.HashEncoder" class="extype" href="HashEncoder.html">HashEncoder</a></span>
       </span>
       </h4>
       
@@ -249,6 +249,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.memcache.HashEncoder#keyEncoder" data-isabs="false">
+      <a id="keyEncoder[T](String,String)(Codec[T]):(T) ⇒ String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">keyEncoder</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span name="namespace">namespace: String</span>, <span name="hashFunc">hashFunc: String = <span class="symbol"><span class="name"><a href="#DEFAULT_HASH_FUNC:String">DEFAULT_HASH_FUNC</a></span></span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="inj">inj: Codec[T]</span>)</span><span class="result">: (T) ⇒ String</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Returns a function that encodes a key to a hashed, base64-encoded
+Memcache key string given a unique namespace string.</p>
     </li><li visbl="pub" name="scala.AnyRef#ne" data-isabs="false">
       <a id="ne(AnyRef):Boolean"></a>
       <h4 class="signature">

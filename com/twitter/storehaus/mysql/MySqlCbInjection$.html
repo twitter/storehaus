@@ -2,7 +2,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html>
         <head>
-          <title>com.twitter.storehaus.mysql.MySQLStore</title>
+          <title>com.twitter.storehaus.mysql.MySqlCbInjection</title>
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
       <link type="text/css" media="screen" rel="stylesheet" href="../../../../lib/template.css" />
@@ -14,9 +14,9 @@
         </head>
         <body onload="sh_highlightDocument('../lib/', '.min.js');" class="value">
       <div id="definition">
-        <a title="Go to companion" href="MySQLStore.html"><img src="../../../../lib/object_to_class_big.png" /></a>
+        <img src="../../../../lib/object_big.png" />
         <p id="owner"><a name="com" class="extype" href="../../../package.html">com</a>.<a name="com.twitter" class="extype" href="../../package.html">twitter</a>.<a name="com.twitter.storehaus" class="extype" href="../package.html">storehaus</a>.<a name="com.twitter.storehaus.mysql" class="extype" href="package.html">mysql</a></p>
-        <h1><a title="Go to companion" href="MySQLStore.html">MySQLStore</a></h1>
+        <h1>MySqlCbInjection</h1>
       </div>
 
       <h4 class="signature" id="signature">
@@ -25,13 +25,16 @@
         <span class="kind">object</span>
       </span>
       <span class="symbol">
-        <span class="name">MySQLStore</span><span class="result"> extends AnyRef</span>
+        <span class="name">MySqlCbInjection</span><span class="result"> extends <span name="com.twitter.bijection.Injection" class="extype">Injection</span>[<a name="com.twitter.storehaus.mysql.MySqlValue" class="extype" href="MySqlValue.html">MySqlValue</a>, <span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span>]</span>
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>Factory for <a name="com.twitter.storehaus.mysql.MySQLStore" class="extype" href="MySQLStore.html">MySQLStore</a> instances.</p></div><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.3.0/storehaus-mysql/src/main/scala/com/twitter/storehaus/mysql/MySQLStore.scala">MySQLStore.scala</a></dd></dl><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>Injection from MySqlValue to ChannelBuffer.
+Returns a channel buffer containing the Value wrapped by MySqlValue.
+Both null values and empty values map to empty channel buffer.
+</p></div><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.5.0/storehaus-mysql/src/main/scala/com/twitter/storehaus/mysql/ValueMapper.scala">ValueMapper.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent">AnyRef, <span name="scala.Any" class="extype">Any</span></div>
+          <div class="superTypes hiddenContent"><span name="com.twitter.bijection.Injection" class="extype">Injection</span>[<a name="com.twitter.storehaus.mysql.MySqlValue" class="extype" href="MySqlValue.html">MySqlValue</a>, <span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span>], <span name="java.io.Serializable" class="extype">Serializable</span>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
     
 
@@ -45,7 +48,7 @@
               <span class="filtertype">Inherited</span>
               <ol><li class="hideall out"><span>Hide All</span></li>
               <li class="showall in"><span>Show all</span></li></ol>
-              <ol id="linearization"><li name="com.twitter.storehaus.mysql.MySQLStore" class="in"><span>MySQLStore</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
+              <ol id="linearization"><li name="com.twitter.storehaus.mysql.MySqlCbInjection" class="in"><span>MySqlCbInjection</span></li><li name="com.twitter.bijection.Injection" class="in"><span>Injection</span></li><li name="java.io.Serializable" class="in"><span>Serializable</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
             </div>
         <div id="visbl">
             <span class="filtertype">Visibility</span>
@@ -123,18 +126,54 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.mysql.MySQLStore#apply" data-isabs="false">
-      <a id="apply(Client,String,String,String):MySQLStore"></a>
+    </li><li visbl="pub" name="com.twitter.bijection.Injection#andThen" data-isabs="false">
+      <a id="andThen[C]((ChannelBuffer) ⇒ C):(MySqlValue) ⇒ C"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">apply</span><span class="params">(<span name="client">client: <span name="com.twitter.finagle.exp.mysql.Client" class="extype">Client</span></span>, <span name="table">table: String</span>, <span name="kCol">kCol: String</span>, <span name="vCol">vCol: String</span>)</span><span class="result">: <a name="com.twitter.storehaus.mysql.MySQLStore" class="extype" href="MySQLStore.html">MySQLStore</a></span>
+        <span class="name">andThen</span><span class="tparams">[<span name="C">C</span>]</span><span class="params">(<span name="g">g: (<span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span>) ⇒ C</span>)</span><span class="result">: (<a name="com.twitter.storehaus.mysql.MySqlValue" class="extype" href="MySqlValue.html">MySqlValue</a>) ⇒ C</span>
       </span>
       </h4>
-      
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Injection</dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.bijection.Injection#andThen" data-isabs="false">
+      <a id="andThen[C](Bijection[ChannelBuffer, C]):Injection[MySqlValue, C]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">andThen</span><span class="tparams">[<span name="C">C</span>]</span><span class="params">(<span name="bij">bij: <span name="com.twitter.bijection.Bijection" class="extype">Bijection</span>[<span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span>, C]</span>)</span><span class="result">: <span name="com.twitter.bijection.Injection" class="extype">Injection</span>[<a name="com.twitter.storehaus.mysql.MySqlValue" class="extype" href="MySqlValue.html">MySqlValue</a>, C]</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Injection</dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.bijection.Injection#andThen" data-isabs="false">
+      <a id="andThen[C](Injection[ChannelBuffer, C]):Injection[MySqlValue, C]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">andThen</span><span class="tparams">[<span name="C">C</span>]</span><span class="params">(<span name="g">g: <span name="com.twitter.bijection.Injection" class="extype">Injection</span>[<span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span>, C]</span>)</span><span class="result">: <span name="com.twitter.bijection.Injection" class="extype">Injection</span>[<a name="com.twitter.storehaus.mysql.MySqlValue" class="extype" href="MySqlValue.html">MySqlValue</a>, C]</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Injection</dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.mysql.MySqlCbInjection#apply" data-isabs="false">
+      <a id="apply(MySqlValue):ChannelBuffer"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">apply</span><span class="params">(<span name="a">a: <a name="com.twitter.storehaus.mysql.MySqlValue" class="extype" href="MySqlValue.html">MySqlValue</a></span>)</span><span class="result">: <span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.mysql.MySqlCbInjection" class="extype" href="">MySqlCbInjection</a> → Injection</dd></dl></div>
     </li><li visbl="pub" name="scala.Any#asInstanceOf" data-isabs="false">
       <a id="asInstanceOf[T0]:T0"></a>
       <h4 class="signature">
@@ -162,6 +201,42 @@
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.bijection.Injection#compose" data-isabs="false">
+      <a id="compose[T]((T) ⇒ MySqlValue):(T) ⇒ ChannelBuffer"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">compose</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span name="g">g: (T) ⇒ <a name="com.twitter.storehaus.mysql.MySqlValue" class="extype" href="MySqlValue.html">MySqlValue</a></span>)</span><span class="result">: (T) ⇒ <span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Injection</dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.bijection.Injection#compose" data-isabs="false">
+      <a id="compose[T](Bijection[T, MySqlValue]):Injection[T, ChannelBuffer]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">compose</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span name="bij">bij: <span name="com.twitter.bijection.Bijection" class="extype">Bijection</span>[T, <a name="com.twitter.storehaus.mysql.MySqlValue" class="extype" href="MySqlValue.html">MySqlValue</a>]</span>)</span><span class="result">: <span name="com.twitter.bijection.Injection" class="extype">Injection</span>[T, <span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span>]</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Injection</dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.bijection.Injection#compose" data-isabs="false">
+      <a id="compose[T](Injection[T, MySqlValue]):Injection[T, ChannelBuffer]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">compose</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span name="g">g: <span name="com.twitter.bijection.Injection" class="extype">Injection</span>[T, <a name="com.twitter.storehaus.mysql.MySqlValue" class="extype" href="MySqlValue.html">MySqlValue</a>]</span>)</span><span class="result">: <span name="com.twitter.bijection.Injection" class="extype">Injection</span>[T, <span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span>]</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Injection</dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#eq" data-isabs="false">
       <a id="eq(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -225,6 +300,18 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.mysql.MySqlCbInjection#invert" data-isabs="false">
+      <a id="invert(ChannelBuffer):Try[MySqlValue]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">invert</span><span class="params">(<span name="b">b: <span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span></span>)</span><span class="result">: <span name="scala.util.Try" class="extype">Try</span>[<a name="com.twitter.storehaus.mysql.MySqlValue" class="extype" href="MySqlValue.html">MySqlValue</a>]</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.mysql.MySqlCbInjection" class="extype" href="">MySqlCbInjection</a> → Injection</dd></dl></div>
     </li><li visbl="pub" name="scala.Any#isInstanceOf" data-isabs="false">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <h4 class="signature">
@@ -273,6 +360,18 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li visbl="prt" name="com.twitter.storehaus.mysql.MySqlCbInjection#readResolve" data-isabs="false">
+      <a id="readResolve():AnyRef"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">readResolve</span><span class="params">()</span><span class="result">: AnyRef</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#synchronized" data-isabs="false">
       <a id="synchronized[T0](⇒ T0):T0"></a>
       <h4 class="signature">
@@ -285,6 +384,18 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.bijection.Injection#toFunction" data-isabs="false">
+      <a id="toFunction:(MySqlValue) ⇒ ChannelBuffer"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">toFunction</span><span class="result">: (<a name="com.twitter.storehaus.mysql.MySqlValue" class="extype" href="MySqlValue.html">MySqlValue</a>) ⇒ <span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Injection</dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#toString" data-isabs="false">
       <a id="toString():String"></a>
       <h4 class="signature">
@@ -349,7 +460,11 @@
         </div>
 
         <div id="inheritedMembers">
-        <div name="scala.AnyRef" class="parent">
+        <div name="com.twitter.bijection.Injection" class="parent">
+              <h3>Inherited from <span name="com.twitter.bijection.Injection" class="extype">Injection</span>[<a name="com.twitter.storehaus.mysql.MySqlValue" class="extype" href="MySqlValue.html">MySqlValue</a>, <span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span>]</h3>
+            </div><div name="java.io.Serializable" class="parent">
+              <h3>Inherited from <span name="java.io.Serializable" class="extype">Serializable</span></h3>
+            </div><div name="scala.AnyRef" class="parent">
               <h3>Inherited from AnyRef</h3>
             </div><div name="scala.Any" class="parent">
               <h3>Inherited from <span name="scala.Any" class="extype">Any</span></h3>

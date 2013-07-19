@@ -29,7 +29,7 @@
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><div class="comment cmt"></div><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.3.0/storehaus-memcache/src/main/scala/com/twitter/storehaus/memcache/MemcacheStore.scala">MemcacheStore.scala</a></dd></dl><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><div class="comment cmt"></div><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.5.0/storehaus-memcache/src/main/scala/com/twitter/storehaus/memcache/MemcacheStore.scala">MemcacheStore.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent">AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
@@ -123,6 +123,18 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.memcache.MemcacheStore#DEFAULT_CONNECTION_LIMIT" data-isabs="false">
+      <a id="DEFAULT_CONNECTION_LIMIT:Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">DEFAULT_CONNECTION_LIMIT</span><span class="result">: <span name="scala.Int" class="extype">Int</span></span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="com.twitter.storehaus.memcache.MemcacheStore#DEFAULT_FLAG" data-isabs="false">
       <a id="DEFAULT_FLAG:Int"></a>
       <h4 class="signature">
@@ -135,27 +147,51 @@
       </span>
       </h4>
       
-    </li><li visbl="pub" name="com.twitter.storehaus.memcache.MemcacheStore#DEFAULT_TTL" data-isabs="false">
-      <a id="DEFAULT_TTL:Time"></a>
+    </li><li visbl="pub" name="com.twitter.storehaus.memcache.MemcacheStore#DEFAULT_RETRIES" data-isabs="false">
+      <a id="DEFAULT_RETRIES:Int"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">val</span>
       </span>
       <span class="symbol">
-        <span class="name">DEFAULT_TTL</span><span class="result">: <span name="com.twitter.util.Time" class="extype">Time</span></span>
+        <span class="name">DEFAULT_RETRIES</span><span class="result">: <span name="scala.Int" class="extype">Int</span></span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.memcache.MemcacheStore#DEFAULT_TIMEOUT" data-isabs="false">
+      <a id="DEFAULT_TIMEOUT:Duration"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">DEFAULT_TIMEOUT</span><span class="result">: <span name="com.twitter.util.Duration" class="extype">Duration</span></span>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.memcache.MemcacheStore#DEFAULT_TTL" data-isabs="false">
+      <a id="DEFAULT_TTL:Duration"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">DEFAULT_TTL</span><span class="result">: <span name="com.twitter.util.Duration" class="extype">Duration</span></span>
       </span>
       </h4>
       
     </li><li visbl="pub" name="com.twitter.storehaus.memcache.MemcacheStore#apply" data-isabs="false">
-      <a id="apply(Client,Time,Int):MemcacheStore"></a>
+      <a id="apply(Client,Duration,Int):MemcacheStore"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">apply</span><span class="params">(<span name="client">client: <span name="com.twitter.finagle.memcached.Client" class="extype">Client</span></span>, <span name="ttl">ttl: <span name="com.twitter.util.Time" class="extype">Time</span> = <span class="symbol"><span class="name"><a href="#DEFAULT_TTL:Time">DEFAULT_TTL</a></span></span></span>, <span name="flag">flag: <span name="scala.Int" class="extype">Int</span> = <span class="symbol"><span class="name"><a href="#DEFAULT_FLAG:Int">DEFAULT_FLAG</a></span></span></span>)</span><span class="result">: <a name="com.twitter.storehaus.memcache.MemcacheStore" class="extype" href="MemcacheStore.html">MemcacheStore</a></span>
+        <span class="name">apply</span><span class="params">(<span name="client">client: <span name="com.twitter.finagle.memcached.Client" class="extype">Client</span></span>, <span name="ttl">ttl: <span name="com.twitter.util.Duration" class="extype">Duration</span> = <span class="symbol"><span class="name"><a href="#DEFAULT_TTL:Duration">DEFAULT_TTL</a></span></span></span>, <span name="flag">flag: <span name="scala.Int" class="extype">Int</span> = <span class="symbol"><span class="name"><a href="#DEFAULT_FLAG:Int">DEFAULT_FLAG</a></span></span></span>)</span><span class="result">: <a name="com.twitter.storehaus.memcache.MemcacheStore" class="extype" href="MemcacheStore.html">MemcacheStore</a></span>
       </span>
       </h4>
       
@@ -186,6 +222,18 @@
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.memcache.MemcacheStore#defaultClient" data-isabs="false">
+      <a id="defaultClient(String,String,Int,Duration,Int):Client"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">defaultClient</span><span class="params">(<span name="name">name: String</span>, <span name="nodeString">nodeString: String</span>, <span name="retries">retries: <span name="scala.Int" class="extype">Int</span> = <span class="symbol"><span class="name"><a href="#DEFAULT_RETRIES:Int">DEFAULT_RETRIES</a></span></span></span>, <span name="timeout">timeout: <span name="com.twitter.util.Duration" class="extype">Duration</span> = <span class="symbol"><span class="name"><a href="#DEFAULT_TIMEOUT:Duration">DEFAULT_TIMEOUT</a></span></span></span>, <span name="hostConnectionLimit">hostConnectionLimit: <span name="scala.Int" class="extype">Int</span> = <span class="symbol"><span class="name"><a href="#DEFAULT_CONNECTION_LIMIT:Int">DEFAULT_CONNECTION_LIMIT</a></span></span></span>)</span><span class="result">: <span name="com.twitter.finagle.memcached.Client" class="extype">Client</span></span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="scala.AnyRef#eq" data-isabs="false">
       <a id="eq(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -261,6 +309,24 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.memcache.MemcacheStore#mergeable" data-isabs="false">
+      <a id="mergeable[K, V](Client,String,Duration,Int)(Codec[K],Codec[V],Monoid[V]):MergeableStore[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">mergeable</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="params">(<span name="client">client: <span name="com.twitter.finagle.memcached.Client" class="extype">Client</span></span>, <span name="keyPrefix">keyPrefix: String</span>, <span name="ttl">ttl: <span name="com.twitter.util.Duration" class="extype">Duration</span> = <span class="symbol"><span class="name"><a href="#DEFAULT_TTL:Duration">DEFAULT_TTL</a></span></span></span>, <span name="flag">flag: <span name="scala.Int" class="extype">Int</span> = <span class="symbol"><span class="name"><a href="#DEFAULT_FLAG:Int">DEFAULT_FLAG</a></span></span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: Codec[K]</span>, <span name="arg1">arg1: Codec[V]</span>, <span name="arg2">arg2: <span name="com.twitter.algebird.Monoid" class="extype">Monoid</span>[V]</span>)</span><span class="result">: <a name="com.twitter.storehaus.algebra.MergeableStore" class="extype" href="../algebra/MergeableStore.html">MergeableStore</a>[K, V]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Returns a Memcache-backed MergeableStore[K, V] that uses
+implicitly-supplied Injection instances from K and V -&gt;
+Array[Byte] to manage type conversion.</p><div class="fullcomment"><div class="comment cmt"><p>Returns a Memcache-backed MergeableStore[K, V] that uses
+implicitly-supplied Injection instances from K and V -&gt;
+Array[Byte] to manage type conversion. The Monoid[V] is also
+pulled in implicitly.
+</p></div></div>
     </li><li visbl="pub" name="scala.AnyRef#ne" data-isabs="false">
       <a id="ne(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -321,6 +387,20 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.memcache.MemcacheStore#typed" data-isabs="false">
+      <a id="typed[K, V](Client,String,Duration,Int)(Codec[K],Codec[V]):Store[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">typed</span><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="params">(<span name="client">client: <span name="com.twitter.finagle.memcached.Client" class="extype">Client</span></span>, <span name="keyPrefix">keyPrefix: String</span>, <span name="ttl">ttl: <span name="com.twitter.util.Duration" class="extype">Duration</span> = <span class="symbol"><span class="name"><a href="#DEFAULT_TTL:Duration">DEFAULT_TTL</a></span></span></span>, <span name="flag">flag: <span name="scala.Int" class="extype">Int</span> = <span class="symbol"><span class="name"><a href="#DEFAULT_FLAG:Int">DEFAULT_FLAG</a></span></span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="arg0">arg0: Codec[K]</span>, <span name="arg1">arg1: Codec[V]</span>)</span><span class="result">: <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[K, V]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Returns a Memcache-backed Store[K, V] that uses
+implicitly-supplied Injection instances from K and V -&gt;
+Array[Byte] to manage type conversion.</p>
     </li><li visbl="pub" name="scala.AnyRef#wait" data-isabs="false">
       <a id="wait():Unit"></a>
       <h4 class="signature">

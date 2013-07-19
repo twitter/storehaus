@@ -29,7 +29,7 @@
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.3.0/storehaus-algebra/src/main/scala/com/twitter/storehaus/algebra/StoreAlgebra.scala">StoreAlgebra.scala</a></dd></dl><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.5.0/storehaus-algebra/src/main/scala/com/twitter/storehaus/algebra/StoreAlgebra.scala">StoreAlgebra.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent">AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
@@ -165,30 +165,6 @@
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.AlgebraicStore#composeKeyMapping" data-isabs="false">
-      <a id="composeKeyMapping[K1]((K1) ⇒ K):Store[K1, V]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">composeKeyMapping</span><span class="tparams">[<span name="K1">K1</span>]</span><span class="params">(<span name="fn">fn: (K1) ⇒ K</span>)</span><span class="result">: <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[K1, V]</span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.AlgebraicStore#convert" data-isabs="false">
-      <a id="convert[K1, V1]((K1) ⇒ K)(Injection[V1, V]):Store[K1, V1]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">convert</span><span class="tparams">[<span name="K1">K1</span>, <span name="V1">V1</span>]</span><span class="params">(<span name="fn">fn: (K1) ⇒ K</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="inj">inj: <span name="com.twitter.bijection.Injection" class="extype">Injection</span>[V1, V]</span>)</span><span class="result">: <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[K1, V1]</span>
-      </span>
-      </h4>
-      
     </li><li visbl="pub" name="scala.AnyRef#eq" data-isabs="false">
       <a id="eq(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -264,18 +240,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.AlgebraicStore#mapValues" data-isabs="false">
-      <a id="mapValues[V1](Injection[V1, V]):Store[K, V1]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">mapValues</span><span class="tparams">[<span name="V1">V1</span>]</span><span class="params">(<span class="implicit">implicit </span><span name="inj">inj: <span name="com.twitter.bijection.Injection" class="extype">Injection</span>[V1, V]</span>)</span><span class="result">: <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[K, V1]</span>
-      </span>
-      </h4>
-      
     </li><li visbl="pub" name="scala.AnyRef#ne" data-isabs="false">
       <a id="ne(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -396,7 +360,55 @@
     </li></ol>
             </div>
 
-        
+        <div class="values members" id="values">
+              <h3>Deprecated Value Members</h3>
+              <ol><li visbl="pub" name="com.twitter.storehaus.algebra.AlgebraicStore#composeKeyMapping" data-isabs="false">
+      <a id="composeKeyMapping[K1]((K1) ⇒ K):Store[K1, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name deprecated" title="Deprecated: (Since version 0.3.1) Use com.twitter.storehaus.EnrichedStore#composeKeyMapping">composeKeyMapping</span><span class="tparams">[<span name="K1">K1</span>]</span><span class="params">(<span name="fn">fn: (K1) ⇒ K</span>)</span><span class="result">: <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[K1, V]</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Annotations</dt><dd>
+                <span class="name">@deprecated</span>
+              
+        </dd><dt>Deprecated</dt><dd class="cmt"><p><i>(Since version 0.3.1)</i> Use com.twitter.storehaus.EnrichedStore#composeKeyMapping</p></dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.algebra.AlgebraicStore#convert" data-isabs="false">
+      <a id="convert[K1, V1]((K1) ⇒ K)(Injection[V1, V]):Store[K1, V1]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name deprecated" title="Deprecated: (Since version 0.3.1) Use com.twitter.storehaus.EnrichedStore#convert">convert</span><span class="tparams">[<span name="K1">K1</span>, <span name="V1">V1</span>]</span><span class="params">(<span name="fn">fn: (K1) ⇒ K</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="inj">inj: <span name="com.twitter.bijection.Injection" class="extype">Injection</span>[V1, V]</span>)</span><span class="result">: <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[K1, V1]</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Annotations</dt><dd>
+                <span class="name">@deprecated</span>
+              
+        </dd><dt>Deprecated</dt><dd class="cmt"><p><i>(Since version 0.3.1)</i> Use com.twitter.storehaus.EnrichedStore#convert</p></dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.algebra.AlgebraicStore#mapValues" data-isabs="false">
+      <a id="mapValues[V1](Injection[V1, V]):Store[K, V1]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name deprecated" title="Deprecated: (Since version 0.3.1) Use com.twitter.storehaus.EnrichedStore#mapValues">mapValues</span><span class="tparams">[<span name="V1">V1</span>]</span><span class="params">(<span class="implicit">implicit </span><span name="inj">inj: <span name="com.twitter.bijection.Injection" class="extype">Injection</span>[V1, V]</span>)</span><span class="result">: <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[K, V1]</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Annotations</dt><dd>
+                <span class="name">@deprecated</span>
+              
+        </dd><dt>Deprecated</dt><dd class="cmt"><p><i>(Since version 0.3.1)</i> Use com.twitter.storehaus.EnrichedStore#mapValues</p></dd></dl></div>
+    </li></ol>
+            </div>
         </div>
 
         <div id="inheritedMembers">

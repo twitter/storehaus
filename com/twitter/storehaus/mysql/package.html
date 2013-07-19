@@ -48,18 +48,30 @@
 
         <div class="types members" id="types">
               <h3>Type Members</h3>
-              <ol><li visbl="pub" name="com.twitter.storehaus.mysql.MySQLStore" data-isabs="false">
-      <a id="MySQLStore:MySQLStore"></a>
+              <ol><li visbl="pub" name="com.twitter.storehaus.mysql.MySqlStore" data-isabs="false">
+      <a id="MySqlStore:MySqlStore"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="MySQLStore.html"><span class="name">MySQLStore</span></a><span class="result"> extends Store[String, ChannelBuffer]</span>
+        <a href="MySqlStore.html"><span class="name">MySqlStore</span></a><span class="result"> extends Store[MySqlValue, MySqlValue]</span>
       </span>
       </h4>
       <p class="comment cmt">Simple storehaus wrapper over finagle-mysql.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.mysql.MySqlValue" data-isabs="false">
+      <a id="MySqlValue:MySqlValue"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="MySqlValue.html"><span class="name">MySqlValue</span></a><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Wraps finagle-mysql Value ADT.</p>
     </li></ol>
             </div>
 
@@ -67,18 +79,54 @@
 
         <div class="values members" id="values">
               <h3>Value Members</h3>
-              <ol><li visbl="pub" name="com.twitter.storehaus.mysql.MySQLStore" data-isabs="false">
-      <a id="MySQLStore:MySQLStore"></a>
+              <ol><li visbl="pub" name="com.twitter.storehaus.mysql.MySqlCbInjection" data-isabs="false">
+      <a id="MySqlCbInjection:MySqlCbInjection"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">object</span>
       </span>
       <span class="symbol">
-        <a href="MySQLStore$.html"><span class="name">MySQLStore</span></a><span class="result"> extends AnyRef</span>
+        <a href="MySqlCbInjection$.html"><span class="name">MySqlCbInjection</span></a><span class="result"> extends Injection[MySqlValue, ChannelBuffer]</span>
       </span>
       </h4>
-      <p class="comment cmt">Factory for <a name="com.twitter.storehaus.mysql.MySQLStore" class="extype" href="MySQLStore.html">MySQLStore</a> instances.</p>
+      <p class="comment cmt">Injection from MySqlValue to ChannelBuffer.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.mysql.MySqlStore" data-isabs="false">
+      <a id="MySqlStore:MySqlStore"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="MySqlStore$.html"><span class="name">MySqlStore</span></a><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Factory for <a name="com.twitter.storehaus.mysql.MySqlStore" class="extype" href="MySqlStore.html">MySqlStore</a> instances.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.mysql.MySqlStringInjection" data-isabs="false">
+      <a id="MySqlStringInjection:MySqlStringInjection"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="MySqlStringInjection$.html"><span class="name">MySqlStringInjection</span></a><span class="result"> extends Injection[MySqlValue, String]</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Injection from MySqlValue to String.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.mysql.MySqlValue" data-isabs="false">
+      <a id="MySqlValue:MySqlValue"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="MySqlValue$.html"><span class="name">MySqlValue</span></a><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Factory for <a name="com.twitter.storehaus.mysql.MySqlValue" class="extype" href="MySqlValue.html">MySqlValue</a> instances.</p>
     </li><li visbl="pub" name="com.twitter.storehaus.mysql.ValueMapper" data-isabs="false">
       <a id="ValueMapper:ValueMapper"></a>
       <h4 class="signature">

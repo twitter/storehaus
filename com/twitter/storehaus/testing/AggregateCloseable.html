@@ -2,7 +2,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html>
         <head>
-          <title>com.twitter.storehaus.mysql.MySQLStore</title>
+          <title>com.twitter.storehaus.testing.AggregateCloseable</title>
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
       <link type="text/css" media="screen" rel="stylesheet" href="../../../../lib/template.css" />
@@ -14,40 +14,27 @@
         </head>
         <body onload="sh_highlightDocument('../lib/', '.min.js');" class="type">
       <div id="definition">
-        <a title="Go to companion" href="MySQLStore$.html"><img src="../../../../lib/class_to_object_big.png" /></a>
-        <p id="owner"><a name="com" class="extype" href="../../../package.html">com</a>.<a name="com.twitter" class="extype" href="../../package.html">twitter</a>.<a name="com.twitter.storehaus" class="extype" href="../package.html">storehaus</a>.<a name="com.twitter.storehaus.mysql" class="extype" href="package.html">mysql</a></p>
-        <h1><a title="Go to companion" href="MySQLStore$.html">MySQLStore</a></h1>
+        <img src="../../../../lib/trait_big.png" />
+        <p id="owner"><a name="com" class="extype" href="../../../package.html">com</a>.<a name="com.twitter" class="extype" href="../../package.html">twitter</a>.<a name="com.twitter.storehaus" class="extype" href="../package.html">storehaus</a>.<a name="com.twitter.storehaus.testing" class="extype" href="package.html">testing</a></p>
+        <h1>AggregateCloseable</h1>
       </div>
 
       <h4 class="signature" id="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">class</span>
+        <span class="kind">trait</span>
       </span>
       <span class="symbol">
-        <span class="name">MySQLStore</span><span class="result"> extends <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[String, <span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span>]</span>
+        <span class="name">AggregateCloseable</span><span class="tparams">[<span name="C">C &lt;: <span name="java.io.Closeable" class="extype">Closeable</span></span>]</span><span class="result"> extends <span name="java.io.Closeable" class="extype">Closeable</span></span>
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>Simple storehaus wrapper over finagle-mysql.</p><p>Assumes the underlying table's key and value columns are both strings.
-Supported MySQL column types are: BLOB, TEXT, VARCHAR.
-Value column is treated as a channelbuffer of UTF-8 strings.</p><p>The finagle-mysql client is required to set the user, database and create
-the underlying table schema prior to this class being used.</p><p>Storehaus-mysql also works with pre-populated MySQL tables, based on the assumption that the key column picked is unique.
-Any table columns other than the picked key and value columns are ignored during reads and writes.</p><p>Example usage:</p><pre>
-<span class="kw">import</span> com.twitter.finagle.exp.mysql.Client
-<span class="kw">import</span> com.twitter.storehaus.mysql.MySQLStore
-
-<span class="kw">val</span> client = Client(<span class="lit">"localhost:3306"</span>, <span class="lit">"storehaususer"</span>, <span class="lit">"test1234"</span>, <span class="lit">"storehaus_test"</span>)
-<span class="kw">val</span> schema = <span class="lit">""</span><span class="lit">"CREATE TABLE `storehaus-mysql-test` (
-      `key` varchar(40) DEFAULT NULL,
-      `value` varchar(100) DEFAULT NULL
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;"</span><span class="lit">""</span>
-<span class="cmt">// or, use an existing pre-populated table.</span>
-client.query(schema).get
-<span class="kw">val</span> store = MySQLStore(client, <span class="lit">"storehaus-mysql-test"</span>, <span class="lit">"key"</span>, <span class="lit">"value"</span>)
-</pre></div><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.3.0/storehaus-mysql/src/main/scala/com/twitter/storehaus/mysql/MySQLStore.scala">MySQLStore.scala</a></dd></dl><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>Represents an Closeable <code>view</code> of an aggregation of Closeables</p></div><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.5.0/storehaus-testing/src/main/scala/com/twitter/storehaus/testing/AggregateCloseable.scala">AggregateCloseable.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[String, <span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span>], <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[String, <span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span>], <span name="java.io.Closeable" class="extype">Closeable</span>, <span name="java.lang.AutoCloseable" class="extype">AutoCloseable</span>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
+          <div class="superTypes hiddenContent"><span name="java.io.Closeable" class="extype">Closeable</span>, <span name="java.lang.AutoCloseable" class="extype">AutoCloseable</span>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
+        </div><div class="toggleContainer block">
+          <span class="toggle">Known Subclasses</span>
+          <div class="subClasses hiddenContent"><a name="com.twitter.storehaus.testing.SelfAggregatingCloseableCleanup" class="extype" href="SelfAggregatingCloseableCleanup.html">SelfAggregatingCloseableCleanup</a></div>
         </div></div>
     
 
@@ -61,7 +48,7 @@ client.query(schema).get
               <span class="filtertype">Inherited</span>
               <ol><li class="hideall out"><span>Hide All</span></li>
               <li class="showall in"><span>Show all</span></li></ol>
-              <ol id="linearization"><li name="com.twitter.storehaus.mysql.MySQLStore" class="in"><span>MySQLStore</span></li><li name="com.twitter.storehaus.Store" class="in"><span>Store</span></li><li name="com.twitter.storehaus.ReadableStore" class="in"><span>ReadableStore</span></li><li name="java.io.Closeable" class="in"><span>Closeable</span></li><li name="java.lang.AutoCloseable" class="in"><span>AutoCloseable</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
+              <ol id="linearization"><li name="com.twitter.storehaus.testing.AggregateCloseable" class="in"><span>AggregateCloseable</span></li><li name="java.io.Closeable" class="in"><span>Closeable</span></li><li name="java.lang.AutoCloseable" class="in"><span>AutoCloseable</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
             </div>
         <div id="visbl">
             <span class="filtertype">Visibility</span>
@@ -71,22 +58,7 @@ client.query(schema).get
 
       <div id="template">
         <div id="allMembers">
-        <div class="members" id="constructors">
-              <h3>Instance Constructors</h3>
-              <ol><li visbl="pub" name="com.twitter.storehaus.mysql.MySQLStore#this" data-isabs="false">
-      <a id="this:MySQLStore"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">new</span>
-      </span>
-      <span class="symbol">
-        <span class="name">MySQLStore</span><span class="params">(<span name="client">client: <span name="com.twitter.finagle.exp.mysql.Client" class="extype">Client</span></span>, <span name="table">table: String</span>, <span name="kCol">kCol: String</span>, <span name="vCol">vCol: String</span>)</span>
-      </span>
-      </h4>
-      
-    </li></ol>
-            </div>
+        
 
         
 
@@ -154,63 +126,15 @@ client.query(schema).get
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.mysql.MySQLStore#DELETE_SQL" data-isabs="false">
-      <a id="DELETE_SQL:String"></a>
+    </li><li visbl="pub" name="com.twitter.storehaus.testing.AggregateCloseable#aggregateCloseable" data-isabs="false">
+      <a id="aggregateCloseable(C):C"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">val</span>
+        <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">DELETE_SQL</span><span class="result">: <span name="java.lang.String" class="extype">String</span></span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="com.twitter.storehaus.mysql.MySQLStore#INSERT_SQL" data-isabs="false">
-      <a id="INSERT_SQL:String"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">INSERT_SQL</span><span class="result">: <span name="java.lang.String" class="extype">String</span></span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="com.twitter.storehaus.mysql.MySQLStore#MULTI_SELECT_SQL_PREFIX" data-isabs="false">
-      <a id="MULTI_SELECT_SQL_PREFIX:String"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">MULTI_SELECT_SQL_PREFIX</span><span class="result">: <span name="java.lang.String" class="extype">String</span></span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="com.twitter.storehaus.mysql.MySQLStore#SELECT_SQL" data-isabs="false">
-      <a id="SELECT_SQL:String"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">SELECT_SQL</span><span class="result">: <span name="java.lang.String" class="extype">String</span></span>
-      </span>
-      </h4>
-      
-    </li><li visbl="pub" name="com.twitter.storehaus.mysql.MySQLStore#UPDATE_SQL" data-isabs="false">
-      <a id="UPDATE_SQL:String"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">UPDATE_SQL</span><span class="result">: <span name="java.lang.String" class="extype">String</span></span>
+        <span class="name">aggregateCloseable</span><span class="params">(<span name="c">c: C</span>)</span><span class="result">: C</span>
       </span>
       </h4>
       
@@ -241,44 +165,18 @@ client.query(schema).get
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.mysql.MySQLStore#close" data-isabs="false">
+    </li><li visbl="pub" name="com.twitter.storehaus.testing.AggregateCloseable#close" data-isabs="false">
       <a id="close():Unit"></a>
       <h4 class="signature">
       <span class="modifier_kind">
-        <span class="modifier"></span>
+        <span class="modifier">final </span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
         <span class="name">close</span><span class="params">()</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">Close this store and release any resources.</p><div class="fullcomment"><div class="comment cmt"><p>Close this store and release any resources.
-It is undefined what happens on get/multiGet after close
-</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.mysql.MySQLStore" class="extype" href="">MySQLStore</a> → <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a> → Closeable → AutoCloseable</dd></dl></div>
-    </li><li visbl="prt" name="com.twitter.storehaus.mysql.MySQLStore#doDelete" data-isabs="false">
-      <a id="doDelete(String):Future[Result]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">doDelete</span><span class="params">(<span name="k">k: String</span>)</span><span class="result">: <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="com.twitter.finagle.exp.mysql.Result" class="extype">Result</span>]</span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd></dl></div>
-    </li><li visbl="prt" name="com.twitter.storehaus.mysql.MySQLStore#doSet" data-isabs="false">
-      <a id="doSet(String,ChannelBuffer):Future[Result]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">doSet</span><span class="params">(<span name="k">k: String</span>, <span name="v">v: <span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span></span>)</span><span class="result">: <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="com.twitter.finagle.exp.mysql.Result" class="extype">Result</span>]</span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.testing.AggregateCloseable" class="extype" href="">AggregateCloseable</a> → Closeable → AutoCloseable</dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#eq" data-isabs="false">
       <a id="eq(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -318,32 +216,6 @@ It is undefined what happens on get/multiGet after close
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li visbl="prt" name="com.twitter.storehaus.mysql.MySQLStore#g" data-isabs="false">
-      <a id="g(String):String"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">g</span><span class="params">(<span name="s">s: String</span>)</span><span class="result">: <span name="java.lang.String" class="extype">String</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.mysql.MySQLStore#get" data-isabs="false">
-      <a id="get(String):Future[Option[ChannelBuffer]]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">get</span><span class="params">(<span name="k">k: String</span>)</span><span class="result">: <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Option" class="extype">Option</span>[<span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span>]]</span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">get a single key from the store.</p><div class="fullcomment"><div class="comment cmt"><p>get a single key from the store.
-Prefer multiGet if you are getting more than one key at a time
-</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.mysql.MySQLStore" class="extype" href="">MySQLStore</a> → <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#getClass" data-isabs="false">
       <a id="getClass():java.lang.Class[_]"></a>
       <h4 class="signature">
@@ -380,34 +252,6 @@ Prefer multiGet if you are getting more than one key at a time
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.mysql.MySQLStore#multiGet" data-isabs="false">
-      <a id="multiGet[K1&lt;:String](Set[K1]):Map[K1, Future[Option[ChannelBuffer]]]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">multiGet</span><span class="tparams">[<span name="K1">K1 &lt;: String</span>]</span><span class="params">(<span name="ks">ks: Set[K1]</span>)</span><span class="result">: Map[K1, <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Option" class="extype">Option</span>[<span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span>]]]</span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">Get a set of keys from the store.</p><div class="fullcomment"><div class="comment cmt"><p>Get a set of keys from the store.
-Important: all keys in the input set are in the resulting map. If the store
-fails to return a value for a given key, that should be represented by a
-Future.exception.
-</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.mysql.MySQLStore" class="extype" href="">MySQLStore</a> → <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a></dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.Store#multiPut" data-isabs="false">
-      <a id="multiPut[K1&lt;:String](Map[K1, Option[ChannelBuffer]]):Map[K1, Future[Unit]]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">multiPut</span><span class="tparams">[<span name="K1">K1 &lt;: String</span>]</span><span class="params">(<span name="kvs">kvs: Map[K1, <span name="scala.Option" class="extype">Option</span>[<span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span>]]</span>)</span><span class="result">: Map[K1, <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Unit" class="extype">Unit</span>]]</span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">Replace a set of keys at one time</p><div class="fullcomment"><div class="comment cmt"><p>Replace a set of keys at one time</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#ne" data-isabs="false">
       <a id="ne(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -444,34 +288,6 @@ Future.exception.
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li visbl="pub" name="com.twitter.storehaus.mysql.MySQLStore#put" data-isabs="false">
-      <a id="put((String, Option[ChannelBuffer])):Future[Unit]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">put</span><span class="params">(<span name="kv">kv: (String, <span name="scala.Option" class="extype">Option</span>[<span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span>])</span>)</span><span class="result">: <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="scala.Unit" class="extype">Unit</span>]</span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">replace a value
-Delete is the same as put((k,None))
-</p><div class="fullcomment"><div class="comment cmt"><p>replace a value
-Delete is the same as put((k,None))
-</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.mysql.MySQLStore" class="extype" href="">MySQLStore</a> → <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a></dd></dl></div>
-    </li><li visbl="prt" name="com.twitter.storehaus.mysql.MySQLStore#set" data-isabs="false">
-      <a id="set(String,ChannelBuffer):Future[Result]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">set</span><span class="params">(<span name="k">k: String</span>, <span name="v">v: <span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span></span>)</span><span class="result">: <span name="com.twitter.util.Future" class="extype">Future</span>[<span name="com.twitter.finagle.exp.mysql.Result" class="extype">Result</span>]</span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#synchronized" data-isabs="false">
       <a id="synchronized[T0](⇒ T0):T0"></a>
       <h4 class="signature">
@@ -548,11 +364,7 @@ Delete is the same as put((k,None))
         </div>
 
         <div id="inheritedMembers">
-        <div name="com.twitter.storehaus.Store" class="parent">
-              <h3>Inherited from <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[String, <span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span>]</h3>
-            </div><div name="com.twitter.storehaus.ReadableStore" class="parent">
-              <h3>Inherited from <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[String, <span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span>]</h3>
-            </div><div name="java.io.Closeable" class="parent">
+        <div name="java.io.Closeable" class="parent">
               <h3>Inherited from <span name="java.io.Closeable" class="extype">Closeable</span></h3>
             </div><div name="java.lang.AutoCloseable" class="parent">
               <h3>Inherited from <span name="java.lang.AutoCloseable" class="extype">AutoCloseable</span></h3>

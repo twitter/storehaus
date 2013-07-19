@@ -112,18 +112,6 @@ you don't want to constantly hit.</p>
       <p class="comment cmt">Caveat Emptor! The monoid on the resulting
 <code>ConvertedMergeableStore</code> will be the bijected monoid from
 Monoid[V1] =&gt; Monoid[V2].</p>
-    </li><li visbl="pub" name="com.twitter.storehaus.algebra.ConvertedStore" data-isabs="false">
-      <a id="ConvertedStore:ConvertedStore[K1, K2, V1, V2]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">class</span>
-      </span>
-      <span class="symbol">
-        <a href="ConvertedStore.html"><span class="name">ConvertedStore</span></a><span class="tparams">[<span name="K1">K1</span>, <span name="K2">-K2</span>, <span name="V1">V1</span>, <span name="V2">V2</span>]</span><span class="result"> extends ConvertedReadableStore[K1, K2, V1, V2] with Store[K2, V2]</span>
-      </span>
-      </h4>
-      <p class="comment cmt">Use an injection on V2,V1 to convert a store of values V2.</p>
     </li><li visbl="pub" name="com.twitter.storehaus.algebra.EnrichedMergeableStore" data-isabs="false">
       <a id="EnrichedMergeableStore:EnrichedMergeableStore[K, V]"></a>
       <h4 class="signature">
@@ -137,6 +125,19 @@ Monoid[V1] =&gt; Monoid[V2].</p>
       </h4>
       <p class="comment cmt">Enrichment on the <a name="com.twitter.storehaus.algebra.MergeableStore" class="extype" href="MergeableStore.html">MergeableStore</a>
 trait.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.algebra.ExpiredException" data-isabs="false">
+      <a id="ExpiredException:ExpiredException[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="ExpiredException.html"><span class="name">ExpiredException</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="params">(<span name="pair">pair: (K, V)</span>)</span><span class="result"> extends RuntimeException with Product with Serializable</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Injection that maps values paired with stale values of T =&gt; None
+on inversion.</p>
     </li><li visbl="pub" name="com.twitter.storehaus.algebra.MergeableMonoidStore" data-isabs="false">
       <a id="MergeableMonoidStore:MergeableMonoidStore[K, V]"></a>
       <h4 class="signature">
@@ -196,8 +197,7 @@ trait.</p>
         <a href="TTLInjection.html"><span class="name">TTLInjection</span></a><span class="tparams">[<span name="K">K</span>, <span name="T">T</span>, <span name="V">V</span>]</span><span class="result"> extends Injection[(K, V), (K, (T, V))]</span>
       </span>
       </h4>
-      <p class="comment cmt">Injection that maps values paired with stale values of T =&gt; None
-on inversion.</p>
+      
     </li><li visbl="pub" name="com.twitter.storehaus.algebra.UnpivotedMergeableStore" data-isabs="false">
       <a id="UnpivotedMergeableStore:UnpivotedMergeableStore[K, OuterK, InnerK, V]"></a>
       <h4 class="signature">
@@ -211,6 +211,18 @@ on inversion.</p>
       </h4>
       <p class="comment cmt">MergeableStore enrichment which presents a MergeableStore[K, V]
 over top of a packed MergeableStore[OuterK, Map[InnerK, V]].</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.algebra.ConvertedStore" data-isabs="false">
+      <a id="ConvertedStore:ConvertedStore[K1, K2, V1, V2]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="ConvertedStore.html"><span class="name deprecated" title="Deprecated: (Since version 0.3.1) Use com.twitter.storehaus.ConvertedStore instead">ConvertedStore</span></a><span class="tparams">[<span name="K1">K1</span>, <span name="K2">-K2</span>, <span name="V1">V1</span>, <span name="V2">V2</span>]</span><span class="result"> extends ConvertedReadableStore[K1, K2, V1, V2] with Store[K2, V2]</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Use an injection on V2,V1 to convert a store of values V2.</p>
     </li></ol>
             </div>
 
@@ -277,7 +289,7 @@ over top of a packed MergeableStore[OuterK, Map[InnerK, V]].</p>
         <a href="StoreAlgebra$.html"><span class="name">StoreAlgebra</span></a><span class="result"> extends AnyRef</span>
       </span>
       </h4>
-      <p class="comment cmt">Enrichments on Store.</p>
+      <p class="comment cmt">Algebraic Enrichments on Store.</p>
     </li><li visbl="pub" name="com.twitter.storehaus.algebra.query" data-isabs="false">
       <a id="query:query"></a>
       <h4 class="signature">

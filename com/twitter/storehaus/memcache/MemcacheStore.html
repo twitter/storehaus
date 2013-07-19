@@ -25,13 +25,13 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">MemcacheStore</span><span class="result"> extends <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[String, <span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span>]</span>
+        <span class="name">MemcacheStore</span><span class="result"> extends <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[String, <span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span>] with <a name="com.twitter.storehaus.WithPutTtl" class="extype" href="../WithPutTtl.html">WithPutTtl</a>[String, <span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span>, <a name="com.twitter.storehaus.memcache.MemcacheStore" class="extype" href="">MemcacheStore</a>]</span>
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.3.0/storehaus-memcache/src/main/scala/com/twitter/storehaus/memcache/MemcacheStore.scala">MemcacheStore.scala</a></dd></dl><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.5.0/storehaus-memcache/src/main/scala/com/twitter/storehaus/memcache/MemcacheStore.scala">MemcacheStore.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[String, <span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span>], <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[String, <span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span>], <span name="java.io.Closeable" class="extype">Closeable</span>, <span name="java.lang.AutoCloseable" class="extype">AutoCloseable</span>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
+          <div class="superTypes hiddenContent"><a name="com.twitter.storehaus.WithPutTtl" class="extype" href="../WithPutTtl.html">WithPutTtl</a>[String, <span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span>, <a name="com.twitter.storehaus.memcache.MemcacheStore" class="extype" href="">MemcacheStore</a>], <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[String, <span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span>], <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[String, <span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span>], <span name="java.io.Closeable" class="extype">Closeable</span>, <span name="java.lang.AutoCloseable" class="extype">AutoCloseable</span>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
     
 
@@ -45,7 +45,7 @@
               <span class="filtertype">Inherited</span>
               <ol><li class="hideall out"><span>Hide All</span></li>
               <li class="showall in"><span>Show all</span></li></ol>
-              <ol id="linearization"><li name="com.twitter.storehaus.memcache.MemcacheStore" class="in"><span>MemcacheStore</span></li><li name="com.twitter.storehaus.Store" class="in"><span>Store</span></li><li name="com.twitter.storehaus.ReadableStore" class="in"><span>ReadableStore</span></li><li name="java.io.Closeable" class="in"><span>Closeable</span></li><li name="java.lang.AutoCloseable" class="in"><span>AutoCloseable</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
+              <ol id="linearization"><li name="com.twitter.storehaus.memcache.MemcacheStore" class="in"><span>MemcacheStore</span></li><li name="com.twitter.storehaus.WithPutTtl" class="in"><span>WithPutTtl</span></li><li name="com.twitter.storehaus.Store" class="in"><span>Store</span></li><li name="com.twitter.storehaus.ReadableStore" class="in"><span>ReadableStore</span></li><li name="java.io.Closeable" class="in"><span>Closeable</span></li><li name="java.lang.AutoCloseable" class="in"><span>AutoCloseable</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
             </div>
         <div id="visbl">
             <span class="filtertype">Visibility</span>
@@ -65,7 +65,7 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">MemcacheStore</span><span class="params">(<span name="client">client: <span name="com.twitter.finagle.memcached.Client" class="extype">Client</span></span>, <span name="ttl">ttl: <span name="com.twitter.util.Time" class="extype">Time</span></span>, <span name="flag">flag: <span name="scala.Int" class="extype">Int</span></span>)</span>
+        <span class="name">MemcacheStore</span><span class="params">(<span name="client">client: <span name="com.twitter.finagle.memcached.Client" class="extype">Client</span></span>, <span name="ttl">ttl: <span name="com.twitter.util.Duration" class="extype">Duration</span></span>, <span name="flag">flag: <span name="scala.Int" class="extype">Int</span></span>)</span>
       </span>
       </h4>
       
@@ -441,6 +441,18 @@ Delete is the same as put((k,None))
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li visbl="pub" name="com.twitter.storehaus.memcache.MemcacheStore#withPutTtl" data-isabs="false">
+      <a id="withPutTtl(Duration):MemcacheStore"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">withPutTtl</span><span class="params">(<span name="ttl">ttl: <span name="com.twitter.util.Duration" class="extype">Duration</span></span>)</span><span class="result">: <a name="com.twitter.storehaus.memcache.MemcacheStore" class="extype" href="">MemcacheStore</a></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.memcache.MemcacheStore" class="extype" href="">MemcacheStore</a> → <a name="com.twitter.storehaus.WithPutTtl" class="extype" href="../WithPutTtl.html">WithPutTtl</a></dd></dl></div>
     </li></ol>
             </div>
 
@@ -448,7 +460,9 @@ Delete is the same as put((k,None))
         </div>
 
         <div id="inheritedMembers">
-        <div name="com.twitter.storehaus.Store" class="parent">
+        <div name="com.twitter.storehaus.WithPutTtl" class="parent">
+              <h3>Inherited from <a name="com.twitter.storehaus.WithPutTtl" class="extype" href="../WithPutTtl.html">WithPutTtl</a>[String, <span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span>, <a name="com.twitter.storehaus.memcache.MemcacheStore" class="extype" href="">MemcacheStore</a>]</h3>
+            </div><div name="com.twitter.storehaus.Store" class="parent">
               <h3>Inherited from <a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[String, <span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span>]</h3>
             </div><div name="com.twitter.storehaus.ReadableStore" class="parent">
               <h3>Inherited from <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[String, <span name="org.jboss.netty.buffer.ChannelBuffer" class="extype">ChannelBuffer</span>]</h3>
