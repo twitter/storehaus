@@ -19,7 +19,7 @@ package com.twitter.storehaus.mysql
 import com.twitter.finagle.exp.mysql.{ Client, PreparedStatement, Result }
 import com.twitter.storehaus.FutureOps
 import com.twitter.storehaus.Store
-import com.twitter.util.Future
+import com.twitter.util.{ Await, Future, Time }
 
 /**
   * @author Ruban Monu
@@ -68,15 +68,22 @@ class MySqlStore(client: Client, table: String, kCol: String, vCol: String)
   val UPDATE_SQL = "UPDATE " + g(table) + " SET " + g(vCol) + "=? WHERE " + g(kCol) + "=?"
   val DELETE_SQL = "DELETE FROM " + g(table) + " WHERE " + g(kCol) + "=?"
 
+  // prepared statements to be reused across gets and puts
+  // TODO: should this be non-blocking? this is part of object construction, so maybe not?
+  val selectStmt = Await.result(client.prepare(SELECT_SQL))
+  val insertStmt = Await.result(client.prepare(INSERT_SQL))
+  val updateStmt = Await.result(client.prepare(UPDATE_SQL))
+  val deleteStmt = Await.result(client.prepare(DELETE_SQL))
+
   override def get(k: MySqlValue): Future[Option[MySqlValue]] = {
     // finagle-mysql select() method lets you pass in a mapping function
     // to convert resultset into desired output format
     // we assume here the mysql client already has the dbname/schema selected
-    val mysqlResult: Future[(PreparedStatement,Seq[Option[MySqlValue]])] = client.prepareAndSelect(SELECT_SQL, MySqlStringInjection(k).getBytes) { row =>
+    selectStmt.parameters = Array(MySqlStringInjection(k).getBytes)
+    val mysqlResult: Future[Seq[Option[MySqlValue]]] = client.select(selectStmt) { row =>
       row(vCol) match { case None => None; case Some(v) => Some(MySqlValue(v)) }
     }
-    mysqlResult.map { case(ps, result) =>
-      client.closeStatement(ps)
+    mysqlResult.map { case result =>
       result.lift(0).flatten.headOption
     }
   }
@@ -108,7 +115,14 @@ class MySqlStore(client: Client, table: String, kCol: String, vCol: String)
     }
   }
   
-  override def close { client.close }
+  override def close {
+    // close prepared statements before closing the connection
+    client.closeStatement(selectStmt)
+    client.closeStatement(insertStmt)
+    client.closeStatement(updateStmt)
+    client.closeStatement(deleteStmt)
+    client.close(Time.Bottom)
+  }
 
   protected def doSet(k: MySqlValue, v: MySqlValue): Future[Result] = {
     // mysql's insert-or-update syntax works only when a primary key is defined:
@@ -117,18 +131,19 @@ class MySqlStore(client: Client, table: String, kCol: String, vCol: String)
     // and insert or update accordingly
     get(k).flatMap { optionV =>
       optionV match {
-        case Some(value) => client.prepareAndExecute(UPDATE_SQL, MySqlStringInjection(v).getBytes, MySqlStringInjection(k).getBytes)
-        case None => client.prepareAndExecute(INSERT_SQL, MySqlStringInjection(k).getBytes, MySqlStringInjection(v).getBytes)
+        case Some(value) =>
+          updateStmt.parameters = Array(MySqlStringInjection(v).getBytes, MySqlStringInjection(k).getBytes)
+          client.execute(updateStmt)
+        case None =>
+          insertStmt.parameters = Array(MySqlStringInjection(k).getBytes, MySqlStringInjection(v).getBytes)
+          client.execute(insertStmt)
       }
-      // prepareAndExecute returns Future[(PreparedStatement,Result)]
-    }.map { case (ps, result) => client.closeStatement(ps); result }
+    }
   }
 
   protected def doDelete(k: MySqlValue): Future[Result] = {
-    // prepareAndExecute returns Future[(PreparedStatement,Result)]
-    client.prepareAndExecute(DELETE_SQL, MySqlStringInjection(k).getBytes).map {
-      case (ps, result) => client.closeStatement(ps); result
-    }
+    deleteStmt.parameters = Array(MySqlStringInjection(k).getBytes) 
+    client.execute(deleteStmt)
   }
 
   // enclose table or column names in backticks, in case they happen to be sql keywords
