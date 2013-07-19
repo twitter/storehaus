@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus.memcache
 
-import com.twitter.bijection.{ Base64String, Bijection, Injection }
+import com.twitter.bijection.{ Base64String, Bijection, Codec, Injection }
 import com.twitter.util.Encoder
 
 /**
@@ -40,9 +40,6 @@ object HashEncoder {
   // See this reference for other algorithm names:
   // http://docs.oracle.com/javase/1.4.2/docs/guide/security/CryptoSpec.html#AppA
   val DEFAULT_HASH_FUNC = "SHA-256"
-
-  // TODO: Remove when Bijection gains a Codec type alias.
-  type Codec[T] = Injection[T, Array[Byte]]
 
   def apply(hashFunc: String = DEFAULT_HASH_FUNC) = new HashEncoder(hashFunc)
 

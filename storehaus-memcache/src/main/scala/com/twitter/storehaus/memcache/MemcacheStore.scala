@@ -17,7 +17,7 @@
 package com.twitter.storehaus.memcache
 
 import com.twitter.algebird.Monoid
-import com.twitter.bijection.{ Bijection, Injection }
+import com.twitter.bijection.{ Bijection, Codec, Injection }
 import com.twitter.bijection.netty.Implicits._
 import com.twitter.conversions.time._
 import com.twitter.finagle.builder.ClientBuilder
@@ -37,7 +37,7 @@ import Store.enrich
  */
 
 object MemcacheStore {
-  import HashEncoder.{ keyEncoder, Codec }
+  import HashEncoder.keyEncoder
 
   // Default Memcached TTL is one day.
   // For more details of setting expiration time for items in Memcached, please refer to
