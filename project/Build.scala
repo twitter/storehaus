@@ -155,7 +155,12 @@ object StorehausBuild extends Build {
   ).dependsOn(storehausCore % "test->test;compile->compile")
 
   lazy val storehausMemcache = module("memcache").settings(
-    libraryDependencies += Finagle.module("memcached")
+    libraryDependencies ++= Seq(
+      "com.twitter" %% "algebird-core" % algebirdVersion,
+      "com.twitter" %% "bijection-core" % bijectionVersion,
+      "com.twitter" %% "bijection-netty" % bijectionVersion,
+      Finagle.module("memcached")
+    )
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
   lazy val storehausMySQL = module("mysql").settings(
