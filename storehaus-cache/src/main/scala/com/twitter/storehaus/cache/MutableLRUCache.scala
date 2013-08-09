@@ -31,7 +31,7 @@ object MutableLRUCache {
 }
 
 class MutableLRUCache[K, V](capacity: Int) extends JMapCache[K, V](() =>
-  new JLinkedHashMap[K, V](capacity + 1, 0.75f) {
+  new JLinkedHashMap[K, V](capacity + 1, 0.75f, true) {
     override protected def removeEldestEntry(eldest: JMap.Entry[K, V]) =
       super.size > capacity
   }) {
