@@ -36,18 +36,18 @@ class InstrumentedReadableStore[K, V](
   val instrumentation: Instrumentation)
   extends Instrumented[ReadableStore[K, V]]
      with ReadableStoreProxy[K,V] {
-    val gets = instrumentation.counter("gets")
-    val multigets = instrumentation.counter("multi", "gets")
 
-    override def get(k: K): Future[Option[V]] =
-      self.get(k).ensure {
-        gets.incr()
-      }
+  private val gets = instrumentation.counter("gets")
+  private val multigets = instrumentation.counter("multi", "gets")
 
-    override def multiGet[K1 <: K](ks: Set[K1]): Map[K1, Future[Option[V]]] = {
-      try self.multiGet(ks) finally {
-        multigets.incr()
-      }
+  override def get(k: K): Future[Option[V]] =
+    self.get(k).ensure {
+      gets.incr()
+    }
+
+  override def multiGet[K1 <: K](ks: Set[K1]): Map[K1, Future[Option[V]]] =
+    try self.multiGet(ks) finally {
+      multigets.incr()
     }
 }
 
@@ -57,10 +57,10 @@ class InstrumentedStore[K, V](
   extends Instrumented[Store[K, V]]
      with StoreProxy[K, V] {
 
-  val gets = instrumentation.counter("gets")
-  val multigets = instrumentation.counter("multi", "gets")
-  val puts = instrumentation.counter("puts")
-  val multiputs = instrumentation.counter("multi", "puts")
+  private val gets = instrumentation.counter("gets")
+  private val multigets = instrumentation.counter("multi", "gets")
+  private val puts = instrumentation.counter("puts")
+  private val multiputs = instrumentation.counter("multi", "puts")
 
   override def put(kv: (K, Option[V])): Future[Unit] =
     self.put(kv).ensure {
@@ -73,14 +73,13 @@ class InstrumentedStore[K, V](
       multiputs.incr()
     }
 
-    override def get(k: K): Future[Option[V]] =
-      self.get(k).ensure {
-        gets.incr()
-      }
+  override def get(k: K): Future[Option[V]] =
+    self.get(k).ensure {
+      gets.incr()
+    }
 
-    override def multiGet[K1 <: K](ks: Set[K1]): Map[K1, Future[Option[V]]] = {
-      try self.multiGet(ks) finally {
-        multigets.incr()
-      }
+  override def multiGet[K1 <: K](ks: Set[K1]): Map[K1, Future[Option[V]]] =
+    try self.multiGet(ks) finally {
+      multigets.incr()
     }
 }
