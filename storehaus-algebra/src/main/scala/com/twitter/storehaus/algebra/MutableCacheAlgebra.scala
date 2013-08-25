@@ -42,21 +42,24 @@ class AlgebraicMutableCache[K, V](cache: MutableCache[K, V]) {
     new MutableCache[K, U] {
       override def get(k: K) = for {
         v <- cache.get(k)
-        (_, u) <- injection.invert(k, v)
+        (_, u) <- injection.invert(k, v).toOption
       } yield u
 
       override def +=(ku: (K, U)) = { cache += injection(ku); this }
 
-      override def hit(k: K) = cache.hit(k).flatMap { injection.invert(k, _) }.map { _._2 }
+      override def hit(k: K) =
+        cache.hit(k)
+          .flatMap(injection.invert(k, _).toOption).map(_._2)
 
       override def evict(k: K) = for {
         evictedV <- cache.evict(k)
-        (_, evictedU) <- injection.invert(k, evictedV)
+        (_, evictedU) <- injection.invert(k, evictedV).toOption
       } yield evictedU
 
       override def empty = new AlgebraicMutableCache(cache.empty).inject(injection)
 
       override def clear = { cache.clear; this }
-      override def iterator = cache.iterator.flatMap(injection.invert(_))
+      override def iterator =
+        cache.iterator.flatMap(injection.invert(_).toOption)
     }
 }

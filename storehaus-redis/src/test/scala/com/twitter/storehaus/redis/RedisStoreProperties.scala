@@ -27,7 +27,7 @@ import com.twitter.util.Await
 import org.jboss.netty.buffer.ChannelBuffer
 import org.scalacheck.{ Arbitrary, Gen, Properties }
 import org.scalacheck.Prop._
-import scala.util.control.Exception.allCatch
+import scala.util.Try
 
 object RedisStoreProperties extends Properties("RedisStore")
   with CloseableCleanup[Store[String, String]]
@@ -61,7 +61,7 @@ object RedisStoreProperties extends Properties("RedisStore")
 
   implicit def strToCb = new Injection[String, ChannelBuffer] {
     def apply(a: String): ChannelBuffer = StringToChannelBuffer(a)
-    def invert(b: ChannelBuffer): Option[String] = allCatch.opt(CBToString(b))
+    override def invert(b: ChannelBuffer) = Try(CBToString(b))
   }
   val closeable =
     RedisStore(client).convert(StringToChannelBuffer(_: String))
