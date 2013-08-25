@@ -47,16 +47,17 @@ package com.twitter.storehaus
  *  An Instrumented type is defined as a proxy for a store that will write information to a provided Instrumentation
  *  instance over the course of its lifespan.
  *
- *  In order to ensure Instrumented types expose their subjects behavior, Instrumented stores also implement a StoreProxy.
+ *  In order to ensure Instrumented types expose their subjects behavior, Instrumented stores also implement a ProxyStore.
  *  A StoreProxy is an interface defined for each store type that implements the types interfaces
  *  and simply forwards method calls to the instance being proxied.
  *
  *  {{{
- *  trait StoreProxy[T] extends T {
+ *  trait ProxyStore[T] {
  *    def self: T
  *  }
- *  trait ReadableStoreProxy[K, V] extends StoreProxy[ReadableStore[K, V]] {
+ *  trait ReadableStoreProxy[K, V] extends ProxyStore[ReadableStore[K, V]] with ReadableStore[K, V] {
  *    def get(k: K): Future[Option[V]] = self.get(k)
+ *    ...
  *  }
  *  }}} 
  *
@@ -70,13 +71,13 @@ package com.twitter.storehaus
  *
  *  {{{
  *  class InstrumentedReadableStore[K,V](
- *    self: ReadableStore[K, V],
- *    instrumentation: Instrumentation)
+ *    val self: ReadableStore[K, V],
+ *    val instrumentation: Instrumentation)
  *    extends Instrumented[ReadableStore[K, V]] with ReadableStoreProxy[K,V] {
  *    val gets = instrumentations.counter("gets")
  *    override def get(k: K): Future[Option[V]] = {
- *      store.get(k).onSuccess {
- *         _ => gets.incr(1)
+ *      store.get(k).ensure {
+ *         gets.incr()
  *      }
  *    }
  *  }

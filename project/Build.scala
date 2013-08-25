@@ -140,6 +140,9 @@ object StorehausBuild extends Build {
     libraryDependencies += "com.twitter" %% "bijection-algebird" % bijectionVersion
   ).dependsOn(storehausCore % "test->test;compile->compile")
 
+  lazy val storehausInstrument =
+    module("instrument").dependsOn(storehausCore)
+
   lazy val storehausMemcache = module("memcache").settings(
     libraryDependencies ++= Seq(
       "com.twitter" %% "algebird-core" % algebirdVersion,
