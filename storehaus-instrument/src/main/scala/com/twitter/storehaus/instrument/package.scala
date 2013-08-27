@@ -124,4 +124,15 @@ package com.twitter.storehaus
  * }}}
  *
  */
-package object instrument
+package object instrument {
+  implicit def instrumentReadableStore[K, V](
+    rs: ReadableStore[K, V]) = new {
+      def instrument(inst: Instrumentation) =
+        new InstrumentedReadableStore(rs, inst)
+    }
+  implicit def instrumentStore[K, V](
+    s: Store[K, V]) = new {
+    def instrument(inst: Instrumentation) =
+      new InstrumentedStore(s, inst)
+  }
+}
