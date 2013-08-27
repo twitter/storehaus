@@ -38,10 +38,15 @@ trait Instrumentation {
     result
   }
 
-  def timeFuture[T](
+  def time[T](
     unit: TimeUnit, name: String*)
-    (f: => Future[T]): Future[T] =
-    timeFuture(unit, stat(name: _*))(f) 
+    (f: => T): T =
+    time(unit, stat(name: _*))(f)
+
+  def time[T](
+    name: String*)
+    (f: => T): T =
+    time(TimeUnit.MILLISECONDS, name: _*)(f)
 
   def timeFuture[T](
     unit: TimeUnit, stat: Stat)
@@ -51,6 +56,11 @@ trait Instrumentation {
       stat.add(elapsed().inUnit(unit))
     }
   }
+
+  def timeFuture[T](
+    unit: TimeUnit, name: String*)
+    (f: => Future[T]): Future[T] =
+    timeFuture(unit, stat(name: _*))(f)
 
   def timeFuture[T](
     name: String*)
