@@ -24,7 +24,7 @@ import com.twitter.util.Future
  *  Instrumentation
  */
 trait Instrumented[T] extends ProxyStore[T] {
-  def instrumentation: Instrumentation
+  protected def instrumentation: Instrumentation
 }
 
 /** An InstrumentedReadable store
@@ -32,18 +32,27 @@ trait Instrumented[T] extends ProxyStore[T] {
  *  a ReadableStores behavior.
  */
 class InstrumentedReadableStore[K, V](
-  val self: ReadableStore[K, V],
-  val instrumentation: Instrumentation)
+  protected val self: ReadableStore[K, V],
+  protected val instrumentation: Instrumentation)
   extends Instrumented[ReadableStore[K, V]]
      with ReadableStoreProxy[K,V] {
 
-  private val gets = instrumentation.counter("gets")
-  private val multigets = instrumentation.counter("multi", "gets")
+  private val getLatency =
+    instrumentation.time[Future[Option[V]]]("get", "latency_ms")_
+  private val getFutureLatency =
+    instrumentation.timeFuture[Option[V]]("get", "future_latency_ms")_
+  private val gets = instrumentation.counter("get", "total")
+  private val hits = instrumentation.counter("get", "hits")
+  private val misses = instrumentation.counter("get", "misses")
+  private val multigets = instrumentation.counter("multi_get", "total")
 
   override def get(k: K): Future[Option[V]] =
-    self.get(k).ensure {
+    getLatency(getFutureLatency(self.get(k)).ensure {
       gets.incr()
-    }
+    }.map { op =>
+      if (op.isDefined) hits.incr() else misses.incr()
+      op
+    })
 
   override def multiGet[K1 <: K](ks: Set[K1]): Map[K1, Future[Option[V]]] =
     try self.multiGet(ks) finally {
@@ -52,8 +61,8 @@ class InstrumentedReadableStore[K, V](
 }
 
 class InstrumentedStore[K, V](
-  val self: Store[K, V],
-  val instrumentation: Instrumentation)
+  protected val self: Store[K, V],
+  protected val instrumentation: Instrumentation)
   extends Instrumented[Store[K, V]]
      with StoreProxy[K, V] {
 

@@ -26,7 +26,7 @@ import com.twitter.util.Future
  */
 // todo: move this into storehaus-core maybe?
 trait ProxyStore[T] {
-  def self: T
+  protected def self: T
 }
 
 /** A StoreProxy interface for ReadableStores */
