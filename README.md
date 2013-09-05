@@ -94,7 +94,7 @@ To learn more and find links to tutorials and information around the web, check 
 
 The latest ScalaDocs are hosted on Storehaus's [Github Project Page](http://twitter.github.io/storehaus).
 
-Discussion occurs primarily on the Storehaus mailing list. To join the mailing list, email [storehaus@librelist.com](mailto:storehaus@librelist.com). The same address is used for posting once you've joined. Issues should be reported on the [GitHub issue tracker](https://github.com/twitter/storehaus/issues).
+Discussion occurs primarily on the [Storehaus mailing list](http://librelist.com/browser/storehaus/). To join the mailing list, email [storehaus@librelist.com](mailto:storehaus@librelist.com). The same address is used for posting once you've joined. Issues should be reported on the [GitHub issue tracker](https://github.com/twitter/storehaus/issues).
 
 ## Maven
 
