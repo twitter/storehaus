@@ -96,7 +96,7 @@ object StorehausBuild extends Build {
       .map { s => "com.twitter" % ("storehaus-" + s + "_2.9.3") % "0.5.0" }
 
   val algebirdVersion = "0.2.0"
-  val bijectionVersion = "0.5.2"
+  val bijectionVersion = "0.5.3"
 
   lazy val storehaus = Project(
     id = "storehaus",
@@ -113,6 +113,7 @@ object StorehausBuild extends Build {
     storehausMemcache,
     storehausMySQL,
     storehausRedis,
+    storehausHBase,
     storehausTesting
   )
 
@@ -137,7 +138,7 @@ object StorehausBuild extends Build {
   lazy val storehausAlgebra = module("algebra").settings(
     libraryDependencies += "com.twitter" %% "algebird-core" % algebirdVersion,
     libraryDependencies += "com.twitter" %% "algebird-util" % algebirdVersion,
-    libraryDependencies += "com.twitter" %% "bijection-algebird" % bijectionVersion
+    libraryDependencies += "com.twitter" %% "algebird-bijection" % algebirdVersion
   ).dependsOn(storehausCore % "test->test;compile->compile")
 
   lazy val storehausMemcache = module("memcache").settings(
@@ -156,6 +157,15 @@ object StorehausBuild extends Build {
   lazy val storehausRedis = module("redis").settings(
     libraryDependencies += Finagle.module("redis"),
     // we don't want various tests clobbering each others keys
+    parallelExecution in Test := false
+  ).dependsOn(storehausAlgebra % "test->test;compile->compile")
+
+  lazy val storehausHBase= module("hbase").settings(
+    libraryDependencies ++= Seq(
+      "com.twitter" %% "algebird-core" % algebirdVersion,
+      "com.twitter" %% "bijection-core" % bijectionVersion,
+      "com.twitter" %% "bijection-hbase" % bijectionVersion
+    ),
     parallelExecution in Test := false
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
