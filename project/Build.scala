@@ -164,7 +164,9 @@ object StorehausBuild extends Build {
     libraryDependencies ++= Seq(
       "com.twitter" %% "algebird-core" % algebirdVersion,
       "com.twitter" %% "bijection-core" % bijectionVersion,
-      "com.twitter" %% "bijection-hbase" % bijectionVersion
+      "com.twitter" %% "bijection-hbase" % bijectionVersion ,
+      "org.apache.hbase" % "hbase" % "0.94.4" % "provided->default",
+      "org.apache.hadoop" % "hadoop-core" % "1.0.4" % "provided->default"
     ),
     parallelExecution in Test := false
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
