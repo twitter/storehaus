@@ -19,46 +19,39 @@ package com.twitter.storehaus.hbase
 import org.apache.hadoop.hbase.client.HTablePool
 import com.twitter.storehaus.Store
 import com.twitter.util.Future
-import com.twitter.bijection.Injection._
 
 /**
- * @author Mansur Ashraf
+ * @author MansurAshraf
  * @since 9/8/13
  */
-object HBaseLongStore {
-  def apply(quorumNames: String, table: String, columnFamily: String, column: String, createTable: Boolean): HBaseLongStore = {
-    val store = new HBaseLongStore(quorumNames, table, columnFamily, column, createTable, new HTablePool())
+object HBaseByteArrayStore {
+  def apply(quorumNames: String, table: String, columnFamily: String, column: String, createTable: Boolean): HBaseByteArrayStore = {
+    val store = new HBaseByteArrayStore(quorumNames, table, columnFamily, column, createTable, new HTablePool())
     store.validateConfiguration()
     store.createTableIfRequired()
     store
   }
 }
 
-class HBaseLongStore(protected val quorumNames: String,
-                     protected val table: String,
-                     protected val columnFamily: String,
-                     protected val column: String,
-                     protected val createTable: Boolean,
-                     protected val pool: HTablePool) extends Store[String, Long] with HBaseStore {
+class HBaseByteArrayStore(val quorumNames: String,
+                          val table: String,
+                          val columnFamily: String,
+                          val column: String,
+                          val createTable: Boolean,
+                          val pool: HTablePool) extends Store[Array[Byte], Array[Byte]] with HBaseStore {
 
   /** get a single key from the store.
     * Prefer multiGet if you are getting more than one key at a time
     */
-  override def get(k: String): Future[Option[Long]] = {
-    import com.twitter.bijection.hbase.HBaseBijections._
-    implicit val stringInj = fromBijectionRep[String, StringBytes]
-    implicit val LongInj = fromBijectionRep[Long, LongBytes]
-    getValue[String,Long](k)
+  override def get(k: Array[Byte]): Future[Option[Array[Byte]]] = {
+    getValue(k)
   }
 
   /**
    * replace a value
    * Delete is the same as put((k,None))
    */
-  override def put(kv: (String, Option[Long])): Future[Unit] = {
-    import com.twitter.bijection.hbase.HBaseBijections._
-    implicit val stringInj = fromBijectionRep[String, StringBytes]
-    implicit val LongInj = fromBijectionRep[Long, LongBytes]
+  override def put(kv: (Array[Byte], Option[Array[Byte]])): Future[Unit] = {
     putValue(kv)
   }
 
@@ -69,4 +62,3 @@ class HBaseLongStore(protected val quorumNames: String,
     pool.close()
   }
 }
-

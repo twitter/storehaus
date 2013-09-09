@@ -16,14 +16,10 @@
 
 package com.twitter.storehaus.hbase
 
-import org.apache.commons.lang.StringUtils._
 import org.apache.hadoop.hbase.client._
 import com.twitter.storehaus.Store
 import com.twitter.util.Future
-import com.twitter.bijection.Conversion._
-import com.twitter.bijection.hbase.HBaseBijections._
-import com.twitter.bijection.Bijection
-import scala.Some
+import com.twitter.bijection.Injection._
 
 /**
  * @author MansurAshraf
@@ -32,49 +28,35 @@ import scala.Some
 object HBaseStringStore {
   def apply(quorumNames: String, table: String, columnFamily: String, column: String, createTable: Boolean): HBaseStringStore = {
     val stringStore = new HBaseStringStore(quorumNames, table, columnFamily, column, createTable, new HTablePool())
+    stringStore.validateConfiguration()
     stringStore.createTableIfRequired()
     stringStore
   }
 }
 
-class HBaseStringStore(val quorumNames: String, val table: String, val columnFamily: String, val column: String, val createTable: Boolean, val pool: HTablePool) extends Store[String, String] with HBaseStoreConfig {
-
-  require(isNotEmpty(quorumNames), "Zookeeper quorums are required")
-  require(isNotEmpty(columnFamily), "column family is required")
-
+class HBaseStringStore(protected val quorumNames: String,
+                       protected val table: String,
+                       protected val columnFamily: String,
+                       protected val column: String, val createTable: Boolean,
+                       protected val pool: HTablePool) extends Store[String, String] with HBaseStore {
 
   /** get a single key from the store.
     * Prefer multiGet if you are getting more than one key at a time
     */
-  override def get(k: String): Future[Option[String]] = Future[Option[String]] {
-    val tbl = pool.getTable(table)
-    val g = createGetRequest(k)
-    val result = tbl.get(g)
-    extractValue(result)
+  override def get(k: String): Future[Option[String]] = {
+    import com.twitter.bijection.hbase.HBaseBijections._
+    implicit val stringInj = fromBijectionRep[String, StringBytes]
+    get(k)
   }
-
 
   /**
    * replace a value
    * Delete is the same as put((k,None))
    */
   override def put(kv: (String, Option[String])): Future[Unit] = {
-    kv match {
-      case (k, Some(v)) => {
-        Future {
-          val p = new Put(k.as[StringBytes])
-          p.add(columnFamily.as[StringBytes], column.as[StringBytes], v.as[StringBytes])
-          val tbl = pool.getTable(table)
-          tbl.put(p)
-        }
-      }
-      case (k, None) => Future {
-        val delete = new Delete(k.as[StringBytes])
-        val tbl = pool.getTable(table)
-        tbl.delete(delete)
-      }
-    }
-
+    import com.twitter.bijection.hbase.HBaseBijections._
+    implicit val stringInj = fromBijectionRep[String, StringBytes]
+    putValue(kv)
   }
 
   /** Close this store and release any resources.
@@ -83,16 +65,4 @@ class HBaseStringStore(val quorumNames: String, val table: String, val columnFam
   override def close {
     pool.close()
   }
-
-  def createGetRequest(k: String): Get = {
-    val g = new Get(k.as[StringBytes])
-    g.addColumn(columnFamily.as[StringBytes], column.as[StringBytes])
-    g
-  }
-
-  def extractValue(result: Result): Option[String] = {
-    val value = result.getValue(columnFamily.as[StringBytes], column.as[StringBytes])
-    Option(value) map (v => Bijection.invert[String, StringBytes](v.asInstanceOf[StringBytes]))
-  }
-
 }

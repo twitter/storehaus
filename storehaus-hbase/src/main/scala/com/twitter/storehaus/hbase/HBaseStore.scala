@@ -16,75 +16,75 @@
 
 package com.twitter.storehaus.hbase
 
-import org.apache.hadoop.hbase.client.{Delete, Put, Result, HTablePool}
-import com.twitter.storehaus.Store
-import org.apache.commons.lang.StringUtils._
-import com.twitter.util.Future
+import org.apache.hadoop.hbase.client._
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.hbase.{HColumnDescriptor, HTableDescriptor, HBaseConfiguration}
 import com.twitter.bijection.hbase.HBaseBijections._
 import com.twitter.bijection.Conversion._
+import com.twitter.bijection.Injection
+import com.twitter.util.Future
+import scala.Some
 
 /**
- * @author MansurAshraf
+ * @author Mansur Ashraf
  * @since 9/8/13
  */
-object HBaseStore {
-  def apply(quorumNames: String, table: String, columnFamily: String, column: String, createTable: Boolean): HBaseStore = {
-    val store = new HBaseStore(quorumNames, table, columnFamily, column, createTable, new HTablePool())
-    store.createTableIfRequired()
-    store
+trait HBaseStore {
+
+  protected val quorumNames: String
+  protected val createTable: Boolean
+  protected val table: String
+  protected val columnFamily: String
+  protected val column: String
+  protected val pool: HTablePool
+
+  def getHBaseAdmin: HBaseAdmin = {
+    val conf = new Configuration()
+    conf.set("hbase.zookeeper.quorum", quorumNames)
+    val hbaseConf = HBaseConfiguration.create(conf)
+    new HBaseAdmin(hbaseConf)
   }
-}
 
-class HBaseStore(val quorumNames: String, val table: String, val columnFamily: String, val column: String, val createTable: Boolean, val pool: HTablePool) extends Store[Array[Byte], Array[Byte]] with HBaseStoreConfig {
+  def createTableIfRequired() {
+    val hbaseAdmin = getHBaseAdmin
+    if (createTable && !hbaseAdmin.tableExists(table)) {
+      val tableDescriptor = new HTableDescriptor(table)
+      tableDescriptor.addFamily(new HColumnDescriptor(columnFamily))
+      hbaseAdmin.createTable(tableDescriptor)
+    }
+  }
 
-  require(isNotEmpty(quorumNames), "Zookeeper quorums are required")
-  require(isNotEmpty(columnFamily), "column family is required")
-  require(isNotEmpty(column), "column is required")
+  def validateConfiguration() {
+    import org.apache.commons.lang.StringUtils.isNotEmpty
 
+    require(isNotEmpty(quorumNames), "Zookeeper quorums are required")
+    require(isNotEmpty(columnFamily), "column family is required")
+    require(isNotEmpty(column), "column is required")
+  }
 
-  /** get a single key from the store.
-    * Prefer multiGet if you are getting more than one key at a time
-    */
-  override def get(k: Array[Byte]): Future[Option[Array[Byte]]] = Future[Option[Array[Byte]]] {
+  def getValue[K, V](key: K)(implicit keyInj: Injection[K, Array[Byte]], valueInj: Injection[V, Array[Byte]]): Future[Option[V]] = Future {
     val tbl = pool.getTable(table)
-    val g = createGetRequest(k)
+    val g = new Get(keyInj(key))
+    g.addColumn(columnFamily.as[StringBytes], column.as[StringBytes])
+
     val result = tbl.get(g)
-    extractValue(result)
+    val value = result.getValue(columnFamily.as[StringBytes], column.as[StringBytes])
+    Option(value).map(v => valueInj.invert(v).get)
   }
 
-
-  /**
-   * replace a value
-   * Delete is the same as put((k,None))
-   */
-  override def put(kv: (Array[Byte], Option[Array[Byte]])): Future[Unit] = {
+  def putValue[K, V](kv: (K, Option[V]))(implicit keyInj: Injection[K, Array[Byte]], valueInj: Injection[V, Array[Byte]]): Future[Unit] = {
     kv match {
       case (k, Some(v)) => Future {
-        val p = new Put(k)
-        p.add(columnFamily.as[StringBytes], column.as[StringBytes], v)
-        val tbl = pool.getTable(table)
-        tbl.put(p)
-      }
+          val p = new Put(keyInj(k))
+          p.add(columnFamily.as[StringBytes], column.as[StringBytes], valueInj(v))
+          val tbl = pool.getTable(table)
+          tbl.put(p)
+        }
       case (k, None) => Future {
-        val delete = new Delete(k)
+        val delete = new Delete(keyInj(k))
         val tbl = pool.getTable(table)
         tbl.delete(delete)
       }
     }
-
   }
-
-  /** Close this store and release any resources.
-    * It is undefined what happens on get/multiGet after close
-    */
-  override def close {
-    pool.close()
-  }
-
-  def extractValue(result: Result): Option[Array[Byte]] = {
-    val value = result.getValue(columnFamily.as[StringBytes], column.as[StringBytes])
-    Option(value)
-  }
-
 }
-
