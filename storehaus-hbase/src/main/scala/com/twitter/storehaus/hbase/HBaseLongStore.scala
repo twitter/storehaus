@@ -26,7 +26,7 @@ import com.twitter.bijection.Injection._
  * @since 9/8/13
  */
 object HBaseLongStore {
-  def apply(quorumNames: String, table: String, columnFamily: String, column: String, createTable: Boolean): HBaseLongStore = {
+  def apply(quorumNames: Seq[String], table: String, columnFamily: String, column: String, createTable: Boolean): HBaseLongStore = {
     val store = new HBaseLongStore(quorumNames, table, columnFamily, column, createTable, new HTablePool())
     store.validateConfiguration()
     store.createTableIfRequired()
@@ -34,7 +34,7 @@ object HBaseLongStore {
   }
 }
 
-class HBaseLongStore(protected val quorumNames: String,
+class HBaseLongStore(protected val quorumNames: Seq[String],
                      protected val table: String,
                      protected val columnFamily: String,
                      protected val column: String,

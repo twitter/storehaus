@@ -21,7 +21,7 @@ package com.twitter.storehaus.hbase
  * @since 9/8/13
  */
 trait DefaultHBaseConfig {
-  val quorumNames = "localhost:2181"
+  val quorumNames = Seq("localhost:2181")
   val table = "summing_bird"
   val columnFamily = "sb"
   val column = "aggregate"

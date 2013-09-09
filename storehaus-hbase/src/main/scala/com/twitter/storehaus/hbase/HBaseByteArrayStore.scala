@@ -25,7 +25,7 @@ import com.twitter.util.Future
  * @since 9/8/13
  */
 object HBaseByteArrayStore {
-  def apply(quorumNames: String, table: String, columnFamily: String, column: String, createTable: Boolean): HBaseByteArrayStore = {
+  def apply(quorumNames: Seq[String], table: String, columnFamily: String, column: String, createTable: Boolean): HBaseByteArrayStore = {
     val store = new HBaseByteArrayStore(quorumNames, table, columnFamily, column, createTable, new HTablePool())
     store.validateConfiguration()
     store.createTableIfRequired()
@@ -33,7 +33,7 @@ object HBaseByteArrayStore {
   }
 }
 
-class HBaseByteArrayStore(val quorumNames: String,
+class HBaseByteArrayStore(val quorumNames: Seq[String],
                           val table: String,
                           val columnFamily: String,
                           val column: String,

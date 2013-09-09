@@ -26,7 +26,7 @@ import com.twitter.bijection.Injection._
  * @since 9/7/13
  */
 object HBaseStringStore {
-  def apply(quorumNames: String, table: String, columnFamily: String, column: String, createTable: Boolean): HBaseStringStore = {
+  def apply(quorumNames: Seq[String], table: String, columnFamily: String, column: String, createTable: Boolean): HBaseStringStore = {
     val stringStore = new HBaseStringStore(quorumNames, table, columnFamily, column, createTable, new HTablePool())
     stringStore.validateConfiguration()
     stringStore.createTableIfRequired()
@@ -34,7 +34,7 @@ object HBaseStringStore {
   }
 }
 
-class HBaseStringStore(protected val quorumNames: String,
+class HBaseStringStore(protected val quorumNames: Seq[String],
                        protected val table: String,
                        protected val columnFamily: String,
                        protected val column: String, val createTable: Boolean,
@@ -46,7 +46,7 @@ class HBaseStringStore(protected val quorumNames: String,
   override def get(k: String): Future[Option[String]] = {
     import com.twitter.bijection.hbase.HBaseBijections._
     implicit val stringInj = fromBijectionRep[String, StringBytes]
-    get(k)
+    getValue[String,String](k)
   }
 
   /**

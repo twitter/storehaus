@@ -31,7 +31,7 @@ import scala.Some
  */
 trait HBaseStore {
 
-  protected val quorumNames: String
+  protected val quorumNames: Seq[String]
   protected val createTable: Boolean
   protected val table: String
   protected val columnFamily: String
@@ -40,7 +40,7 @@ trait HBaseStore {
 
   def getHBaseAdmin: HBaseAdmin = {
     val conf = new Configuration()
-    conf.set("hbase.zookeeper.quorum", quorumNames)
+    conf.set("hbase.zookeeper.quorum", quorumNames.mkString(","))
     val hbaseConf = HBaseConfiguration.create(conf)
     new HBaseAdmin(hbaseConf)
   }
@@ -57,7 +57,7 @@ trait HBaseStore {
   def validateConfiguration() {
     import org.apache.commons.lang.StringUtils.isNotEmpty
 
-    require(isNotEmpty(quorumNames), "Zookeeper quorums are required")
+    require(!quorumNames.isEmpty, "Zookeeper quorums are required")
     require(isNotEmpty(columnFamily), "column family is required")
     require(isNotEmpty(column), "column is required")
   }
