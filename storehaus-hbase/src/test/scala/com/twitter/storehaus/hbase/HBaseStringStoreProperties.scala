@@ -65,4 +65,5 @@ with DefaultHBaseCluster[Store[String, String]] {
   testingUtil.startMiniCluster()
   val closeable =HBaseStringStore(quorumNames, table, columnFamily, column, createTable,pool,conf)
   property("HBaseStore test") =storeTest(closeable)
+
 }

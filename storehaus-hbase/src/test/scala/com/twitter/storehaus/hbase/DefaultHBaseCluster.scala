@@ -37,6 +37,7 @@ trait DefaultHBaseCluster[C <: Closeable] extends CloseableCleanup[C] {
 
   override def cleanup() {
     super.cleanup()
-    testingUtil.shutdownMiniCluster()
+   /* testingUtil.shutdownMiniZKCluster()
+    testingUtil.shutdownMiniCluster()*/
   }
 }
