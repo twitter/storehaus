@@ -20,33 +20,47 @@ import org.apache.hadoop.hbase.client._
 import com.twitter.storehaus.Store
 import com.twitter.util.Future
 import com.twitter.bijection.Injection._
+import org.apache.hadoop.conf.Configuration
 
 /**
  * @author MansurAshraf
  * @since 9/7/13
  */
 object HBaseStringStore {
-  def apply(quorumNames: Seq[String], table: String, columnFamily: String, column: String, createTable: Boolean): HBaseStringStore = {
-    val stringStore = new HBaseStringStore(quorumNames, table, columnFamily, column, createTable, new HTablePool())
-    stringStore.validateConfiguration()
-    stringStore.createTableIfRequired()
-    stringStore
+  def apply(quorumNames: Seq[String],
+            table: String,
+            columnFamily: String,
+            column: String,
+            createTable: Boolean,
+            pool: HTablePool,
+            conf: Configuration): HBaseStringStore = {
+    val store = new HBaseStringStore(quorumNames, table, columnFamily, column, createTable, pool, conf)
+    store.validateConfiguration()
+    store.createTableIfRequired()
+    store
   }
+
+  def apply(quorumNames: Seq[String],
+            table: String,
+            columnFamily: String,
+            column: String,
+            createTable: Boolean): HBaseStringStore = apply(quorumNames, table, columnFamily, column, createTable, new HTablePool(), new Configuration())
 }
 
 class HBaseStringStore(protected val quorumNames: Seq[String],
                        protected val table: String,
                        protected val columnFamily: String,
-                       protected val column: String, val createTable: Boolean,
-                       protected val pool: HTablePool) extends Store[String, String] with HBaseStore {
-
+                       protected val column: String,
+                       protected val createTable: Boolean,
+                       protected val pool: HTablePool,
+                       protected val conf: Configuration) extends Store[String, String] with HBaseStore {
   /** get a single key from the store.
     * Prefer multiGet if you are getting more than one key at a time
     */
   override def get(k: String): Future[Option[String]] = {
     import com.twitter.bijection.hbase.HBaseBijections._
     implicit val stringInj = fromBijectionRep[String, StringBytes]
-    getValue[String,String](k)
+    getValue[String, String](k)
   }
 
   /**

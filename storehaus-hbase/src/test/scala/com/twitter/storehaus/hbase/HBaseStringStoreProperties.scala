@@ -22,15 +22,14 @@ import com.twitter.storehaus.{FutureOps, Store}
 import com.twitter.storehaus.testing.generator.NonEmpty
 import org.scalacheck.Prop._
 import com.twitter.util.Await
+import org.apache.hadoop.hbase.HBaseTestingUtility
 
 /**
  * @author MansurAshraf
  * @since 9/8/13
  */
 object HBaseStringStoreProperties extends Properties("HBaseStore")
-with CloseableCleanup[Store[String, String]]
-with DefaultHBaseConfig {
-
+with DefaultHBaseCluster[Store[String, String]] {
   def validPairs: Gen[List[(String, Option[String])]] =
     NonEmpty.Pairing.alphaStrs()
 
@@ -63,9 +62,7 @@ with DefaultHBaseConfig {
   def storeTest(store: Store[String, String]) =
     putStoreTest(store, validPairs) && multiPutStoreTest(store, validPairs)
 
-  val closeable =HBaseStringStore(quorumNames, table, columnFamily, column, createTable)
-
-
-  property("HBaseStore test") =
-    storeTest(closeable)
+  testingUtil.startMiniCluster()
+  val closeable =HBaseStringStore(quorumNames, table, columnFamily, column, createTable,pool,conf)
+  property("HBaseStore test") =storeTest(closeable)
 }

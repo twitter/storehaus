@@ -16,14 +16,27 @@
 
 package com.twitter.storehaus.hbase
 
+import org.apache.hadoop.hbase.HBaseTestingUtility
+import org.apache.hadoop.hbase.client.HTablePool
+import com.twitter.storehaus.testing.CloseableCleanup
+import java.io.Closeable
+
 /**
  * @author MansurAshraf
  * @since 9/8/13
  */
-trait DefaultHBaseConfig {
+trait DefaultHBaseCluster[C <: Closeable] extends CloseableCleanup[C] {
   val quorumNames = Seq("localhost:2181")
   val table = "summing_bird"
   val columnFamily = "sb"
   val column = "aggregate"
   val createTable = true
+  val testingUtil = new HBaseTestingUtility()
+  val conf = testingUtil.getConfiguration
+  val pool = new HTablePool(conf, 1)
+
+  override def cleanup() {
+    super.cleanup()
+    testingUtil.shutdownMiniCluster()
+  }
 }

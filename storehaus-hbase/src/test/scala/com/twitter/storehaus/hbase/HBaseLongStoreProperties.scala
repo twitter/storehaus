@@ -17,7 +17,6 @@
 package com.twitter.storehaus.hbase
 
 import org.scalacheck.{Gen, Properties}
-import com.twitter.storehaus.testing.CloseableCleanup
 import com.twitter.storehaus.Store
 import com.twitter.storehaus.testing.generator.NonEmpty
 import HBaseStringStoreProperties._
@@ -27,8 +26,7 @@ import HBaseStringStoreProperties._
  * @since 9/8/13
  */
 object HBaseLongStoreProperties extends Properties("HBaseLongStore")
-with CloseableCleanup[Store[String, Long]]
-with DefaultHBaseConfig {
+with DefaultHBaseCluster[Store[String, Long]] {
 
   def validPairs: Gen[List[(String, Option[Long])]] =
     NonEmpty.Pairing.alphaStrNumerics[Long](10)
@@ -36,7 +34,8 @@ with DefaultHBaseConfig {
   def storeTest(store: Store[String, Long]) =
     putStoreTest(store, validPairs) && multiPutStoreTest(store, validPairs)
 
-  val closeable = HBaseLongStore(quorumNames, table, columnFamily, column, createTable)
+  testingUtil.startMiniCluster()
+  val closeable = HBaseLongStore(quorumNames, table, columnFamily, column, createTable,pool,conf)
 
   property("HBaseLongStore test") = storeTest(closeable)
 

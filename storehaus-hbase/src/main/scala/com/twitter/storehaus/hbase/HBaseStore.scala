@@ -37,10 +37,12 @@ trait HBaseStore {
   protected val columnFamily: String
   protected val column: String
   protected val pool: HTablePool
+  protected val conf: Configuration
 
   def getHBaseAdmin: HBaseAdmin = {
-    val conf = new Configuration()
-    conf.set("hbase.zookeeper.quorum", quorumNames.mkString(","))
+    if (conf.get("hbase.zookeeper.quorum") == null) {
+      conf.set("hbase.zookeeper.quorum", quorumNames.mkString(","))
+    }
     val hbaseConf = HBaseConfiguration.create(conf)
     new HBaseAdmin(hbaseConf)
   }
@@ -75,11 +77,11 @@ trait HBaseStore {
   def putValue[K, V](kv: (K, Option[V]))(implicit keyInj: Injection[K, Array[Byte]], valueInj: Injection[V, Array[Byte]]): Future[Unit] = {
     kv match {
       case (k, Some(v)) => Future {
-          val p = new Put(keyInj(k))
-          p.add(columnFamily.as[StringBytes], column.as[StringBytes], valueInj(v))
-          val tbl = pool.getTable(table)
-          tbl.put(p)
-        }
+        val p = new Put(keyInj(k))
+        p.add(columnFamily.as[StringBytes], column.as[StringBytes], valueInj(v))
+        val tbl = pool.getTable(table)
+        tbl.put(p)
+      }
       case (k, None) => Future {
         val delete = new Delete(keyInj(k))
         val tbl = pool.getTable(table)

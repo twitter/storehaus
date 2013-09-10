@@ -20,18 +20,31 @@ import org.apache.hadoop.hbase.client.HTablePool
 import com.twitter.storehaus.Store
 import com.twitter.util.Future
 import com.twitter.bijection.Injection._
+import org.apache.hadoop.conf.Configuration
 
 /**
  * @author Mansur Ashraf
  * @since 9/8/13
  */
 object HBaseLongStore {
-  def apply(quorumNames: Seq[String], table: String, columnFamily: String, column: String, createTable: Boolean): HBaseLongStore = {
-    val store = new HBaseLongStore(quorumNames, table, columnFamily, column, createTable, new HTablePool())
+  def apply(quorumNames: Seq[String],
+            table: String,
+            columnFamily: String,
+            column: String,
+            createTable: Boolean,
+            pool: HTablePool,
+            conf: Configuration): HBaseLongStore = {
+    val store = new HBaseLongStore(quorumNames, table, columnFamily, column, createTable, pool, conf)
     store.validateConfiguration()
     store.createTableIfRequired()
     store
   }
+
+  def apply(quorumNames: Seq[String],
+            table: String,
+            columnFamily: String,
+            column: String,
+            createTable: Boolean): HBaseLongStore = apply(quorumNames, table, columnFamily, column, createTable, new HTablePool(), new Configuration())
 }
 
 class HBaseLongStore(protected val quorumNames: Seq[String],
@@ -39,7 +52,8 @@ class HBaseLongStore(protected val quorumNames: Seq[String],
                      protected val columnFamily: String,
                      protected val column: String,
                      protected val createTable: Boolean,
-                     protected val pool: HTablePool) extends Store[String, Long] with HBaseStore {
+                     protected val pool: HTablePool,
+                     protected val conf: Configuration) extends Store[String, Long] with HBaseStore {
 
   /** get a single key from the store.
     * Prefer multiGet if you are getting more than one key at a time
@@ -48,7 +62,7 @@ class HBaseLongStore(protected val quorumNames: Seq[String],
     import com.twitter.bijection.hbase.HBaseBijections._
     implicit val stringInj = fromBijectionRep[String, StringBytes]
     implicit val LongInj = fromBijectionRep[Long, LongBytes]
-    getValue[String,Long](k)
+    getValue[String, Long](k)
   }
 
   /**
