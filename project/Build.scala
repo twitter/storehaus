@@ -1,3 +1,19 @@
+/*
+ * Copyright 2013 Twitter inc.
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+
 package storehaus
 
 import sbt._
@@ -96,7 +112,7 @@ object StorehausBuild extends Build {
       .map { s => "com.twitter" % ("storehaus-" + s + "_2.9.3") % "0.5.0" }
 
   val algebirdVersion = "0.2.0"
-  val bijectionVersion = "0.5.2"
+  val bijectionVersion = "0.5.3"
 
   lazy val storehaus = Project(
     id = "storehaus",
@@ -113,6 +129,7 @@ object StorehausBuild extends Build {
     storehausMemcache,
     storehausMySQL,
     storehausRedis,
+    storehausHBase,
     storehausTesting
   )
 
@@ -137,7 +154,7 @@ object StorehausBuild extends Build {
   lazy val storehausAlgebra = module("algebra").settings(
     libraryDependencies += "com.twitter" %% "algebird-core" % algebirdVersion,
     libraryDependencies += "com.twitter" %% "algebird-util" % algebirdVersion,
-    libraryDependencies += "com.twitter" %% "bijection-algebird" % bijectionVersion
+    libraryDependencies += "com.twitter" %% "algebird-bijection" % algebirdVersion
   ).dependsOn(storehausCore % "test->test;compile->compile")
 
   lazy val storehausMemcache = module("memcache").settings(
@@ -156,6 +173,18 @@ object StorehausBuild extends Build {
   lazy val storehausRedis = module("redis").settings(
     libraryDependencies += Finagle.module("redis"),
     // we don't want various tests clobbering each others keys
+    parallelExecution in Test := false
+  ).dependsOn(storehausAlgebra % "test->test;compile->compile")
+
+  lazy val storehausHBase= module("hbase").settings(
+    libraryDependencies ++= Seq(
+      "com.twitter" %% "algebird-core" % algebirdVersion,
+      "com.twitter" %% "bijection-core" % bijectionVersion,
+      "com.twitter" %% "bijection-hbase" % bijectionVersion ,
+      "org.apache.hbase" % "hbase" % "0.94.6" % "provided->default" classifier "tests" classifier "",
+      "org.apache.hadoop" % "hadoop-core" % "1.2.0" % "provided->default",
+      "org.apache.hadoop" % "hadoop-test" % "1.2.0" % "test"
+    ),
     parallelExecution in Test := false
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
