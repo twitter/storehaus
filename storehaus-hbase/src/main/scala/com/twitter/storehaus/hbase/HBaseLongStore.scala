@@ -33,8 +33,9 @@ object HBaseLongStore {
             column: String,
             createTable: Boolean,
             pool: HTablePool,
-            conf: Configuration): HBaseLongStore = {
-    val store = new HBaseLongStore(quorumNames, table, columnFamily, column, createTable, pool, conf)
+            conf: Configuration,
+            threads:Int): HBaseLongStore = {
+    val store = new HBaseLongStore(quorumNames, table, columnFamily, column, createTable, pool, conf,threads)
     store.validateConfiguration()
     store.createTableIfRequired()
     store
@@ -44,7 +45,7 @@ object HBaseLongStore {
             table: String,
             columnFamily: String,
             column: String,
-            createTable: Boolean): HBaseLongStore = apply(quorumNames, table, columnFamily, column, createTable, new HTablePool(), new Configuration())
+            createTable: Boolean): HBaseLongStore = apply(quorumNames, table, columnFamily, column, createTable, new HTablePool(), new Configuration(),4)
 }
 
 class HBaseLongStore(protected val quorumNames: Seq[String],
@@ -53,7 +54,8 @@ class HBaseLongStore(protected val quorumNames: Seq[String],
                      protected val column: String,
                      protected val createTable: Boolean,
                      protected val pool: HTablePool,
-                     protected val conf: Configuration) extends Store[String, Long] with HBaseStore {
+                     protected val conf: Configuration,
+                     protected val threads:Int) extends Store[String, Long] with HBaseStore {
 
   /** get a single key from the store.
     * Prefer multiGet if you are getting more than one key at a time

@@ -22,8 +22,9 @@ import org.apache.hadoop.hbase.{HColumnDescriptor, HTableDescriptor, HBaseConfig
 import com.twitter.bijection.hbase.HBaseBijections._
 import com.twitter.bijection.Conversion._
 import com.twitter.bijection.Injection
-import com.twitter.util.Future
+import com.twitter.util.{FuturePool, Future}
 import scala.Some
+import java.util.concurrent.Executors
 
 /**
  * @author Mansur Ashraf
@@ -38,6 +39,8 @@ trait HBaseStore {
   protected val column: String
   protected val pool: HTablePool
   protected val conf: Configuration
+  protected val threads: Int
+  protected val futurePool = FuturePool(Executors.newFixedThreadPool(threads))
 
   def getHBaseAdmin: HBaseAdmin = {
     if (conf.get("hbase.zookeeper.quorum") == null) {
@@ -64,7 +67,7 @@ trait HBaseStore {
     require(isNotEmpty(column), "column is required")
   }
 
-  def getValue[K, V](key: K)(implicit keyInj: Injection[K, Array[Byte]], valueInj: Injection[V, Array[Byte]]): Future[Option[V]] = Future {
+  def getValue[K, V](key: K)(implicit keyInj: Injection[K, Array[Byte]], valueInj: Injection[V, Array[Byte]]): Future[Option[V]] = futurePool {
     val tbl = pool.getTable(table)
     val g = new Get(keyInj(key))
     g.addColumn(columnFamily.as[StringBytes], column.as[StringBytes])
@@ -76,13 +79,13 @@ trait HBaseStore {
 
   def putValue[K, V](kv: (K, Option[V]))(implicit keyInj: Injection[K, Array[Byte]], valueInj: Injection[V, Array[Byte]]): Future[Unit] = {
     kv match {
-      case (k, Some(v)) => Future {
+      case (k, Some(v)) => futurePool {
         val p = new Put(keyInj(k))
         p.add(columnFamily.as[StringBytes], column.as[StringBytes], valueInj(v))
         val tbl = pool.getTable(table)
         tbl.put(p)
       }
-      case (k, None) => Future {
+      case (k, None) => futurePool {
         val delete = new Delete(keyInj(k))
         val tbl = pool.getTable(table)
         tbl.delete(delete)

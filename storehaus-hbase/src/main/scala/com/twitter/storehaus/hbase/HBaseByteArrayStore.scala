@@ -32,8 +32,9 @@ object HBaseByteArrayStore {
             column: String,
             createTable: Boolean,
             pool: HTablePool,
-            conf: Configuration): HBaseByteArrayStore = {
-    val store = new HBaseByteArrayStore(quorumNames, table, columnFamily, column, createTable,pool,conf)
+            conf: Configuration,
+            threads: Int): HBaseByteArrayStore = {
+    val store = new HBaseByteArrayStore(quorumNames, table, columnFamily, column, createTable, pool, conf, threads)
     store.validateConfiguration()
     store.createTableIfRequired()
     store
@@ -43,7 +44,7 @@ object HBaseByteArrayStore {
             table: String,
             columnFamily: String,
             column: String,
-            createTable: Boolean): HBaseByteArrayStore = apply(quorumNames,table,columnFamily,column,createTable,new HTablePool(), new Configuration())
+            createTable: Boolean): HBaseByteArrayStore = apply(quorumNames, table, columnFamily, column, createTable, new HTablePool(), new Configuration(), 4)
 }
 
 class HBaseByteArrayStore(protected val quorumNames: Seq[String],
@@ -52,7 +53,8 @@ class HBaseByteArrayStore(protected val quorumNames: Seq[String],
                           protected val column: String,
                           protected val createTable: Boolean,
                           protected val pool: HTablePool,
-                          protected val conf: Configuration) extends Store[Array[Byte], Array[Byte]] with HBaseStore {
+                          protected val conf: Configuration,
+                          protected val threads: Int) extends Store[Array[Byte], Array[Byte]] with HBaseStore {
 
   /** get a single key from the store.
     * Prefer multiGet if you are getting more than one key at a time
