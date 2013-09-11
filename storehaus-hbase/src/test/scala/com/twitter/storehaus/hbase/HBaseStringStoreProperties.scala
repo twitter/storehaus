@@ -17,12 +17,10 @@
 package com.twitter.storehaus.hbase
 
 import org.scalacheck.{Arbitrary, Gen, Properties}
-import com.twitter.storehaus.testing.CloseableCleanup
 import com.twitter.storehaus.{FutureOps, Store}
 import com.twitter.storehaus.testing.generator.NonEmpty
 import org.scalacheck.Prop._
 import com.twitter.util.Await
-import org.apache.hadoop.hbase.HBaseTestingUtility
 
 /**
  * @author MansurAshraf
