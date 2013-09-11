@@ -94,7 +94,7 @@ See the [current API documentation](http://twitter.github.com/storehaus) for mor
 
 ## Maven
 
-Storehaus modules are available on maven central. The current groupid and version for all modules is, respectively, `"com.twitter"` and  `0.5.0`.
+Storehaus modules are available on maven central. The current groupid and version for all modules is, respectively, `"com.twitter"` and  `0.5.1`.
 
 Current published artifacts are
 
