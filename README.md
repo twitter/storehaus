@@ -79,6 +79,7 @@ Storehaus provides a number of modules wrapping existing key-value stores. Enric
   * [Storehaus-memcache](http://twitter.github.com/storehaus/#com.twitter.storehaus.memcache.MemcacheStore) (wraps Twitter's [finagle-memcached](https://github.com/twitter/finagle/tree/master/finagle-memcached) library)
   * [Storehaus-mysql](http://twitter.github.com/storehaus/#com.twitter.storehaus.mysql.MySQLStore) (wraps Twitter's [finagle-mysql](https://github.com/twitter/finagle/tree/master/finagle-mysql) library)
   * [Storehaus-redis](http://twitter.github.com/storehaus/#com.twitter.storehaus.redis.RedisStore) (wraps Twitter's [finagle-redis](https://github.com/twitter/finagle/tree/master/finagle-redis) library)
+  * [Storehaus-hbase](http://twitter.github.com/storehaus/#com.twitter.storehaus.hbase.HBaseStore)
 
 #### Planned Modules
 
@@ -106,6 +107,8 @@ Current published artifacts are
 * `storehaus-memcache_2.10`
 * `storehaus-mysql_2.9.3`
 * `storehaus-mysql_2.10`
+* `storehaus-hbase_2.9.3`
+* `storehaus-hbase_2.10`
 * `storehaus-redis_2.9.3`
 * `storehaus-redis_2.10`
 * `storehaus-cache_2.9.3`
