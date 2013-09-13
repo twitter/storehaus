@@ -130,6 +130,7 @@ object StorehausBuild extends Build {
     storehausMySQL,
     storehausRedis,
     storehausHBase,
+    storehausDynamoDB,
     storehausTesting
   )
 
@@ -184,6 +185,18 @@ object StorehausBuild extends Build {
       "org.apache.hbase" % "hbase" % "0.94.6" % "provided->default" classifier "tests" classifier "",
       "org.apache.hadoop" % "hadoop-core" % "1.2.0" % "provided->default",
       "org.apache.hadoop" % "hadoop-test" % "1.2.0" % "test"
+    ),
+    parallelExecution in Test := false
+  ).dependsOn(storehausAlgebra % "test->test;compile->compile")
+
+  lazy val storehausDynamoDB= module("dynamodb").settings(
+    libraryDependencies ++= Seq(
+      "com.twitter" %% "algebird-core" % algebirdVersion,
+      "com.twitter" %% "bijection-core" % bijectionVersion,
+      "com.twitter" %% "bijection-hbase" % bijectionVersion ,
+      "com.amazonaws" % "aws-java-sdk" % "1.5.7"
+      ////use alternator for local testing
+      //"com.michelboudreau" % "alternator" % "0.6.4" % "test"
     ),
     parallelExecution in Test := false
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
