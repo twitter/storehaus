@@ -17,7 +17,7 @@
 package com.twitter.storehaus.algebra
 
 import com.twitter.algebird.{ MapAlgebra, Monoid, SummingQueue }
-import com.twitter.bijection.algebird.AlgebirdBijections._
+import com.twitter.algebird.bijection.AlgebirdBijections._
 import com.twitter.bijection.Injection
 import com.twitter.storehaus._
 import com.twitter.util.Await
@@ -93,7 +93,7 @@ object MergeableStoreProperties extends Properties("MergeableStore") {
 
   property("Converted MergeableStore obeys the mergeable store laws") = {
     // We are using a weird monoid on Int here:
-    import com.twitter.bijection.algebird.AlgebirdBijections._
+    import com.twitter.algebird.bijection.AlgebirdBijections._
     import com.twitter.bijection.Conversion.asMethod
     implicit val monoid : Monoid[Int] = implicitly[Monoid[(Short,Short)]].as[Monoid[Int]]
 

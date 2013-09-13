@@ -1,7 +1,7 @@
 language: scala
 scala:
   - 2.10.0
-  - 2.9.2
+  - 2.9.3
 before_script:
   - mysql -u root -e "create database storehaus_test;"
   - mysql -u root -e "create user 'storehaususer'@'localhost' identified by 'test1234';"
@@ -9,3 +9,4 @@ before_script:
 services:
   - redis-server
   - memcache
+script: umask 0022 && sbt ++$TRAVIS_SCALA_VERSION test
