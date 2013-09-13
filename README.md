@@ -79,6 +79,7 @@ Storehaus provides a number of modules wrapping existing key-value stores. Enric
   * [Storehaus-memcache](http://twitter.github.com/storehaus/#com.twitter.storehaus.memcache.MemcacheStore) (wraps Twitter's [finagle-memcached](https://github.com/twitter/finagle/tree/master/finagle-memcached) library)
   * [Storehaus-mysql](http://twitter.github.com/storehaus/#com.twitter.storehaus.mysql.MySQLStore) (wraps Twitter's [finagle-mysql](https://github.com/twitter/finagle/tree/master/finagle-mysql) library)
   * [Storehaus-redis](http://twitter.github.com/storehaus/#com.twitter.storehaus.redis.RedisStore) (wraps Twitter's [finagle-redis](https://github.com/twitter/finagle/tree/master/finagle-redis) library)
+  * [Storehaus-hbase](http://twitter.github.com/storehaus/#com.twitter.storehaus.hbase.HBaseStore)
 
 #### Planned Modules
 
@@ -94,22 +95,26 @@ See the [current API documentation](http://twitter.github.com/storehaus) for mor
 
 ## Maven
 
-Storehaus modules are available on maven central. The current groupid and version for all modules is, respectively, `"com.twitter"` and  `0.4.0`.
+Storehaus modules are available on maven central. The current groupid and version for all modules is, respectively, `"com.twitter"` and  `0.5.1`.
 
 Current published artifacts are
 
-* `storehaus-core_2.9.2`
+* `storehaus-core_2.9.3`
 * `storehaus-core_2.10`
-* `storehaus-algebra_2.9.2`
+* `storehaus-algebra_2.9.3`
 * `storehaus-algebra_2.10`
-* `storehaus-memcache_2.9.2`
+* `storehaus-memcache_2.9.3`
 * `storehaus-memcache_2.10`
-* `storehaus-mysql_2.9.2`
+* `storehaus-mysql_2.9.3`
 * `storehaus-mysql_2.10`
-* `storehaus-redis_2.9.2`
+* `storehaus-hbase_2.9.3`
+* `storehaus-hbase_2.10`
+* `storehaus-redis_2.9.3`
 * `storehaus-redis_2.10`
-* `storehaus-cache_2.9.2`
+* `storehaus-cache_2.9.3`
 * `storehaus-cache_2.10`
+* `storehaus-testing_2.9.3`
+* `storehaus-testing_2.10`
 
 The suffix denotes the scala version.
 

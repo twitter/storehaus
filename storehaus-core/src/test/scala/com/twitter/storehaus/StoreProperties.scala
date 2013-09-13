@@ -23,26 +23,28 @@ import org.scalacheck.Gen.choose
 import org.scalacheck.Prop._
 
 object StoreProperties extends Properties("Store") {
-  def baseTest[K: Arbitrary, V: Arbitrary: Equiv](store: Store[K, V])
-    (put: (Store[K, V], List[(K, Option[V])]) => Unit) =
+  def baseTest[K: Arbitrary, V: Arbitrary: Equiv](storeIn: => Store[K, V])
+    (put: (Store[K, V], List[(K, Option[V])]) => Unit) = {
     forAll { (examples: List[(K, Option[V])]) =>
+      lazy val store = storeIn
       put(store, examples)
       examples.toMap.forall { case (k, optV) =>
-          Equiv[Option[V]].equiv(Await.result(store.get(k)), optV)
+        Equiv[Option[V]].equiv(Await.result(store.get(k)), optV)
       }
     }
+  }
 
-  def putStoreTest[K: Arbitrary, V: Arbitrary: Equiv](store: Store[K, V]) =
+  def putStoreTest[K: Arbitrary, V: Arbitrary: Equiv](store: => Store[K, V]) =
     baseTest(store) { (s, pairs) =>
       pairs.foreach { p => Await.result(s.put(p)) }
     }
 
-  def multiPutStoreTest[K: Arbitrary, V: Arbitrary: Equiv](store: Store[K, V]) =
+  def multiPutStoreTest[K: Arbitrary, V: Arbitrary: Equiv](store: => Store[K, V]) =
     baseTest(store) { (s, pairs) =>
       Await.result(FutureOps.mapCollect(s.multiPut(pairs.toMap)))
     }
 
-  def storeTest[K: Arbitrary, V: Arbitrary: Equiv](store: Store[K, V]) =
+  def storeTest[K: Arbitrary, V: Arbitrary: Equiv](store: => Store[K, V]) =
     putStoreTest(store) && multiPutStoreTest(store)
 
   property("ConcurrentHashMapStore test") =

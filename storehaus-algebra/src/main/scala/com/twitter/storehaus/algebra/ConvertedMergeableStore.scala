@@ -32,7 +32,7 @@ class ConvertedMergeableStore[K1, -K2, V1, V2](store: MergeableStore[K1, V1])(kf
   (implicit bij: ImplicitBijection[V2, V1])
   extends com.twitter.storehaus.ConvertedStore[K1, K2, V1, V2](store)(kfn)(Injection.fromBijection(bij.bijection))
   with MergeableStore[K2, V2] {
-  import com.twitter.bijection.algebird.AlgebirdBijections._
+  import com.twitter.algebird.bijection.AlgebirdBijections._
 
   override def monoid: Monoid[V2] = store.monoid.as[Monoid[V2]]
 

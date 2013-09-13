@@ -16,6 +16,7 @@
 
 package com.twitter.storehaus.memcache
 
+import com.twitter.bijection.{ Base64String, Bijection, Codec, Injection }
 import com.twitter.util.Encoder
 
 /**
@@ -28,10 +29,7 @@ import com.twitter.util.Encoder
  *  @author Sam Ritchie
  */
 
-// See this reference for other algorithm names:
-// http://docs.oracle.com/javase/1.4.2/docs/guide/security/CryptoSpec.html#AppA
-
-class HashEncoder(hashFunc: String = "SHA-256") extends Encoder[Array[Byte],Array[Byte]] {
+class HashEncoder(hashFunc: String) extends Encoder[Array[Byte], Array[Byte]] {
   def encode(bytes: Array[Byte]): Array[Byte] = {
     val md = java.security.MessageDigest.getInstance(hashFunc)
     md.digest(bytes)
@@ -39,6 +37,19 @@ class HashEncoder(hashFunc: String = "SHA-256") extends Encoder[Array[Byte],Arra
 }
 
 object HashEncoder {
-  def apply() = new HashEncoder
-  def apply(hashFunc: String) = new HashEncoder(hashFunc)
+  // See this reference for other algorithm names:
+  // http://docs.oracle.com/javase/1.4.2/docs/guide/security/CryptoSpec.html#AppA
+  val DEFAULT_HASH_FUNC = "SHA-256"
+
+  def apply(hashFunc: String = DEFAULT_HASH_FUNC) = new HashEncoder(hashFunc)
+
+  /**
+   * Returns a function that encodes a key to a hashed, base64-encoded
+   * Memcache key string given a unique namespace string.
+   */
+  def keyEncoder[T](namespace: String, hashFunc: String = DEFAULT_HASH_FUNC)
+    (implicit inj: Codec[T]): T => String = { key: T =>
+    def concat(bytes: Array[Byte]): Array[Byte] = namespace.getBytes ++ bytes
+    (inj andThen (concat _) andThen HashEncoder() andThen Bijection.connect[Array[Byte], Base64String])(key).str
+  }
 }
