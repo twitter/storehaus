@@ -16,31 +16,108 @@
 
 package com.twitter.storehaus
 
-import com.twitter.util.Future
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.ConcurrentHashMap
 
-/*
+import scala.collection.mutable.ConcurrentMap
+import scala.collection.JavaConversions._
+
+import com.twitter.util.{ Future, Promise, Return, Throw }
+
+/**
  * N - total replicas
  * One - 1 successful operation is sufficient to consider the operation as complete
  * Quorum - N/2 + 1 successful operations are sufficient to consider the operation as complete
  * All - N successful operations are required
  */
-sealed trait ConsistencyLevel
-case object One extends ConsistencyLevel
-case object Quorum extends ConsistencyLevel
-case object All extends ConsistencyLevel
+object ConsistencyLevel extends Enumeration {
+  type ConsistencyLevel = Value
+  val One, Quorum, All = Value
+}
+import ConsistencyLevel._
+
+/**
+ * Thrown when a read operation fails due to unsatisfied consistency level
+ */
+class ReadFailedException[K](val key: K)
+    extends RuntimeException("Read failed for key " + key)
+
+/**
+ * Thrown when a write operation fails due to unsatisfied consistency level
+ */
+class WriteFailedException[K](val key: K)
+    extends RuntimeException("Write failed for key " + key)
 
 /**
  * Replicates reads to a seq of stores and returns the value based on picked read consistency.
  *
  * Consistency semantics:
  * One - returns after first successful read, fails if all underlying reads fail
- * Quorum - returns after at least N/2 + 1 reads succeed and return the same value (read repairs divergent replicas), fails otherwise
+ * Quorum - returns after at least N/2 + 1 reads succeed and return the same value, fails otherwise
  * All - returns if all N reads succeed and return the same value, fails otherwise
  */
-class TunableConsistentReadableStore[-K, +V](stores: Seq[ReadableStore[K, V]], readConsistency: ConsistencyLevel)
+class TunableReplicatedReadableStore[-K, +V](stores: Seq[ReadableStore[K, V]], readConsistency: ConsistencyLevel)
   extends AbstractReadableStore[K, V] {
-  override def get(k: K) = Future.None // TODO
-  override def multiGet[K1 <: K](ks: Set[K1]) = ks.zipWithIndex.map{ case (k, v) => (k, Future.None) }.toMap // TODO
+
+  object ExpectedSuccesses {
+    def get(c: ConsistencyLevel) = {
+      c match {
+        case One => 1
+        case Quorum => stores.size/2 + 1
+        case All => stores.size
+      }
+    }
+  }
+
+  def doGet(k: K): Future[(Option[V], Seq[Int])] = {
+    if (stores.isEmpty) {
+      Future((None, List[Int]()))
+    } else {
+      val expected = ExpectedSuccesses.get(readConsistency)
+      // a map of counts per result value
+      val counts = new ConcurrentHashMap[Option[V], AtomicInteger]()
+      // no support for concurrent sets? using a hashmap instead below
+      // other options are CopyOnWriteArray, or 'synchronize' on regular list accesses
+      val successNodes = new ConcurrentHashMap[Int, Boolean]()
+
+      val success = new AtomicInteger(0)
+      val fail = new AtomicInteger(0)
+      val futures = stores.map { s => s.get(k) }
+      val promise = Promise.interrupts[(Option[V], Seq[Int])](futures:_*)
+      for ((f, i) <- futures.zipWithIndex) {
+        f.onSuccess { result =>
+          success.getAndIncrement
+          val count = synchronized { counts.getOrElseUpdate(result, new AtomicInteger(0)) }
+          val newCountVal = count.incrementAndGet
+          successNodes.put(i, true)
+          if (newCountVal >= expected)
+            // return result along with list of stores that succeeded
+            promise.updateIfEmpty(Return((result, successNodes.keys.toSeq)))
+        } onFailure { e =>
+          if (fail.incrementAndGet > stores.size - expected)
+            promise.updateIfEmpty(Throw(new ReadFailedException(k)))
+        } ensure {
+          if (success.get + fail.get >= stores.size)
+            promise.updateIfEmpty(Throw(new ReadFailedException(k)))
+        }
+      }
+      promise
+    }
+  }
+
+  override def get(k: K): Future[Option[V]] = {
+    doGet(k).map { _._1 }
+  }
+}
+
+/** Factory method to create TunableReplicatedStore instances */
+object TunableReplicatedStore {
+  def fromSeq[K,V](replicas: Seq[Store[K, V]], readConsistency: ConsistencyLevel,
+      writeConsistency: ConsistencyLevel, readRepair: Boolean = false, writeRollback: Boolean = false): Store[K, V] = {
+    new TunableReplicatedStore[K, V](replicas, readConsistency, writeConsistency, readRepair, writeRollback) {
+      override def close { replicas.foreach { _.close } }
+    }
+  }
 }
 
 /**
@@ -51,11 +128,52 @@ class TunableConsistentReadableStore[-K, +V](stores: Seq[ReadableStore[K, V]], r
  * Quorum - returns after N/2 + 1 writes succeed (other writes can complete in the background), fails otherwise
  * All - returns if all N writes succeed, fails otherwise
  *
- * For all write failures, the key is deleted on all replicas (in the background) as part of rollback.
+ * Additionally, the following operations are supported:
+ * readRepair - read repair any missing or incorrect data (only for Quorum reads)
+ * writeRollback - delete the key on all replicas if quorum write fails (only for Quorum writes and All writes)
  */
-class TunableConsistentStore[-K, V](stores: Seq[Store[K, V]], readConsistency: ConsistencyLevel, writeConsistency: ConsistencyLevel)
-  extends TunableConsistentReadableStore[K, V](stores, readConsistency)
+class TunableReplicatedStore[-K, V](stores: Seq[Store[K, V]], readConsistency: ConsistencyLevel,
+    writeConsistency: ConsistencyLevel, readRepair: Boolean = true, writeRollback: Boolean = true)
+  extends TunableReplicatedReadableStore[K, V](stores, readConsistency)
   with Store[K, V] {
-  override def put(kv: (K, Option[V])) = Future.None.unit // TODO
-  override def multiPut[K1 <: K](kvs: Map[K1, Option[V]]) = collection.immutable.Map(kvs.map { case (k, v) => (k, Future.None.unit) }.toSeq: _*) // TODO
+
+  override def get(k: K) = {
+    doGet(k).map { r : (Option[V], Seq[Int]) =>
+      if (readRepair && readConsistency == Quorum) {
+        // optionally, perform read-repair (best effort)
+        stores.zipWithIndex.filter{ case (s, i) => ! r._2.contains(i) }.foreach { case (s, i) => s.put(k, r._1) }
+      }
+      r._1
+    }
+  }
+
+  override def put(kv: (K, Option[V])) = {
+    if (stores.isEmpty) {
+      Future[Unit]()
+    } else {
+      val expected = ExpectedSuccesses.get(writeConsistency)
+      val success = new AtomicInteger(0)
+      val fail = new AtomicInteger(0)
+      val futures = stores.map { s => s.put(kv) }
+      val promise = Promise.interrupts[Unit](futures:_*)
+      for (f <- futures) {
+        f.onSuccess { result =>
+          if (success.incrementAndGet >= expected)
+            promise.updateIfEmpty(Return(()))
+        } onFailure { e =>
+          if (fail.incrementAndGet > stores.size - expected) {
+            // optionally delete key in all replicas as part of rollback (best effort)
+            if (writeRollback && (writeConsistency == Quorum || writeConsistency == All)) {
+              stores.map { s => s.put(kv._1, None) }
+            }
+            promise.updateIfEmpty(Throw(new WriteFailedException(kv._1)))
+          }
+        } ensure {
+          if (success.get + fail.get >= stores.size)
+            promise.updateIfEmpty(Return(()))
+        }
+      }
+      promise
+    }
+  }
 }
