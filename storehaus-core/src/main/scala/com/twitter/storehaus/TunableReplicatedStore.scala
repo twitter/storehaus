@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.ConcurrentHashMap
 
 import scala.collection.mutable.ConcurrentMap
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 import com.twitter.util.{ Future, Promise, Return, Throw }
 
@@ -30,11 +30,21 @@ import com.twitter.util.{ Future, Promise, Return, Throw }
  * Quorum - N/2 + 1 successful operations are sufficient to consider the operation as complete
  * All - N successful operations are required
  */
-object ConsistencyLevel extends Enumeration {
-  type ConsistencyLevel = Value
-  val One, Quorum, All = Value
+sealed trait ConsistencyLevel {
+  def expectedSuccesses[K,V](stores: Seq[ReadableStore[K,V]]): Int
 }
-import ConsistencyLevel._
+
+object ConsistencyLevel {
+  case object One extends ConsistencyLevel {
+    override def expectedSuccesses[K,V](stores: Seq[ReadableStore[K,V]]): Int = 1
+  }
+  case object Quorum extends ConsistencyLevel {
+    override def expectedSuccesses[K,V](stores: Seq[ReadableStore[K,V]]): Int = stores.size / 2 + 1
+  }
+  case object All extends ConsistencyLevel {
+    override def expectedSuccesses[K,V](stores: Seq[ReadableStore[K,V]]): Int = stores.size
+  }
+}
 
 /**
  * Thrown when a read operation fails due to unsatisfied consistency level
@@ -59,26 +69,14 @@ class WriteFailedException[K](val key: K)
 class TunableReplicatedReadableStore[-K, +V](stores: Seq[ReadableStore[K, V]], readConsistency: ConsistencyLevel)
   extends AbstractReadableStore[K, V] {
 
-  object ExpectedSuccesses {
-    def get(c: ConsistencyLevel) = {
-      c match {
-        case One => 1
-        case Quorum => stores.size/2 + 1
-        case All => stores.size
-      }
-    }
-  }
-
   def doGet(k: K): Future[(Option[V], Seq[Int])] = {
     if (stores.isEmpty) {
-      Future((None, List[Int]()))
+      Future.value((None, List[Int]()))
     } else {
-      val expected = ExpectedSuccesses.get(readConsistency)
+      val expected = readConsistency.expectedSuccesses(stores)
       // a map of counts per result value
-      val counts = new ConcurrentHashMap[Option[V], AtomicInteger]()
-      // no support for concurrent sets? using a hashmap instead below
-      // other options are CopyOnWriteArray, or 'synchronize' on regular list accesses
-      val successNodes = new ConcurrentHashMap[Int, Boolean]()
+      val counts = new ConcurrentHashMap[Option[V], AtomicInteger].asScala
+      val successNodes = java.util.Collections.newSetFromMap(new ConcurrentHashMap[Int, java.lang.Boolean]).asScala
 
       val success = new AtomicInteger(0)
       val fail = new AtomicInteger(0)
@@ -87,12 +85,19 @@ class TunableReplicatedReadableStore[-K, +V](stores: Seq[ReadableStore[K, V]], r
       for ((f, i) <- futures.zipWithIndex) {
         f.onSuccess { result =>
           success.getAndIncrement
-          val count = synchronized { counts.getOrElseUpdate(result, new AtomicInteger(0)) }
-          val newCountVal = count.incrementAndGet
-          successNodes.put(i, true)
-          if (newCountVal >= expected)
+          successNodes.add(i)
+          val count = counts.get(result) match {
+            case Some(existing) => existing.incrementAndGet
+            case None =>
+              val newCounter = new AtomicInteger(1)
+              counts.putIfAbsent(result, newCounter) match {
+                case Some(existing) => existing.incrementAndGet
+                case None => newCounter.get
+              }
+          }
+          if (count >= expected)
             // return result along with list of stores that succeeded
-            promise.updateIfEmpty(Return((result, successNodes.keys.toSeq)))
+            promise.updateIfEmpty(Return((result, successNodes.toSeq)))
         } onFailure { e =>
           if (fail.incrementAndGet > stores.size - expected)
             promise.updateIfEmpty(Throw(new ReadFailedException(k)))
@@ -130,7 +135,7 @@ object TunableReplicatedStore {
  *
  * Additionally, the following operations are supported:
  * readRepair - read repair any missing or incorrect data (only for Quorum reads)
- * writeRollback - delete the key on all replicas if quorum write fails (only for Quorum writes and All writes)
+ * writeRollback - delete the key on all replicas if write fails (only for Quorum writes and All writes)
  */
 class TunableReplicatedStore[-K, V](stores: Seq[Store[K, V]], readConsistency: ConsistencyLevel,
     writeConsistency: ConsistencyLevel, readRepair: Boolean = true, writeRollback: Boolean = true)
@@ -139,19 +144,22 @@ class TunableReplicatedStore[-K, V](stores: Seq[Store[K, V]], readConsistency: C
 
   override def get(k: K) = {
     doGet(k).map { r : (Option[V], Seq[Int]) =>
-      if (readRepair && readConsistency == Quorum) {
+      val (response, successes) = r
+      if (readRepair && readConsistency == ConsistencyLevel.Quorum) {
         // optionally, perform read-repair (best effort)
-        stores.zipWithIndex.filter{ case (s, i) => ! r._2.contains(i) }.foreach { case (s, i) => s.put(k, r._1) }
+        stores.zipWithIndex.foreach { case (s, i) =>
+          if (!successes.contains(i)) s.put(k, response)
+        }
       }
-      r._1
+      response
     }
   }
 
   override def put(kv: (K, Option[V])) = {
     if (stores.isEmpty) {
-      Future[Unit]()
+      Future.value(())
     } else {
-      val expected = ExpectedSuccesses.get(writeConsistency)
+      val expected = writeConsistency.expectedSuccesses(stores)
       val success = new AtomicInteger(0)
       val fail = new AtomicInteger(0)
       val futures = stores.map { s => s.put(kv) }
@@ -163,8 +171,8 @@ class TunableReplicatedStore[-K, V](stores: Seq[Store[K, V]], readConsistency: C
         } onFailure { e =>
           if (fail.incrementAndGet > stores.size - expected) {
             // optionally delete key in all replicas as part of rollback (best effort)
-            if (writeRollback && (writeConsistency == Quorum || writeConsistency == All)) {
-              stores.map { s => s.put(kv._1, None) }
+            if (writeRollback && (writeConsistency == ConsistencyLevel.Quorum || writeConsistency == ConsistencyLevel.All)) {
+              stores.foreach { s => s.put(kv._1, None) }
             }
             promise.updateIfEmpty(Throw(new WriteFailedException(kv._1)))
           }
