@@ -26,14 +26,12 @@ import com.twitter.concurrent.AsyncSemaphore
  * @param store the store to fetch values from
  * @param maxMultiGetSize a multiGet to `store` will fetch values for at most `maxMultiGetSize` keys
  * @param maxConcurrentMultiGets the maximum number of multigets to concurrently issue
- * @param batchFn the multiGet method calls this function at the beginning of each batch. It is
- *        useful if you want to log the progress of the big multiGet.
  */
 class BatchedReadableStore[K, V](
     store: ReadableStore[K, V],
     maxMultiGetSize: Int,
-    maxConcurrentMultiGets: Int,
-    batchFn: () => Unit = () => ()) extends ReadableStore[K, V] {
+    maxConcurrentMultiGets: Int)
+    (implicit fc: FutureCollector[(K, V)]) extends ReadableStore[K, V] {
   override def get(k: K): Future[Option[V]] = store.get(k)
   override def multiGet[K1 <: K](keys: Set[K1]): Map[K1, Future[Option[V]]] = {
 
@@ -42,8 +40,6 @@ class BatchedReadableStore[K, V](
     keys
       .grouped(maxMultiGetSize)
       .map{ keyBatch: Set[K1] =>
-
-        batchFn()
 
         // mapCollect the result of the multiget so we can release the permit at the end
         val batchResult: Future[Map[K1, Option[V]]] = connectionLock
