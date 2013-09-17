@@ -1,10 +1,9 @@
 package com.twitter.storehaus.dynamodb
 
-import com.twitter.bijection.{ Bijection, Codec, Injection }
+import com.twitter.bijection.{ Bijection, Injection }
 import com.twitter.bijection.Conversion.asMethod
 import com.twitter.bijection.{ AbstractBijection, AbstractInjection }
 import com.twitter.bijection.NumericInjections
-import com.twitter.bijection.Inversion.attempt
 import com.amazonaws.services.dynamodbv2.model.AttributeValue
 
 //TODO: pull these out into the Bijections project

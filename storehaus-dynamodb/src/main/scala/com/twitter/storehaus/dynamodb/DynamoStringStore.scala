@@ -2,16 +2,8 @@ package com.twitter.storehaus.dynamodb
 
 import java.util.{ Map => JMap }
 
-import com.twitter.algebird.Monoid
-import com.twitter.bijection.{ Bijection, Codec, Injection }
-import com.twitter.bijection.Conversion.asMethod
-import com.twitter.conversions.time._
-import com.twitter.util.{ Duration, Future }
-import com.twitter.storehaus.{ FutureOps, Store, WithPutTtl, ConvertedStore }
-import com.twitter.storehaus.algebra.MergeableStore
+import com.twitter.storehaus.ConvertedStore
 
-import com.amazonaws.auth.BasicAWSCredentials
-import com.amazonaws.services.dynamodbv2.{ AmazonDynamoDBClient, AmazonDynamoDB }
 import com.amazonaws.services.dynamodbv2.model._
 
 import AwsBijections._
