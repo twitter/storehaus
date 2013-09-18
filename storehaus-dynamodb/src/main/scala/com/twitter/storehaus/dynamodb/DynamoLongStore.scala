@@ -35,8 +35,6 @@ class DynamoLongStore(underlying: DynamoStore)
       Map(underlying.valueColumn -> attributeUpdateValue).as[JMap[String, AttributeValueUpdate]]
     )
 
-    Future {
-      underlying.client.updateItem(updateRequest)
-    }
+    underlying.apiRequestFuturePool(underlying.client.updateItem(updateRequest))
   }
 }

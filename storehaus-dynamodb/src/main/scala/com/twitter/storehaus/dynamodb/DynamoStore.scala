@@ -1,9 +1,10 @@
 package com.twitter.storehaus.dynamodb
 
 import java.util.{ Map => JMap }
+import java.util.concurrent.Executors
 
 import com.twitter.bijection.Conversion.asMethod
-import com.twitter.util.Future
+import com.twitter.util.{ Future, FuturePool }
 import com.twitter.storehaus.Store
 
 import com.amazonaws.auth.BasicAWSCredentials
@@ -30,6 +31,9 @@ class DynamoStore(val client: AmazonDynamoDB, val tableName: String, val primary
   extends Store[String, AttributeValue]
 {
 
+  //TODO: make this pool size configurable
+  val apiRequestFuturePool = FuturePool(Executors.newFixedThreadPool(4))
+
   override def put(kv: (String, Option[AttributeValue])): Future[Unit] = {
     kv match {
       case (key, Some(value)) => {
@@ -40,19 +44,14 @@ class DynamoStore(val client: AmazonDynamoDB, val tableName: String, val primary
         ).as[JMap[String, AttributeValue]]
         val putRequest = new PutItemRequest(tableName, attributes)
 
-        Future {
-          client.putItem(putRequest)
-        }
-
+        apiRequestFuturePool(client.putItem(putRequest))
       }
 
       case (key, None) => {
         val attributes = Map(primaryKeyColumn -> key.as[AttributeValue]).as[JMap[String, AttributeValue]]
         val deleteRequest = new DeleteItemRequest(tableName, attributes)
 
-        Future {
-          client.deleteItem(deleteRequest)
-        }
+        apiRequestFuturePool(client.deleteItem(deleteRequest))
       }
 
     }
@@ -63,7 +62,7 @@ class DynamoStore(val client: AmazonDynamoDB, val tableName: String, val primary
     val attributes = Map(primaryKeyColumn -> k.as[AttributeValue]).as[JMap[String, AttributeValue]]
     val getRequest = new GetItemRequest(tableName, attributes)
 
-    Future {
+    apiRequestFuturePool {
       Option(client.getItem(getRequest).getItem) match {
         case Some(response) => {
           Option(response.get(valueColumn))
