@@ -1,5 +1,7 @@
 package com.twitter.storehaus.dynamodb
 
+import scala.util.Try
+
 import com.twitter.bijection.{ Bijection, Injection }
 import com.twitter.bijection.Conversion.asMethod
 import com.twitter.bijection.{ AbstractBijection, AbstractInjection }
@@ -15,6 +17,6 @@ object AwsBijections extends NumericInjections {
 
   implicit val longToAttributeValue : Injection[Long, AttributeValue] = new AbstractInjection[Long, AttributeValue] {
     override def apply(l: Long) = (new AttributeValue).withN(l.as[String])
-    override def invert(a: AttributeValue) = Injection.invert[Long, String](a.getN)
+    override def invert(a: AttributeValue) = Try(a.getN.toLong)
   }
 }
