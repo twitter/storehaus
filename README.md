@@ -89,9 +89,13 @@ Here's a list of modules we plan in implementing, with links to the github issue
 * [storehaus-berkeleydb](https://github.com/twitter/storehaus/issues/52)
 * [storehaus-dynamodb](https://github.com/twitter/storehaus/issues/60)
 
-### Documentation
+## Community and Documentation
 
-See the [current API documentation](http://twitter.github.com/storehaus) for more information.
+To learn more and find links to tutorials and information around the web, check out the [Storehaus Wiki](https://github.com/twitter/storehaus/wiki).
+
+The latest ScalaDocs are hosted on Storehaus's [Github Project Page](http://twitter.github.io/storehaus).
+
+Discussion occurs primarily on the [Storehaus mailing list](https://groups.google.com/forum/#!forum/storehaus). Issues should be reported on the [GitHub issue tracker](https://github.com/twitter/storehaus/issues).
 
 ## Maven
 
