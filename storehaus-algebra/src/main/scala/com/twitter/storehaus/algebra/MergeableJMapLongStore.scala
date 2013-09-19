@@ -41,10 +41,7 @@ class MergeableJMapLongStore[K] extends MergeableStore[K, Long] {
 
   override def get(k: K): Future[Option[Long]] = {
     Future {
-      Option(dataContainer.get(k)) match {
-        case Some(atomic) => Some(atomic.get)
-        case None => None
-      }
+      Option(dataContainer.get(k)).map(_.get)
     }
   }
 
