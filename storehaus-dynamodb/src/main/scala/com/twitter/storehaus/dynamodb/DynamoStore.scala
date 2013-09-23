@@ -36,7 +36,7 @@ object DynamoStore {
 
   def apply(awsAccessKey: String, awsSecretKey: String, tableName: String, primaryKeyColumn: String, valueColumn: String): DynamoStore = {
     val processors = Runtime.getRuntime.availableProcessors
-    this(awsSecretKey, awsSecretKey, tableName, primaryKeyColumn, valueColumn, processors)
+    this(awsAccessKey, awsSecretKey, tableName, primaryKeyColumn, valueColumn, processors)
   }
 
   def apply(awsAccessKey: String, awsSecretKey: String, tableName: String,
