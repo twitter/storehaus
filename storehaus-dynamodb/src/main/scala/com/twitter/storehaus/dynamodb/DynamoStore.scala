@@ -85,12 +85,7 @@ class DynamoStore(val client: AmazonDynamoDB, val tableName: String,
     val getRequest = new GetItemRequest(tableName, attributes)
 
     apiRequestFuturePool {
-      Option(client.getItem(getRequest).getItem) match {
-        case Some(response) => {
-          Option(response.get(valueColumn))
-        }
-        case None => None
-      }
+      Option(client.getItem(getRequest).getItem).map(_.get(valueColumn))
     }
   }
 
