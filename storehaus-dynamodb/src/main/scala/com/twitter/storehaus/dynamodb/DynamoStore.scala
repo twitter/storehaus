@@ -34,20 +34,27 @@ import AwsBijections._
 
 object DynamoStore {
 
-  def apply(awsAccessKey: String, awsSecretKey: String, tableName: String, primaryKeyColumn: String, valueColumn: String) = {
+  def apply(awsAccessKey: String, awsSecretKey: String, tableName: String, primaryKeyColumn: String, valueColumn: String): DynamoStore = {
+    val processors = Runtime.getRuntime.availableProcessors
+    this(awsSecretKey, awsSecretKey, tableName, primaryKeyColumn, valueColumn, processors)
+  }
+
+  def apply(awsAccessKey: String, awsSecretKey: String, tableName: String,
+    primaryKeyColumn: String, valueColumn: String, numberWorkerThreads: Int): DynamoStore = {
+
     val auth = new BasicAWSCredentials(awsAccessKey, awsSecretKey)
     val client = new AmazonDynamoDBClient(auth)
-    new DynamoStore(client, tableName, primaryKeyColumn, valueColumn)
+    new DynamoStore(client, tableName, primaryKeyColumn, valueColumn, numberWorkerThreads)
   }
 
 }
 
-class DynamoStore(val client: AmazonDynamoDB, val tableName: String, val primaryKeyColumn: String, val valueColumn: String)
+class DynamoStore(val client: AmazonDynamoDB, val tableName: String,
+  val primaryKeyColumn: String, val valueColumn: String, numberWorkerThreads: Int)
   extends Store[String, AttributeValue]
 {
 
-  //TODO: make this pool size configurable
-  val apiRequestFuturePool = FuturePool(Executors.newFixedThreadPool(4))
+  val apiRequestFuturePool = FuturePool(Executors.newFixedThreadPool(numberWorkerThreads))
 
   override def put(kv: (String, Option[AttributeValue])): Future[Unit] = {
     kv match {
