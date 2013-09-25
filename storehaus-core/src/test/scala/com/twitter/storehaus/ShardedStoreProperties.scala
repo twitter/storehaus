@@ -28,6 +28,7 @@ object ShardedStoreProperties extends Properties("ShardedStore") {
     (mod, v/by)
   }
 
+  implicit val strArb: Arbitrary[String] = Arbitrary { Gen.alphaNumChar }
   property("ShardedStore test") = {
     val SHARDS = 10
     implicit val arbpair: Arbitrary[(Int,Int)] = Arbitrary { Arbitrary.arbitrary[Int].map { moddiv(_, SHARDS) } }

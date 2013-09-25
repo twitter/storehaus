@@ -19,6 +19,7 @@ package com.twitter.storehaus
 import org.scalacheck.Properties
 
 object ReplicatedStoreProperties extends Properties("ReplicatedStore") {
+  implicit val strArb: Arbitrary[String] = Arbitrary { Gen.alphaNumChar }
   property("ReplicatedStore test") =
     StoreProperties.storeTest(Store.first(Stream.continually(new JMapStore[String, Int]).take(100).toSeq))
 }
