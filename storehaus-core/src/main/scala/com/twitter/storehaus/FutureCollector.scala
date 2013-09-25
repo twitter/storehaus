@@ -41,7 +41,7 @@ object FutureCollector {
     override def apply(futureSeq: Seq[Future[T]]) =
       Future.collect {
         futureSeq.map { f: Future[T] =>
-          f.map { Some(_) }.handle { case _ => None }
+          f.map { Some(_) }.handle { case x: Exception => None } // don't eat Error
         }
       }.map { _.flatten }
   }
