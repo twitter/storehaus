@@ -181,7 +181,7 @@ object StorehausBuild extends Build {
       "com.twitter" %% "algebird-core" % algebirdVersion,
       "com.twitter" %% "bijection-core" % bijectionVersion,
       "com.twitter" %% "bijection-hbase" % bijectionVersion ,
-      "org.hbase" % "asynchbase" % "1.4.1",
+      "org.hbase" % "asynchbase" % "1.4.1" % "provided->default" intransitive(),
       "org.apache.hbase" % "hbase" % "0.94.6" % "provided->default" classifier "tests" classifier "",
       "org.apache.hadoop" % "hadoop-core" % "1.2.0" % "provided->default",
       "org.apache.hadoop" % "hadoop-test" % "1.2.0" % "test"
