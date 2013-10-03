@@ -1,5 +1,10 @@
 # storehaus #
 
+### Version.0.5.1 ###
+
+* Add storehaus-hbase and upgrade to bijection 0.5.3: https://github.com/twitter/storehaus/pull/139
+* Fix mutable TTL cache bug: https://github.com/twitter/storehaus/pull/136
+
 ### Version.0.5.0 ###
 
 * Reuse prepared statements in mysql: https://github.com/twitter/storehaus/issues/93
