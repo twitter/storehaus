@@ -77,8 +77,9 @@ The [`MergeableStore`](http://twitter.github.com/storehaus/#com.twitter.storehau
 Storehaus provides a number of modules wrapping existing key-value stores. Enriching these key-value stores with Storehaus's combinators has been hugely helpful to us here at Twitter. Writing your jobs in terms of Storehaus stores makes it easy to test your jobs; use an in-memory `JMapStore` in testing and a `MemcacheStore` in production.
 
   * [Storehaus-memcache](http://twitter.github.com/storehaus/#com.twitter.storehaus.memcache.MemcacheStore) (wraps Twitter's [finagle-memcached](https://github.com/twitter/finagle/tree/master/finagle-memcached) library)
-  * [Storehaus-mysql](http://twitter.github.com/storehaus/#com.twitter.storehaus.mysql.MySQLStore) (wraps Twitter's [finagle-mysql](https://github.com/twitter/finagle/tree/master/finagle-mysql) library)
+  * [Storehaus-mysql](http://twitter.github.com/storehaus/#com.twitter.storehaus.mysql.MySqlStore) (wraps Twitter's [finagle-mysql](https://github.com/twitter/finagle/tree/master/finagle-mysql) library)
   * [Storehaus-redis](http://twitter.github.com/storehaus/#com.twitter.storehaus.redis.RedisStore) (wraps Twitter's [finagle-redis](https://github.com/twitter/finagle/tree/master/finagle-redis) library)
+  * [Storehaus-hbase](http://twitter.github.com/storehaus/#com.twitter.storehaus.hbase.HBaseStore)
 
 #### Planned Modules
 
@@ -88,13 +89,17 @@ Here's a list of modules we plan in implementing, with links to the github issue
 * [storehaus-berkeleydb](https://github.com/twitter/storehaus/issues/52)
 * [storehaus-dynamodb](https://github.com/twitter/storehaus/issues/60)
 
-### Documentation
+## Community and Documentation
 
-See the [current API documentation](http://twitter.github.com/storehaus) for more information.
+To learn more and find links to tutorials and information around the web, check out the [Storehaus Wiki](https://github.com/twitter/storehaus/wiki).
+
+The latest ScalaDocs are hosted on Storehaus's [Github Project Page](http://twitter.github.io/storehaus).
+
+Discussion occurs primarily on the [Storehaus mailing list](https://groups.google.com/forum/#!forum/storehaus). Issues should be reported on the [GitHub issue tracker](https://github.com/twitter/storehaus/issues).
 
 ## Maven
 
-Storehaus modules are available on maven central. The current groupid and version for all modules is, respectively, `"com.twitter"` and  `0.5.0`.
+Storehaus modules are available on maven central. The current groupid and version for all modules is, respectively, `"com.twitter"` and  `0.5.1`.
 
 Current published artifacts are
 
@@ -106,6 +111,8 @@ Current published artifacts are
 * `storehaus-memcache_2.10`
 * `storehaus-mysql_2.9.3`
 * `storehaus-mysql_2.10`
+* `storehaus-hbase_2.9.3`
+* `storehaus-hbase_2.10`
 * `storehaus-redis_2.9.3`
 * `storehaus-redis_2.10`
 * `storehaus-cache_2.9.3`
