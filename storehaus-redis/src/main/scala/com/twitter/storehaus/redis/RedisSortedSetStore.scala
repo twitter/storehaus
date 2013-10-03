@@ -33,7 +33,8 @@ object RedisSortedSetStore {
  *  represent both the member's name and score within the set
  */
 class RedisSortedSetStore(client: Client)
-  extends Store[ChannelBuffer, Seq[(ChannelBuffer, Double)]] {
+  extends MergeableStore[ChannelBuffer, Seq[(ChannelBuffer, Double)]] {
+  val monoid = implicitly[Monoid[Seq[(ChannelBuffer, Double)]]]
 
   /** Returns the whole set as a tuple of seq of (member, score) */
   override def get(k: ChannelBuffer): Future[Option[Seq[(ChannelBuffer, Double)]]] =
@@ -54,6 +55,12 @@ class RedisSortedSetStore(client: Client)
       case (set, None) =>
         client.del(Seq(set)).unit
     }
+
+  /** Performs a zIncrBy operation on a set for a seq of members */
+  override def merge(kv: (ChannelBuffer, Seq[(ChannelBuffer, Double)])): Future[Unit] =
+    Future.collect(kv._2.map {
+      case (member, by) => client.zIncrBy(kv._1, by, member)
+    }).unit
 
   /** @return a mergeable store backed by redis with this store's client */
   def members: MergeableStore[(ChannelBuffer, ChannelBuffer), Double] =
@@ -153,7 +160,7 @@ class RedisSortedSetMembershipStore(client: Client)
     }.flatten).toMap
   }
 
-  /** Performs an zIncrBy operation on a set for a given member */
+  /** Performs a zIncrBy operation on a set for a given member */
   override def merge(kv: ((ChannelBuffer, ChannelBuffer), Double)): Future[Unit] =
     client.zIncrBy(kv._1._1, kv._2, kv._1._2).unit
 
