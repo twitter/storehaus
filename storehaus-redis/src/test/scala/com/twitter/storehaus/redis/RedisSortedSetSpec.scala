@@ -64,11 +64,11 @@ class RedisSortedSetSpec extends Specification
 
   "RedisSortedSet#members" should {
     shareVariables()
-      val putting: Map[(String, String), Option[Double]] =
+    val putting =
         commits.map { case (m,d) => (("commits", m), Some(d)) }
               .toMap
     "support Store operations" in {
-      // TODO(doug) Future.collect should really work with lists
+      // TODO(doug) Future.collect should really work with all iterables
       Await.result(Future.collect(members.multiPut(putting).values.toSeq))
       putting.foreach {
         case (k, v) =>
