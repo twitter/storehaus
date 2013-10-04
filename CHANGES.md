@@ -1,9 +1,19 @@
-# storehaus #
+# Storehaus #
+
+### Version.0.6.0 ###
+* Fix readme link to mysql store: https://github.com/twitter/storehaus/pull/143
+* Tunable Replicated Store: https://github.com/twitter/storehaus/pull/142
+* Add Community Section to README: https://github.com/twitter/storehaus/pull/138
+* DynamoDB Store: https://github.com/twitter/storehaus/pull/144
+* Move travis to build with 2.10.2 : https://github.com/twitter/storehaus/pull/150
+* Added AsyncHBase based Store: https://github.com/twitter/storehaus/pull/149
+* Redis sorted sets: https://github.com/twitter/storehaus/pull/127
+* Don't catch all Throwable: https://github.com/twitter/storehaus/pull/148
 
 ### Version.0.5.1 ###
 
-Add storehaus-hbase and upgrade to bijection 0.5.3: https://github.com/twitter/storehaus/pull/139
-Fix mutable TTL cache bug: https://github.com/twitter/storehaus/pull/136
+* Add storehaus-hbase and upgrade to bijection 0.5.3: https://github.com/twitter/storehaus/pull/139
+* Fix mutable TTL cache bug: https://github.com/twitter/storehaus/pull/136
 
 ### Version.0.5.0 ###
 

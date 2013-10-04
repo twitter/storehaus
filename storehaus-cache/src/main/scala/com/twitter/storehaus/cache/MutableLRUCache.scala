@@ -30,11 +30,14 @@ object MutableLRUCache {
   def apply[K, V](capacity: Int) = new MutableLRUCache[K, V](capacity)
 }
 
-class MutableLRUCache[K, V](capacity: Int) extends JMapCache[K, V](() =>
-  new JLinkedHashMap[K, V](capacity + 1, 0.75f, true) {
-    override protected def removeEldestEntry(eldest: JMap.Entry[K, V]) =
-      super.size > capacity
-  }) {
+class MutableLRUCache[K, V](capacity: Int) extends JMapCache[K, V](() => {
+    val cap = capacity
+    new JLinkedHashMap[K, V](cap + 1, 0.75f, true) {
+      override protected def removeEldestEntry(eldest: JMap.Entry[K, V]) =
+        super.size > cap
+    }
+  }
+  ) {
   override def hit(k: K) = {
     get(k).map { v =>
       evict(k)
