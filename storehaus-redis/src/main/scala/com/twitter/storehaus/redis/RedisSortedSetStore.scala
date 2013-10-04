@@ -36,10 +36,11 @@ class RedisSortedSetStore(client: Client)
   extends MergeableStore[ChannelBuffer, Seq[(ChannelBuffer, Double)]] {
   val monoid = implicitly[Monoid[Seq[(ChannelBuffer, Double)]]]
 
-  /** Returns the whole set as a tuple of seq of (member, score) */
+  /** Returns the whole set as a tuple of seq of (member, score).
+   *  An empty set is represented as None. */
   override def get(k: ChannelBuffer): Future[Option[Seq[(ChannelBuffer, Double)]]] =
     client.zRange(k, 0, -1, true).map(
-      _.left.toOption.map( _.asTuples)
+      _.left.toOption.map( _.asTuples).filter(_.nonEmpty)
     )
     
   /** Replaces or deletes the whole set. Setting the set effectivly results
@@ -113,7 +114,7 @@ class RedisSortedSetMembershipStore(client: Client)
 
   /** @return a member's score or None if the member is not in the set */
   override def get(k: (ChannelBuffer, ChannelBuffer)): Future[Option[Double]] =
-    client.zScore(k._1, k._1).map(_.map(_.toDouble))
+    client.zScore(k._1, k._2).map(_.map(_.toDouble))
    
    /** Partitions a map of multiPut pivoted values into
     *  a two item tuple of deletes and sets, multimapped
