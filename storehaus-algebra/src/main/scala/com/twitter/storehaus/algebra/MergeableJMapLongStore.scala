@@ -18,39 +18,41 @@ package com.twitter.storehaus.algebra
 
 import java.util.concurrent.atomic.AtomicLong
 import java.util.{ Map => JMap, HashMap => JHashMap }
+import java.util.concurrent.{ ConcurrentHashMap => JConcurrentHashMap }
 
 import com.twitter.algebird.Monoid
 import com.twitter.util.Future
 
 /**
- * MergeableStore instance that is backed by a Java Map
- * and AtomicLong instances. This combination allows for
- * the associative addition necessary for the merge operation.
- * There is no optimization and all multi operations default to
+ * MergeableStore instance that is backed by a ConcurrentHashMap
+ * This class is thread safe with a locking merge operation
+ * and thread safe put/get operations provided by the underlying
+ * ConcurrentHashMap
+ * There is no multi operation optimization so all multi operations use
  * the default Store implementation.
  *
  * This class is ideal for local testing of code that interacts with
  * a MergeableStore[String,Long] such as RedisLongStore without the need to
- * hit a remote database.
+ * hit a remote database. Can also be used for data processing where
+ * you don't care about persistence beyond the running process.
  *
  */
 class MergeableJMapLongStore[K] extends MergeableStore[K, Long] {
   val monoid = implicitly[Monoid[Long]]
 
-  private val dataContainer: JMap[K, AtomicLong] = new JHashMap[K, AtomicLong]()
+  protected val dataContainer = new JConcurrentHashMap[K, Long]
 
   override def get(k: K): Future[Option[Long]] = {
-    Future {
-      Option(dataContainer.get(k)).map(_.get)
+    Future.value {
+      Option(dataContainer.get(k))
     }
   }
 
   override def put(kv: (K, Option[Long])): Future[Unit] = {
-    Future {
+    Future.value {
       kv match {
         case (key, Some(value)) => {
-          val atomicValue = new AtomicLong(value)
-          dataContainer.put(key, atomicValue)
+          dataContainer.put(key, value)
         }
         case (key, None) => {
           dataContainer.remove(key)
@@ -60,10 +62,14 @@ class MergeableJMapLongStore[K] extends MergeableStore[K, Long] {
   }
 
   override def merge(kv: (K, Long)): Future[Unit] = {
-    Future {
-      Option(dataContainer.get(kv._1)) match {
-        case Some(value) => value.addAndGet(kv._2)
-        case None => this.put(kv._1, Some(kv._2))
+    Future.value {
+      this.synchronized {
+        Option(dataContainer.get(kv._1)) match {
+          case Some(value) => {
+            dataContainer.put(kv._1, monoid.plus(value, kv._2))
+          }
+          case None => this.put(kv._1, Some(kv._2))
+        }
       }
     }
   }
