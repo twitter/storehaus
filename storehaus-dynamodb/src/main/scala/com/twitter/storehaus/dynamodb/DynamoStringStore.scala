@@ -13,16 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.twitter.storehaus.dynamodb
 
-package com.twitter.storehaus
+import java.util.{ Map => JMap }
 
-import org.scalacheck.Properties
+import com.twitter.storehaus.ConvertedStore
 
-import org.scalacheck.Arbitrary
-import org.scalacheck.Gen
+import com.amazonaws.services.dynamodbv2.model._
 
-object ReplicatedStoreProperties extends Properties("ReplicatedStore") {
-  implicit val strArb: Arbitrary[String] = Arbitrary { Gen.alphaStr }
-  property("ReplicatedStore test") =
-    StoreProperties.storeTest(Store.first(Stream.continually(new JMapStore[String, Int]).take(100).toSeq))
+import AwsBijections._
+
+object DynamoStringStore {
+  def apply(awsAccessKey: String, awsSecretKey: String, tableName: String, primaryKeyColumn: String, valueColumn: String) =
+    new DynamoStringStore(DynamoStore(awsAccessKey, awsSecretKey, tableName, primaryKeyColumn, valueColumn))
 }
+
+class DynamoStringStore(underlying: DynamoStore)
+  extends ConvertedStore[String, String, AttributeValue, String](underlying)(identity)

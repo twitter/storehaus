@@ -57,7 +57,7 @@ class BufferingStore[K, V](store: MergeableStore[K, V], summerCons: Monoid[V] =>
 
   def flush(implicit collect: FutureCollector[(Any, Unit)]): Future[Unit] =
     summer.flush
-      .map { m => FutureOps.mapCollect(store.multiMerge(m)).unit }
+      .map { m => FutureOps.mapCollect(store.multiMerge(m))(collect).unit }
       .getOrElse(Future.Unit)
 
   protected def multiPromise[K1 <: K](ks: Set[K1]): Map[K1, Promise[Unit]] = {

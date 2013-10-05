@@ -109,10 +109,10 @@ object StorehausBuild extends Build {
   def youngestForwardCompatible(subProj: String) =
     Some(subProj)
       .filterNot(unreleasedModules.contains(_))
-      .map { s => "com.twitter" % ("storehaus-" + s + "_2.9.3") % "0.5.0" }
+      .map { s => "com.twitter" % ("storehaus-" + s + "_2.9.3") % "0.5.1" }
 
-  val algebirdVersion = "0.2.0"
-  val bijectionVersion = "0.5.3"
+  val algebirdVersion = "0.3.0"
+  val bijectionVersion = "0.5.4"
 
   lazy val storehaus = Project(
     id = "storehaus",
@@ -130,6 +130,7 @@ object StorehausBuild extends Build {
     storehausMySQL,
     storehausRedis,
     storehausHBase,
+    storehausDynamoDB,
     storehausTesting
   )
 
@@ -181,9 +182,23 @@ object StorehausBuild extends Build {
       "com.twitter" %% "algebird-core" % algebirdVersion,
       "com.twitter" %% "bijection-core" % bijectionVersion,
       "com.twitter" %% "bijection-hbase" % bijectionVersion ,
+      "org.hbase" % "asynchbase" % "1.4.1" % "provided->default" intransitive(),
+      "com.stumbleupon" % "async" % "1.4.0" % "provided->default" intransitive(),
       "org.apache.hbase" % "hbase" % "0.94.6" % "provided->default" classifier "tests" classifier "",
       "org.apache.hadoop" % "hadoop-core" % "1.2.0" % "provided->default",
       "org.apache.hadoop" % "hadoop-test" % "1.2.0" % "test"
+    ),
+    parallelExecution in Test := false
+  ).dependsOn(storehausAlgebra % "test->test;compile->compile")
+
+  lazy val storehausDynamoDB= module("dynamodb").settings(
+    libraryDependencies ++= Seq(
+      "com.twitter" %% "algebird-core" % algebirdVersion,
+      "com.twitter" %% "bijection-core" % bijectionVersion,
+      "com.twitter" %% "bijection-hbase" % bijectionVersion ,
+      "com.amazonaws" % "aws-java-sdk" % "1.5.7"
+      ////use alternator for local testing
+      //"com.michelboudreau" % "alternator" % "0.6.4" % "test"
     ),
     parallelExecution in Test := false
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
