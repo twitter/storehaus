@@ -115,6 +115,22 @@ of stores
 useful if you are going to be modifying a store from many threads, something
 you in general cannot do unless the docs specifically say that a store is
 safe for that.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.ConsistencyLevel" data-isabs="true">
+      <a id="ConsistencyLevel:ConsistencyLevel"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">sealed </span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="ConsistencyLevel.html"><span class="name">ConsistencyLevel</span></a><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <p class="comment cmt">N - total replicas
+One - 1 successful operation is sufficient to consider the operation as complete
+Quorum - N/2 + 1 successful operations are sufficient to consider the operation as complete
+All - N successful operations are required
+</p>
     </li><li visbl="pub" name="com.twitter.storehaus.ConvertedReadableStore" data-isabs="false">
       <a id="ConvertedReadableStore:ConvertedReadableStore[K1, K2, V1, V2]"></a>
       <h4 class="signature">
@@ -172,7 +188,7 @@ trait.</p>
         <span class="kind">trait</span>
       </span>
       <span class="symbol">
-        <a href="FutureCollector.html"><span class="name">FutureCollector</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="result"> extends (Seq[Future[T]]) ⇒ Future[Seq[T]]</span>
+        <a href="FutureCollector.html"><span class="name">FutureCollector</span></a><span class="tparams">[<span name="T">-T</span>]</span><span class="result"> extends Serializable</span>
       </span>
       </h4>
       <p class="comment cmt">A type to represent how Seq of futures are collected into a future of Seq[T]</p>
@@ -238,6 +254,19 @@ store and these are just implemented using the default implementation from Store
       </span>
       </h4>
       <p class="comment cmt">This is only thrown when a value is expected but somehow absent.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.ReadFailedException" data-isabs="false">
+      <a id="ReadFailedException:ReadFailedException[K]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="ReadFailedException.html"><span class="name">ReadFailedException</span></a><span class="tparams">[<span name="K">K</span>]</span><span class="result"> extends RuntimeException</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Thrown when a read operation fails due to unsatisfied consistency level
+</p>
     </li><li visbl="pub" name="com.twitter.storehaus.ReadableStore" data-isabs="true">
       <a id="ReadableStore:ReadableStore[K, V]"></a>
       <h4 class="signature">
@@ -353,6 +382,30 @@ Note: if a K1 is absent from the routes, any put will give a</p>
       </span>
       </h4>
       <p class="comment cmt">Main trait for mutable stores.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.TunableReplicatedReadableStore" data-isabs="false">
+      <a id="TunableReplicatedReadableStore:TunableReplicatedReadableStore[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="TunableReplicatedReadableStore.html"><span class="name">TunableReplicatedReadableStore</span></a><span class="tparams">[<span name="K">-K</span>, <span name="V">+V</span>]</span><span class="result"> extends AbstractReadableStore[K, V]</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Replicates reads to a seq of stores and returns the value based on picked read consistency.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.TunableReplicatedStore" data-isabs="false">
+      <a id="TunableReplicatedStore:TunableReplicatedStore[K, V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="TunableReplicatedStore.html"><span class="name">TunableReplicatedStore</span></a><span class="tparams">[<span name="K">-K</span>, <span name="V">V</span>]</span><span class="result"> extends TunableReplicatedReadableStore[K, V] with Store[K, V]</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Replicates writes to a seq of stores, and returns after picked write consistency is satisfied.</p>
     </li><li visbl="pub" name="com.twitter.storehaus.UnpivotedReadableStore" data-isabs="false">
       <a id="UnpivotedReadableStore:UnpivotedReadableStore[K, OuterK, InnerK, V]"></a>
       <h4 class="signature">
@@ -391,6 +444,19 @@ Store[OuterK, Map[InnerK, V]].</p>
       </span>
       </h4>
       <p class="comment cmt">Trait for building mutable store with TTL.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.WriteFailedException" data-isabs="false">
+      <a id="WriteFailedException:WriteFailedException[K]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="WriteFailedException.html"><span class="name">WriteFailedException</span></a><span class="tparams">[<span name="K">K</span>]</span><span class="result"> extends RuntimeException</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Thrown when a write operation fails due to unsatisfied consistency level
+</p>
     </li></ol>
             </div>
 
@@ -410,6 +476,18 @@ Store[OuterK, Map[InnerK, V]].</p>
       </span>
       </h4>
       <p class="comment cmt">Helpful transformations on maps and collections.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.ConsistencyLevel" data-isabs="false">
+      <a id="ConsistencyLevel:ConsistencyLevel"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="ConsistencyLevel$.html"><span class="name">ConsistencyLevel</span></a><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="com.twitter.storehaus.EmptyReadableStore" data-isabs="false">
       <a id="EmptyReadableStore:EmptyReadableStore"></a>
       <h4 class="signature">
@@ -430,7 +508,7 @@ Store[OuterK, Map[InnerK, V]].</p>
         <span class="kind">object</span>
       </span>
       <span class="symbol">
-        <a href="FutureCollector$.html"><span class="name">FutureCollector</span></a><span class="result"> extends AnyRef</span>
+        <a href="FutureCollector$.html"><span class="name">FutureCollector</span></a><span class="result"> extends Serializable</span>
       </span>
       </h4>
       <p class="comment cmt">Some factory methods and instances of FutureCollector that are used in storehaus</p>
@@ -507,6 +585,18 @@ These should arguably exist in util-core.</p>
       </span>
       </h4>
       <p class="comment cmt">Factory methods and some combinators on Stores</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.TunableReplicatedStore" data-isabs="false">
+      <a id="TunableReplicatedStore:TunableReplicatedStore"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="TunableReplicatedStore$.html"><span class="name">TunableReplicatedStore</span></a><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Factory method to create TunableReplicatedStore instances</p>
     </li><li visbl="pub" name="com.twitter.storehaus.algebra" data-isabs="false">
       <a id="algebra:algebra"></a>
       <h4 class="signature">
@@ -519,6 +609,18 @@ These should arguably exist in util-core.</p>
       </span>
       </h4>
       
+    </li><li visbl="pub" name="com.twitter.storehaus.asynchbase" data-isabs="false">
+      <a id="asynchbase:asynchbase"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="asynchbase/package.html"><span class="name">asynchbase</span></a>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="com.twitter.storehaus.cache" data-isabs="false">
       <a id="cache:cache"></a>
       <h4 class="signature">
@@ -528,6 +630,18 @@ These should arguably exist in util-core.</p>
       </span>
       <span class="symbol">
         <a href="cache/package.html"><span class="name">cache</span></a>
+      </span>
+      </h4>
+      
+    </li><li visbl="pub" name="com.twitter.storehaus.dynamodb" data-isabs="false">
+      <a id="dynamodb:dynamodb"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="dynamodb/package.html"><span class="name">dynamodb</span></a>
       </span>
       </h4>
       

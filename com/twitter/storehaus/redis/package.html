@@ -98,6 +98,46 @@ by a redis hash
       </span>
       </h4>
       <p class="comment cmt">A Store for sets of values backed by a Redis set.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.redis.RedisSortedSetMembershipStore" data-isabs="false">
+      <a id="RedisSortedSetMembershipStore:RedisSortedSetMembershipStore"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="RedisSortedSetMembershipStore.html"><span class="name">RedisSortedSetMembershipStore</span></a><span class="result"> extends MergeableStore[(ChannelBuffer, ChannelBuffer), Double]</span>
+      </span>
+      </h4>
+      <p class="comment cmt">An unpivoted-like member-oriented view of redis sorted sets.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.redis.RedisSortedSetMembershipView" data-isabs="false">
+      <a id="RedisSortedSetMembershipView:RedisSortedSetMembershipView"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="RedisSortedSetMembershipView.html"><span class="name">RedisSortedSetMembershipView</span></a><span class="result"> extends MergeableStore[ChannelBuffer, Double]</span>
+      </span>
+      </h4>
+      <p class="comment cmt">An unpivoted-like member-oriented view of a redis sorted set bound to a specific
+ set.</p>
+    </li><li visbl="pub" name="com.twitter.storehaus.redis.RedisSortedSetStore" data-isabs="false">
+      <a id="RedisSortedSetStore:RedisSortedSetStore"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="RedisSortedSetStore.html"><span class="name">RedisSortedSetStore</span></a><span class="result"> extends MergeableStore[ChannelBuffer, Seq[(ChannelBuffer, Double)]]</span>
+      </span>
+      </h4>
+      <p class="comment cmt">A Store representation of a redis sorted set
+ where keys represent the name of the set and values
+ represent both the member's name and score within the set
+</p>
     </li><li visbl="pub" name="com.twitter.storehaus.redis.RedisStore" data-isabs="false">
       <a id="RedisStore:RedisStore"></a>
       <h4 class="signature">
@@ -178,6 +218,18 @@ Values are merged by with an append operation.</p>
       </span>
       </h4>
       <p class="comment cmt"></p>
+    </li><li visbl="pub" name="com.twitter.storehaus.redis.RedisSortedSetStore" data-isabs="false">
+      <a id="RedisSortedSetStore:RedisSortedSetStore"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="RedisSortedSetStore$.html"><span class="name">RedisSortedSetStore</span></a><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="com.twitter.storehaus.redis.RedisStore" data-isabs="false">
       <a id="RedisStore:RedisStore"></a>
       <h4 class="signature">

@@ -36,9 +36,9 @@ TODO: we should add a specific exception type here so we can safely filter these
 </p></div><dl class="attributes block"> <dt>Annotations</dt><dd>
                 <span class="name">@deprecated</span>
               
-        </dd><dt>Deprecated</dt><dd class="cmt"><p><i>(Since version 0.3.1)</i> Use com.twitter.storehaus.ConvertedStore instead</p></dd><dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.5.1/storehaus-algebra/src/main/scala/com/twitter/storehaus/algebra/ConvertedStore.scala">ConvertedStore.scala</a></dd></dl><div class="toggleContainer block">
+        </dd><dt>Deprecated</dt><dd class="cmt"><p><i>(Since version 0.3.1)</i> Use com.twitter.storehaus.ConvertedStore instead</p></dd><dt>Source</dt><dd><a target="_blank" href="https://github.com/twitter/storehaus/tree/0.6.0/storehaus-algebra/src/main/scala/com/twitter/storehaus/algebra/ConvertedStore.scala">ConvertedStore.scala</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[K2, V2], <a name="com.twitter.storehaus.ConvertedReadableStore" class="extype" href="../ConvertedReadableStore.html">ConvertedReadableStore</a>[K1, K2, V1, V2], <a name="com.twitter.storehaus.AbstractReadableStore" class="extype" href="../AbstractReadableStore.html">AbstractReadableStore</a>[K2, V2], <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[K2, V2], <span name="java.io.Closeable" class="extype">Closeable</span>, <span name="java.lang.AutoCloseable" class="extype">AutoCloseable</span>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
+          <div class="superTypes hiddenContent"><a name="com.twitter.storehaus.Store" class="extype" href="../Store.html">Store</a>[K2, V2], <a name="com.twitter.storehaus.ConvertedReadableStore" class="extype" href="../ConvertedReadableStore.html">ConvertedReadableStore</a>[K1, K2, V1, V2], <a name="com.twitter.storehaus.AbstractReadableStore" class="extype" href="../AbstractReadableStore.html">AbstractReadableStore</a>[K2, V2], <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[K2, V2], <span name="java.io.Closeable" class="extype">Closeable</span>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
     
 
@@ -52,7 +52,7 @@ TODO: we should add a specific exception type here so we can safely filter these
               <span class="filtertype">Inherited</span>
               <ol><li class="hideall out"><span>Hide All</span></li>
               <li class="showall in"><span>Show all</span></li></ol>
-              <ol id="linearization"><li name="com.twitter.storehaus.algebra.ConvertedStore" class="in"><span>ConvertedStore</span></li><li name="com.twitter.storehaus.Store" class="in"><span>Store</span></li><li name="com.twitter.storehaus.ConvertedReadableStore" class="in"><span>ConvertedReadableStore</span></li><li name="com.twitter.storehaus.AbstractReadableStore" class="in"><span>AbstractReadableStore</span></li><li name="com.twitter.storehaus.ReadableStore" class="in"><span>ReadableStore</span></li><li name="java.io.Closeable" class="in"><span>Closeable</span></li><li name="java.lang.AutoCloseable" class="in"><span>AutoCloseable</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
+              <ol id="linearization"><li name="com.twitter.storehaus.algebra.ConvertedStore" class="in"><span>ConvertedStore</span></li><li name="com.twitter.storehaus.Store" class="in"><span>Store</span></li><li name="com.twitter.storehaus.ConvertedReadableStore" class="in"><span>ConvertedReadableStore</span></li><li name="com.twitter.storehaus.AbstractReadableStore" class="in"><span>AbstractReadableStore</span></li><li name="com.twitter.storehaus.ReadableStore" class="in"><span>ReadableStore</span></li><li name="java.io.Closeable" class="in"><span>Closeable</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
             </div>
         <div id="visbl">
             <span class="filtertype">Visibility</span>
@@ -185,7 +185,7 @@ TODO: we should add a specific exception type here so we can safely filter these
       </h4>
       <p class="shortcomment cmt">Close this store and release any resources.</p><div class="fullcomment"><div class="comment cmt"><p>Close this store and release any resources.
 It is undefined what happens on get/multiGet after close
-</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.algebra.ConvertedStore" class="extype" href="">ConvertedStore</a> → <a name="com.twitter.storehaus.ConvertedReadableStore" class="extype" href="../ConvertedReadableStore.html">ConvertedReadableStore</a> → <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a> → Closeable → AutoCloseable</dd></dl></div>
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="com.twitter.storehaus.algebra.ConvertedStore" class="extype" href="">ConvertedStore</a> → <a name="com.twitter.storehaus.ConvertedReadableStore" class="extype" href="../ConvertedReadableStore.html">ConvertedReadableStore</a> → <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a> → Closeable</dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#eq" data-isabs="false">
       <a id="eq(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -441,8 +441,6 @@ Delete is the same as put((k,None))
               <h3>Inherited from <a name="com.twitter.storehaus.ReadableStore" class="extype" href="../ReadableStore.html">ReadableStore</a>[K2, V2]</h3>
             </div><div name="java.io.Closeable" class="parent">
               <h3>Inherited from <span name="java.io.Closeable" class="extype">Closeable</span></h3>
-            </div><div name="java.lang.AutoCloseable" class="parent">
-              <h3>Inherited from <span name="java.lang.AutoCloseable" class="extype">AutoCloseable</span></h3>
             </div><div name="scala.AnyRef" class="parent">
               <h3>Inherited from AnyRef</h3>
             </div><div name="scala.Any" class="parent">
