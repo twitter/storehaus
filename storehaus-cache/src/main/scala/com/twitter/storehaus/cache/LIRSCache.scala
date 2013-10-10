@@ -25,8 +25,8 @@ object Stack {
                backingKeyMap:Map[K, Int] = Map.empty[K, Int]) =
     new Stack[K](maxSize, backingIndexMap, backingKeyMap)
 }
-//TODO(jcoveney) get rid of the val once it is all working
-class Stack[K](maxSize:Int, val backingIndexMap:SortedMap[Int, K], val backingKeyMap:Map[K, Int]) {
+
+sealed class Stack[K](maxSize:Int, backingIndexMap:SortedMap[Int, K], backingKeyMap:Map[K, Int]) {
   /**
    * Adds k to the top of the stack. If k is already in the Stack,
    * it will be put on the top. If k was not in the Stack and the
@@ -90,13 +90,13 @@ object LIRSStacks {
   def apply[K](sSize:Int, qSize:Int) = new LIRSStacks[K](Stack[K](sSize), Stack[K](qSize))
 }
 
-class LIRSStacks[K](val stackS: Stack[K], val stackQ: Stack[K]) {
+sealed class LIRSStacks[K](val stackS: Stack[K], val stackQ: Stack[K]) {
   @tailrec
   final def prune: LIRSStacks[K] = {
     val (oldK, newStackS) = stackS.dropOldest
     oldK match {
-      case Some(k) if !isLIRBlock(k) => new LIRSStacks(newStackS, stackQ).prune
-      case _ => this //We don't need to remove as there is either nothing to remove, or a LIR block is on the bottomr
+      case Some(k) if stackQ.contains(k) => new LIRSStacks(newStackS, stackQ).prune
+      case _ => this //We don't need to remove as there is either nothing to remove, or an LIR block is on the bottom
     }
   }
 
@@ -142,7 +142,7 @@ class LIRSStacks[K](val stackS: Stack[K], val stackQ: Stack[K]) {
 
   def isInQ(k: K): Boolean = stackQ.contains(k)
 
-  def remove(k: K): LIRSStacks[K] = new LIRSStacks(stackS.remove(k)._2, stackQ.remove(k)._2)
+  def evict(k: K): LIRSStacks[K] = new LIRSStacks(stackS.remove(k)._2, stackQ.remove(k)._2)
 
   def empty = new LIRSStacks(stackS.empty, stackQ.empty)
 
@@ -153,16 +153,23 @@ object LIRSCache {
   def apply[K, V](maxSize:Int, sPercent:Double, backingMap:Map[K, V] = Map.empty[K,V]) = {
     val sSize = (maxSize * sPercent).toInt
     val qSize = maxSize - sSize
-    //TODO sSize and qSize can't be 0
+    require(sSize > 0, "Size of S stack in cache must be >0")
+    require(qSize > 0, "Size of Q stack in cache must be >0")
     new LIRSCache[K, V](LIRSStacks[K](sSize, qSize), backingMap)
   }
 }
 
-//TODO(jcoveney) make the backingMap a cache
-class LIRSCache[K, V](val lirsStacks:LIRSStacks[K], val backingMap: Map[K, V]) extends Cache[K, V] {
+/**
+ * This is an implementation of an immutable LIRS Cache based on the LIRS Cache impelementation
+ * in Clojure's core.cache:
+ * https://github.com/clojure/core.cache/blob/master/src/main/clojure/clojure/core/cache.clj.
+ * The cache is described in this paper:
+ * http://citeseer.ist.psu.edu/viewdoc/download;jsessionid=EA23F554FDF98A258C6FDF0C8E98BFD1?doi=10.1.1.116.2184&rep=rep1&type=pdf
+ */
+
+class LIRSCache[K, V](lirsStacks:LIRSStacks[K], backingMap: Map[K, V]) extends Cache[K, V] {
   def get(k: K): Option[V] = backingMap.get(k)
 
-  //TODO(jcoveney) is it safe to assume that this is our "miss"?
   def put(kv: (K, V)): (Set[K], Cache[K, V]) = {
     val (k, v) = kv
     def miss:(Set[K], Cache[K, V]) = {
@@ -221,45 +228,63 @@ class LIRSCache[K, V](val lirsStacks:LIRSStacks[K], val backingMap: Map[K, V]) e
 
   def hit(k: K): Cache[K, V] =
     get(k).map { v =>
-      if (lirsStacks.isInS(k) && !lirsStacks.isInQ(k)(k)) {
-        val (_, newLirsStacks) = lirsStacks.putOnTopOfS(k)
-        if (lirsStacks.isOldestInS(k)) {
-          new LIRSCache(newLirsStacks.prune, backingMap)
-        } else {
-          new LIRSCache(newLirsStacks, backingMap)
+      if (lirsStacks.isInS(k) && !lirsStacks.isInQ(k)) {
+        // In the case where k is in S but not in Q, it is a LIR block. We push it to the top of S, and
+        // prune if it was the oldest in S.
+        val (evictedFromS, newLirsStacks) = lirsStacks.putOnTopOfS(k)
+        if (evictedFromS.isDefined) {
+          throw new IllegalStateException("Nothing should have been evicted from S when k was bumped as it was already present")
         }
-      } else if (lirsStacks.isInS(k) && lirsStacks.isInQ(k)(k)) {
-        val (oldest, newLirsStacks) =
-          lirsStacks
-            .putOnTopOfS(k)._2
-            .removeFromQ(k)._2
-            .dropOldestInS
-        val newLirsStacks2 = oldest match {
-          case Some(oldest) => newLirsStacks.putOnTopOfQ(oldest)._2
-          case None => throw new IllegalStateException("Stack S empty despite just having added a value")
+        new LIRSCache(if (lirsStacks.isOldestInS(k)) newLirsStacks.prune else newLirsStacks, backingMap)
+      } else if (lirsStacks.isInS(k) && lirsStacks.isInQ(k)) {
+        // In the case where k is in S and Q, it is an HIR block. We bump k to the top of S and remove it from Q.
+        // We then move the oldest value in S to Q. Then we prune.
+        val (evictedFromS, newLirsStacks) = lirsStacks.putOnTopOfS(k)
+        if (evictedFromS.isDefined) {
+          throw new IllegalStateException("Nothing should have been evicted from S when k was bumped as it was already present")
         }
-        new LIRSCache(newLirsStacks2.prune, backingMap)
-      } else if (!lirsStacks.isInS(k) && lirsStacks.isInQ(k)(k)) {
-        new LIRSCache(lirsStacks.putOnTopOfS(k)._2.putOnTopOfQ(k)._2, backingMap)
+        val (evictedFromQ, newLirsStacks2) = newLirsStacks.removeFromQ(k)
+        if (!evictedFromQ.isDefined) {
+          throw new IllegalStateException("Key was not evicted from Q despite it being present")
+        }
+        val (oldestInS, newLirsStacks3) = newLirsStacks2.dropOldestInS
+        oldestInS match {
+          case Some(oldK) => {
+            val (evictedFromQ2, newLirsStacks4) = newLirsStacks3.putOnTopOfQ(oldK)
+            if (evictedFromQ2.isDefined) {
+              throw new IllegalStateException("Nothing should have been evicted when we put the value from S on top of Q")
+            }
+            new LIRSCache(newLirsStacks4.prune, backingMap)
+          }
+          case None => throw new IllegalStateException("We dropped the oldest value in S but got nothing back")
+        }
+      } else if (!lirsStacks.isInS(k) && lirsStacks.isInQ(k)) {
+        // In the case where k is not in S but it is in Q it is a non-resident HIR block. We bump it to the top of Q, and put it in 
+        // S. If anything is evicted from S in the process, we check if it is in Q. If it is not, we remove it from the cache.
+        val (evictedFromQ, newLirsStacks) = lirsStacks.putOnTopOfQ(k)
+        if (evictedFromQ.isDefined) {
+          throw new IllegalStateException("We bumped the value to the top of Q, so nothing should have come back")
+        }
+        val (evictedFromS, newLirsStacks2) = newLirsStacks.putOnTopOfS(k)
+        val newBackingMap = evictedFromS match {
+          case Some(oldK) if !newLirsStacks2.isInQ(k) => backingMap - oldK
+          case _ => backingMap
+        }
+        new LIRSCache(newLirsStacks2, newBackingMap)
       } else {
-        throw new IllegalStateException("Key in cache, but not in Stack S or Stack Q. Value: "+k)
+        throw new IllegalStateException("Key in cache, but not in Stack S or Stack Q. Key: " + k)
       }
     }.getOrElse(this)
  
   def evict(k: K): (Option[V], Cache[K, V]) =
-    (get(k), new LIRSCache(lirsStacks.remove(k), backingMap - k))
+    (get(k), new LIRSCache(lirsStacks.evict(k), backingMap - k))
 
-  /**
-   * Returns an iterator of all key-value pairs inside of this
-   * cache.
-   */
   def iterator: Iterator[(K, V)] = backingMap.iterator
 
-  /** Returns an empty version of this specific cache implementation. */
   def empty: Cache[K, V] = new LIRSCache(lirsStacks.empty, backingMap.empty)
 
   override def toString = {
     val pairStrings = iterator.map { case (k, v) => k + " -> " + v }
-    "LRUCache(" + pairStrings.toList.mkString(", ") + ")"
+    "LIRSCache(" + pairStrings.toList.mkString(", ") + ")"
   }
 }
