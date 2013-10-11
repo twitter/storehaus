@@ -23,8 +23,7 @@ object SideC extends Side {
 }
 
 object CyclicIncrementProvider {
-  def intIncrementer: CyclicIncrementProvider[Int] =
-    CyclicIncrementProvider[Int](0, {i:Int => i + 1})
+  def intIncrementer: CyclicIncrementProvider[Int] = CyclicIncrementProvider(0, {i:Int => i + 1})
 
   def apply[K:Ordering](zero: K, increment: K => K): CyclicIncrementProvider[K] =
     CyclicIncrementProvider(zero, increment, SideA, 0, zero, 0, zero)

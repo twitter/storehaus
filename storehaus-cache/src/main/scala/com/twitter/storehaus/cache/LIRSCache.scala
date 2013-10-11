@@ -20,17 +20,17 @@ import scala.collection.SortedMap
 import scala.annotation.tailrec
 
 object Stack {
-  private[storehaus] def apply[K](maxSize:Int,
-                                  backingIndexMap:SortedMap[CyclicIncrement[Int], K] = SortedMap.empty[CyclicIncrement[Int], K],
-                                  backingKeyMap:Map[K, CyclicIncrement[Int]] = Map.empty[K, CyclicIncrement[Int]],
-                                  cyclicIncrementProvider:CyclicIncrementProvider[Int] = CyclicIncrementProvider.intIncrementer): Stack[K] =
-    Stack[K](maxSize, backingIndexMap, backingKeyMap, cyclicIncrementProvider)
+  def apply[K](maxSize:Int,
+               backingIndexMap:SortedMap[CyclicIncrement[Int], K] = SortedMap.empty[CyclicIncrement[Int], K],
+               backingKeyMap:Map[K, CyclicIncrement[Int]] = Map.empty[K, CyclicIncrement[Int]],
+               cyclicIncrementProvider:CyclicIncrementProvider[Int] = CyclicIncrementProvider.intIncrementer): Stack[K] =
+    new Stack[K](maxSize, backingIndexMap, backingKeyMap, cyclicIncrementProvider)
 }
 
-class Stack[K] private[storehaus] (maxSize:Int,
-                                   backingIndexMap:SortedMap[CyclicIncrement[Int], K],
-                                   backingKeyMap:Map[K, CyclicIncrement[Int]],
-                                   cyclicIncrementProvider:CyclicIncrementProvider[Int]) {
+class Stack[K](maxSize:Int,
+               backingIndexMap:SortedMap[CyclicIncrement[Int], K],
+               backingKeyMap:Map[K, CyclicIncrement[Int]],
+               cyclicIncrementProvider:CyclicIncrementProvider[Int]) {
   /**
    * Adds k to the top of the stack. If k is already in the Stack,
    * it will be put on the top. If k was not in the Stack and the
@@ -55,7 +55,7 @@ class Stack[K] private[storehaus] (maxSize:Int,
         } else {
           val newBackingIndexMap = backingIndexMap + (newInc->k)
           val newBackingKeyMap = backingKeyMap + (k->newInc)
-          (None, new Stack(maxSize, newBackingIndexMap, newBackingKeyMap, cyclicIncrementProvider))
+          (None, new Stack(maxSize, newBackingIndexMap, newBackingKeyMap, newCyc))
         }
       }
     }
@@ -93,10 +93,10 @@ class Stack[K] private[storehaus] (maxSize:Int,
 }
 
 object LIRSStacks {
-  private[storehaus] def apply[K](sSize:Int, qSize:Int) = new LIRSStacks[K](Stack[K](sSize), Stack[K](qSize))
+  def apply[K](sSize:Int, qSize:Int) = new LIRSStacks[K](Stack[K](sSize), Stack[K](qSize))
 }
 
-class LIRSStacks[K] private[storehaus] (val stackS: Stack[K], val stackQ: Stack[K]) {
+class LIRSStacks[K](stackS: Stack[K], stackQ: Stack[K]) {
   @tailrec
   final def prune: LIRSStacks[K] = {
     val (oldK, newStackS) = stackS.dropOldest
