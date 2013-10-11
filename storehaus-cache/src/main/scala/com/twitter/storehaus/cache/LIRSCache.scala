@@ -20,13 +20,13 @@ import scala.collection.SortedMap
 import scala.annotation.tailrec
 
 object Stack {
-  def apply[K](maxSize:Int,
+  private[storehaus] def apply[K](maxSize:Int,
                backingIndexMap:SortedMap[Int, K] = SortedMap.empty[Int, K],
                backingKeyMap:Map[K, Int] = Map.empty[K, Int]) =
     new Stack[K](maxSize, backingIndexMap, backingKeyMap)
 }
 
-sealed class Stack[K](maxSize:Int, backingIndexMap:SortedMap[Int, K], backingKeyMap:Map[K, Int]) {
+class Stack[K] private[storehaus] (maxSize:Int, backingIndexMap:SortedMap[Int, K], backingKeyMap:Map[K, Int]) {
   /**
    * Adds k to the top of the stack. If k is already in the Stack,
    * it will be put on the top. If k was not in the Stack and the
@@ -87,10 +87,10 @@ sealed class Stack[K](maxSize:Int, backingIndexMap:SortedMap[Int, K], backingKey
 }
 
 object LIRSStacks {
-  def apply[K](sSize:Int, qSize:Int) = new LIRSStacks[K](Stack[K](sSize), Stack[K](qSize))
+  private[storehaus] def apply[K](sSize:Int, qSize:Int) = new LIRSStacks[K](Stack[K](sSize), Stack[K](qSize))
 }
 
-sealed class LIRSStacks[K](val stackS: Stack[K], val stackQ: Stack[K]) {
+class LIRSStacks[K] private[storehaus] (val stackS: Stack[K], val stackQ: Stack[K]) {
   @tailrec
   final def prune: LIRSStacks[K] = {
     val (oldK, newStackS) = stackS.dropOldest
