@@ -16,20 +16,18 @@
 
 package com.twitter.storehaus.cache
 
-sealed trait Side extends Ordered[Side] {
-  val nextSide:Side
-  override def toString = getClass.getSimpleName
-  def compare(that:Side) = if (this == that) 0 else if (nextSide == that) -1 else 1
-}
-object SideA extends Side {
-  val nextSide = SideB
-}
-object SideB extends Side {
-  val nextSide = SideC
-}
-object SideC extends Side {
-  val nextSide = SideA
-}
+/**
+ * This is an immutable implementation of a provider of cyclical increments. The motivation
+ * is that we need ordered identifiers for caches, but we do not want to just increment
+ * an int as this has a theoretical upper limit (this is functional programming, our stuff
+ * doesn't crash, right?). This class allows the reuse of numbers, making it highly unlikely
+ * to run out of identifiers (it is still possible, but in a way that would be unavoidable -- 
+ * if there is a key that stays in the stacks forever, thus never allowing us to reuse the
+ * increments after that key). This class ensures that when it is asked for a new increment,
+ * it will be greater than all currently outstanding increments at that time.
+ *
+ * @author Jonathan Coveney
+ */
 
 object CyclicIncrementProvider {
   def intIncrementer: CyclicIncrementProvider[Int] = CyclicIncrementProvider(0, {i:Int => i + 1})
@@ -94,7 +92,16 @@ class CyclicIncrementProvider[K:Ordering]
 object CyclicIncrement {
   implicit def ordering[K](implicit ordering:Ordering[K]):Ordering[CyclicIncrement[K]] = Ordering.by { ci => (ci.side, ci.value) }
 }
-//TODO(jcoveney) in the companion object give it an implicit ordering by the Tuple of values, then havet he Side ordering in scope
+
 case class CyclicIncrement[K:Ordering](side:Side, value:K) {
   override def toString = side + ":" + value
 }
+
+sealed trait Side extends Ordered[Side] {
+  val nextSide:Side
+  override def toString = getClass.getSimpleName
+  def compare(that:Side) = if (this == that) 0 else if (nextSide == that) -1 else 1
+}
+object SideA extends Side { val nextSide = SideB }
+object SideB extends Side { val nextSide = SideC }
+object SideC extends Side { val nextSide = SideA }
