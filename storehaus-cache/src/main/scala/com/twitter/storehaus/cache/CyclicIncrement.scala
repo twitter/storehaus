@@ -23,28 +23,26 @@ object SideC extends Side {
 }
 
 object CyclicIncrementProvider {
-  def intIncrementer(maxSize:Int): CyclicIncrementProvider[Int] =
-    CyclicIncrementProvider[Int](maxSize, 0, {i:Int => i + 1}, SideA, 0, 0, 0, 0)
+  def intIncrementer: CyclicIncrementProvider[Int] =
+    CyclicIncrementProvider[Int](0, {i:Int => i + 1}, SideA, 0, 0, 0, 0)
 
-  def apply[K:Ordering](maxSize:Int, zero: K, increment: K => K): CyclicIncrementProvider[K] =
-    CyclicIncrementProvider(maxSize, zero, increment, SideA, 0, zero, 0, zero)
+  def apply[K:Ordering](zero: K, increment: K => K): CyclicIncrementProvider[K] =
+    CyclicIncrementProvider(zero, increment, SideA, 0, zero, 0, zero)
 
-  def apply[K:Ordering](maxSize: Int,
-               zero: K,
+  def apply[K:Ordering](zero: K,
                increment: K => K,
                currentSide: Side,
                currentSideCount: Int,
                maxCurrentSideVal: K,
                nextSideCount: Int,
                maxNextSideVal: K): CyclicIncrementProvider[K] = 
-    new CyclicIncrementProvider[K](maxSize, zero, increment, currentSide, currentSideCount, maxCurrentSideVal, nextSideCount, maxNextSideVal)
+    new CyclicIncrementProvider[K](zero, increment, currentSide, currentSideCount, maxCurrentSideVal, nextSideCount, maxNextSideVal)
 }
 
-// Algorithm: we start on a side. We hand out maxSize values. Once we've handed out that many values, we begin to give out values of side.nextSide. Once
+// Algorithm: we start on a side. We hand out values. Once we've handed out at least 1 value, we begin to give out values of side.nextSide. Once
 // all of the increments of the previous side have been culled, we now switch. side.nextSide becomes the current side. Then we repeat the algorithm.
 class CyclicIncrementProvider[K:Ordering]
-  (maxSize: Int,
-   zero: K,
+  (zero: K,
    increment: K => K,
    currentSide: Side,
    currentSideCount: Int,
@@ -52,37 +50,37 @@ class CyclicIncrementProvider[K:Ordering]
    nextSideCount: Int,
    maxNextSideVal: K) {
   def getNewMaxIncrement:(CyclicIncrement[K], CyclicIncrementProvider[K]) =
-    if (nextSideCount > 0 || currentSideCount >= maxSize) {
+    if (nextSideCount > 0 || currentSideCount > 0) {
       // We hand one out of the next time
       val nextVal = increment(maxNextSideVal)
       (CyclicIncrement[K](currentSide.nextSide, nextVal),
-       CyclicIncrementProvider[K](maxSize, zero, increment, currentSide, currentSideCount, maxCurrentSideVal, nextSideCount+1, nextVal))
+       CyclicIncrementProvider[K](zero, increment, currentSide, currentSideCount, maxCurrentSideVal, nextSideCount+1, nextVal))
     } else {
       // We hand out one of the current time
       val nextVal = increment(maxCurrentSideVal)
       (CyclicIncrement[K](currentSide, nextVal),
-       CyclicIncrementProvider[K](maxSize, zero, increment, currentSide, currentSideCount+1, nextVal, nextSideCount, maxNextSideVal))
+       CyclicIncrementProvider[K](zero, increment, currentSide, currentSideCount+1, nextVal, nextSideCount, maxNextSideVal))
     }
 
   def cullOldIncrement(cyclicIncrement:CyclicIncrement[K]):CyclicIncrementProvider[K] =
     if (cyclicIncrement.side == currentSide) {
       val nextCurrentSidecount = currentSideCount - 1
       if (nextCurrentSidecount == 0) {
-        CyclicIncrementProvider[K](maxSize, zero, increment, currentSide.nextSide, nextSideCount, maxNextSideVal, 0, zero)
+        CyclicIncrementProvider[K](zero, increment, currentSide.nextSide, nextSideCount, maxNextSideVal, 0, zero)
       } else {
-        CyclicIncrementProvider[K](maxSize, zero, increment, currentSide, nextCurrentSidecount, maxCurrentSideVal, nextSideCount, maxNextSideVal)
+        CyclicIncrementProvider[K](zero, increment, currentSide, nextCurrentSidecount, maxCurrentSideVal, nextSideCount, maxNextSideVal)
       }
     } else if (cyclicIncrement.side == currentSide.nextSide) {
-      CyclicIncrementProvider[K](maxSize, zero, increment, currentSide, currentSideCount, maxCurrentSideVal, nextSideCount-1, maxNextSideVal)
+      CyclicIncrementProvider[K](zero, increment, currentSide, currentSideCount, maxCurrentSideVal, nextSideCount-1, maxNextSideVal)
     } else {
       throw new IllegalStateException("Shouldn't be culling a value of given type")
     }
 
     override def toString =
-      "CyclicIncrementProvider: maxSize:%d zero:%d currentSide:%s currentSideCount:%d maxCurrentSideVal:%d nextSideCount:%d maxNextSideVal:%d"
-        .format(maxSize, zero, currentSide, currentSideCount, maxCurrentSideVal, nextSideCount, maxNextSideVal)
+      "CyclicIncrementProvider: zero:%d currentSide:%s currentSideCount:%d maxCurrentSideVal:%d nextSideCount:%d maxNextSideVal:%d"
+        .format(zero, currentSide, currentSideCount, maxCurrentSideVal, nextSideCount, maxNextSideVal)
 
-    def empty = CyclicIncrementProvider(maxSize, zero, increment)
+    def empty = CyclicIncrementProvider(zero, increment)
 }
 
 object CyclicIncrement {

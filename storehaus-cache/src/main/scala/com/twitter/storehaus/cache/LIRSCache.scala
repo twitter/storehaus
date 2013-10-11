@@ -22,14 +22,9 @@ import scala.annotation.tailrec
 object Stack {
   private[storehaus] def apply[K](maxSize:Int,
                                   backingIndexMap:SortedMap[CyclicIncrement[Int], K] = SortedMap.empty[CyclicIncrement[Int], K],
-                                  backingKeyMap:Map[K, CyclicIncrement[Int]] = Map.empty[K, CyclicIncrement[Int]]): Stack[K] =
-    Stack[K](maxSize, backingIndexMap, backingKeyMap, CyclicIncrementProvider.intIncrementer(maxSize))
-
-  private[storehaus] def apply[K](maxSize:Int,
-                                  backingIndexMap:SortedMap[CyclicIncrement[Int], K],
-                                  backingKeyMap:Map[K, CyclicIncrement[Int]],
-                                  cyclicIncrementProvider:CyclicIncrementProvider[Int]): Stack[K] =
-    new Stack[K](maxSize, backingIndexMap, backingKeyMap, cyclicIncrementProvider)
+                                  backingKeyMap:Map[K, CyclicIncrement[Int]] = Map.empty[K, CyclicIncrement[Int]],
+                                  cyclicIncrementProvider:CyclicIncrementProvider[Int] = CyclicIncrementProvider.intIncrementer): Stack[K] =
+    Stack[K](maxSize, backingIndexMap, backingKeyMap, cyclicIncrementProvider)
 }
 
 class Stack[K] private[storehaus] (maxSize:Int,
