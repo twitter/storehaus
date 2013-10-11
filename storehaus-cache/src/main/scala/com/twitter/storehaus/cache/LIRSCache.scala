@@ -19,141 +19,15 @@ package com.twitter.storehaus.cache
 import scala.collection.SortedMap
 import scala.annotation.tailrec
 
-object Stack {
-  def apply[K](maxSize:Int,
-               backingIndexMap:SortedMap[CyclicIncrement[Int], K] = SortedMap.empty[CyclicIncrement[Int], K],
-               backingKeyMap:Map[K, CyclicIncrement[Int]] = Map.empty[K, CyclicIncrement[Int]],
-               cyclicIncrementProvider:CyclicIncrementProvider[Int] = CyclicIncrementProvider.intIncrementer): Stack[K] =
-    new Stack[K](maxSize, backingIndexMap, backingKeyMap, cyclicIncrementProvider)
-}
-
-class Stack[K](maxSize:Int,
-               backingIndexMap:SortedMap[CyclicIncrement[Int], K],
-               backingKeyMap:Map[K, CyclicIncrement[Int]],
-               cyclicIncrementProvider:CyclicIncrementProvider[Int]) {
-  /**
-   * Adds k to the top of the stack. If k is already in the Stack,
-   * it will be put on the top. If k was not in the Stack and the
-   * Stack was full, returns the evicted member.
-   */
-  def putOnTop(k: K): (Option[K], Stack[K]) = {
-    val (newInc, newCyc) = cyclicIncrementProvider.getNewMaxIncrement 
-    backingKeyMap.get(k) match {
-      case Some(oldInc) => {
-        val newBackingIndexMap = backingIndexMap - oldInc + (newInc->k)
-        val newBackingKeyMap = backingKeyMap + (k->newInc)
-        val newCyc2 = newCyc.cullOldIncrement(oldInc)
-        (None, new Stack(maxSize, newBackingIndexMap, newBackingKeyMap, newCyc2))
-      }
-      case None => {
-        if (isFull) {
-          val (oldInc, lastK) = backingIndexMap.head
-          val newBackingIndexMap = backingIndexMap - oldInc + (newInc->k)
-          val newBackingKeyMap = backingKeyMap - lastK + (k->newInc)
-          val newCyc2 = newCyc.cullOldIncrement(oldInc)
-          (Some(lastK), new Stack(maxSize, newBackingIndexMap, newBackingKeyMap, newCyc2))
-        } else {
-          val newBackingIndexMap = backingIndexMap + (newInc->k)
-          val newBackingKeyMap = backingKeyMap + (k->newInc)
-          (None, new Stack(maxSize, newBackingIndexMap, newBackingKeyMap, newCyc))
-        }
-      }
-    }
-  }
-
-  def dropOldest: (Option[K], Stack[K]) = {
-    if (isEmpty) {
-      (None, this)
-    } else {
-      val (lastInc, lastK) = backingIndexMap.head
-      (Some(lastK), new Stack(maxSize, backingIndexMap - lastInc, backingKeyMap - lastK, cyclicIncrementProvider.cullOldIncrement(lastInc)))
-    }
-  }
-
-  def remove(k: K): (Option[K], Stack[K]) = {
-    backingKeyMap.get(k) match {
-      case Some(inc) => (Some(k), new Stack(maxSize, backingIndexMap - inc, backingKeyMap - k, cyclicIncrementProvider.cullOldIncrement(inc)))
-      case None => (None, this)
-    }
-  }
-
-  def contains(k: K): Boolean = backingKeyMap.contains(k)
-
-  def isOldest(k: K): Boolean = if (!isEmpty) { backingIndexMap.head._2 == k } else false
-
-  def size = backingIndexMap.size
-
-  def isFull = size >= maxSize
-
-  def isEmpty = size <= 0
-
-  def empty = new Stack[K](maxSize, backingIndexMap.empty, backingKeyMap.empty, cyclicIncrementProvider.empty)
-
-  override def toString = backingIndexMap.map { _._2 }.mkString(",")
-}
-
-object LIRSStacks {
-  def apply[K](sSize:Int, qSize:Int) = new LIRSStacks[K](Stack[K](sSize), Stack[K](qSize))
-}
-
-class LIRSStacks[K](stackS: Stack[K], stackQ: Stack[K]) {
-  @tailrec
-  final def prune: LIRSStacks[K] = {
-    val (oldK, newStackS) = stackS.dropOldest
-    oldK match {
-      case Some(k) if stackQ.contains(k) => new LIRSStacks(newStackS, stackQ).prune
-      case _ => this //We don't need to remove as there is either nothing to remove, or an LIR block is on the bottom
-    }
-  }
-
-  def putOnTopOfS(k: K): (Option[K], LIRSStacks[K]) = {
-    val (optK, newStackS) = stackS.putOnTop(k)
-    (optK, new LIRSStacks(newStackS, stackQ))
-  }
-
-  def putOnTopOfQ(k: K): (Option[K], LIRSStacks[K]) = {
-    val (optK, newStackQ) = stackQ.putOnTop(k)
-    (optK, new LIRSStacks(stackS, newStackQ))
-  }
-
-  def dropOldestInS: (Option[K], LIRSStacks[K]) = {
-    val (optK, newStackS) = stackS.dropOldest
-    (optK, new LIRSStacks(newStackS, stackQ))
-  }
-
-  def dropOldestInQ: (Option[K], LIRSStacks[K]) = {
-    val (optK, newStackQ) = stackQ.dropOldest
-    (optK, new LIRSStacks(stackS, newStackQ))
-  }
-
-  def removeFromS(k: K): (Option[K], LIRSStacks[K]) = {
-    val (optK, newStackS) = stackS.remove(k)
-    (optK, new LIRSStacks(newStackS, stackQ))
-  }
-
-  def removeFromQ(k: K): (Option[K], LIRSStacks[K]) = {
-    val (optK, newStackQ) = stackQ.remove(k)
-    (optK, new LIRSStacks(stackS, newStackQ))
-  }
-
-  def isOldestInS(k: K): Boolean = stackS.isOldest(k)
-
-  def isOldestInQ(k: K): Boolean = stackQ.isOldest(k)
-
-  def isSFull: Boolean = stackS.isFull
-
-  def isQFull: Boolean = stackQ.isFull
-
-  def isInS(k: K): Boolean = stackS.contains(k)
-
-  def isInQ(k: K): Boolean = stackQ.contains(k)
-
-  def evict(k: K): LIRSStacks[K] = new LIRSStacks(stackS.remove(k)._2, stackQ.remove(k)._2)
-
-  def empty = new LIRSStacks(stackS.empty, stackQ.empty)
-
-  override def toString = "S:["+stackS+"] Q:["+stackQ+"]"
-}
+/**
+ * This is an implementation of an immutable LIRS Cache based on the LIRS Cache impelementation
+ * in Clojure's core.cache:
+ * https://github.com/clojure/core.cache/blob/master/src/main/clojure/clojure/core/cache.clj.
+ * The cache is described in this paper:
+ * http://citeseer.ist.psu.edu/viewdoc/download;jsessionid=EA23F554FDF98A258C6FDF0C8E98BFD1?doi=10.1.1.116.2184&rep=rep1&type=pdf
+ *
+ * @author Jonathan Coveney
+ */
 
 object LIRSCache {
   def apply[K, V](maxSize:Int, sPercent:Double, backingMap:Map[K, V] = Map.empty[K,V]) = {
@@ -164,14 +38,6 @@ object LIRSCache {
     new LIRSCache[K, V](LIRSStacks[K](sSize, qSize), backingMap)
   }
 }
-
-/**
- * This is an implementation of an immutable LIRS Cache based on the LIRS Cache impelementation
- * in Clojure's core.cache:
- * https://github.com/clojure/core.cache/blob/master/src/main/clojure/clojure/core/cache.clj.
- * The cache is described in this paper:
- * http://citeseer.ist.psu.edu/viewdoc/download;jsessionid=EA23F554FDF98A258C6FDF0C8E98BFD1?doi=10.1.1.116.2184&rep=rep1&type=pdf
- */
 
 class LIRSCache[K, V](lirsStacks:LIRSStacks[K], backingMap: Map[K, V]) extends Cache[K, V] {
   def get(k: K): Option[V] = backingMap.get(k)
@@ -293,4 +159,140 @@ class LIRSCache[K, V](lirsStacks:LIRSStacks[K], backingMap: Map[K, V]) extends C
     val pairStrings = iterator.map { case (k, v) => k + " -> " + v }
     "LIRSCache(" + pairStrings.toList.mkString(", ") + ")"
   }
+}
+
+object LIRSStacks {
+  def apply[K](sSize:Int, qSize:Int) = new LIRSStacks[K](Stack[K](sSize), Stack[K](qSize))
+}
+
+class LIRSStacks[K](stackS: Stack[K], stackQ: Stack[K]) {
+  @tailrec
+  final def prune: LIRSStacks[K] = {
+    val (oldK, newStackS) = stackS.dropOldest
+    oldK match {
+      case Some(k) if stackQ.contains(k) => new LIRSStacks(newStackS, stackQ).prune
+      case _ => this //We don't need to remove as there is either nothing to remove, or an LIR block is on the bottom
+    }
+  }
+
+  def putOnTopOfS(k: K): (Option[K], LIRSStacks[K]) = {
+    val (optK, newStackS) = stackS.putOnTop(k)
+    (optK, new LIRSStacks(newStackS, stackQ))
+  }
+
+  def putOnTopOfQ(k: K): (Option[K], LIRSStacks[K]) = {
+    val (optK, newStackQ) = stackQ.putOnTop(k)
+    (optK, new LIRSStacks(stackS, newStackQ))
+  }
+
+  def dropOldestInS: (Option[K], LIRSStacks[K]) = {
+    val (optK, newStackS) = stackS.dropOldest
+    (optK, new LIRSStacks(newStackS, stackQ))
+  }
+
+  def dropOldestInQ: (Option[K], LIRSStacks[K]) = {
+    val (optK, newStackQ) = stackQ.dropOldest
+    (optK, new LIRSStacks(stackS, newStackQ))
+  }
+
+  def removeFromS(k: K): (Option[K], LIRSStacks[K]) = {
+    val (optK, newStackS) = stackS.remove(k)
+    (optK, new LIRSStacks(newStackS, stackQ))
+  }
+
+  def removeFromQ(k: K): (Option[K], LIRSStacks[K]) = {
+    val (optK, newStackQ) = stackQ.remove(k)
+    (optK, new LIRSStacks(stackS, newStackQ))
+  }
+
+  def isOldestInS(k: K): Boolean = stackS.isOldest(k)
+
+  def isOldestInQ(k: K): Boolean = stackQ.isOldest(k)
+
+  def isSFull: Boolean = stackS.isFull
+
+  def isQFull: Boolean = stackQ.isFull
+
+  def isInS(k: K): Boolean = stackS.contains(k)
+
+  def isInQ(k: K): Boolean = stackQ.contains(k)
+
+  def evict(k: K): LIRSStacks[K] = new LIRSStacks(stackS.remove(k)._2, stackQ.remove(k)._2)
+
+  def empty = new LIRSStacks(stackS.empty, stackQ.empty)
+
+  override def toString = "S:["+stackS+"] Q:["+stackQ+"]"
+}
+
+object Stack {
+  def apply[K](maxSize:Int,
+               backingIndexMap:SortedMap[CyclicIncrement[Int], K] = SortedMap.empty[CyclicIncrement[Int], K],
+               backingKeyMap:Map[K, CyclicIncrement[Int]] = Map.empty[K, CyclicIncrement[Int]],
+               cyclicIncrementProvider:CyclicIncrementProvider[Int] = CyclicIncrementProvider.intIncrementer): Stack[K] =
+    new Stack[K](maxSize, backingIndexMap, backingKeyMap, cyclicIncrementProvider)
+}
+
+class Stack[K](maxSize:Int,
+               backingIndexMap:SortedMap[CyclicIncrement[Int], K],
+               backingKeyMap:Map[K, CyclicIncrement[Int]],
+               cyclicIncrementProvider:CyclicIncrementProvider[Int]) {
+  /**
+   * Adds k to the top of the stack. If k is already in the Stack,
+   * it will be put on the top. If k was not in the Stack and the
+   * Stack was full, returns the evicted member.
+   */
+  def putOnTop(k: K): (Option[K], Stack[K]) = {
+    val (newInc, newCyc) = cyclicIncrementProvider.getNewMaxIncrement 
+    backingKeyMap.get(k) match {
+      case Some(oldInc) => {
+        val newBackingIndexMap = backingIndexMap - oldInc + (newInc->k)
+        val newBackingKeyMap = backingKeyMap + (k->newInc)
+        val newCyc2 = newCyc.cullOldIncrement(oldInc)
+        (None, new Stack(maxSize, newBackingIndexMap, newBackingKeyMap, newCyc2))
+      }
+      case None => {
+        if (isFull) {
+          val (oldInc, lastK) = backingIndexMap.head
+          val newBackingIndexMap = backingIndexMap - oldInc + (newInc->k)
+          val newBackingKeyMap = backingKeyMap - lastK + (k->newInc)
+          val newCyc2 = newCyc.cullOldIncrement(oldInc)
+          (Some(lastK), new Stack(maxSize, newBackingIndexMap, newBackingKeyMap, newCyc2))
+        } else {
+          val newBackingIndexMap = backingIndexMap + (newInc->k)
+          val newBackingKeyMap = backingKeyMap + (k->newInc)
+          (None, new Stack(maxSize, newBackingIndexMap, newBackingKeyMap, newCyc))
+        }
+      }
+    }
+  }
+
+  def dropOldest: (Option[K], Stack[K]) = {
+    if (isEmpty) {
+      (None, this)
+    } else {
+      val (lastInc, lastK) = backingIndexMap.head
+      (Some(lastK), new Stack(maxSize, backingIndexMap - lastInc, backingKeyMap - lastK, cyclicIncrementProvider.cullOldIncrement(lastInc)))
+    }
+  }
+
+  def remove(k: K): (Option[K], Stack[K]) = {
+    backingKeyMap.get(k) match {
+      case Some(inc) => (Some(k), new Stack(maxSize, backingIndexMap - inc, backingKeyMap - k, cyclicIncrementProvider.cullOldIncrement(inc)))
+      case None => (None, this)
+    }
+  }
+
+  def contains(k: K): Boolean = backingKeyMap.contains(k)
+
+  def isOldest(k: K): Boolean = if (!isEmpty) { backingIndexMap.head._2 == k } else false
+
+  def size = backingIndexMap.size
+
+  def isFull = size >= maxSize
+
+  def isEmpty = size <= 0
+
+  def empty = new Stack[K](maxSize, backingIndexMap.empty, backingKeyMap.empty, cyclicIncrementProvider.empty)
+
+  override def toString = backingIndexMap.map { _._2 }.mkString(",")
 }
