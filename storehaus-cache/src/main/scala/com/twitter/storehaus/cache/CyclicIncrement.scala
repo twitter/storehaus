@@ -17,18 +17,18 @@
 package com.twitter.storehaus.cache
 
 sealed trait Side extends Ordered[Side] {
-  def nextSide:Side
+  val nextSide:Side
   override def toString = getClass.getSimpleName
   def compare(that:Side) = if (this == that) 0 else if (nextSide == that) -1 else 1
 }
 object SideA extends Side {
-  def nextSide = SideB
+  val nextSide = SideB
 }
 object SideB extends Side {
-  def nextSide = SideC
+  val nextSide = SideC
 }
 object SideC extends Side {
-  def nextSide = SideA
+  val nextSide = SideA
 }
 
 object CyclicIncrementProvider {
