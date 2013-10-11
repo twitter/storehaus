@@ -32,10 +32,10 @@ package com.twitter.storehaus.cache
 object CyclicIncrementProvider {
   def intIncrementer: CyclicIncrementProvider[Int] = CyclicIncrementProvider(0, {i:Int => i + 1})
 
-  def apply[K:Ordering](zero: K, increment: K => K): CyclicIncrementProvider[K] =
+  def apply[@specialized(Int) K:Ordering](zero: K, increment: K => K): CyclicIncrementProvider[K] =
     CyclicIncrementProvider(zero, increment, SideA, 0, zero, 0, zero)
 
-  def apply[K:Ordering](zero: K,
+  def apply[@specialized(Int) K:Ordering](zero: K,
                increment: K => K,
                currentSide: Side,
                currentSideCount: Int,
@@ -47,7 +47,7 @@ object CyclicIncrementProvider {
 
 // Algorithm: we start on a side. We hand out values. Once we've handed out at least 1 value, we begin to give out values of side.nextSide. Once
 // all of the increments of the previous side have been culled, we now switch. side.nextSide becomes the current side. Then we repeat the algorithm.
-class CyclicIncrementProvider[K:Ordering]
+class CyclicIncrementProvider[@specialized(Int) K:Ordering]
   (zero: K,
    increment: K => K,
    currentSide: Side,
@@ -93,7 +93,7 @@ object CyclicIncrement {
   implicit def ordering[K](implicit ordering:Ordering[K]):Ordering[CyclicIncrement[K]] = Ordering.by { ci => (ci.side, ci.value) }
 }
 
-case class CyclicIncrement[K:Ordering](side:Side, value:K) {
+case class CyclicIncrement[@specialized(Int) K:Ordering](side:Side, value:K) {
   override def toString = side + ":" + value
 }
 
