@@ -21,35 +21,46 @@ import scala.annotation.tailrec
 
 object Stack {
   private[storehaus] def apply[K](maxSize:Int,
-               backingIndexMap:SortedMap[Int, K] = SortedMap.empty[Int, K],
-               backingKeyMap:Map[K, Int] = Map.empty[K, Int]) =
-    new Stack[K](maxSize, backingIndexMap, backingKeyMap)
+                                  backingIndexMap:SortedMap[CyclicIncrement[Int], K] = SortedMap.empty[CyclicIncrement[Int], K],
+                                  backingKeyMap:Map[K, CyclicIncrement[Int]] = Map.empty[K, CyclicIncrement[Int]]): Stack[K] =
+    Stack[K](maxSize, backingIndexMap, backingKeyMap, CyclicIncrementProvider.intIncrementer(maxSize))
+
+  private[storehaus] def apply[K](maxSize:Int,
+                                  backingIndexMap:SortedMap[CyclicIncrement[Int], K],
+                                  backingKeyMap:Map[K, CyclicIncrement[Int]],
+                                  cyclicIncrementProvider:CyclicIncrementProvider[Int]): Stack[K] =
+    new Stack[K](maxSize, backingIndexMap, backingKeyMap, cyclicIncrementProvider)
 }
 
-class Stack[K] private[storehaus] (maxSize:Int, backingIndexMap:SortedMap[Int, K], backingKeyMap:Map[K, Int]) {
+class Stack[K] private[storehaus] (maxSize:Int,
+                                   backingIndexMap:SortedMap[CyclicIncrement[Int], K],
+                                   backingKeyMap:Map[K, CyclicIncrement[Int]],
+                                   cyclicIncrementProvider:CyclicIncrementProvider[Int]) {
   /**
    * Adds k to the top of the stack. If k is already in the Stack,
    * it will be put on the top. If k was not in the Stack and the
    * Stack was full, returns the evicted member.
    */
   def putOnTop(k: K): (Option[K], Stack[K]) = {
-    val newInc = (if (backingIndexMap.isEmpty) 0 else backingIndexMap.last._1) + 1
+    val (newInc, newCyc) = cyclicIncrementProvider.getNewMaxIncrement 
     backingKeyMap.get(k) match {
       case Some(oldInc) => {
         val newBackingIndexMap = backingIndexMap - oldInc + (newInc->k)
         val newBackingKeyMap = backingKeyMap + (k->newInc)
-        (None, new Stack(maxSize, newBackingIndexMap, newBackingKeyMap))
+        val newCyc2 = newCyc.cullOldIncrement(oldInc)
+        (None, new Stack(maxSize, newBackingIndexMap, newBackingKeyMap, newCyc2))
       }
       case None => {
         if (isFull) {
           val (oldInc, lastK) = backingIndexMap.head
           val newBackingIndexMap = backingIndexMap - oldInc + (newInc->k)
           val newBackingKeyMap = backingKeyMap - lastK + (k->newInc)
-          (Some(lastK), new Stack(maxSize, newBackingIndexMap, newBackingKeyMap))
+          val newCyc2 = newCyc.cullOldIncrement(oldInc)
+          (Some(lastK), new Stack(maxSize, newBackingIndexMap, newBackingKeyMap, newCyc2))
         } else {
           val newBackingIndexMap = backingIndexMap + (newInc->k)
           val newBackingKeyMap = backingKeyMap + (k->newInc)
-          (None, new Stack(maxSize, newBackingIndexMap, newBackingKeyMap))
+          (None, new Stack(maxSize, newBackingIndexMap, newBackingKeyMap, cyclicIncrementProvider))
         }
       }
     }
@@ -60,13 +71,13 @@ class Stack[K] private[storehaus] (maxSize:Int, backingIndexMap:SortedMap[Int, K
       (None, this)
     } else {
       val (lastInc, lastK) = backingIndexMap.head
-      (Some(lastK), new Stack(maxSize, backingIndexMap - lastInc, backingKeyMap - lastK))
+      (Some(lastK), new Stack(maxSize, backingIndexMap - lastInc, backingKeyMap - lastK, cyclicIncrementProvider.cullOldIncrement(lastInc)))
     }
   }
 
   def remove(k: K): (Option[K], Stack[K]) = {
     backingKeyMap.get(k) match {
-      case Some(inc) => (Some(k), new Stack(maxSize, backingIndexMap - inc, backingKeyMap - k))
+      case Some(inc) => (Some(k), new Stack(maxSize, backingIndexMap - inc, backingKeyMap - k, cyclicIncrementProvider.cullOldIncrement(inc)))
       case None => (None, this)
     }
   }
@@ -81,7 +92,7 @@ class Stack[K] private[storehaus] (maxSize:Int, backingIndexMap:SortedMap[Int, K
 
   def isEmpty = size <= 0
 
-  def empty = new Stack[K](maxSize, backingIndexMap.empty, backingKeyMap.empty)
+  def empty = new Stack[K](maxSize, backingIndexMap.empty, backingKeyMap.empty, cyclicIncrementProvider.empty)
 
   override def toString = backingIndexMap.map { _._2 }.mkString(",")
 }
