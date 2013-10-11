@@ -19,14 +19,7 @@ package com.twitter.storehaus.cache
 sealed trait Side extends Ordered[Side] {
   def nextSide:Side
   override def toString = getClass.getSimpleName
-  def compare(that:Side) =
-    if (this == that) {
-      0
-    } else if (nextSide == that) {
-      -1
-    } else {
-      1
-    }
+  def compare(that:Side) = if (this == that) 0 else if (nextSide == that) -1 else 1
 }
 object SideA extends Side {
   def nextSide = SideB
