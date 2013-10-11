@@ -59,12 +59,12 @@ class CyclicIncrementProvider[@specialized(Int) K:Ordering]
     if (nextSideCount > 0 || currentSideCount > 0) {
       // We hand one out of the next time
       val nextVal = increment(maxNextSideVal)
-      (CyclicIncrement[K](currentSide.nextSide, nextVal),
+      (currentSide.nextSide.makeCyclicIncrement(nextVal),
        CyclicIncrementProvider[K](zero, increment, currentSide, currentSideCount, maxCurrentSideVal, nextSideCount+1, nextVal))
     } else {
       // We hand out one of the current time
       val nextVal = increment(maxCurrentSideVal)
-      (CyclicIncrement[K](currentSide, nextVal),
+      (currentSide.makeCyclicIncrement(nextVal),
        CyclicIncrementProvider[K](zero, increment, currentSide, currentSideCount+1, nextVal, nextSideCount, maxNextSideVal))
     }
 
@@ -90,18 +90,35 @@ class CyclicIncrementProvider[@specialized(Int) K:Ordering]
 }
 
 object CyclicIncrement {
-  implicit def ordering[K](implicit ordering:Ordering[K]):Ordering[CyclicIncrement[K]] = Ordering.by { ci => (ci.side, ci.value) }
+  implicit def ordering[K](implicit ordering:Ordering[K]):Ordering[CyclicIncrement[K]] = Ordering.by { _.value }
 }
 
-case class CyclicIncrement[@specialized(Int) K:Ordering](side:Side, value:K) {
+sealed trait CyclicIncrement[@specialized(Int) K] {
+  def side:Side
+  def value:K
+  implicit def ordering(implicit ordering:Ordering[K]) = ordering
   override def toString = side + ":" + value
 }
 
+case class SideACyclicIncrement[@specialized(Int) K:Ordering](override val value:K) extends CyclicIncrement[K] { def side = SideA }
+case class SideBCyclicIncrement[@specialized(Int) K:Ordering](override val value:K) extends CyclicIncrement[K] { def side = SideB }
+case class SideCCyclicIncrement[@specialized(Int) K:Ordering](override val value:K) extends CyclicIncrement[K] { def side = SideC }
+
 sealed trait Side extends Ordered[Side] {
-  val nextSide:Side
+  def nextSide:Side
+  def makeCyclicIncrement[@specialized(Int) K:Ordering](value:K):CyclicIncrement[K]
   override def toString = getClass.getSimpleName
   def compare(that:Side) = if (this == that) 0 else if (nextSide == that) -1 else 1
 }
-object SideA extends Side { val nextSide = SideB }
-object SideB extends Side { val nextSide = SideC }
-object SideC extends Side { val nextSide = SideA }
+object SideA extends Side {
+  def nextSide = SideB
+  def makeCyclicIncrement[@specialized(Int) K:Ordering](value:K) = SideACyclicIncrement[K](value)
+}
+object SideB extends Side {
+  def nextSide = SideC
+  def makeCyclicIncrement[@specialized(Int) K:Ordering](value:K) = SideBCyclicIncrement[K](value)
+}
+object SideC extends Side {
+  def nextSide = SideA
+  def makeCyclicIncrement[@specialized(Int) K:Ordering](value:K) = SideCCyclicIncrement[K](value)
+}
