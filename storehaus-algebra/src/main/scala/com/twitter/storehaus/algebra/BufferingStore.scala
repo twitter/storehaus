@@ -20,6 +20,15 @@ import com.twitter.algebird.{ Monoid, StatefulSummer }
 import com.twitter.util.{ Future, Promise }
 import com.twitter.storehaus.{ FutureOps, FutureCollector }
 import scala.collection.mutable.{ Map => MMap }
+import scala.collection.breakOut
+
+import PromiseLink.toPromiseLink
+
+/** For any given V, construct a StatefulSummer of Map[K, V]
+ */
+trait SummerConstructor[K] {
+  def apply[V](mon: Monoid[V]): StatefulSummer[Map[K, V]]
+}
 
 /** A Mergeable that sits on top of another mergeable and pre-aggregates before pushing into merge/multiMerge
  * This is very useful for cases where you have some keys that are very hot, or you have a remote store that
@@ -27,57 +36,46 @@ import scala.collection.mutable.{ Map => MMap }
  * Note that calling a get/put forces a flush on this store.  Also note that the Futures returned by merge
  * are completed only when the underlying store is finally merged.
  */
-class BufferingStore[K, V](store: MergeableStore[K, V], summerCons: Monoid[V] => StatefulSummer[Map[K, V]])
+class BufferingStore[K, V](store: MergeableStore[K, V], summerCons: SummerConstructor[K])
   extends MergeableStore[K, V] {
-  private val promiseMap = MMap[Any, Promise[Unit]]()
-  protected implicit val collector = FutureCollector.bestEffort[(Any, Unit)]
-  protected val summer: StatefulSummer[Map[K, V]] = summerCons(store.monoid)
+  protected implicit val collector = FutureCollector.bestEffort[Any]
+  protected val summer: StatefulSummer[Map[K, PromiseLink[V]]] = summerCons(new PromiseLinkMonoid(monoid))
 
-  override val monoid: Monoid[V] = store.monoid
+  override def monoid: Monoid[V] = store.monoid
 
-  override def get(k: K): Future[Option[V]] =
-    summer.flush
-      .flatMap { mergeAndFulfill(_).get(k) }
-      .getOrElse(Future.Unit)
-      .flatMap { _ => store.get(k) }
+  // Assumes m has k, which is true by construction below
+  private def wait[K1<:K, W](k: K1, m: Future[Map[K1, Future[W]]]): Future[W] = m.flatMap { _.apply(k) }
 
   override def multiGet[K1 <: K](ks: Set[K1]): Map[K1, Future[Option[V]]] = {
-    val writeComputation: Future[Unit] =
-      summer.flush.map { m =>
-        FutureOps.mapCollect {
-          mergeAndFulfill(m).filterKeys(ks.toSet[K])
-        }.unit
-      }.getOrElse(Future.Unit)
-    FutureOps.liftFutureValues(ks, writeComputation.map { _ => store.multiGet(ks) })
-  }
-  override def put(pair: (K, Option[V])) = flush.flatMap { _ => store.put(pair) }
-
-  override def multiPut[K1 <: K](kvs: Map[K1, Option[V]]) =
-    FutureOps.liftFutureValues(kvs.keySet, flush.map { _ => store.multiPut(kvs) })
-
-  def flush(implicit collect: FutureCollector[(Any, Unit)]): Future[Unit] =
-    summer.flush
-      .map { m => FutureOps.mapCollect(store.multiMerge(m))(collect).unit }
-      .getOrElse(Future.Unit)
-
-  protected def multiPromise[K1 <: K](ks: Set[K1]): Map[K1, Promise[Unit]] = {
-    ks.map { k =>
-      k -> promiseMap.getOrElseUpdate(k, new Promise[Unit])
-    }.toMap
+    val allGets = flush.map( _ => store.multiGet(ks))
+    ks.map { k => k -> wait(k, allGets) }(breakOut)
   }
 
-  protected def multiFulfill[K1 <: K](m: Map[K1, Future[Unit]]): Map[K1, Future[Unit]] = {
-    m.foreach { case (k, futureUnit) => promiseMap(k).become(futureUnit) }
-    promiseMap --= m.keySet
-    m
+  override def multiPut[K1 <: K](kvs: Map[K1, Option[V]]) = {
+    val allPuts = flush.map(_ => store.multiPut(kvs))
+    kvs.map { case (k, _) => k -> wait(k, allPuts) }
   }
 
-  protected def mergeAndFulfill[K1 <: K](m: Map[K1, V]) = multiFulfill(store.multiMerge(m))
+  private def flush: Future[Unit] =
+    summer.flush.map(mergeFlush(_)) match {
+      case None => Future.Unit
+      case Some(mKV) => collector(mKV.values.toSeq).unit
+    }
 
-  override def merge(pair: (K, V)): Future[Unit] = multiMerge(Map(pair))(pair._1)
-  override def multiMerge[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Unit]] = {
-    val result: Map[K1, Future[Unit]] = multiPromise(kvs.keySet)
-    summer.put(kvs.asInstanceOf[Map[K, V]]).foreach { mergeAndFulfill(_) }
-    result
+  // Return the value before, like a merge
+  private def mergeFlush(toMerge: Map[K, PromiseLink[V]]): Map[K, Future[Option[V]]] =
+    // Now merge any evicted items from the buffer to below:
+    store
+      .multiMerge(toMerge.mapValues(_.value))
+      .map { case (k, foptV) =>
+        val prom = toMerge(k)
+        foptV.respond { prom.promise.update(_) }
+        k -> foptV
+      }
+
+  override def multiMerge[K1 <: K](kvs: Map[K1, V]) = {
+    val links: Map[K, PromiseLink[V]] = kvs.map { case (k1, v) => k1 -> toPromiseLink(v) }(breakOut) // no lazy
+    summer.put(links).foreach(mergeFlush(_))
+    kvs.map { case (k, _) => k -> links(k).promise }
   }
 }

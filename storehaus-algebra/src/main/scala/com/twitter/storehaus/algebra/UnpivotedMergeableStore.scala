@@ -33,22 +33,21 @@ class UnpivotedMergeableStore[-K, OuterK, InnerK, V: Monoid](store: MergeableSto
 
   override val monoid: Monoid[V] = implicitly[Monoid[V]]
 
-  override def merge(pair: (K, V)): Future[Unit] = {
+  override def merge(pair: (K, V)): Future[Option[V]] = {
     val (k, v) = pair
     val (outerK, innerK) = split(k)
     store.merge(outerK -> Map(innerK -> v))
+      .map { _.flatMap { inner => inner.get(innerK) } }
   }
 
-  override def multiMerge[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Unit]] = {
+  override def multiMerge[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Option[V]]] = {
     val pivoted: Map[OuterK, Map[InnerK, V]] =
       CollectionOps.pivotMap[K1, OuterK, InnerK, V](kvs)(split)
-    val ret: Map[OuterK, Future[Unit]] = store.multiMerge(pivoted)
-    kvs.flatMap {
+    val ret: Map[OuterK, Future[Option[Map[InnerK, V]]]] = store.multiMerge(pivoted)
+    kvs.map {
       case (k, _) =>
-        val (outerK, _) = split(k)
-        (1 to pivoted(outerK).size).map { _ =>
-          k -> ret(outerK)
-        }
+        val (outerK, innerK) = split(k)
+        k -> ret(outerK).map(_.flatMap { innerM => innerM.get(innerK) })
     }.toMap
   }
   override def close { store.close }

@@ -20,10 +20,12 @@ import com.twitter.algebird.{ MapAlgebra, Monoid, SummingQueue }
 import com.twitter.algebird.bijection.AlgebirdBijections._
 import com.twitter.bijection.Injection
 import com.twitter.storehaus._
-import com.twitter.util.Await
+import com.twitter.util.{Await, Future}
 import org.scalacheck.{ Arbitrary, Properties }
 import org.scalacheck.Prop._
 import org.scalacheck.Properties
+
+import scala.collection.breakOut
 
 object MergeableStoreProperties extends Properties("MergeableStore") {
   def rightContainsLeft[K,V: Equiv](l: Map[K, V], r: Map[K, V]): Boolean =
@@ -52,19 +54,25 @@ object MergeableStoreProperties extends Properties("MergeableStore") {
   }
 
   // Adds a bunch of items and removes them and sees if they are absent
-  def baseTest[K: Arbitrary, V: Arbitrary: Monoid: Equiv](store: MergeableStore[K, V])(put: (MergeableStore[K, V], List[(K, V)]) => Unit) =
+  def baseTest[K: Arbitrary, V: Arbitrary: Monoid: Equiv](store: MergeableStore[K, V])(put:
+      (MergeableStore[K, V], List[(K, V)]) => Map[K, (Future[Option[V]],V)]) =
+
     forAll { examples: List[(K, V)] =>
       val inputMap = MapAlgebra.sumByKey(examples).mapValues { Monoid.nonZeroOption(_) }
       val preResult = Await.result(FutureOps.mapCollect(store.multiGet(inputMap.keySet)))
       val expectedResult = Monoid.plus(inputMap, preResult)
         .mapValues { _.flatMap { Monoid.nonZeroOption(_) } }
 
-      put(store, examples) // Mutate the store
+      val res = put(store, examples) // Mutate the store
+      // from the results, we can get the final value:
+      val finalMerged = Await.result(FutureOps.mapCollect(
+        res.mapValues { case (fopt, v) => fopt.map { opt => opt.map { Monoid.plus(_, v) }.getOrElse(v) } }
+      )).mapValues(Monoid.nonZeroOption(_))
 
       Equiv[Map[K, Option[V]]].equiv(
         expectedResult,
         Await.result(FutureOps.mapCollect(store.multiGet(expectedResult.keySet)))
-      )
+      ) && Equiv[Map[K, Option[V]]].equiv(expectedResult, finalMerged)
     }
 
   def newStore[K, V: Monoid]: MergeableStore[K, V] =
@@ -77,10 +85,14 @@ object MergeableStoreProperties extends Properties("MergeableStore") {
   }
 
   def singleMergeableStoreTest[K: Arbitrary, V: Arbitrary: Monoid: Equiv](store: MergeableStore[K, V]) =
-    baseTest(store) { (s, pairs) => pairs.foreach { s.merge(_) } }
+    baseTest(store) { (s, pairs) => pairs.map { case kv@(k, v) => k -> (s.merge(kv), v) }(breakOut) }
 
   def multiMergeableStoreTest[K: Arbitrary, V: Arbitrary: Monoid: Equiv](store: MergeableStore[K, V]) =
-    baseTest(store) { (s, pairs) => s.multiMerge(MapAlgebra.sumByKey(pairs)) }
+    baseTest(store) { (s, pairs) =>
+      val presummed = MapAlgebra.sumByKey(pairs)
+      s.multiMerge(presummed)
+        .map { case (k, fv) => (k, (fv, presummed(k))) }
+    }
 
   def mergeableStoreTest[K: Arbitrary, V: Arbitrary: Monoid: Equiv](store: MergeableStore[K, V]) =
     singleMergeableStoreTest(store) && multiMergeableStoreTest(store)
