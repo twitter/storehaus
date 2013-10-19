@@ -31,10 +31,10 @@ class PromiseLinkMonoid[V](monoid: Monoid[V]) extends Monoid[PromiseLink[V]] { /
 
   def plus(older: PromiseLink[V], newer: PromiseLink[V]): PromiseLink[V] = {
     val (PromiseLink(p1, v1), PromiseLink(p2, v2)) = (older, newer)
-    p2.respond { tryOptV =>
-      p1.update(tryOptV.map(optV => optV.map(monoid.plus(_, v2))))
+    p1.respond { tryOptV =>
+      p2.update(tryOptV.map(optV => optV.map(monoid.plus(_, v1))))
     }
-    PromiseLink(p2, monoid.plus(v1, v2))
+    PromiseLink(p1, monoid.plus(v1, v2))
   }
 
   override def isNonZero(v: PromiseLink[V]) = monoid.isNonZero(v.value)
