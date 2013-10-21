@@ -25,11 +25,15 @@ import com.twitter.util.Future
 trait MergeableStore[-K, V] extends Store[K, V] {
   /** The monoid equivalent to the merge operation of this store */
   def monoid: Monoid[V]
-  /** the key should hold: Monoid.plus(get(kv._1).get, Some(kv._2)) after this.
+  /** Returns the value JUST BEFORE the merge. If it is empty, it is like a zero.
+   * the key should hold:
+   * val (k,v) = kv
+   * result = get(k)
+   * key is set to: result.map(Semigroup.plus(_, Some(v)).getOrElse(v) after this.
    */
-  def merge(kv: (K, V)): Future[Unit] = multiMerge(Map(kv)).apply(kv._1)
+  def merge(kv: (K, V)): Future[Option[V]] = multiMerge(Map(kv)).apply(kv._1)
   /** merge a set of keys. */
-  def multiMerge[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Unit]] = kvs.map { kv => (kv._1, merge(kv)) }
+  def multiMerge[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Option[V]]] = kvs.map { kv => (kv._1, merge(kv)) }
 }
 
 /** Some factory methods and combinators on MergeableStore */
@@ -42,17 +46,23 @@ object MergeableStore {
     * store's multiGet and multiSet.
     */
   def multiMergeFromMultiSet[K, V](store: Store[K, V], kvs: Map[K, V])
-    (implicit collect: FutureCollector[(K, Option[V])], monoid: Monoid[V]): Map[K, Future[Unit]] = {
+    (implicit collect: FutureCollector[(K, (Option[V],Option[V]))], monoid: Monoid[V]): Map[K, Future[Option[V]]] = {
     val keySet = kvs.keySet
-    val collected: Future[Map[K, Future[Unit]]] =
+    val collected: Future[Map[K, Future[Option[V]]]] =
       collect {
         store.multiGet(keySet).view.map {
           case (k, futureOptV) =>
-            futureOptV.map { v =>
-              k -> Semigroup.plus(v, kvs.get(k)).flatMap { Monoid.nonZeroOption(_) }
+            futureOptV.map { init =>
+              val incV = kvs(k)
+              val resV = init.map(Semigroup.plus(_, incV)).getOrElse(incV)
+              k -> (init, Monoid.nonZeroOption(resV))
             }
         }.toSeq
-      }.map { pairs: Seq[(K, Option[V])] => store.multiPut(pairs.toMap) }
+      }.map { pairs: Seq[(K, (Option[V], Option[V]))] =>
+        val pairMap = pairs.toMap
+        store.multiPut(pairMap.mapValues(_._2))
+          .map { case (k, funit) => (k, funit.map { _ => pairMap(k)._1 }) }
+      }
     CollectionOps.zipWith(keySet) { k => collected.flatMap { _.apply(k) } }
   }
 
@@ -75,7 +85,7 @@ object MergeableStore {
   /** Use a StatefulSummer to buffer results before calling merge.
    * Useful when merging to a remote store, of if you have some very hot keys
    */
-  def withSummer[K, V](store: MergeableStore[K, V])(summerCons: Monoid[V] => StatefulSummer[Map[K, V]]): MergeableStore[K, V] =
+  def withSummer[K, V](store: MergeableStore[K, V])(summerCons: SummerConstructor[K]): MergeableStore[K, V] =
     new BufferingStore(store, summerCons)
 
   /** Convert the key and value type of this mergeable.

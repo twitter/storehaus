@@ -172,7 +172,11 @@ object StorehausBuild extends Build {
   ).dependsOn(storehausCore % "test->test;compile->compile")
 
   lazy val storehausRedis = module("redis").settings(
-    libraryDependencies += Finagle.module("redis"),
+    libraryDependencies ++= Seq (
+      "com.twitter" %% "bijection-core" % bijectionVersion,
+      "com.twitter" %% "bijection-netty" % bijectionVersion,
+      Finagle.module("redis")
+    ),
     // we don't want various tests clobbering each others keys
     parallelExecution in Test := false
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
