@@ -16,8 +16,17 @@ limitations under the License.
 package com.twitter.storehaus.algebra
 
 import com.twitter.algebird._
-import com.twitter.util.{Promise, Try}
+import com.twitter.util.{Future, Promise, Try, Throw, Return}
 
+class PromiseLinkSemigroup[V](sg: Semigroup[V]) extends Semigroup[PromiseLink[V]] {
+  def plus(older: PromiseLink[V], newer: PromiseLink[V]): PromiseLink[V] = {
+    val (PromiseLink(p1, v1), PromiseLink(p2, v2)) = (older, newer)
+    p1.respond { tryOptV =>
+      p2.update(tryOptV.map(optV => optV.map(sg.plus(_, v1))))
+    }
+    PromiseLink(p1, sg.plus(v1, v2))
+  }
+}
 /**
  * TODO: REMOVE WHEN NEXT VERSION OF ALGEBIRD IS PUBLISHED
  * https://github.com/twitter/storehaus/issues/157
@@ -26,17 +35,8 @@ import com.twitter.util.{Promise, Try}
  * for TunnelMonoid for general motivation. NOTE: the Promise will be fulfilled with
  * the value just before the PromiseLink is calculated.
  */
-class PromiseLinkMonoid[V](monoid: Monoid[V]) extends Monoid[PromiseLink[V]] { //TODo(jcoveney) rename PromiseLink
-	def zero = PromiseLink(new Promise, monoid.zero)
-
-  def plus(older: PromiseLink[V], newer: PromiseLink[V]): PromiseLink[V] = {
-    val (PromiseLink(p1, v1), PromiseLink(p2, v2)) = (older, newer)
-    p1.respond { tryOptV =>
-      p2.update(tryOptV.map(optV => optV.map(monoid.plus(_, v1))))
-    }
-    PromiseLink(p1, monoid.plus(v1, v2))
-  }
-
+class PromiseLinkMonoid[V](monoid: Monoid[V]) extends PromiseLinkSemigroup[V](monoid) with Monoid[PromiseLink[V]] {
+  def zero = PromiseLink(new Promise[Option[V]], monoid.zero)
   override def isNonZero(v: PromiseLink[V]) = monoid.isNonZero(v.value)
 }
 
@@ -45,15 +45,30 @@ class PromiseLinkMonoid[V](monoid: Monoid[V]) extends Monoid[PromiseLink[V]] { /
  * fulfilling the Promise with the value just before the value is added in.
  */
 case class PromiseLink[V](promise: Promise[Option[V]], value: V) {
-  def completeWithStartingValue(startingV: Try[Option[V]])(implicit monoid: Monoid[V]): Try[V] = {
-    promise.update(startingV)
-    startingV.map { opt => opt.map(monoid.plus(_, value)).getOrElse(value) }
+  def result(implicit sg: Semigroup[V]): Future[V] =
+    promise.map { opt => opt.map(sg.plus(_, value)).getOrElse(value) }
+
+  def completeIfEmpty(startingV: Try[Option[V]]): Boolean =
+    promise.updateIfEmpty(startingV)
+
+  /** Returns none if this was already set, else this plus the init
+   */
+  def apply(start: Option[V])(implicit semigroup: Semigroup[V]): Option[V] = {
+    if(completeIfEmpty(Return(start))) {
+      Some(start.map(semigroup.plus(_, value)).getOrElse(value))
+    }
+    else None
   }
+
+  def fail(t: Throwable): Boolean = promise.updateIfEmpty(Throw(t))
 }
 
 object PromiseLink {
+  implicit def semigroup[V](implicit innerSg: Semigroup[V]): PromiseLinkSemigroup[V] =
+    new PromiseLinkSemigroup[V](innerSg)
+
   implicit def monoid[V](implicit innerMonoid: Monoid[V]): PromiseLinkMonoid[V] =
     new PromiseLinkMonoid[V](innerMonoid)
 
-	def toPromiseLink[V](value:V) = PromiseLink(new Promise[Option[V]], value)
+  def apply[V](value:V): PromiseLink[V] = PromiseLink[V](new Promise[Option[V]], value)
 }

@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus.algebra
 
-import com.twitter.algebird.{SummingQueue, Monoid}
+import com.twitter.algebird.{SummingQueue, Semigroup}
 import com.twitter.storehaus.{ StoreProperties, JMapStore }
 import org.scalacheck.Properties
 
@@ -27,16 +27,16 @@ object BufferingStoreProperties extends Properties("BufferingStore") {
 
   property("BufferingStore [Map[Int,String]] obeys the store properties") = storeTest {
     newStore[String, Map[Int, String]].withSummer(new SummerConstructor[String] {
-      def apply[V](monoid: Monoid[V]) = {
-        implicit val m = monoid
+      def apply[V](sg: Semigroup[V]) = {
+        implicit val semi = sg
         SummingQueue[Map[String, V]](10)
       }
     })
   }
   property("BufferingStore [Map[Int,Int]] obeys the store properties") = storeTest {
     newStore[String, Map[Int, Int]].withSummer(new SummerConstructor[String] {
-      def apply[V](monoid: Monoid[V]) = {
-        implicit val m = monoid
+      def apply[V](sg: Semigroup[V]) = {
+        implicit val semi = sg
         SummingQueue[Map[String, V]](10)
       }
     })

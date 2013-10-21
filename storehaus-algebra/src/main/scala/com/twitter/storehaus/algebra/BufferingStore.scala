@@ -16,18 +16,16 @@
 
 package com.twitter.storehaus.algebra
 
-import com.twitter.algebird.{ Monoid, StatefulSummer }
+import com.twitter.algebird.{ Monoid, Semigroup, StatefulSummer }
 import com.twitter.util.{ Future, Promise }
 import com.twitter.storehaus.{ FutureOps, FutureCollector }
 import scala.collection.mutable.{ Map => MMap }
 import scala.collection.breakOut
 
-import PromiseLink.toPromiseLink
-
 /** For any given V, construct a StatefulSummer of Map[K, V]
  */
 trait SummerConstructor[K] {
-  def apply[V](mon: Monoid[V]): StatefulSummer[Map[K, V]]
+  def apply[V](mon: Semigroup[V]): StatefulSummer[Map[K, V]]
 }
 
 /** A Mergeable that sits on top of another mergeable and pre-aggregates before pushing into merge/multiMerge
@@ -39,7 +37,7 @@ trait SummerConstructor[K] {
 class BufferingStore[K, V](store: MergeableStore[K, V], summerCons: SummerConstructor[K])
   extends MergeableStore[K, V] {
   protected implicit val collector = FutureCollector.bestEffort[Any]
-  protected val summer: StatefulSummer[Map[K, PromiseLink[V]]] = summerCons(new PromiseLinkMonoid(monoid))
+  protected val summer: StatefulSummer[Map[K, PromiseLink[V]]] = summerCons(new PromiseLinkSemigroup(monoid))
 
   override def monoid: Monoid[V] = store.monoid
 
@@ -69,12 +67,12 @@ class BufferingStore[K, V](store: MergeableStore[K, V], summerCons: SummerConstr
       .multiMerge(toMerge.mapValues(_.value))
       .map { case (k, foptV) =>
         val prom = toMerge(k)
-        foptV.respond { prom.promise.update(_) }
+        foptV.respond { prom.completeIfEmpty(_) }
         k -> foptV
       }
 
   override def multiMerge[K1 <: K](kvs: Map[K1, V]) = {
-    val links: Map[K, PromiseLink[V]] = kvs.map { case (k1, v) => k1 -> toPromiseLink(v) }(breakOut) // no lazy
+    val links: Map[K, PromiseLink[V]] = kvs.map { case (k1, v) => k1 -> PromiseLink(v) }(breakOut) // no lazy
     summer.put(links).foreach(mergeFlush(_))
     kvs.map { case (k, _) => k -> links(k).promise }
   }
