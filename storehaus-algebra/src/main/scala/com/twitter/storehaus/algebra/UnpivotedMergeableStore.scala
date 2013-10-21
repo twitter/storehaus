@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus.algebra
 
-import com.twitter.algebird.Monoid
+import com.twitter.algebird.{Monoid, Semigroup}
 import com.twitter.storehaus.{ CollectionOps, UnpivotedStore }
 import com.twitter.util.Future
 
@@ -27,11 +27,11 @@ import com.twitter.util.Future
  * @author Sam Ritchie
  */
 
-class UnpivotedMergeableStore[-K, OuterK, InnerK, V: Monoid](store: MergeableStore[OuterK, Map[InnerK, V]])(split: K => (OuterK, InnerK))
+class UnpivotedMergeableStore[-K, OuterK, InnerK, V: Semigroup](store: MergeableStore[OuterK, Map[InnerK, V]])(split: K => (OuterK, InnerK))
   extends UnpivotedStore[K, OuterK, InnerK, V](store)(split)
   with MergeableStore[K, V] {
 
-  override val monoid: Monoid[V] = implicitly[Monoid[V]]
+  override def semigroup: Semigroup[V] = implicitly[Semigroup[V]]
 
   override def merge(pair: (K, V)): Future[Option[V]] = {
     val (k, v) = pair

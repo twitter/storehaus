@@ -23,8 +23,8 @@ import com.twitter.util.Future
 
 /** Main trait to represent stores that are used for aggregation */
 trait MergeableStore[-K, V] extends Store[K, V] {
-  /** The monoid equivalent to the merge operation of this store */
-  def monoid: Monoid[V]
+  /** The semigroup equivalent to the merge operation of this store */
+  def semigroup: Semigroup[V]
   /** Returns the value JUST BEFORE the merge. If it is empty, it is like a zero.
    * the key should hold:
    * val (k,v) = kv

@@ -17,7 +17,7 @@ package com.twitter.storehaus.dynamodb
 
 import java.util.{ Map => JMap }
 
-import com.twitter.algebird.Monoid
+import com.twitter.algebird.Semigroup
 import com.twitter.bijection.Conversion.asMethod
 import com.twitter.util.Future
 import com.twitter.storehaus.ConvertedStore
@@ -38,7 +38,7 @@ class DynamoLongStore(underlying: DynamoStore)
   extends ConvertedStore[String, String, AttributeValue, Long](underlying)(identity)
   with MergeableStore[String, Long] {
 
-  val monoid = implicitly[Monoid[Long]]
+  def semigroup = implicitly[Semigroup[Long]]
 
   override def merge(kv: (String, Long)) = {
     val attributeUpdateValue = new AttributeValueUpdate(

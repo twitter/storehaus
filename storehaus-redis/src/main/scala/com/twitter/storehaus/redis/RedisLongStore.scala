@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus.redis
 
-import com.twitter.algebird.Monoid
+import com.twitter.algebird.Semigroup
 import com.twitter.bijection.{ Injection, NumericInjections }
 import com.twitter.bijection.netty.Implicits._
 import com.twitter.finagle.redis.Client
@@ -50,7 +50,7 @@ import RedisLongStore._
 class RedisLongStore(underlying: RedisStore)
   extends ConvertedStore[ChannelBuffer, ChannelBuffer, ChannelBuffer, Long](underlying)(identity)
      with MergeableStore[ChannelBuffer, Long] {
-  val monoid = implicitly[Monoid[Long]]
+  val semigroup = implicitly[Semigroup[Long]]
   override def merge(kv: (ChannelBuffer, Long)): Future[Option[Long]] =
     underlying.client.incrBy(kv._1, kv._2).map(v => Some(v - kv._2)) // redis returns the result
 }

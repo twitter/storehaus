@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus.algebra
 
-import com.twitter.algebird.Monoid
+import com.twitter.algebird.Semigroup
 import com.twitter.bijection.{ Conversion, Injection, ImplicitBijection }
 import com.twitter.util.Future
 
@@ -25,9 +25,9 @@ import scala.collection.breakOut
 import Conversion.asMethod
 
 /**
-  * Caveat Emptor! The monoid on the resulting
-  * `ConvertedMergeableStore` will be the bijected monoid from
-  * Monoid[V1] => Monoid[V2]. This will not necessarily result in the
+  * Caveat Emptor! The semigroup on the resulting
+  * `ConvertedMergeableStore` will be the bijected semigroup from
+  * Semigroup[V1] => Semigroup[V2]. This will not necessarily result in the
   * behavior you'd expect.
   */
 class ConvertedMergeableStore[K1, -K2, V1, V2](store: MergeableStore[K1, V1])(kfn: K2 => K1)
@@ -36,7 +36,7 @@ class ConvertedMergeableStore[K1, -K2, V1, V2](store: MergeableStore[K1, V1])(kf
   with MergeableStore[K2, V2] {
   import com.twitter.algebird.bijection.AlgebirdBijections._
 
-  override def monoid: Monoid[V2] = store.monoid.as[Monoid[V2]]
+  override def semigroup: Semigroup[V2] = store.semigroup.as[Semigroup[V2]]
 
   override def merge(kv: (K2, V2)): Future[Option[V2]] = {
     val k1 = kfn(kv._1)

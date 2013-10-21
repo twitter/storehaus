@@ -16,18 +16,24 @@
 
 package com.twitter.storehaus.algebra
 
-import com.twitter.algebird.Monoid
+import com.twitter.algebird.{Monoid, Semigroup}
 import com.twitter.storehaus.{ FutureCollector, Store }
 import com.twitter.util.Future
 
+/** Uses the monoid and filters zeros on put
+ */
 class MergeableMonoidStore[-K, V: Monoid](store: Store[K, V], fc: FutureCollector[(K, Option[V])] = FutureCollector.default[(K, Option[V])])
   extends MergeableStore[K, V] {
-  override val monoid: Monoid[V] = implicitly[Monoid[V]]
+  override def semigroup: Semigroup[V] = implicitly[Monoid[V]]
 
   override def get(k: K) = store.get(k)
   override def multiGet[K1 <: K](ks: Set[K1]) = store.multiGet(ks)
-  override def put(kv: (K, Option[V])) = store.put(kv)
-  override def multiPut[K1 <: K](kvs: Map[K1, Option[V]]) = store.multiPut(kvs)
+  override def put(kv: (K, Option[V])) = {
+    val (k, optV) = kv
+    store.put((k, optV.filter(Monoid.isNonZero(_))))
+  }
+  override def multiPut[K1 <: K](kvs: Map[K1, Option[V]]) =
+    store.multiPut(kvs.mapValues(_.filter(v => Monoid.isNonZero(v))))
 
   /**
    * sets to monoid.plus(get(kv._1).get.getOrElse(monoid.zero), kv._2)
@@ -42,9 +48,7 @@ class MergeableMonoidStore[-K, V: Monoid](store: Store[K, V], fc: FutureCollecto
     } yield vOpt
 
   override def multiMerge[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Option[V]]] = {
-    // FutureCollector is invariant, but clearly it will accept K1 <: K
-    // and the contract is that it should not change K1 at all.
-    implicit val collector = fc.asInstanceOf[FutureCollector[(K1, Option[V])]]
+    implicit val collector = fc
     MergeableStore.multiMergeFromMultiSet(this, kvs)
   }
 }

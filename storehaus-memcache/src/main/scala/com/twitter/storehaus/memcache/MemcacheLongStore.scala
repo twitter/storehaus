@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus.memcache
 
-import com.twitter.algebird.Monoid
+import com.twitter.algebird.Semigroup
 import com.twitter.bijection.NumericInjections
 import com.twitter.util.{Duration, Future}
 import com.twitter.finagle.memcached.Client
@@ -48,7 +48,7 @@ class MemcacheLongStore(underlying: MemcacheStore)
   extends ConvertedStore[String, String, ChannelBuffer, Long](underlying)(identity)
   with MergeableStore[String, Long] {
 
-  val monoid = implicitly[Monoid[Long]]
+  def semigroup = implicitly[Semigroup[Long]]
 
   /** Merges a key by incrementing by a Long value. */
   override def merge(kv: (String, Long)) = {
