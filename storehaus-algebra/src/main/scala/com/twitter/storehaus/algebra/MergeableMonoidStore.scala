@@ -27,7 +27,7 @@ import com.twitter.util.Future
  * key is absent (which this store can never confirm).
  */
 class MergeableMonoidStore[-K, V: Monoid](store: Store[K, V], fc: FutureCollector[(K, Option[V])] = FutureCollector.default[(K, Option[V])])
-  extends MergeableStore[K, V] {
+  extends MergeableStoreViaGetPut[K, V](store, fc) {
   override def semigroup: Semigroup[V] = implicitly[Monoid[V]]
 
   private def default: Some[V] = Some(Monoid.zero)
@@ -50,21 +50,4 @@ class MergeableMonoidStore[-K, V: Monoid](store: Store[K, V], fc: FutureCollecto
   }
   override def multiPut[K1 <: K](kvs: Map[K1, Option[V]]) =
     store.multiPut(kvs.mapValues(_.filter(v => Monoid.isNonZero(v))))
-
-  /**
-   * sets to monoid.plus(get(kv._1).get.getOrElse(monoid.zero), kv._2)
-   * but maybe more efficient implementations
-   */
-  override def merge(kv: (K, V)): Future[Some[V]] =
-    for {
-      vOpt <- get(kv._1)
-      oldV = vOpt.getOrElse(Monoid.zero[V])
-      newV = Monoid.plus(oldV, kv._2)
-      finalUnit <- put((kv._1, Monoid.nonZeroOption(newV)))
-    } yield vOpt
-
-  override def multiMerge[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Option[V]]] = {
-    implicit val collector = fc
-    MergeableStore.multiMergeFromMultiSet(this, kvs)
-  }
 }
