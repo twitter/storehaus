@@ -25,15 +25,15 @@ object BufferingStoreProperties extends Properties("BufferingStore") {
   import MergeableStoreProperties._
   import MergeableStore.enrich
 
-  property("BufferingStore [Map[Int,String]] obeys the store properties") = storeTest {
+  property("BufferingStore [Map[Int,String]] obeys the store properties") = sparseStoreTest("") {
     newStore[String, Map[Int, String]].withSummer(new SummerConstructor[String] {
       def apply[V](sg: Semigroup[V]) = {
         implicit val semi = sg
         SummingQueue[Map[String, V]](10)
       }
-    })
+      }), { _.toMap.collect { case (k, s) if !s.isEmpty => (k, s); case (k, Some(s)) if !s.isEmpty => (k, Some(s)) }
   }
-  property("BufferingStore [Map[Int,Int]] obeys the store properties") = storeTest {
+  property("BufferingStore [Map[Int,Int]] obeys the store properties") = sparseStoreTest(0) {
     newStore[String, Map[Int, Int]].withSummer(new SummerConstructor[String] {
       def apply[V](sg: Semigroup[V]) = {
         implicit val semi = sg
