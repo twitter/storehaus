@@ -26,7 +26,9 @@ object BufferingStoreProperties extends Properties("BufferingStore") {
   import MergeableStore.enrich
 
   property("BufferingStore [Map[Int,String]] obeys the store properties") =
-    sparseStoreTest { m: Map[Int,String] => Monoid.isNonZero(m) } {
+    sparseStoreTest { opt: Option[Map[Int, String]] =>
+        opt.filter(Monoid.isNonZero(_)).orElse(Some(Monoid.zero[Map[Int,String]]))
+      } {
       newStore[String, Map[Int, String]].withSummer(new SummerConstructor[String] {
         def apply[V](sg: Semigroup[V]) = {
           implicit val semi = sg
@@ -35,7 +37,9 @@ object BufferingStoreProperties extends Properties("BufferingStore") {
       })
     }
   property("BufferingStore [Map[Int,Int]] obeys the store properties") =
-    sparseStoreTest { m: Map[Int,Int] => Monoid.isNonZero(m) } {
+    sparseStoreTest { opt: Option[Map[Int, Int]] =>
+        opt.filter(Monoid.isNonZero(_)).orElse(Some(Monoid.zero[Map[Int,Int]]))
+      } {
       newStore[String, Map[Int, Int]].withSummer(new SummerConstructor[String] {
         def apply[V](sg: Semigroup[V]) = {
           implicit val semi = sg

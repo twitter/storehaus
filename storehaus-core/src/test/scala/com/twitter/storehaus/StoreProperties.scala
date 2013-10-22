@@ -48,13 +48,13 @@ object StoreProperties extends Properties("Store") {
   def storeTest[K: Arbitrary, V: Arbitrary: Equiv](store: => Store[K, V]) =
     putStoreTest(store) && multiPutStoreTest(store)
 
-  def sparseStoreTest[K: Arbitrary, V: Arbitrary: Equiv](nonZeroPred: V => Boolean)(store: => Store[K, V]) =
+  def sparseStoreTest[K: Arbitrary, V: Arbitrary: Equiv](norm: Option[V] => Option[V])(store: => Store[K, V]) =
     baseTest(store) { (s, pairs) =>
       Await.result(pairs.foldLeft(Future.Unit) { (fOld, p) => fOld.flatMap { _ => s.put(p) } })
-      pairs.toMap.mapValues(v => v.filter(nonZeroPred(_)))
+      pairs.toMap.mapValues(norm)
     } && baseTest(store) { (s, pairs) =>
       Await.result(FutureOps.mapCollect(s.multiPut(pairs.toMap)))
-      pairs.toMap.mapValues(v => v.filter(nonZeroPred(_)))
+      pairs.toMap.mapValues(norm)
     }
 
   property("ConcurrentHashMapStore test") =
