@@ -24,11 +24,10 @@ import org.scalacheck.Prop._
 
 object StoreProperties extends Properties("Store") {
   def baseTest[K: Arbitrary, V: Arbitrary: Equiv](storeIn: => Store[K, V])
-    (put: (Store[K, V], List[(K, Option[V])]) => Unit) = {
+  (put: (Store[K, V], List[(K, Option[V])]) => Map[K, Option[V]]) = {
     forAll { (examples: List[(K, Option[V])]) =>
       lazy val store = storeIn
-      put(store, examples)
-      examples.toMap.forall { case (k, optV) =>
+      put(store, examples).forall { case (k, optV) =>
         Equiv[Option[V]].equiv(Await.result(store.get(k)), optV)
       }
     }
@@ -36,16 +35,27 @@ object StoreProperties extends Properties("Store") {
 
   def putStoreTest[K: Arbitrary, V: Arbitrary: Equiv](store: => Store[K, V]) =
     baseTest(store) { (s, pairs) =>
-      pairs.foreach { p => Await.result(s.put(p)) }
+      Await.result(pairs.foldLeft(Future.Unit) { (fOld, p) => fOld.flatMap { _ => s.put(p) } })
+      pairs.toMap
     }
 
   def multiPutStoreTest[K: Arbitrary, V: Arbitrary: Equiv](store: => Store[K, V]) =
     baseTest(store) { (s, pairs) =>
       Await.result(FutureOps.mapCollect(s.multiPut(pairs.toMap)))
+      pairs.toMap
     }
 
   def storeTest[K: Arbitrary, V: Arbitrary: Equiv](store: => Store[K, V]) =
     putStoreTest(store) && multiPutStoreTest(store)
+
+  def sparseStoreTest[K: Arbitrary, V: Arbitrary: Equiv](norm: Option[V] => Option[V])(store: => Store[K, V]) =
+    baseTest(store) { (s, pairs) =>
+      Await.result(pairs.foldLeft(Future.Unit) { (fOld, p) => fOld.flatMap { _ => s.put(p) } })
+      pairs.toMap.mapValues(norm)
+    } && baseTest(store) { (s, pairs) =>
+      Await.result(FutureOps.mapCollect(s.multiPut(pairs.toMap)))
+      pairs.toMap.mapValues(norm)
+    }
 
   property("ConcurrentHashMapStore test") =
     storeTest(new ConcurrentHashMapStore[String,Int]())

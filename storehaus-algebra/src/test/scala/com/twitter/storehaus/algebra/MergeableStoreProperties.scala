@@ -75,8 +75,11 @@ object MergeableStoreProperties extends Properties("MergeableStore") {
       ) && Equiv[Map[K, Option[V]]].equiv(expectedResult, finalMerged)
     }
 
-  def newStore[K, V: Monoid]: MergeableStore[K, V] =
+  def newStore[K, V: Semigroup]: MergeableStore[K, V] =
     MergeableStore.fromStore(new JMapStore[K, V])
+
+  def newSparseStore[K, V: Monoid]: MergeableStore[K, V] =
+    MergeableStore.fromStoreEmptyIsZero(new JMapStore[K, V])
 
   def newConvertedStore[K,V1,V2](implicit inj: Injection[V2,V1], monoid: Monoid[V2]): MergeableStore[K,V2] = {
     val store = new JMapStore[K, V1]
@@ -99,6 +102,9 @@ object MergeableStoreProperties extends Properties("MergeableStore") {
 
   property("MergeableStore from JMapStore obeys the mergeable store laws") =
     mergeableStoreTest(newStore[Int, Map[Int, Int]])
+
+  property("MergeableStore - sparse - from JMapStore obeys the mergeable store laws") =
+    mergeableStoreTest(newSparseStore[Int, Map[Int, Int]])
 
   property("MergeableStore from Converted JMapStore obeys the mergeable store laws") =
     mergeableStoreTest(newConvertedStore[Int, String, Int])

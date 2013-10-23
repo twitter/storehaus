@@ -37,9 +37,9 @@ trait SummerConstructor[K] {
 class BufferingStore[K, V](store: MergeableStore[K, V], summerCons: SummerConstructor[K])
   extends MergeableStore[K, V] {
   protected implicit val collector = FutureCollector.bestEffort[Any]
-  protected val summer: StatefulSummer[Map[K, PromiseLink[V]]] = summerCons(new PromiseLinkSemigroup(monoid))
+  protected val summer: StatefulSummer[Map[K, PromiseLink[V]]] = summerCons(new PromiseLinkSemigroup(semigroup))
 
-  override def monoid: Monoid[V] = store.monoid
+  override def semigroup = store.semigroup
 
   // Assumes m has k, which is true by construction below
   private def wait[K1<:K, W](k: K1, m: Future[Map[K1, Future[W]]]): Future[W] = m.flatMap { _.apply(k) }

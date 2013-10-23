@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus.redis
 
-import com.twitter.algebird.Monoid
+import com.twitter.algebird.Semigroup
 import com.twitter.util.Future
 import com.twitter.finagle.redis.Client
 import com.twitter.storehaus.Store
@@ -34,7 +34,7 @@ object RedisSortedSetStore {
  */
 class RedisSortedSetStore(client: Client)
   extends MergeableStore[ChannelBuffer, Seq[(ChannelBuffer, Double)]] {
-  val monoid = implicitly[Monoid[Seq[(ChannelBuffer, Double)]]]
+  def semigroup = implicitly[Semigroup[Seq[(ChannelBuffer, Double)]]]
 
   /** Returns the whole set as a tuple of seq of (member, score) */
   override def get(k: ChannelBuffer): Future[Option[Seq[(ChannelBuffer, Double)]]] =
@@ -90,7 +90,7 @@ class RedisSortedSetStore(client: Client)
 class RedisSortedSetMembershipView(client: Client, set: ChannelBuffer)
   extends MergeableStore[ChannelBuffer, Double] {
   private lazy val underlying = new RedisSortedSetMembershipStore(client)
-  val monoid = implicitly[Monoid[Double]]
+  def semigroup = implicitly[Semigroup[Double]]
 
   override def get(k: ChannelBuffer): Future[Option[Double]] =
     underlying.get((set, k))
@@ -114,7 +114,7 @@ class RedisSortedSetMembershipView(client: Client, set: ChannelBuffer)
  */
 class RedisSortedSetMembershipStore(client: Client)
   extends MergeableStore[(ChannelBuffer, ChannelBuffer), Double] {
-  val monoid = implicitly[Monoid[Double]]
+  def semigroup = implicitly[Semigroup[Double]]
 
   /** @return a member's score or None if the member is not in the set */
   override def get(k: (ChannelBuffer, ChannelBuffer)): Future[Option[Double]] =

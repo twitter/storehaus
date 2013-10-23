@@ -23,8 +23,8 @@ import com.twitter.util.Future
 
 /** Main trait to represent stores that are used for aggregation */
 trait MergeableStore[-K, V] extends Store[K, V] {
-  /** The monoid equivalent to the merge operation of this store */
-  def monoid: Monoid[V]
+  /** The semigroup equivalent to the merge operation of this store */
+  def semigroup: Semigroup[V]
   /** Returns the value JUST BEFORE the merge. If it is empty, it is like a zero.
    * the key should hold:
    * val (k,v) = kv
@@ -46,7 +46,7 @@ object MergeableStore {
     * store's multiGet and multiSet.
     */
   def multiMergeFromMultiSet[K, V](store: Store[K, V], kvs: Map[K, V])
-    (implicit collect: FutureCollector[(K, (Option[V],Option[V]))], monoid: Monoid[V]): Map[K, Future[Option[V]]] = {
+    (implicit collect: FutureCollector[(K, (Option[V], Option[V]))], sg: Semigroup[V]): Map[K, Future[Option[V]]] = {
     val keySet = kvs.keySet
     val collected: Future[Map[K, Future[Option[V]]]] =
       collect {
@@ -54,8 +54,8 @@ object MergeableStore {
           case (k, futureOptV) =>
             futureOptV.map { init =>
               val incV = kvs(k)
-              val resV = init.map(Semigroup.plus(_, incV)).getOrElse(incV)
-              k -> (init, Monoid.nonZeroOption(resV))
+              val resV = init.map(Semigroup.plus(_, incV)).orElse(Some(incV))
+              k -> (init, resV)
             }
         }.toSeq
       }.map { pairs: Seq[(K, (Option[V], Option[V]))] =>
@@ -67,19 +67,29 @@ object MergeableStore {
   }
 
   /** unpivot or uncurry this MergeableStore
-   * TODO: not clear is correct. It is injecting whatever monoid is present at call time
-   * not the actual monoid being used by the underlying store. I guess we need to unpivot
-   * the monoid as well (and might not even be well defined).
-   * If the monoid is the usual mapMonoid, everything is fine.
+   * TODO: not clear is correct. It is injecting whatever Semigroup is present at call time
+   * not the actual Semigroup being used by the underlying store. I guess we need to unpivot
+   * the Semigroup as well (and might not even be well defined).
+   * If the Semigroup is the usual mapMonoid, everything is fine.
    */
-  def unpivot[K, OuterK, InnerK, V: Monoid](store: MergeableStore[OuterK, Map[InnerK, V]])
+  def unpivot[K, OuterK, InnerK, V: Semigroup](store: MergeableStore[OuterK, Map[InnerK, V]])
     (split: K => (OuterK, InnerK)): MergeableStore[K, V] =
     new UnpivotedMergeableStore(store)(split)
 
   /** Create a mergeable by implementing merge with get followed by put.
    * Only safe if each key is owned by a single thread.
    */
-  def fromStore[K,V](store: Store[K,V])(implicit mon: Monoid[V], fc: FutureCollector[(K, Option[V])]): MergeableStore[K,V] =
+  def fromStore[K,V](store: Store[K,V])(implicit sg: Semigroup[V],
+      fc: FutureCollector[(K, Option[V])]): MergeableStore[K,V] =
+    new MergeableStoreViaGetPut[K, V](store, fc)
+
+  /** Create a mergeable by implementing merge with get followed by put.
+   * Only safe if each key is owned by a single thread.
+   * This deletes zeros on put, but returns zero on empty (never returns None).
+   * Useful for sparse storage of counts, etc...
+   */
+  def fromStoreEmptyIsZero[K,V](store: Store[K,V])(implicit mon: Monoid[V],
+      fc: FutureCollector[(K, Option[V])]): MergeableStore[K,V] =
     new MergeableMonoidStore[K, V](store, fc)
 
   /** Use a StatefulSummer to buffer results before calling merge.
