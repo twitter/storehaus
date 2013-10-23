@@ -20,6 +20,8 @@ import com.twitter.algebird.Monoid
 import com.twitter.bijection.{ Conversion, Injection, ImplicitBijection }
 import com.twitter.util.Future
 
+import scala.collection.breakOut
+
 import Conversion.asMethod
 
 /**
@@ -36,16 +38,16 @@ class ConvertedMergeableStore[K1, -K2, V1, V2](store: MergeableStore[K1, V1])(kf
 
   override def monoid: Monoid[V2] = store.monoid.as[Monoid[V2]]
 
-  override def merge(kv: (K2, V2)): Future[Unit] = {
+  override def merge(kv: (K2, V2)): Future[Option[V2]] = {
     val k1 = kfn(kv._1)
     val v1 = bij.bijection(kv._2)
-    store.merge((k1, v1))
+    store.merge((k1, v1)).map(_.as[Option[V2]])
   }
 
-  override def multiMerge[K3 <: K2](kvs: Map[K3, V2]): Map[K3, Future[Unit]] = {
+  override def multiMerge[K3 <: K2](kvs: Map[K3, V2]): Map[K3, Future[Option[V2]]] = {
     val mapK1V1 = kvs.map { case (k3, v2) => (kfn(k3), bij.bijection(v2)) }
-    val res: Map[K1, Future[Unit]] = store.multiMerge(mapK1V1)
-    kvs.keySet.map { k3 => (k3, res(kfn(k3))) }.toMap
+    val res: Map[K1, Future[Option[V1]]] = store.multiMerge(mapK1V1)
+    kvs.keySet.map { k3 => (k3, res(kfn(k3)).map(_.as[Option[V2]])) }(breakOut)
   }
 
   override def close { store.close }

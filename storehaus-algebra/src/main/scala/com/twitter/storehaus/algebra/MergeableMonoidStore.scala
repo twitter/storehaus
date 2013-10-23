@@ -33,15 +33,15 @@ class MergeableMonoidStore[-K, V: Monoid](store: Store[K, V], fc: FutureCollecto
    * sets to monoid.plus(get(kv._1).get.getOrElse(monoid.zero), kv._2)
    * but maybe more efficient implementations
    */
-  override def merge(kv: (K, V)): Future[Unit] =
+  override def merge(kv: (K, V)): Future[Option[V]] =
     for {
       vOpt <- get(kv._1)
       oldV = vOpt.getOrElse(Monoid.zero[V])
       newV = Monoid.plus(oldV, kv._2)
       finalUnit <- put((kv._1, Monoid.nonZeroOption(newV)))
-    } yield finalUnit
+    } yield vOpt
 
-  override def multiMerge[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Unit]] = {
+  override def multiMerge[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Option[V]]] = {
     // FutureCollector is invariant, but clearly it will accept K1 <: K
     // and the contract is that it should not change K1 at all.
     implicit val collector = fc.asInstanceOf[FutureCollector[(K1, Option[V])]]

@@ -23,6 +23,8 @@ import com.twitter.util.Future
 import com.twitter.storehaus.ConvertedStore
 import com.twitter.storehaus.algebra.MergeableStore
 
+import scala.util.Try
+
 import com.amazonaws.services.dynamodbv2.model._
 
 import AwsBijections._
@@ -50,6 +52,10 @@ class DynamoLongStore(underlying: DynamoStore)
       Map(underlying.valueColumn -> attributeUpdateValue).as[JMap[String, AttributeValueUpdate]]
     )
 
-    underlying.apiRequestFuturePool(underlying.client.updateItem(updateRequest))
+    underlying.apiRequestFuturePool {
+      val res = underlying.client.updateItem(updateRequest)
+      // Returns the result, we need the value before
+      Option(res.getAttributes.get(kv._1)).map { av => av.as[Try[Long]].get - kv._2 }
+    }
   }
 }
