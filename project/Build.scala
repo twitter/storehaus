@@ -18,7 +18,6 @@ package storehaus
 
 import sbt._
 import Keys._
-import sbtgitflow.ReleasePlugin._
 import spray.boilerplate.BoilerplatePlugin.Boilerplate
 import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
 import com.typesafe.tools.mima.plugin.MimaKeys.previousArtifact
@@ -32,7 +31,7 @@ object StorehausBuild extends Build {
     }
 
   val extraSettings =
-    Project.defaultSettings ++ releaseSettings ++ Boilerplate.settings ++ mimaDefaultSettings
+    Project.defaultSettings ++ Boilerplate.settings ++ mimaDefaultSettings
 
   def ciSettings: Seq[Project.Setting[_]] =
     if (sys.env.getOrElse("TRAVIS", "false").toBoolean) Seq(
