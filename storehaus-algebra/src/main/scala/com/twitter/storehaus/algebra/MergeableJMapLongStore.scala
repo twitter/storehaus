@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicLong
 import java.util.{ Map => JMap, HashMap => JHashMap }
 import java.util.concurrent.{ ConcurrentHashMap => JConcurrentHashMap }
 
-import com.twitter.algebird.Monoid
+import com.twitter.algebird.Semigroup
 import com.twitter.util.Future
 
 /**
@@ -37,18 +37,20 @@ import com.twitter.util.Future
  * you don't care about persistence beyond the running process.
  *
  */
-class MergeableJMapLongStore[K] extends MergeableStore[K, Long] {
-  val monoid = implicitly[Monoid[Long]]
+class MergeableJMapLongStore[K] extends MergeableJMapStore[K, Long]()(implicitly[Semigroup[Long]])
 
-  protected val dataContainer = new JConcurrentHashMap[K, Long]
+class MergeableJMapStore[K, V](implicit override val semigroup: Semigroup[V])
+  extends MergeableStore[K, V] {
 
-  override def get(k: K): Future[Option[Long]] = {
+  protected val dataContainer = new JConcurrentHashMap[K, V]
+
+  override def get(k: K): Future[Option[V]] = {
     Future.value {
       Option(dataContainer.get(k))
     }
   }
 
-  override def put(kv: (K, Option[Long])): Future[Unit] = {
+  override def put(kv: (K, Option[V])): Future[Unit] = {
     Future.value {
       kv match {
         case (key, Some(value)) => {
@@ -61,14 +63,15 @@ class MergeableJMapLongStore[K] extends MergeableStore[K, Long] {
     }
   }
 
-  override def merge(kv: (K, Long)): Future[Unit] = {
+  override def merge(kv: (K, V)): Future[Option[V]] = {
     Future.value {
       this.synchronized {
         Option(dataContainer.get(kv._1)) match {
-          case Some(value) => {
-            dataContainer.put(kv._1, monoid.plus(value, kv._2))
+          case start@Some(value) => {
+            dataContainer.put(kv._1, Semigroup.plus(value, kv._2))
+            start
           }
-          case None => this.put(kv._1, Some(kv._2))
+          case None => this.put(kv._1, Some(kv._2)); None
         }
       }
     }
