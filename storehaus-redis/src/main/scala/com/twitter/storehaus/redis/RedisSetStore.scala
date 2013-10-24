@@ -67,7 +67,7 @@ class RedisSetStore(val client: Client, ttl: Option[Duration])
   protected [redis] def delete(k: ChannelBuffer, v: List[ChannelBuffer]) =
     client.sRem(k, v).unit
 
-  override def close(t: Time) = client.quit
+  override def close(t: Time) = client.quit.foreach { _ => client.release }
 }
 
 /**
