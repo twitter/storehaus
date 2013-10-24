@@ -113,6 +113,7 @@ object StorehausBuild extends Build {
 
   val algebirdVersion = "0.3.0"
   val bijectionVersion = "0.5.4"
+  val utilVersion = "6.3.7"
 
   lazy val storehaus = Project(
     id = "storehaus",
@@ -146,7 +147,7 @@ object StorehausBuild extends Build {
 
   lazy val storehausCore = module("core").settings(
     libraryDependencies ++= Seq(
-      withCross("com.twitter" %% "util-core" % "6.3.7"),
+      withCross("com.twitter" %% "util-core" % utilVersion),
       "com.twitter" %% "bijection-core" % bijectionVersion,
       "com.twitter" %% "bijection-util" % bijectionVersion
     )
@@ -213,7 +214,8 @@ object StorehausBuild extends Build {
     settings = sharedSettings ++ Seq(
       name := "storehaus-testing",
       previousArtifact := youngestForwardCompatible("testing"),
-      libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.10.0" withSources()
+      libraryDependencies ++= Seq("org.scalacheck" %% "scalacheck" % "1.10.0" withSources(),
+        withCross("com.twitter" %% "util-core" % utilVersion))
     )
   )
 }
