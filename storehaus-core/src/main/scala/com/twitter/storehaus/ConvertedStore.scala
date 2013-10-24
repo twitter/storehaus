@@ -19,7 +19,7 @@ package com.twitter.storehaus
 import com.twitter.bijection.Injection
 import com.twitter.bijection.Conversion.asMethod
 import com.twitter.bijection.twitter_util.UtilBijections._
-import com.twitter.util.{ Future, Try }
+import com.twitter.util.{ Future, Try, Time }
 import scala.util.{ Success, Failure }
 
 /** Use an injection on V2,V1 to convert a store of values V2.
@@ -43,5 +43,5 @@ class ConvertedStore[K1, -K2, V1, V2](store: Store[K1, V1])(kfn: K2 => K1)(impli
     val res: Map[K1, Future[Unit]] = store.multiPut(mapK1V1)
     kvs.keySet.map { k3 => (k3, res(kfn(k3))) }.toMap
   }
-  override def close { store.close }
+  override def close(t: Time) = store.close(t)
 }

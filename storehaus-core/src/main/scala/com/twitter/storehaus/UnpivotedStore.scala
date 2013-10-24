@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus
 
-import com.twitter.util.Future
+import com.twitter.util.{Future, Time}
 
 /**
  * Store enrichment which presents a Store[K, V] over top of a packed
@@ -46,5 +46,5 @@ class UnpivotedStore[-K, OuterK, InnerK, V](store: Store[OuterK, Map[InnerK, V]]
   override def multiPut[K1 <: K](kvs: Map[K1, Option[V]]) =
     PivotOps.multiPut(store, kvs)(split)(FutureCollector.default)
 
-  override def close { store.close }
+  override def close(time: Time) = store.close(time)
 }

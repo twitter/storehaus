@@ -17,7 +17,7 @@
 package com.twitter.storehaus.redis
 
 import com.twitter.algebird.Monoid
-import com.twitter.util.{ Duration, Future }
+import com.twitter.util.{ Duration, Future, Time }
 import com.twitter.finagle.redis.Client
 import com.twitter.storehaus.{ Store, UnpivotedStore }
 import org.jboss.netty.buffer.{ ChannelBuffer, ChannelBuffers }
@@ -58,7 +58,7 @@ class RedisHashStore(val client: Client, ttl: Option[Duration])
       case (key, None) => client.del(Seq(key)).unit
     }
 
-  override def close { client.release }
+  override def close(t: Time) = client.quit.foreach { _ => client.release }
 }
 
 /*

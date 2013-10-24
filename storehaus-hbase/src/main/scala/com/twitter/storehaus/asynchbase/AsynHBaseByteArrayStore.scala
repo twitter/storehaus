@@ -17,7 +17,7 @@
 package com.twitter.storehaus.asynchbase
 
 import com.twitter.storehaus.Store
-import com.twitter.util.Future
+import com.twitter.util.{Future, Time}
 import org.hbase.async.HBaseClient
 
 /**
@@ -62,7 +62,7 @@ class AsyncHBaseByteArrayStore(protected val quorumNames: Seq[String],
   /** Close this store and release any resources.
     * It is undefined what happens on get/multiGet after close
     */
-  override def close {
+  override def close(t: Time) = futurePool {
     client.shutdown().join()
   }
 }

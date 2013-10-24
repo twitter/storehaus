@@ -18,7 +18,7 @@ package com.twitter.storehaus.algebra
 
 import com.twitter.algebird.Semigroup
 import com.twitter.bijection.{ Conversion, Injection, ImplicitBijection }
-import com.twitter.util.Future
+import com.twitter.util.{Future, Time}
 
 import scala.collection.breakOut
 
@@ -50,5 +50,5 @@ class ConvertedMergeableStore[K1, -K2, V1, V2](store: MergeableStore[K1, V1])(kf
     kvs.keySet.map { k3 => (k3, res(kfn(k3)).map(_.as[Option[V2]])) }(breakOut)
   }
 
-  override def close { store.close }
+  override def close(t: Time) = store.close(t)
 }
