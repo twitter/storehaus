@@ -41,6 +41,25 @@ object ReadableStoreAlgebra {
           fv.map { optV => optV.map { ts => Monoid.sum(ev(ts)) } }
         }
     }
+
+    /**
+     * Combine two stores for reading
+     */
+    type CombinedStoreV[V1, V2] = Either[(V1,V2), Either[V1, V2]]
+    def both[K, V1, V2](storeA: ReadableStore[K, V1], storeB: ReadableStore[K, V2]): ReadableStore[K, CombinedStoreV[V1, V2]] = {
+      new AbstractReadableStore[K, CombinedStoreV[V1, V2]] {
+        override def get(k: K) = {
+          val fetchA = storeA.get(k)
+          val fetchB = storeB.get(k)
+          Future.join(fetchA, fetchB).map{
+            case (Some(lVal), Some(rVal)) => Some(Left(lVal, rVal))
+            case (Some(lVal), None) => Some(Right(Left(lVal)))
+            case (None, Some(rVal)) =>  Some(Right(Right(rVal)))
+            case (None, None) => None
+          }
+        }
+      }
+    }
 }
 
 class AlgebraicReadableStore[K, V](store: ReadableStore[K, V]) {

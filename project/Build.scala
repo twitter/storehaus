@@ -18,7 +18,6 @@ package storehaus
 
 import sbt._
 import Keys._
-import sbtgitflow.ReleasePlugin._
 import spray.boilerplate.BoilerplatePlugin.Boilerplate
 import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
 import com.typesafe.tools.mima.plugin.MimaKeys.previousArtifact
@@ -32,7 +31,7 @@ object StorehausBuild extends Build {
     }
 
   val extraSettings =
-    Project.defaultSettings ++ releaseSettings ++ Boilerplate.settings ++ mimaDefaultSettings
+    Project.defaultSettings ++ Boilerplate.settings ++ mimaDefaultSettings
 
   def ciSettings: Seq[Project.Setting[_]] =
     if (sys.env.getOrElse("TRAVIS", "false").toBoolean) Seq(
@@ -113,6 +112,7 @@ object StorehausBuild extends Build {
 
   val algebirdVersion = "0.3.0"
   val bijectionVersion = "0.5.4"
+  val utilVersion = "6.3.7"
 
   lazy val storehaus = Project(
     id = "storehaus",
@@ -146,7 +146,7 @@ object StorehausBuild extends Build {
 
   lazy val storehausCore = module("core").settings(
     libraryDependencies ++= Seq(
-      withCross("com.twitter" %% "util-core" % "6.3.7"),
+      withCross("com.twitter" %% "util-core" % utilVersion),
       "com.twitter" %% "bijection-core" % bijectionVersion,
       "com.twitter" %% "bijection-util" % bijectionVersion
     )
@@ -172,7 +172,11 @@ object StorehausBuild extends Build {
   ).dependsOn(storehausCore % "test->test;compile->compile")
 
   lazy val storehausRedis = module("redis").settings(
-    libraryDependencies += Finagle.module("redis"),
+    libraryDependencies ++= Seq (
+      "com.twitter" %% "bijection-core" % bijectionVersion,
+      "com.twitter" %% "bijection-netty" % bijectionVersion,
+      Finagle.module("redis")
+    ),
     // we don't want various tests clobbering each others keys
     parallelExecution in Test := false
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
@@ -209,7 +213,8 @@ object StorehausBuild extends Build {
     settings = sharedSettings ++ Seq(
       name := "storehaus-testing",
       previousArtifact := youngestForwardCompatible("testing"),
-      libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.10.0" withSources()
+      libraryDependencies ++= Seq("org.scalacheck" %% "scalacheck" % "1.10.0" withSources(),
+        withCross("com.twitter" %% "util-core" % utilVersion))
     )
   )
 }

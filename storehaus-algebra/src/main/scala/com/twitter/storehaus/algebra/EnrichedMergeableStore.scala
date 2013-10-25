@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus.algebra
 
-import com.twitter.algebird.{ Monoid, StatefulSummer }
+import com.twitter.algebird.{ Semigroup, StatefulSummer }
 import com.twitter.bijection.ImplicitBijection
 
 /**
@@ -34,11 +34,11 @@ import com.twitter.bijection.ImplicitBijection
   */
 class EnrichedMergeableStore[K, V](store: MergeableStore[K, V]) {
   def unpivot[CombinedK, InnerK, InnerV](split: CombinedK => (K, InnerK))
-    (implicit ev: V <:< Map[InnerK, InnerV], monoid: Monoid[InnerV])
+    (implicit ev: V <:< Map[InnerK, InnerV], monoid: Semigroup[InnerV])
       : MergeableStore[CombinedK, InnerV] =
     MergeableStore.unpivot(store.asInstanceOf[MergeableStore[K, Map[InnerK, InnerV]]])(split)
 
-  def withSummer(summerCons: Monoid[V] => StatefulSummer[Map[K, V]]): MergeableStore[K, V] =
+  def withSummer(summerCons: SummerConstructor[K]): MergeableStore[K, V] =
     MergeableStore.withSummer(store)(summerCons)
 
   def composeKeyMapping[K1](fn: K1 => K): MergeableStore[K1, V] =

@@ -18,7 +18,7 @@ package com.twitter.storehaus.hbase
 
 import org.apache.hadoop.hbase.client.HTablePool
 import com.twitter.storehaus.Store
-import com.twitter.util.Future
+import com.twitter.util.{Future, Time}
 import org.apache.hadoop.conf.Configuration
 
 /**
@@ -74,7 +74,5 @@ class HBaseByteArrayStore(protected val quorumNames: Seq[String],
   /** Close this store and release any resources.
     * It is undefined what happens on get/multiGet after close
     */
-  override def close {
-    pool.close()
-  }
+  override def close(t: Time) = futurePool { pool.close() }
 }

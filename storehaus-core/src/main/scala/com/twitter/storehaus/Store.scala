@@ -18,8 +18,7 @@ package com.twitter.storehaus
 
 import com.twitter.bijection.Injection
 import com.twitter.storehaus.cache.MutableCache
-import com.twitter.util.{Duration, Future, Timer}
-import java.io.Closeable
+import com.twitter.util.{Closable, Duration, Future, Timer, Time}
 import java.util.{ Map => JMap }
 
 /** Factory methods and some combinators on Stores */

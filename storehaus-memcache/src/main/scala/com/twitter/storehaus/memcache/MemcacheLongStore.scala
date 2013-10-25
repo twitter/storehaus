@@ -16,21 +16,27 @@
 
 package com.twitter.storehaus.memcache
 
-import com.twitter.algebird.Monoid
+import com.twitter.algebird.Semigroup
 import com.twitter.bijection.NumericInjections
-import com.twitter.util.Duration
+import com.twitter.util.{Duration, Future}
 import com.twitter.finagle.memcached.Client
 import com.twitter.storehaus.ConvertedStore
 import com.twitter.storehaus.algebra.MergeableStore
 import org.jboss.netty.buffer.ChannelBuffer
 
+import com.twitter.bijection.Conversion.asMethod
+import com.twitter.bijection.Injection
+
+import com.twitter.bijection.netty.ChannelBufferBijection
+
 /**
  *  @author Doug Tangren
  */
-object MemcacheLongStore extends NumericInjections {
+object MemcacheLongStore {
+  private implicit val cb2ary = ChannelBufferBijection
   // Long => String => ChannelBuffer <= String <= Long
-  private [memcache] implicit val LongInjection =
-    long2String.andThen(MemcacheStringStore.StringInjection)
+  private [memcache] implicit val LongInjection: Injection[Long, ChannelBuffer] =
+    Injection.connect[Long, String, Array[Byte], ChannelBuffer]
 
   def apply(client: Client, ttl: Duration = MemcacheStore.DEFAULT_TTL, flag: Int = MemcacheStore.DEFAULT_FLAG) =
     new MemcacheLongStore(MemcacheStore(client, ttl, flag))
@@ -38,15 +44,23 @@ object MemcacheLongStore extends NumericInjections {
 import MemcacheLongStore._
 
 /** A MergeableStore for Long values backed by memcache */
-class MemcacheLongStore(underlying: MemcacheStore) 
+class MemcacheLongStore(underlying: MemcacheStore)
   extends ConvertedStore[String, String, ChannelBuffer, Long](underlying)(identity)
   with MergeableStore[String, Long] {
 
-  val monoid = implicitly[Monoid[Long]]
+  def semigroup = implicitly[Semigroup[Long]]
 
-  /** Merges a key by incrementing by a Long value. This operation
-   *  has no effect if there was no previous value for the provided key */
-  override def merge(kv: (String, Long)) =
-    underlying.client.incr(kv._1, kv._2).unit
+  /** Merges a key by incrementing by a Long value. */
+  override def merge(kv: (String, Long)) = {
+    val (k, v) = kv
+    underlying.client.incr(k, v).flatMap {
+      case Some(res) => Future.value(Some(res - v)) // value before
+      case None => // memcache does not create on increment
+        underlying
+          .client
+          .add(k, v.as[ChannelBuffer])
+          .flatMap { b => if(b) Future.value(None) else merge(kv) }
+    }
+  }
 }
 
