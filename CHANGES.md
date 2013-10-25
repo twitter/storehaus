@@ -1,5 +1,12 @@
 # Storehaus #
 
+### Version 0.7.0 ###
+* Read from two stores concurrently: https://github.com/twitter/storehaus/pull/158
+* Merge returns the value before: https://github.com/twitter/storehaus/pull/163
+* Mergeable uses Semigroup (swap store is possible): https://github.com/twitter/storehaus/pull/165
+* Better sorted set support in redis: https://github.com/twitter/storehaus/pull/152
+* Move from java Closeable to twitter.util.Closable (Future[Unit] return)
+
 ### Version.0.6.0 ###
 * Fix readme link to mysql store: https://github.com/twitter/storehaus/pull/143
 * Tunable Replicated Store: https://github.com/twitter/storehaus/pull/142
