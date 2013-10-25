@@ -17,7 +17,7 @@
 package com.twitter.storehaus.redis
 
 import com.twitter.algebird.Semigroup
-import com.twitter.util.Future
+import com.twitter.util.{Future, Time}
 import com.twitter.finagle.redis.Client
 import com.twitter.storehaus.Store
 import com.twitter.storehaus.algebra.MergeableStore
@@ -76,7 +76,7 @@ class RedisSortedSetStore(client: Client)
   def members(set: ChannelBuffer): MergeableStore[ChannelBuffer, Double] =
     new RedisSortedSetMembershipView(client, set)
 
-  override def close = client.release
+  override def close(t: Time) = client.quit.foreach { _ => client.release }
 }
 
 /** An unpivoted-like member-oriented view of a redis sorted set bound to a specific
@@ -102,7 +102,7 @@ class RedisSortedSetMembershipView(client: Client, set: ChannelBuffer)
   override def merge(kv: (ChannelBuffer, Double)): Future[Option[Double]] =
     underlying.merge((set, kv._1), kv._2)
 
-  override def close = underlying.close
+  override def close(t: Time) = client.quit.foreach { _ => client.release }
 }
 
 /** An unpivoted-like member-oriented view of redis sorted sets.
@@ -172,5 +172,5 @@ class RedisSortedSetMembershipStore(client: Client)
       _.map { res => res - kv._2 }
     }
 
-  override def close = client.release
+  override def close(t: Time) = client.quit.foreach { _ => client.release }
 }

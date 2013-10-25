@@ -18,7 +18,7 @@ package com.twitter.storehaus.algebra
 
 import com.twitter.algebird.{Monoid, Semigroup}
 import com.twitter.storehaus.{ CollectionOps, UnpivotedStore }
-import com.twitter.util.Future
+import com.twitter.util.{Future, Time}
 
 /**
  * MergeableStore enrichment which presents a MergeableStore[K, V]
@@ -50,5 +50,5 @@ class UnpivotedMergeableStore[-K, OuterK, InnerK, V: Semigroup](store: Mergeable
         k -> ret(outerK).map(_.flatMap { innerM => innerM.get(innerK) })
     }.toMap
   }
-  override def close { store.close }
+  override def close(t: Time) = store.close(t)
 }

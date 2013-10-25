@@ -16,12 +16,10 @@
 
 package com.twitter.storehaus.testing
 
-import java.io.Closeable
+import com.twitter.util.Closable
 
 /** Cleanup for Closeable types */
-trait CloseableCleanup[C <: Closeable] extends Cleanup {
+trait CloseableCleanup[C <: Closable] extends Cleanup {
   def closeable: C
-  def cleanup() {
-    closeable.close()
-  }
+  def cleanup() = closeable.close()
 }

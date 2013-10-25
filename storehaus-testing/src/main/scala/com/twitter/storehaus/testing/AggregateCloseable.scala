@@ -17,10 +17,10 @@
 package com.twitter.storehaus.testing
 
 import scala.collection.mutable.{ HashSet, SynchronizedSet }
-import java.io.Closeable
+import com.twitter.util.{Closable, Future, Time}
 
 /** Represents an Closeable `view` of an aggregation of Closeables */
-trait AggregateCloseable[C <: Closeable] extends Closeable {
+trait AggregateCloseable[C <: Closable] extends Closable {
   private val closables =
     new HashSet[C] with SynchronizedSet[C]
 
@@ -29,11 +29,11 @@ trait AggregateCloseable[C <: Closeable] extends Closeable {
     c
   }
 
-  final def close = closables.foreach(_.close)
+  final def close(t: Time) = Future.collect(closables.map(_.close).toSeq).unit
 }
 
 /** An AggregatedCloseable that cleans up after itself */
-trait SelfAggregatingCloseableCleanup[C <: Closeable]
+trait SelfAggregatingCloseableCleanup[C <: Closable]
   extends AggregateCloseable[C]
   with CloseableCleanup[AggregateCloseable[C]] {
   final def closeable = this

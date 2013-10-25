@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus
 
-import com.twitter.util.Future
+import com.twitter.util.{Future, Time}
 
 /** Convert the keys/values of a store.
  *
@@ -33,5 +33,5 @@ class ConvertedReadableStore[K1, -K2, V1, +V2](rs: ReadableStore[K1, V1])(kfn: K
     val k1ToV2 = rs.multiGet(s.map(kfn)).mapValues(FutureOps.flatMapValue(_)(vfn))
     s.map { k3 => (k3, k1ToV2(kfn(k3))) }.toMap
   }
-  override def close { rs.close }
+  override def close(time: Time) = rs.close(time)
 }
