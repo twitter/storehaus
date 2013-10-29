@@ -112,7 +112,7 @@ object StorehausBuild extends Build {
   def youngestForwardCompatible(subProj: String) =
     Some(subProj)
       .filterNot(unreleasedModules.contains(_))
-      .map { s => "com.twitter" % ("storehaus-" + s + "_2.9.3") % "0.5.1" }
+      .map { s => "com.twitter" % ("storehaus-" + s + "_2.9.3") % "0.7.0" }
 
   val algebirdVersion = "0.3.0"
   val bijectionVersion = "0.5.4"

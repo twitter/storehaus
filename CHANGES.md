@@ -1,5 +1,8 @@
 # Storehaus #
 
+### Version 0.7.1 ###
+* Upgrade to specs2, include sbt runner: https://github.com/twitter/storehaus/pull/170
+
 ### Version 0.7.0 ###
 * Read from two stores concurrently: https://github.com/twitter/storehaus/pull/158
 * Merge returns the value before: https://github.com/twitter/storehaus/pull/163
