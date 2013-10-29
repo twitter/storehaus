@@ -1,6 +1,9 @@
 # Storehaus #
 
 ### Version 0.7.1 ###
+* Remove sources req on specs2, breaks downstream deps
+
+### Version 0.7.1 ###
 * Upgrade to specs2, include sbt runner: https://github.com/twitter/storehaus/pull/170
 
 ### Version 0.7.0 ###

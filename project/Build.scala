@@ -31,8 +31,8 @@ object StorehausBuild extends Build {
     }
 
   def specs2Import(scalaVersion: String) = scalaVersion match {
-      case version if version startsWith "2.9" => "org.specs2" %% "specs2" % "1.12.4.1" % "test" withSources()
-      case version if version startsWith "2.10" => "org.specs2" %% "specs2" % "1.13" % "test" withSources()
+      case version if version startsWith "2.9" => "org.specs2" %% "specs2" % "1.12.4.1" % "test"
+      case version if version startsWith "2.10" => "org.specs2" %% "specs2" % "1.13" % "test"
   }
   val extraSettings =
     Project.defaultSettings ++ Boilerplate.settings ++ mimaDefaultSettings
