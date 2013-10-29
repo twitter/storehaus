@@ -6,7 +6,7 @@ import com.twitter.storehaus.algebra.MergeableStore
 import com.twitter.storehaus.testing.CloseableCleanup
 import com.twitter.util.{ Await, Future }
 import org.jboss.netty.buffer.ChannelBuffer
-import org.specs._
+import org.specs2.mutable._
 import scala.util.Try
 
 class RedisSortedSetSpec extends Specification
@@ -20,7 +20,7 @@ class RedisSortedSetSpec extends Specification
 
   val closeable: RedisSortedSetStore =
     RedisSortedSetStore(client)
-   
+
   val sets: MergeableStore[String, Seq[(String, Double)]] =
     closeable.convert(StringToChannelBuffer(_: String))
 
@@ -39,8 +39,8 @@ class RedisSortedSetSpec extends Specification
   }
 
   "RedisSortedSet" should {
-    shareVariables()
-    "support Store operations" in {    
+
+    "support Store operations" in {
       Await.result(for {
         put     <- sets.put(("commits", Some(commits)))
         commits <- sets.get("commits")
@@ -63,7 +63,7 @@ class RedisSortedSetSpec extends Specification
   }
 
   "RedisSortedSet#members" should {
-    shareVariables()
+
     val putting =
         commits.map { case (m,d) => (("commits", m), Some(d)) }
               .toMap

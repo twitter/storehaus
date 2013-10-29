@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus.cache
 
-import org.specs._
+import org.specs2.mutable._
 
 class MutableLRUCacheTest extends Specification {
   def freshCache = MutableLRUCache[String, Int](2)
