@@ -16,8 +16,8 @@
 
 package com.twitter.storehaus.redis
 
-import com.twitter.algebird.Monoid
-import com.twitter.util.Future
+import com.twitter.algebird.Semigroup
+import com.twitter.util.{Future, Time}
 import com.twitter.finagle.redis.Client
 import com.twitter.storehaus.Store
 import com.twitter.storehaus.algebra.MergeableStore
@@ -34,14 +34,15 @@ object RedisSortedSetStore {
  */
 class RedisSortedSetStore(client: Client)
   extends MergeableStore[ChannelBuffer, Seq[(ChannelBuffer, Double)]] {
-  val monoid = implicitly[Monoid[Seq[(ChannelBuffer, Double)]]]
+  def semigroup = implicitly[Semigroup[Seq[(ChannelBuffer, Double)]]]
 
-  /** Returns the whole set as a tuple of seq of (member, score) */
+  /** Returns the whole set as a tuple of seq of (member, score).
+   *  An empty set is represented as None. */
   override def get(k: ChannelBuffer): Future[Option[Seq[(ChannelBuffer, Double)]]] =
     client.zRange(k, 0, -1, true).map(
-      _.left.toOption.map( _.asTuples)
+      _.left.toOption.map( _.asTuples).filter(_.nonEmpty)
     )
-    
+
   /** Replaces or deletes the whole set. Setting the set effectivly results
    *  in a delete of the previous sets key and multiple calls to zAdd for each member. */
   override def put(kv: (ChannelBuffer, Option[Seq[(ChannelBuffer, Double)]])): Future[Unit] =
@@ -57,10 +58,15 @@ class RedisSortedSetStore(client: Client)
     }
 
   /** Performs a zIncrBy operation on a set for a seq of members */
-  override def merge(kv: (ChannelBuffer, Seq[(ChannelBuffer, Double)])): Future[Unit] =
+  override def merge(kv: (ChannelBuffer, Seq[(ChannelBuffer, Double)])): Future[Option[Seq[(ChannelBuffer, Double)]]] =
     Future.collect(kv._2.map {
-      case (member, by) => client.zIncrBy(kv._1, by, member)
-    }).unit
+      case (member, by) =>
+          client.zIncrBy(kv._1, by, member)
+            .map {
+              case Some(res) => member -> (res - by) //get the value before
+              case None => member -> 0.0
+            }
+    }).map(Some(_))
 
   /** @return a mergeable store backed by redis with this store's client */
   def members: MergeableStore[(ChannelBuffer, ChannelBuffer), Double] =
@@ -70,7 +76,7 @@ class RedisSortedSetStore(client: Client)
   def members(set: ChannelBuffer): MergeableStore[ChannelBuffer, Double] =
     new RedisSortedSetMembershipView(client, set)
 
-  override def close = client.release
+  override def close(t: Time) = client.quit.foreach { _ => client.release }
 }
 
 /** An unpivoted-like member-oriented view of a redis sorted set bound to a specific
@@ -85,7 +91,7 @@ class RedisSortedSetStore(client: Client)
 class RedisSortedSetMembershipView(client: Client, set: ChannelBuffer)
   extends MergeableStore[ChannelBuffer, Double] {
   private lazy val underlying = new RedisSortedSetMembershipStore(client)
-  val monoid = implicitly[Monoid[Double]]
+  def semigroup = implicitly[Semigroup[Double]]
 
   override def get(k: ChannelBuffer): Future[Option[Double]] =
     underlying.get((set, k))
@@ -93,10 +99,10 @@ class RedisSortedSetMembershipView(client: Client, set: ChannelBuffer)
   override def put(kv: (ChannelBuffer, Option[Double])): Future[Unit] =
     underlying.put(((set,kv._1), kv._2))
 
-  override def merge(kv: (ChannelBuffer, Double)): Future[Unit] =
+  override def merge(kv: (ChannelBuffer, Double)): Future[Option[Double]] =
     underlying.merge((set, kv._1), kv._2)
 
-  override def close = underlying.close
+  override def close(t: Time) = client.quit.foreach { _ => client.release }
 }
 
 /** An unpivoted-like member-oriented view of redis sorted sets.
@@ -109,12 +115,12 @@ class RedisSortedSetMembershipView(client: Client, set: ChannelBuffer)
  */
 class RedisSortedSetMembershipStore(client: Client)
   extends MergeableStore[(ChannelBuffer, ChannelBuffer), Double] {
-  val monoid = implicitly[Monoid[Double]]
+  def semigroup = implicitly[Semigroup[Double]]
 
   /** @return a member's score or None if the member is not in the set */
   override def get(k: (ChannelBuffer, ChannelBuffer)): Future[Option[Double]] =
-    client.zScore(k._1, k._1).map(_.map(_.toDouble))
-   
+    client.zScore(k._1, k._2).map(_.map(_.toDouble))
+
    /** Partitions a map of multiPut pivoted values into
     *  a two item tuple of deletes and sets, multimapped
     *  by a key computed from K1.
@@ -123,7 +129,7 @@ class RedisSortedSetMembershipStore(client: Client)
     *  easier for stores that can perform batch operations on collections
     *  of InnerK values keyed by OutterK where V indicates membership
     *  of InnerK within OutterK.
-    * 
+    *
     *  ( general enough to go into PivotOpts )
     */
    def multiPutPartitioned[OutterK, InnerK, K1 <: (OutterK, InnerK), V, IndexK](kv: Map[K1, Option[V]])(by: K1 => IndexK):
@@ -161,8 +167,10 @@ class RedisSortedSetMembershipStore(client: Client)
   }
 
   /** Performs a zIncrBy operation on a set for a given member */
-  override def merge(kv: ((ChannelBuffer, ChannelBuffer), Double)): Future[Unit] =
-    client.zIncrBy(kv._1._1, kv._2, kv._1._2).unit
+  override def merge(kv: ((ChannelBuffer, ChannelBuffer), Double)): Future[Option[Double]] =
+    client.zIncrBy(kv._1._1, kv._2, kv._1._2).map {
+      _.map { res => res - kv._2 }
+    }
 
-  override def close = client.release
+  override def close(t: Time) = client.quit.foreach { _ => client.release }
 }

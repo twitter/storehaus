@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus
 
-import com.twitter.util.Future
+import com.twitter.util.{Future, Time}
 
 /** Factory methods to create ShardedReadableStore instances
  *  @author Oscar Boykin
@@ -25,7 +25,7 @@ object ShardedReadableStore {
   def fromMap[K1,K2,V](m: Map[K1, ReadableStore[K2, V]]): ReadableStore[(K1,K2), V] = {
     val routes = new MapStore(m)
     new ShardedReadableStore[K1, K2, V, ReadableStore[K2, V]](routes) {
-      override def close { m.values.foreach { _.close } }
+      override def close(time: Time) = Future.collect(m.values.map(_.close(time)).toSeq).unit
     }
   }
 }
@@ -67,7 +67,7 @@ object ShardedStore {
   def fromMap[K1,K2,V](m: Map[K1, Store[K2, V]]): Store[(K1,K2), V] = {
     val routes = new MapStore(m)
     new ShardedStore[K1, K2, V, Store[K2, V]](routes) {
-      override def close { m.values.foreach { _.close } }
+      override def close(t: Time) = Future.collect(m.values.map(_.close(t)).toSeq).unit
     }
   }
 }

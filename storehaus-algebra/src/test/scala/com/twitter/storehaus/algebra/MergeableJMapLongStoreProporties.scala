@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-package com.twitter.storehaus.testing
+package com.twitter.storehaus.algebra
 
-import com.twitter.util.Closable
+import org.scalacheck.Properties
 
-/** Cleanup for Closeable types */
-trait CloseableCleanup[C <: Closable] extends Cleanup {
-  def closeable: C
-  def cleanup() = closeable.close()
+object MergeableJMapLongStoreProporties extends Properties("MergeableJMapLongStore") {
+  import MergeableStoreProperties.mergeableStoreTest
+
+  property("MergeableJMapLongStore obeys the mergeable store proporites") =
+    mergeableStoreTest(new MergeableJMapLongStore[String])
+
 }

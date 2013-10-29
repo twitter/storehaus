@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus.cache
 
-import org.specs._
+import org.specs2.mutable._
 
 class TTLCacheTest extends Specification {
   val cache = Cache.ttl[String, Int](200)

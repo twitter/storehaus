@@ -23,7 +23,7 @@ import com.twitter.conversions.time._
 import com.twitter.finagle.builder.ClientBuilder
 import com.twitter.finagle.memcached.KetamaClientBuilder
 import com.twitter.finagle.memcached.protocol.text.Memcached
-import com.twitter.util.{ Duration, Future }
+import com.twitter.util.{ Duration, Future, Time }
 import com.twitter.finagle.memcached.{ GetResult, Client }
 import com.twitter.storehaus.{ FutureOps, Store, WithPutTtl }
 import com.twitter.storehaus.algebra.MergeableStore
@@ -128,5 +128,5 @@ class MemcacheStore(val client: Client, ttl: Duration, flag: Int)
       case (key, None) => client.delete(key).unit
     }
 
-  override def close { client.release }
+  override def close(t: Time) = Future(client.release)
 }

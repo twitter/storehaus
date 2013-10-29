@@ -14,12 +14,16 @@
  * limitations under the License.
  */
 
-package com.twitter.storehaus.testing
+package com.twitter.storehaus
 
-import com.twitter.util.Closable
+import org.scalacheck.Properties
+import org.scalacheck.Prop._
 
-/** Cleanup for Closeable types */
-trait CloseableCleanup[C <: Closable] extends Cleanup {
-  def closeable: C
-  def cleanup() = closeable.close()
+object BatchedReadableStoreProperties extends Properties("BatchedReadableStoreProperties") {
+  import ReadableStoreProperties.readableStoreLaws
+
+  property("BatchedReadableStore obeys the ReadableStore laws") =
+    readableStoreLaws[String, Int] { m =>
+      new BatchedReadableStore(ReadableStore.fromMap(m), 3, 3)
+    }
 }

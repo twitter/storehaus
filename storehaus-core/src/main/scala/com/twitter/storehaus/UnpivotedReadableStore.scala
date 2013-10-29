@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus
 
-import com.twitter.util.Future
+import com.twitter.util.{Future, Time}
 
 /**
  * ReadableStore enrichment which presents a ReadableStore[K, V] over
@@ -49,5 +49,5 @@ class UnpivotedReadableStore[-K, OuterK, InnerK, +V](store: ReadableStore[OuterK
       }
     }.toMap
   }
-  override def close { store.close }
+  override def close(time: Time) = store.close(time)
 }

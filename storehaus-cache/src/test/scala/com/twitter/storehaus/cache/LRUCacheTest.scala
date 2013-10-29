@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus.cache
 
-import org.specs._
+import org.specs2.mutable._
 
 class LRUCacheTest extends Specification {
   def checkCache[K, V](pairs: Seq[(K, V)], m: Map[K, V])(implicit cache: Cache[K, V]) =
