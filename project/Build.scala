@@ -30,6 +30,10 @@ object StorehausBuild extends Build {
       case x => x
     }
 
+  def specs2Import(scalaVersion: String) = scalaVersion match {
+      case version if version startsWith "2.9" => "org.specs2" %% "specs2" % "1.12.4.1" % "test" withSources()
+      case version if version startsWith "2.10" => "org.specs2" %% "specs2" % "1.13" % "test" withSources()
+  }
   val extraSettings =
     Project.defaultSettings ++ Boilerplate.settings ++ mimaDefaultSettings
 
@@ -54,7 +58,7 @@ object StorehausBuild extends Build {
     crossScalaVersions := Seq("2.9.3", "2.10.0"),
     javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
     javacOptions in doc := Seq("-source", "1.6"),
-    libraryDependencies += "org.scala-tools.testing" %% "specs" % "1.6.9" % "test" withSources(),
+    libraryDependencies <+= scalaVersion(specs2Import(_)),
     resolvers ++= Seq(
       Opts.resolver.sonatypeSnapshots,
       Opts.resolver.sonatypeReleases,
