@@ -38,14 +38,16 @@ class RedisSortedSetSpec extends Specification
       if (xs.isEmpty) None else Some(xs.init, xs.last)
   }
 
-  "RedisSortedSet" should {
+  sequential // Required as tests mutate the store in order
 
+  "RedisSortedSet" should {
     "support Store operations" in {
       Await.result(for {
         put     <- sets.put(("commits", Some(commits)))
         commits <- sets.get("commits")
       } yield commits) must beSome(commits.sortWith(_._2 < _._2))
     }
+
     "support merge operations" in {
       val merged = Await.result(for {
         _       <- sets.merge(("commits", Seq(("sritchie", 1.0))))
