@@ -16,8 +16,9 @@
 
 package com.twitter.storehaus.redis
 
-import com.twitter.algebird.Monoid
+import com.twitter.algebird.Semigroup
 import com.twitter.bijection.{ Injection, NumericInjections }
+import com.twitter.bijection.netty.Implicits._
 import com.twitter.finagle.redis.Client
 import com.twitter.storehaus.ConvertedStore
 import com.twitter.storehaus.algebra.MergeableStore
@@ -25,17 +26,17 @@ import com.twitter.util.{ Duration, Future }
 import org.jboss.netty.buffer.ChannelBuffer
 
 /**
- * 
+ *
  * @author Doug Tangren
  */
 
-object RedisLongStore extends NumericInjections {
+object RedisLongStore {
    /** redis stores numerics as strings
     *  so we have to encode/decode them as such
     *  http://redis.io/topics/data-types-intro
     */
   private [redis] implicit val LongInjection =
-    long2String.andThen(RedisStringStore.StringInjection)
+    Injection.connect[Long, String, Array[Byte], ChannelBuffer]
 
   def apply(client: Client, ttl: Option[Duration] = RedisStore.Default.TTL) =
     new RedisLongStore(RedisStore(client, ttl))
@@ -49,7 +50,7 @@ import RedisLongStore._
 class RedisLongStore(underlying: RedisStore)
   extends ConvertedStore[ChannelBuffer, ChannelBuffer, ChannelBuffer, Long](underlying)(identity)
      with MergeableStore[ChannelBuffer, Long] {
-  val monoid = implicitly[Monoid[Long]]
-  override def merge(kv: (ChannelBuffer, Long)): Future[Unit] =
-    underlying.client.incrBy(kv._1, kv._2).unit
+  val semigroup = implicitly[Semigroup[Long]]
+  override def merge(kv: (ChannelBuffer, Long)): Future[Option[Long]] =
+    underlying.client.incrBy(kv._1, kv._2).map(v => Some(v - kv._2)) // redis returns the result
 }

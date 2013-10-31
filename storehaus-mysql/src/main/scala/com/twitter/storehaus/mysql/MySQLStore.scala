@@ -28,7 +28,7 @@ import com.twitter.util.{ Await, Future, Time }
 /** Factory for [[com.twitter.storehaus.mysql.MySqlStore]] instances. */
 object MySqlStore {
 
-  def apply(client: Client, table: String, kCol: String, vCol: String) = 
+  def apply(client: Client, table: String, kCol: String, vCol: String) =
     new MySqlStore(client, table, kCol, vCol)
 }
 
@@ -56,7 +56,7 @@ object MySqlStore {
   *     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;"""
   * // or, use an existing pre-populated table.
   * client.query(schema).get
-  * val store = MySqlStore(client, "storehaus-mysql-test", "key", "value") 
+  * val store = MySqlStore(client, "storehaus-mysql-test", "key", "value")
   * }}}
   */
 class MySqlStore(client: Client, table: String, kCol: String, vCol: String)
@@ -114,14 +114,14 @@ class MySqlStore(client: Client, table: String, kCol: String, vCol: String)
       case (key, None) => doDelete(key).unit
     }
   }
-  
-  override def close {
+
+  override def close(t: Time) = {
     // close prepared statements before closing the connection
     client.closeStatement(selectStmt)
     client.closeStatement(insertStmt)
     client.closeStatement(updateStmt)
     client.closeStatement(deleteStmt)
-    client.close(Time.Bottom)
+    client.close(t)
   }
 
   protected def doSet(k: MySqlValue, v: MySqlValue): Future[Result] = {
@@ -142,7 +142,7 @@ class MySqlStore(client: Client, table: String, kCol: String, vCol: String)
   }
 
   protected def doDelete(k: MySqlValue): Future[Result] = {
-    deleteStmt.parameters = Array(MySqlStringInjection(k).getBytes) 
+    deleteStmt.parameters = Array(MySqlStringInjection(k).getBytes)
     client.execute(deleteStmt)
   }
 

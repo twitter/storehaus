@@ -16,26 +16,35 @@
 
 package com.twitter.storehaus.algebra
 
-import com.twitter.algebird.SummingQueue
+import com.twitter.algebird.{SummingQueue, Semigroup, Monoid}
 import com.twitter.storehaus.{ StoreProperties, JMapStore }
 import org.scalacheck.Properties
 
 object BufferingStoreProperties extends Properties("BufferingStore") {
-  import StoreProperties.storeTest
+  import StoreProperties.sparseStoreTest
   import MergeableStoreProperties._
   import MergeableStore.enrich
 
-  property("BufferingStore obeys the store properties") = storeTest {
-    newStore[String, Map[Int, String]].withSummer { monoid =>
-      implicit val m = monoid
-      SummingQueue[Map[String, Map[Int, String]]](10)
+  property("BufferingStore [Map[Int,String]] obeys the store properties") =
+    sparseStoreTest { opt: Option[Map[Int, String]] =>
+        opt.filter(Monoid.isNonZero(_)).orElse(Some(Monoid.zero[Map[Int,String]]))
+      } {
+      newSparseStore[String, Map[Int, String]].withSummer(new SummerConstructor[String] {
+        def apply[V](sg: Semigroup[V]) = {
+          implicit val semi = sg
+          SummingQueue[Map[String, V]](10)
+        }
+      })
     }
-  }
-
-  property("BufferingStore obeys the store laws") = mergeableStoreTest {
-    newStore[String, Map[String, Int]].withSummer { monoid =>
-      implicit val m = monoid
-      SummingQueue[Map[String, Map[String, Int]]](10)
+  property("BufferingStore [Map[Int,Int]] obeys the store properties") =
+    sparseStoreTest { opt: Option[Map[Int, Int]] =>
+        opt.filter(Monoid.isNonZero(_)).orElse(Some(Monoid.zero[Map[Int,Int]]))
+      } {
+      newSparseStore[String, Map[Int, Int]].withSummer(new SummerConstructor[String] {
+        def apply[V](sg: Semigroup[V]) = {
+          implicit val semi = sg
+          SummingQueue[Map[String, V]](10)
+        }
+      })
     }
-  }
 }

@@ -19,29 +19,25 @@ package com.twitter.storehaus
 import com.twitter.util.Future
 
 /** A type to represent how Seq of futures are collected into a future of Seq[T] */
-trait FutureCollector[T] extends (Seq[Future[T]] => Future[Seq[T]])
+trait FutureCollector[-T] extends java.io.Serializable {
+  def apply[T1<:T](in: Seq[Future[T1]]): Future[Seq[T1]]
+}
 
 /** Some factory methods and instances of FutureCollector that are used in storehaus */
 object FutureCollector {
-  /** make a new FutureCollector from a Function1 */
-  def fromFn[T](fn: Seq[Future[T]] => Future[Seq[T]]): FutureCollector[T] =
-    new FutureCollector[T] {
-      override def apply(seq: Seq[Future[T]]) = fn(seq)
-    }
-
   /**
    * If any future fails, the remaining future fails.
    */
   implicit def default[T] = new FutureCollector[T] {
-    override def apply(futureSeq: Seq[Future[T]]) = Future.collect(futureSeq)
+    override def apply[T1<:T](futureSeq: Seq[Future[T1]]) = Future.collect(futureSeq)
   }
 
   /** All failing futures are filtered during collection.  */
   def bestEffort[T] = new FutureCollector[T] {
-    override def apply(futureSeq: Seq[Future[T]]) =
+    override def apply[T1<:T](futureSeq: Seq[Future[T1]]) =
       Future.collect {
-        futureSeq.map { f: Future[T] =>
-          f.map { Some(_) }.handle { case _ => None }
+        futureSeq.map { f: Future[T1] =>
+          f.map { Some(_) }.handle { case x: Exception => None } // don't eat Error
         }
       }.map { _.flatten }
   }
