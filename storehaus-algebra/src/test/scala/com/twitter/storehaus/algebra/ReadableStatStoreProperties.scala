@@ -61,8 +61,8 @@ object ReadableStatStoreProperties extends Properties("ReadableStatStore") {
         val queryResults = buildStoreRunQueries(mA, others, reporter)
         val wrappedResults = queryResults.map(_._2)
         val referenceResults = queryResults.map(_._2)
-        wrappedResults.collect{case Some(b) => b}.size == presentCount
-        wrappedResults.collect{case None => 1}.size == absentCount
+        wrappedResults.collect{case Some(b) => b}.size == presentCount &&
+          wrappedResults.collect{case None => 1}.size == absentCount
   }
 
   property("traceGet can piggyback without breaking the results, hit counter is as expected") = forAll { (mA: Map[Int, String], others: Set[Int]) =>
@@ -71,8 +71,8 @@ object ReadableStatStoreProperties extends Properties("ReadableStatStore") {
           override def traceGet(request: Future[Option[String]]): Future[Option[String]] = request.onSuccess{ _ => hitCounter += 1}
         }
         val queryResults = buildStoreRunQueries(mA, others, reporter)
-        queryResults.forall{case (a, b) => a == b}
-        queryResults.size == hitCounter
+        queryResults.forall{case (a, b) => a == b} &&
+          queryResults.size == hitCounter
   }
 
 
@@ -92,8 +92,8 @@ object ReadableStatStoreProperties extends Properties("ReadableStatStore") {
 
         }
         val (_, storeResults) = buildStoreRunMultiGetQueries(mA, others, reporter)
-        storeResults.values.collect{case Some(b) => b}.size == presentCount
-        storeResults.values.collect{case None => 1}.size == absentCount
+        storeResults.values.collect{case Some(b) => b}.size == presentCount &&
+          storeResults.values.collect{case None => 1}.size == absentCount
   }
 
   property("traceMultiGet can piggyback without breaking the results, hit counter is as expected") = forAll { (mA: Map[Int, String], others: Set[Int]) =>
@@ -106,8 +106,8 @@ object ReadableStatStoreProperties extends Properties("ReadableStatStore") {
       }
       val (mapRes, storeResults) = buildStoreRunMultiGetQueries(mA, others, reporter)
       mapRes.size == storeResults.size &&
-        mapRes.keySet.forall(k => mapRes.get(k) == storeResults.get(k))
-      hitCounter == 1
+        mapRes.keySet.forall(k => mapRes.get(k) == storeResults.get(k)) &&
+        hitCounter == 1
   }
 
 }

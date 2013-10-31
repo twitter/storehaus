@@ -20,16 +20,11 @@ import com.twitter.algebird.Monoid
 import com.twitter.util.Future
 import com.twitter.storehaus.{ AbstractReadableStore, ReadableStore }
 
-trait StatReporter[K, V] {
-  def traceGet(request: Future[Option[V]]): Future[Option[V]] = request
-  def traceMultiGet[K1 <: K](request: Map[K1, Future[Option[V]]]): Map[K1, Future[Option[V]]] = request
-  def getPresent {}
-  def getAbsent {}
-  def multiGetPresent {}
-  def multiGetAbsent {}
+object ReadableStatStore {
+  def apply[K, V](store: ReadableStore[K, V], reporter: StatReporter[K, V]) = new ReadableStatStore(store, reporter)
 }
 
-case class ReadableStatStore[K, V](store: ReadableStore[K, V], reporter: StatReporter[K, V]) extends ReadableStore[K, V] {
+class ReadableStatStore[K, V](store: ReadableStore[K, V], reporter: StatReporter[K, V]) extends ReadableStore[K, V] {
 
   override def get(k: K): Future[Option[V]] =
     reporter.traceGet(store.get(k))
