@@ -65,7 +65,6 @@ object MergableStatStoreProperties extends Properties("ReadableStatStore") {
           inserts.map(_._2).collect{case None => 1}.size == multiPutNoneCount
   }
 
-
   property("merge Some/None count matches") = forAll { (base: Map[Int, Int], merge: Map[Int, Int]) =>
         var mergeWithSomeCount = 0
         var mergeWithNoneCount = 0
@@ -105,97 +104,4 @@ object MergableStatStoreProperties extends Properties("ReadableStatStore") {
         existsBeforeList.collect{case Some(_) => 1}.size == mergeWithSomeCount &&
           existsBeforeList.collect{case None => 1}.size == mergeWithNoneCount
   }
-
-
 }
-
-
-
-//     /**
-//     * get returns none when not in either store
-//     */
-
-//   def buildStoreRunQueries[K, V](mA: Map[K, V], others: Set[K], reporter: StatReporter[K, V]) = {
-//     val baseStore = ReadableStore.fromMap(mA)
-//     val wrappedStore = ReadableStatStore(baseStore, reporter)
-//     val expanded: Set[K] = (mA.keySet ++ others)
-//     // We use call to list, or it keeps the results of the map as a set and we loose data
-//     expanded.toList.map{k: K => (mA.get(k), Await.result(wrappedStore.get(k)))}
-//   }
-
-//   def buildStoreRunMultiGetQueries[K, V](mA: Map[K, V], others: Set[K], reporter: StatReporter[K, V]) = {
-//     val baseStore = ReadableStore.fromMap(mA)
-//     val wrappedStore = ReadableStatStore(baseStore, reporter)
-//     val expanded: Set[K] = (mA.keySet ++ others)
-//     // We use call to list, or it keeps the results of the map as a set and we loose data
-//     (expanded.map{k => (k, mA.get(k))}.toMap,
-//       wrappedStore.multiGet(expanded).map{case (k, futureV) => (k, Await.result(futureV))})
-//   }
-
-//   property("Stats store matches raw get for all queries") = forAll { (mA: Map[Int, String], others: Set[Int]) =>
-//         val reporter = new StatReporter[Int, String] {}
-//         val queryResults = buildStoreRunQueries(mA, others, reporter)
-//         queryResults.forall{case (a, b) => a == b}
-//   }
-
-//   property("Present/Absent count matches") = forAll { (mA: Map[Int, String], others: Set[Int]) =>
-//         var presentCount = 0
-//         var absentCount = 0
-//         val reporter = new StatReporter[Int, String] {
-//           override def getPresent:Unit = presentCount += 1
-//           override def getAbsent:Unit = absentCount += 1
-
-//         }
-//         val queryResults = buildStoreRunQueries(mA, others, reporter)
-//         val wrappedResults = queryResults.map(_._2)
-//         val referenceResults = queryResults.map(_._2)
-//         wrappedResults.collect{case Some(b) => b}.size == presentCount
-//         wrappedResults.collect{case None => 1}.size == absentCount
-//   }
-
-//   property("traceGet can piggyback without breaking the results, hit counter is as expected") = forAll { (mA: Map[Int, String], others: Set[Int]) =>
-//         var hitCounter = 0
-//         val reporter = new StatReporter[Int, String] {
-//           override def traceGet(request: Future[Option[String]]): Future[Option[String]] = request.onSuccess{ _ => hitCounter += 1}
-//         }
-//         val queryResults = buildStoreRunQueries(mA, others, reporter)
-//         queryResults.forall{case (a, b) => a == b}
-//         queryResults.size == hitCounter
-//   }
-
-
-//   property("Stats store matches raw get for multiget all queries") = forAll { (mA: Map[Int, String], others: Set[Int]) =>
-//         val reporter = new StatReporter[Int, String] {}
-//         val (mapRes, storeResults) = buildStoreRunMultiGetQueries(mA, others, reporter)
-//         mapRes.size == storeResults.size &&
-//           mapRes.keySet.forall(k => mapRes.get(k) == storeResults.get(k))
-//   }
-
-//   property("Present/Absent count matches in multiget") = forAll { (mA: Map[Int, String], others: Set[Int]) =>
-//         var presentCount = 0
-//         var absentCount = 0
-//         val reporter = new StatReporter[Int, String] {
-//           override def multiGetPresent:Unit = presentCount += 1
-//           override def multiGetAbsent:Unit = absentCount += 1
-
-//         }
-//         val (_, storeResults) = buildStoreRunMultiGetQueries(mA, others, reporter)
-//         storeResults.values.collect{case Some(b) => b}.size == presentCount
-//         storeResults.values.collect{case None => 1}.size == absentCount
-//   }
-
-//   property("traceMultiGet can piggyback without breaking the results, hit counter is as expected") = forAll { (mA: Map[Int, String], others: Set[Int]) =>
-//       var hitCounter = 0
-//       val reporter = new StatReporter[Int, String] {
-//         override def traceMultiGet[K1 <: Int](request: Map[K1, Future[Option[String]]]): Map[K1, Future[Option[String]]] = {
-//           hitCounter += 1
-//           request
-//         }
-//       }
-//       val (mapRes, storeResults) = buildStoreRunMultiGetQueries(mA, others, reporter)
-//       mapRes.size == storeResults.size &&
-//         mapRes.keySet.forall(k => mapRes.get(k) == storeResults.get(k))
-//       hitCounter == 1
-//   }
-
-// }
