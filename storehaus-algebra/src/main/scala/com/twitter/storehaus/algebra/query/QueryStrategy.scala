@@ -89,7 +89,7 @@ object QueryStrategy extends Serializable {
    * and merges them into the store so they can be queried with this strategy.
    */
   def index[Q,L,X,V](qs: QueryStrategy[Q,L,X], ms: MergeableStore[X,V]): (TraversableOnce[(L, V)] => Future[Unit]) = { ts =>
-    implicit val m: Monoid[V] = ms.monoid
+    implicit val sg: Semigroup[V] = ms.semigroup
     val summed: Map[X, V] = Monoid.sum {
       ts.flatMap { case (l,v) => qs.index(l).map { x => Map(x -> v) } }
     }

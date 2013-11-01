@@ -17,8 +17,7 @@
 package com.twitter.storehaus
 
 import com.twitter.storehaus.cache.{ Cache, MutableCache }
-import com.twitter.util.{ Duration, Future, Timer }
-import java.io.Closeable
+import com.twitter.util.{ Closable, Duration, Future, Time, Timer }
 
 /** Holds various factory and transformation functions for ReadableStore instances */
 object ReadableStore {
@@ -152,7 +151,7 @@ object ReadableStore {
  *   <li>Future.exception - Some kind of unexpected failure (including non-answer).</li>
  * </ul>
  */
-trait ReadableStore[-K, +V] extends Closeable { self =>
+trait ReadableStore[-K, +V] extends Closable { self =>
   /** get a single key from the store.
    * Prefer multiGet if you are getting more than one key at a time
    */
@@ -169,7 +168,7 @@ trait ReadableStore[-K, +V] extends Closeable { self =>
   /** Close this store and release any resources.
    * It is undefined what happens on get/multiGet after close
    */
-  override def close { }
+  override def close(time: Time) = Future.Unit
 }
 
 /** Abstract extension of the defined trait to minimize trait bloat.

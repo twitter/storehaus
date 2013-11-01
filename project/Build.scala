@@ -18,7 +18,6 @@ package storehaus
 
 import sbt._
 import Keys._
-import sbtgitflow.ReleasePlugin._
 import spray.boilerplate.BoilerplatePlugin.Boilerplate
 import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
 import com.typesafe.tools.mima.plugin.MimaKeys.previousArtifact
@@ -31,8 +30,12 @@ object StorehausBuild extends Build {
       case x => x
     }
 
+  def specs2Import(scalaVersion: String) = scalaVersion match {
+      case version if version startsWith "2.9" => "org.specs2" %% "specs2" % "1.12.4.1" % "test"
+      case version if version startsWith "2.10" => "org.specs2" %% "specs2" % "1.13" % "test"
+  }
   val extraSettings =
-    Project.defaultSettings ++ releaseSettings ++ Boilerplate.settings ++ mimaDefaultSettings
+    Project.defaultSettings ++ Boilerplate.settings ++ mimaDefaultSettings
 
   def ciSettings: Seq[Project.Setting[_]] =
     if (sys.env.getOrElse("TRAVIS", "false").toBoolean) Seq(
@@ -55,7 +58,7 @@ object StorehausBuild extends Build {
     crossScalaVersions := Seq("2.9.3", "2.10.0"),
     javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
     javacOptions in doc := Seq("-source", "1.6"),
-    libraryDependencies += "org.scala-tools.testing" %% "specs" % "1.6.9" % "test" withSources(),
+    libraryDependencies <+= scalaVersion(specs2Import(_)),
     resolvers ++= Seq(
       Opts.resolver.sonatypeSnapshots,
       Opts.resolver.sonatypeReleases,
@@ -109,10 +112,11 @@ object StorehausBuild extends Build {
   def youngestForwardCompatible(subProj: String) =
     Some(subProj)
       .filterNot(unreleasedModules.contains(_))
-      .map { s => "com.twitter" % ("storehaus-" + s + "_2.9.3") % "0.5.0" }
+      .map { s => "com.twitter" % ("storehaus-" + s + "_2.9.3") % "0.7.0" }
 
-  val algebirdVersion = "0.2.0"
-  val bijectionVersion = "0.5.3"
+  val algebirdVersion = "0.3.0"
+  val bijectionVersion = "0.5.4"
+  val utilVersion = "6.3.7"
 
   lazy val storehaus = Project(
     id = "storehaus",
@@ -130,6 +134,7 @@ object StorehausBuild extends Build {
     storehausMySQL,
     storehausRedis,
     storehausHBase,
+    storehausDynamoDB,
     storehausTesting
   )
 
@@ -145,7 +150,7 @@ object StorehausBuild extends Build {
 
   lazy val storehausCore = module("core").settings(
     libraryDependencies ++= Seq(
-      withCross("com.twitter" %% "util-core" % "6.3.7"),
+      withCross("com.twitter" %% "util-core" % utilVersion),
       "com.twitter" %% "bijection-core" % bijectionVersion,
       "com.twitter" %% "bijection-util" % bijectionVersion
     )
@@ -171,7 +176,11 @@ object StorehausBuild extends Build {
   ).dependsOn(storehausCore % "test->test;compile->compile")
 
   lazy val storehausRedis = module("redis").settings(
-    libraryDependencies += Finagle.module("redis"),
+    libraryDependencies ++= Seq (
+      "com.twitter" %% "bijection-core" % bijectionVersion,
+      "com.twitter" %% "bijection-netty" % bijectionVersion,
+      Finagle.module("redis")
+    ),
     // we don't want various tests clobbering each others keys
     parallelExecution in Test := false
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
@@ -181,9 +190,23 @@ object StorehausBuild extends Build {
       "com.twitter" %% "algebird-core" % algebirdVersion,
       "com.twitter" %% "bijection-core" % bijectionVersion,
       "com.twitter" %% "bijection-hbase" % bijectionVersion ,
+      "org.hbase" % "asynchbase" % "1.4.1" % "provided->default" intransitive(),
+      "com.stumbleupon" % "async" % "1.4.0" % "provided->default" intransitive(),
       "org.apache.hbase" % "hbase" % "0.94.6" % "provided->default" classifier "tests" classifier "",
       "org.apache.hadoop" % "hadoop-core" % "1.2.0" % "provided->default",
       "org.apache.hadoop" % "hadoop-test" % "1.2.0" % "test"
+    ),
+    parallelExecution in Test := false
+  ).dependsOn(storehausAlgebra % "test->test;compile->compile")
+
+  lazy val storehausDynamoDB= module("dynamodb").settings(
+    libraryDependencies ++= Seq(
+      "com.twitter" %% "algebird-core" % algebirdVersion,
+      "com.twitter" %% "bijection-core" % bijectionVersion,
+      "com.twitter" %% "bijection-hbase" % bijectionVersion ,
+      "com.amazonaws" % "aws-java-sdk" % "1.5.7"
+      ////use alternator for local testing
+      //"com.michelboudreau" % "alternator" % "0.6.4" % "test"
     ),
     parallelExecution in Test := false
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
@@ -194,7 +217,8 @@ object StorehausBuild extends Build {
     settings = sharedSettings ++ Seq(
       name := "storehaus-testing",
       previousArtifact := youngestForwardCompatible("testing"),
-      libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.10.0" withSources()
+      libraryDependencies ++= Seq("org.scalacheck" %% "scalacheck" % "1.10.0" withSources(),
+        withCross("com.twitter" %% "util-core" % utilVersion))
     )
   )
 }

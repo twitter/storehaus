@@ -63,12 +63,13 @@ package com.twitter.storehaus.algebra
 
 trait MergeableStore[-K, V] extends Store[K, V] {
   def monoid: Monoid[V]
-  def merge(kv: (K, V)): Future[Unit] = multiMerge(Map(kv)).apply(kv._1)
-  def multiMerge[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Unit]] = kvs.map { kv => (kv._1, merge(kv)) }
+  def merge(kv: (K, V)): Future[Option[V]] = multiMerge(Map(kv)).apply(kv._1)
+  def multiMerge[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Option[V]]] = kvs.map { kv => (kv._1, merge(kv)) }
 }
 ```
 
-`MergeableStore`'s `merge` and `multiMerge` are similar to `put` and `multiPut`; the difference is that values added with `merge` are added to the store's existing value. Because the addition is handled with a `Monoid[V]` from Twitter's [Algebird](https://github.com/twitter/algebird) project, it's easy to write stores that aggregate [Lists](http://twitter.github.com/algebird/#com.twitter.algebird.ListMonoid), [decayed values](http://twitter.github.com/algebird/#com.twitter.algebird.DecayedValue), even [HyperLogLog](http://twitter.github.com/algebird/#com.twitter.algebird.HyperLogLog$) instances.
+`MergeableStore`'s `merge` and `multiMerge` are similar to `put` and `multiPut`; the difference is that values added with `merge` are added to the store's existing value and the previous value is returned.
+Because the addition is handled with a `Semigroup[V]` or `Monoid[V]` from Twitter's [Algebird](https://github.com/twitter/algebird) project, it's easy to write stores that aggregate [Lists](http://twitter.github.com/algebird/#com.twitter.algebird.ListMonoid), [decayed values](http://twitter.github.com/algebird/#com.twitter.algebird.DecayedValue), even [HyperLogLog](http://twitter.github.com/algebird/#com.twitter.algebird.HyperLogLog$) instances.
 
 The [`MergeableStore`](http://twitter.github.com/storehaus/#com.twitter.storehaus.algebra.MergeableStore$) object provides a number of combinators on these stores. For ease of use, Storehaus provides an implicit conversion to an enrichment on `MergeableStore`. Access this by importing `MergeableStore.enrich`.
 
@@ -77,9 +78,10 @@ The [`MergeableStore`](http://twitter.github.com/storehaus/#com.twitter.storehau
 Storehaus provides a number of modules wrapping existing key-value stores. Enriching these key-value stores with Storehaus's combinators has been hugely helpful to us here at Twitter. Writing your jobs in terms of Storehaus stores makes it easy to test your jobs; use an in-memory `JMapStore` in testing and a `MemcacheStore` in production.
 
   * [Storehaus-memcache](http://twitter.github.com/storehaus/#com.twitter.storehaus.memcache.MemcacheStore) (wraps Twitter's [finagle-memcached](https://github.com/twitter/finagle/tree/master/finagle-memcached) library)
-  * [Storehaus-mysql](http://twitter.github.com/storehaus/#com.twitter.storehaus.mysql.MySQLStore) (wraps Twitter's [finagle-mysql](https://github.com/twitter/finagle/tree/master/finagle-mysql) library)
+  * [Storehaus-mysql](http://twitter.github.com/storehaus/#com.twitter.storehaus.mysql.MySqlStore) (wraps Twitter's [finagle-mysql](https://github.com/twitter/finagle/tree/master/finagle-mysql) library)
   * [Storehaus-redis](http://twitter.github.com/storehaus/#com.twitter.storehaus.redis.RedisStore) (wraps Twitter's [finagle-redis](https://github.com/twitter/finagle/tree/master/finagle-redis) library)
   * [Storehaus-hbase](http://twitter.github.com/storehaus/#com.twitter.storehaus.hbase.HBaseStore)
+  * [storehaus-dynamodb](https://github.com/twitter/storehaus/tree/develop/storehaus-dynamodb)
 
 #### Planned Modules
 
@@ -87,15 +89,18 @@ Here's a list of modules we plan in implementing, with links to the github issue
 
 * [storehaus-leveldb](https://github.com/twitter/storehaus/issues/51)
 * [storehaus-berkeleydb](https://github.com/twitter/storehaus/issues/52)
-* [storehaus-dynamodb](https://github.com/twitter/storehaus/issues/60)
 
-### Documentation
+## Community and Documentation
 
-See the [current API documentation](http://twitter.github.com/storehaus) for more information.
+To learn more and find links to tutorials and information around the web, check out the [Storehaus Wiki](https://github.com/twitter/storehaus/wiki).
+
+The latest ScalaDocs are hosted on Storehaus's [Github Project Page](http://twitter.github.io/storehaus).
+
+Discussion occurs primarily on the [Storehaus mailing list](https://groups.google.com/forum/#!forum/storehaus). Issues should be reported on the [GitHub issue tracker](https://github.com/twitter/storehaus/issues).
 
 ## Maven
 
-Storehaus modules are available on maven central. The current groupid and version for all modules is, respectively, `"com.twitter"` and  `0.5.1`.
+Storehaus modules are available on maven central. The current groupid and version for all modules is, respectively, `"com.twitter"` and  `0.6.0`.
 
 Current published artifacts are
 
@@ -111,6 +116,8 @@ Current published artifacts are
 * `storehaus-hbase_2.10`
 * `storehaus-redis_2.9.3`
 * `storehaus-redis_2.10`
+* `storehaus-dynamodb_2.9.3`
+* `storehaus-dynamodb_2.10`
 * `storehaus-cache_2.9.3`
 * `storehaus-cache_2.10`
 * `storehaus-testing_2.9.3`
@@ -142,6 +149,7 @@ Here are a few that shine among the many:
 
 * Ruban Monu <https://twitter.com/rubanm>, for `storehaus-mysql`
 * Doug Tangren <https://twitter.com/softprops>, for `storehaus-redis`
+* Ryan Weald <https://twitter.com/rweald>, for `storehaus-dynamodb`
 
 ## License
 

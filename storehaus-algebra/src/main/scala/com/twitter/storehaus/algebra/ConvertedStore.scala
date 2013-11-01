@@ -18,7 +18,7 @@ package com.twitter.storehaus.algebra
 
 import com.twitter.bijection.Injection
 import com.twitter.storehaus.{ ConvertedReadableStore, Store }
-import com.twitter.util.Future
+import com.twitter.util.{Future, Time}
 
 /** Use an injection on V2,V1 to convert a store of values V2.
  * If the value stored in the underlying store cannot be converted back to V2, then you will get a Future.exception
@@ -43,5 +43,5 @@ class ConvertedStore[K1, -K2, V1, V2](store: Store[K1, V1])(kfn: K2 => K1)(impli
     val res: Map[K1, Future[Unit]] = store.multiPut(mapK1V1)
     kvs.keySet.map { k3 => (k3, res(kfn(k3))) }.toMap
   }
-  override def close { store.close }
+  override def close(t: Time) = store.close(t)
 }

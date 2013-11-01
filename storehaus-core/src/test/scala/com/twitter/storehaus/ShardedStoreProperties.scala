@@ -18,6 +18,7 @@ package com.twitter.storehaus
 
 import org.scalacheck.Properties
 import org.scalacheck.Arbitrary
+import org.scalacheck.Gen
 
 object ShardedStoreProperties extends Properties("ShardedStore") {
   import StoreProperties.storeTest
@@ -28,6 +29,7 @@ object ShardedStoreProperties extends Properties("ShardedStore") {
     (mod, v/by)
   }
 
+  implicit val strArb: Arbitrary[String] = Arbitrary { Gen.alphaStr }
   property("ShardedStore test") = {
     val SHARDS = 10
     implicit val arbpair: Arbitrary[(Int,Int)] = Arbitrary { Arbitrary.arbitrary[Int].map { moddiv(_, SHARDS) } }
