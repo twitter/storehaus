@@ -21,7 +21,6 @@ import org.scalacheck.Gen.choose
 import org.scalacheck.Prop._
 
 object ClockProperties extends Properties("Clock") {
-  //TODO is there a way to make this also work for IdProviders through generics?
   def vectorOfTicks[T: Ordering, K <: Clock[T, K]](clock: K, initialTicks: Vector[T] = Vector.empty[T], number: Int = 100): (Seq[T], K) =
     1.to(number).foldLeft((initialTicks, clock)) { case ((cum, clock), _) =>
       val (v, newClock) = clock.tick
