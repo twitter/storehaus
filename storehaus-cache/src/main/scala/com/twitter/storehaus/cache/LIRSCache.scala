@@ -131,7 +131,7 @@ class LIRSCache[K, V](lirsStacks:LIRSStacks[K], backingMap: Map[K, V]) extends C
           case None => throw new IllegalStateException("We dropped the oldest value in S but got nothing back")
         }
       } else if (!lirsStacks.isInS(k) && lirsStacks.isInQ(k)) {
-        // In the case where k is not in S but it is in Q it is a non-resident HIR block. We bump it to the top of Q, and put it in 
+        // In the case where k is not in S but it is in Q it is a non-resident HIR block. We bump it to the top of Q, and put it in
         // S. If anything is evicted from S in the process, we check if it is in Q. If it is not, we remove it from the cache.
         val (evictedFromQ, newLirsStacks) = lirsStacks.putOnTopOfQ(k)
         if (evictedFromQ.isDefined) {
@@ -147,7 +147,7 @@ class LIRSCache[K, V](lirsStacks:LIRSStacks[K], backingMap: Map[K, V]) extends C
         throw new IllegalStateException("Key in cache, but not in Stack S or Stack Q. Key: " + k)
       }
     }.getOrElse(this)
- 
+
   def evict(k: K): (Option[V], Cache[K, V]) =
     (get(k), new LIRSCache(lirsStacks.evict(k), backingMap - k))
 
@@ -242,12 +242,12 @@ class Stack[K](maxSize:Int,
    * Stack was full, returns the evicted member.
    */
   def putOnTop(k: K): (Option[K], Stack[K]) = {
-    val (newInc, newCyc) = cyclicIncrementProvider.getNewMaxIncrement 
+    val (newInc, newCyc) = cyclicIncrementProvider.tick
     backingKeyMap.get(k) match {
       case Some(oldInc) => {
         val newBackingIndexMap = backingIndexMap - oldInc + (newInc->k)
         val newBackingKeyMap = backingKeyMap + (k->newInc)
-        val newCyc2 = newCyc.cullOldIncrement(oldInc)
+        val newCyc2 = newCyc.cull(oldInc)
         (None, new Stack(maxSize, newBackingIndexMap, newBackingKeyMap, newCyc2))
       }
       case None => {
@@ -255,7 +255,7 @@ class Stack[K](maxSize:Int,
           val (oldInc, lastK) = backingIndexMap.head
           val newBackingIndexMap = backingIndexMap - oldInc + (newInc->k)
           val newBackingKeyMap = backingKeyMap - lastK + (k->newInc)
-          val newCyc2 = newCyc.cullOldIncrement(oldInc)
+          val newCyc2 = newCyc.cull(oldInc)
           (Some(lastK), new Stack(maxSize, newBackingIndexMap, newBackingKeyMap, newCyc2))
         } else {
           val newBackingIndexMap = backingIndexMap + (newInc->k)
@@ -271,13 +271,13 @@ class Stack[K](maxSize:Int,
       (None, this)
     } else {
       val (lastInc, lastK) = backingIndexMap.head
-      (Some(lastK), new Stack(maxSize, backingIndexMap - lastInc, backingKeyMap - lastK, cyclicIncrementProvider.cullOldIncrement(lastInc)))
+      (Some(lastK), new Stack(maxSize, backingIndexMap - lastInc, backingKeyMap - lastK, cyclicIncrementProvider.cull(lastInc)))
     }
   }
 
   def remove(k: K): (Option[K], Stack[K]) = {
     backingKeyMap.get(k) match {
-      case Some(inc) => (Some(k), new Stack(maxSize, backingIndexMap - inc, backingKeyMap - k, cyclicIncrementProvider.cullOldIncrement(inc)))
+      case Some(inc) => (Some(k), new Stack(maxSize, backingIndexMap - inc, backingKeyMap - k, cyclicIncrementProvider.cull(inc)))
       case None => (None, this)
     }
   }
