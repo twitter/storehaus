@@ -60,12 +60,8 @@ object IdProviderProperties extends Properties("IdProvider") {
     }._3
   }
 
-
   def idProviderLaws[T: Ordering](idProvider: IdProvider[T]) =
     ClockProperties.clockLaws[T, IdProvider[T]](idProvider) && alwaysIncreasing[T](idProvider)
-
-  //TODO(jco) have a test which culls value and such and ensures that global order is always maintained.
-  // ie that the new value is always bigger than all the old ones.
 
   property("CyclicIncrementProvider obeys the IdProvider laws") =
     idProviderLaws(CyclicIncrementProvider.intIncrementer)
