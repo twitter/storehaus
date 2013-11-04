@@ -21,11 +21,11 @@ package com.twitter.storehaus.cache
  */
 
 trait Clock[@specialized(Int, Long) T, +This <: Clock[T, This]] {
-	def tick: (T, This)
+  def tick: (T, This)
 }
 
 trait IdProvider[@specialized(Int, Long) T] extends Clock[T, IdProvider[T]] {
-	def cull(oldId: T): IdProvider[T]
+  def cull(oldId: T): IdProvider[T]
 }
 
 case class LongClock(v:Long = 0) extends Clock[Long, LongClock] {
