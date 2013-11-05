@@ -38,7 +38,7 @@ object MySqlStoreProperties extends Properties("MySqlStore")
   }
 
   def multiPut(s: MySqlStore, pairs: List[(MySqlValue, Option[MySqlValue])]) {
-    Await.result(Future.collect(s.multiPut(pairs.toMap, true /* batched */).values.toSeq))
+    Await.result(Future.collect(s.multiPut(pairs.toMap).values.toSeq))
   }
 
   /** invert any type to MySql String values. Because most mysql configuraions are case insensitive by default,
