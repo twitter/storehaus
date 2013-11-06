@@ -149,12 +149,12 @@ class MySqlStore(client: Client, table: String, kCol: String, vCol: String)
 
         // handle inserts for new keys
         val insertF = newKeys.isEmpty match {
-          case true => Future(())
+          case true => Future.Unit
           case false =>
             // do not include None values in insert query
             val insertKvs = newKeys.map { k => k -> kvs.getOrElse(k, None) }.filter { ! _._2.isEmpty }
             insertKvs.isEmpty match {
-              case true => Future(())
+              case true => Future.Unit
               case false =>
                 val insertSql = MULTI_INSERT_SQL_PREFIX + Stream.continually("(?, ?)").take(insertKvs.size).mkString(",")
                 val insertParams = insertKvs.map { kv =>
@@ -173,7 +173,7 @@ class MySqlStore(client: Client, table: String, kCol: String, vCol: String)
         // do not include None values in update query
         val updateKvs = existingKvs.filter { ! _._2.isEmpty }
         val updateF = updateKvs.isEmpty match {
-          case true => Future(())
+          case true => Future.Unit
           case false =>
             val updateSql = MULTI_UPDATE_SQL_PREFIX + Stream.continually("WHEN ? THEN ?").take(updateKvs.size).mkString(" ") +
               MULTI_UPDATE_SQL_INFIX + Stream.continually("?").take(updateKvs.size).mkString("(", ",", ")")
@@ -193,7 +193,7 @@ class MySqlStore(client: Client, table: String, kCol: String, vCol: String)
         // deletes
         val deleteKeys = existingKvs.filter { _._2.isEmpty }.map { _._1 }
         val deleteF = deleteKeys.isEmpty match {
-          case true => Future(())
+          case true => Future.Unit
           case false =>
             val deleteSql = MULTI_DELETE_SQL_PREFIX + Stream.continually("?").take(deleteKeys.size).mkString("(", ",", ")")
             val deleteParams = deleteKeys.map { k => MySqlStringInjection(k).getBytes }.toSeq
@@ -203,12 +203,16 @@ class MySqlStore(client: Client, table: String, kCol: String, vCol: String)
             }
         }
 
-        Future.join(List(insertF, updateF, deleteF))
-          .flatMap { f => commitTransaction }
-          .handle { case e: Exception => rollbackTransaction.flatMap { throw e } }
+        insertF.flatMap { f =>
+          updateF.flatMap { f =>
+            deleteF.flatMap { f => commitTransaction }
+          }
+        }
+
+        List(insertF, updateF, deleteF).foreach { _.handle { case e: Exception => rollbackTransaction.flatMap { throw e } } }
       }
     }
-    kvs.mapValues { v => putResult.flatMap { f => f.unit } }
+    kvs.mapValues { v => putResult }
   }
 
   override def close(t: Time) = {
