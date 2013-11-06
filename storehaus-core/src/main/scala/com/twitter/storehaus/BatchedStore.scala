@@ -39,18 +39,18 @@ class BatchedStore[K, V](
       with Store[K,V] {
   // do we need different knobs for gets and puts
   // or should we use the same max size and max concurrent for both?
+  protected val writeConnectionLock = new AsyncSemaphore(maxConcurrentMultiPuts)
 
   override def put(kv: (K, Option[V])): Future[Unit] = store.put(kv)
 
   override def multiPut[K1 <: K](kvs: Map[K1, Option[V]]): Map[K1, Future[Unit]] = {
-    val connectionLock = new AsyncSemaphore(maxConcurrentMultiPuts)
 
     kvs
       .grouped(maxMultiPutSize)
       .map{ keyBatch: Map[K1, Option[V]] =>
 
         // mapCollect the result of the multiput so we can release the permit at the end
-        val batchResult: Future[Map[K1, Unit]] = connectionLock
+        val batchResult: Future[Map[K1, Unit]] = writeConnectionLock
           .acquire()
           .flatMap { permit =>
             FutureOps.mapCollect(store.multiPut(keyBatch)).ensure{ permit.release() }
