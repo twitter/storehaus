@@ -143,7 +143,7 @@ class MySqlStore(client: Client, table: String, kCol: String, vCol: String)
     // reduce your batch size if you are hitting mysql packet limit:
     // http://dev.mysql.com/doc/refman/5.1/en/packet-too-large.html
     val putResult = startTransaction.flatMap { t =>
-      FutureOps.mapCollect(multiGet(kvs.keySet)).map { result =>
+      FutureOps.mapCollect(multiGet(kvs.keySet)).flatMap { result =>
         val existingKeys = result.filter { !_._2.isEmpty }.keySet
         val newKeys = result.filter { _._2.isEmpty }.keySet
 
@@ -212,7 +212,7 @@ class MySqlStore(client: Client, table: String, kCol: String, vCol: String)
         }
       }
     }
-    kvs.mapValues { v => putResult.flatMap { f => f.unit } }
+    kvs.mapValues { v => putResult.unit }
   }
 
   override def close(t: Time) = {
