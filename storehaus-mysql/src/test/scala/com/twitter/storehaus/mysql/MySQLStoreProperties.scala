@@ -21,7 +21,7 @@ import java.util.logging.Level
 import com.twitter.finagle.exp.mysql.Client
 import com.twitter.storehaus.testing.SelfAggregatingCloseableCleanup
 import com.twitter.storehaus.testing.generator.NonEmpty
-import com.twitter.util.Await
+import com.twitter.util.{Await, Future}
 
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
@@ -35,6 +35,10 @@ object MySqlStoreProperties extends Properties("MySqlStore")
     pairs.foreach { case (k, v) =>
       Await.result(s.put((k, v)))
     }
+  }
+
+  def multiPut(s: MySqlStore, pairs: List[(MySqlValue, Option[MySqlValue])]) {
+    Await.result(Future.collect(s.multiPut(pairs.toMap).values.toSeq))
   }
 
   /** invert any type to MySql String values. Because most mysql configuraions are case insensitive by default,
@@ -54,10 +58,10 @@ object MySqlStoreProperties extends Properties("MySqlStore")
       }
     }
 
-  def putAndMultiGetStoreTest(store: MySqlStore, pairs: Gen[List[(Any, Option[Any])]] = NonEmpty.Pairing.alphaStrs()) =
+  def multiPutAndMultiGetStoreTest(store: MySqlStore, pairs: Gen[List[(Any, Option[Any])]] = NonEmpty.Pairing.alphaStrs()) =
     forAll(pairs) { (examples: List[(Any, Option[Any])]) =>
       val stringified = stringify(examples)
-      put(store, stringified)
+      multiPut(store, stringified)
       val data = stringified.toMap
       val result = store.multiGet(data.keySet)
       data.forall { case (k, optV) =>
@@ -95,31 +99,31 @@ object MySqlStoreProperties extends Properties("MySqlStore")
     withStore(putAndGetStoreTest(_), "text", "blob")
 
   property("MySqlStore text->text multiget") =
-    withStore(putAndMultiGetStoreTest(_), "text", "text", true)
+    withStore(multiPutAndMultiGetStoreTest(_), "text", "text", true)
 
   property("MySqlStore blob->blob multiget") =
-    withStore(putAndMultiGetStoreTest(_), "blob", "blob", true)
+    withStore(multiPutAndMultiGetStoreTest(_), "blob", "blob", true)
 
   property("MySqlStore text->blob multiget") =
-    withStore(putAndMultiGetStoreTest(_), "text", "blob", true)
+    withStore(multiPutAndMultiGetStoreTest(_), "text", "blob", true)
 
   property("MySqlStore int->int") =
     withStore(putAndGetStoreTest(_, NonEmpty.Pairing.numerics[Int]()), "int", "int")
 
   property("MySqlStore int->int multiget") =
-    withStore(putAndMultiGetStoreTest(_, NonEmpty.Pairing.numerics[Int]()), "int", "int", true)
+    withStore(multiPutAndMultiGetStoreTest(_, NonEmpty.Pairing.numerics[Int]()), "int", "int", true)
 
   property("MySqlStore bigint->bigint") =
     withStore(putAndGetStoreTest(_, NonEmpty.Pairing.numerics[Long]()), "bigint", "bigint")
 
   property("MySqlStore bigint->bigint multiget") =
-    withStore(putAndMultiGetStoreTest(_, NonEmpty.Pairing.numerics[Long]()), "bigint", "bigint", true)
+    withStore(multiPutAndMultiGetStoreTest(_, NonEmpty.Pairing.numerics[Long]()), "bigint", "bigint", true)
 
   property("MySqlStore smallint->smallint") =
     withStore(putAndGetStoreTest(_, NonEmpty.Pairing.numerics[Short]()), "smallint", "smallint")
 
   property("MySqlStore smallint->smallint multiget") =
-    withStore(putAndMultiGetStoreTest(_, NonEmpty.Pairing.numerics[Short]()), "smallint", "smallint", true)
+    withStore(multiPutAndMultiGetStoreTest(_, NonEmpty.Pairing.numerics[Short]()), "smallint", "smallint", true)
 
   private def withStore[T](f: MySqlStore => T, kColType: String, vColType: String, multiGet: Boolean = false): T = {
     val client = Client("localhost:3306", "storehaususer", "test1234", "storehaus_test", Level.WARNING)
