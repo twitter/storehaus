@@ -16,13 +16,13 @@
 
 package com.twitter.storehaus
 
-import com.twitter.util.{ Duration, Future }
+import com.twitter.util.{ Closable, Duration, Future, Time }
 
 /** Main trait for mutable stores.
  * Instances may implement EITHER put, multiPut or both. The default implementations
  * are in terms of each other.
  */
-trait WritableStore[-K, V] {
+trait WritableStore[-K, V] extends Closable {
   /**
    * replace a value
    * Delete is the same as put((k,None))
@@ -31,6 +31,11 @@ trait WritableStore[-K, V] {
   /** Replace a set of keys at one time */
   def multiPut[K1 <: K](kvs: Map[K1, Option[V]]): Map[K1, Future[Unit]] =
     kvs.map { kv => (kv._1, put(kv)) }
+
+  /** Close this store and release any resources.
+   * It is undefined what happens on get/multiGet after close
+   */
+  override def close(time: Time) = Future.Unit
 }
 
 /**
