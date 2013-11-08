@@ -32,10 +32,12 @@ class BatchedReadableStore[K, V](
     maxMultiGetSize: Int,
     maxConcurrentMultiGets: Int)
     (implicit fc: FutureCollector[(K, V)]) extends ReadableStore[K, V] {
-  override def get(k: K): Future[Option[V]] = store.get(k)
-  override def multiGet[K1 <: K](keys: Set[K1]): Map[K1, Future[Option[V]]] = {
 
-    val connectionLock = new AsyncSemaphore(maxConcurrentMultiGets)
+  protected val connectionLock = new AsyncSemaphore(maxConcurrentMultiGets)
+
+  override def get(k: K): Future[Option[V]] = store.get(k)
+
+  override def multiGet[K1 <: K](keys: Set[K1]): Map[K1, Future[Option[V]]] = {
 
     keys
       .grouped(maxMultiGetSize)
