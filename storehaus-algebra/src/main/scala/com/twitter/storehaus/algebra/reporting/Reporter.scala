@@ -16,9 +16,7 @@
 
 package com.twitter.storehaus.algebra.reporting
 
-import com.twitter.algebird.Monoid
 import com.twitter.util.Future
-import scala.collection.generic.CanBuildFrom
 
 object Reporter {
   def sideEffect[T, U](params: U, f: Future[T], sideEffect: (U, Future[T]) => Future[Unit]): Future[T] =
@@ -34,17 +32,20 @@ object Reporter {
 
 }
 
-trait StoreReporter[K, V] {
-  def tracePut(kv: (K, Option[V]), request: Future[Unit]) = Future.Unit
-  def traceMultiPut[K1 <: K](kvs: Map[K1, Option[V]], request: Map[K1, Future[Unit]]): Map[K1, Future[Unit]] = request
-}
 
 trait ReadableStoreReporter[K, V]{
   def traceMultiGet[K1 <: K](ks: Set[K1], request: Map[K1, Future[Option[V]]]) = request.mapValues(_.unit)
-  def traceGet(k: K, request: Future[Option[V]]) = Future.Unit
+  def traceGet(k: K, request: Future[Option[V]]) = request.unit
 }
 
-trait MergeableStoreReporter[K, V] extends StoreReporter[K, V] with ReadableStoreReporter[K, V]{
-  def traceMerge(kv: (K, V), request: Future[Option[V]]) = Future.Unit
+trait WritableStoreReporter[K, V] {
+  def tracePut(kv: (K, Option[V]), request: Future[Unit]) = request
+  def traceMultiPut[K1 <: K](kvs: Map[K1, Option[V]], request: Map[K1, Future[Unit]]): Map[K1, Future[Unit]] = request
+}
+
+trait StoreReporter[K, V] extends ReadableStoreReporter[K, V] with WritableStoreReporter[K, V]
+
+trait MergeableStoreReporter[K, V] extends StoreReporter[K, V]{
+  def traceMerge(kv: (K, V), request: Future[Option[V]]) = request.unit
   def traceMultiMerge[K1 <: K](kvs: Map[K1, V], request: Map[K1, Future[Option[V]]]) = request.mapValues(_.unit)
 }
