@@ -41,6 +41,6 @@ trait WritableStore[-K, V] extends Closable {
 /**
  * Trait for building mutable store with TTL.
  */
-trait WithPutTtl[K, V, S <: Store[K, V]] {
+trait WithPutTtl[K, V, S <: WritableStore[K, V]] {
   def withPutTtl(ttl: Duration): S
 }
