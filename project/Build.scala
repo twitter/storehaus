@@ -173,7 +173,7 @@ object StorehausBuild extends Build {
 
   lazy val storehausMySQL = module("mysql").settings(
     libraryDependencies += Finagle.module("mysql")
-  ).dependsOn(storehausCore % "test->test;compile->compile")
+  ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
   lazy val storehausRedis = module("redis").settings(
     libraryDependencies ++= Seq (

@@ -93,9 +93,9 @@ class MySqlStore(client: Client, table: String, kCol: String, vCol: String)
   protected val updateStmt = Await.result(client.prepare(UPDATE_SQL))
   protected val deleteStmt = Await.result(client.prepare(DELETE_SQL))
 
-  protected def startTransaction : Future[Unit] = client.query(START_TXN_SQL).unit
-  protected def commitTransaction : Future[Unit] = client.query(COMMIT_TXN_SQL).unit
-  protected def rollbackTransaction : Future[Unit] = client.query(ROLLBACK_TXN_SQL).unit
+  protected [mysql] def startTransaction : Future[Unit] = client.query(START_TXN_SQL).unit
+  protected [mysql] def commitTransaction : Future[Unit] = client.query(COMMIT_TXN_SQL).unit
+  protected [mysql] def rollbackTransaction : Future[Unit] = client.query(ROLLBACK_TXN_SQL).unit
 
 
   override def get(k: MySqlValue): Future[Option[MySqlValue]] = {
