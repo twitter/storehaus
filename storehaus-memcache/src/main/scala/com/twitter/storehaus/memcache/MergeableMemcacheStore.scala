@@ -16,19 +16,38 @@
 
 package com.twitter.storehaus.memcache
 
+import com.twitter.algebird.Semigroup
 import com.twitter.bijection.Injection
+import com.twitter.finagle.memcached.Client
 import com.twitter.storehaus.ConvertedStore
 import com.twitter.storehaus.algebra.MergeableStore
-import com.twitter.util.Future
+import com.twitter.util.{ Duration, Future }
 
 import org.jboss.netty.buffer.ChannelBuffer
 
 import scala.util.{ Failure, Success, Try }
 
+/** Factory for [[com.twitter.storehaus.memcache.MergeableMemcacheStore]] instances. */
+object MergeableMemcacheStore {
+
+  def apply[V](client: Client, ttl: Duration = MemcacheStore.DEFAULT_TTL, flag: Int = MemcacheStore.DEFAULT_FLAG)
+      (inj: Injection[V, ChannelBuffer], semigroup: Semigroup[V]) =
+    new MergeableMemcacheStore[V](MemcacheStore(client, ttl, flag))(inj, semigroup)
+}
+
+/** Returned when merge fails after a certain number of retries */
 class MergeFailedException(val key: String)
   extends RuntimeException("Merge failed for key " + key)
 
-abstract class MergeableMemcacheStore[V](underlying: MemcacheStore)(implicit inj: Injection[V, ChannelBuffer])
+/**
+ * Mergeable MemcacheStore that uses CAS.
+ *
+ * The store supports multiple concurrent writes to the same key, but you might
+ * see a performance hit if there are too many concurrent writes to a hot key.
+ * The solution is to group by a hot key, and use only a single (or few) writers to that key.
+ */
+class MergeableMemcacheStore[V](underlying: MemcacheStore)(implicit inj: Injection[V, ChannelBuffer],
+    override val semigroup: Semigroup[V])
   extends ConvertedStore[String, String, ChannelBuffer, V](underlying)(identity)
   with MergeableStore[String, V] {
 
