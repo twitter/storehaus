@@ -88,7 +88,7 @@ object MySqlLongStoreProperties extends Properties("MySqlLongStore")
     withStore(putAndGetStoreTest(_), "text", "bigint")
 
   property("MySqlLongStore merge") =
-    withStore(putAndGetStoreTest(_), "text", "bigint", true)
+    withStore(mergeStoreTest(_), "text", "bigint", true)
 
   private def withStore[T](f: MySqlLongStore => T, kColType: String, vColType: String, merge: Boolean = false): T = {
     val client = Client("localhost:3306", "storehaususer", "test1234", "storehaus_test", Level.WARNING)
