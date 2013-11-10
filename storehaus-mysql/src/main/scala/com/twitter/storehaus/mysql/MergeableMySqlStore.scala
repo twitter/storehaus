@@ -30,7 +30,8 @@ import com.twitter.util.{ Future, Throw }
 /**
   * Mergeable MySQL store that performs merge inside a transaction.
   */
-abstract class MergeableMySqlStore[V](underlying: MySqlStore)(implicit inj: Injection[V, MySqlValue])
+class MergeableMySqlStore[V](underlying: MySqlStore)(implicit inj: Injection[V, MySqlValue],
+    override val semigroup: Semigroup[V])
   extends ConvertedStore[MySqlValue, MySqlValue, MySqlValue, V](underlying)(identity)
   with MergeableStore[MySqlValue, V] {
 

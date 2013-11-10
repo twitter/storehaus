@@ -41,8 +41,6 @@ import MySqlLongStore._
 
 /** MySQL store for Long values */
 class MySqlLongStore(underlying: MySqlStore)(inj: Injection[Long, MySqlValue])
-  extends MergeableMySqlStore[Long](underlying)(inj) {
-
-  val semigroup = implicitly[Semigroup[Long]]
+  extends MergeableMySqlStore[Long](underlying)(inj, implicitly[Semigroup[Long]]) {
 }
 
