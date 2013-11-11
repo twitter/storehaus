@@ -226,16 +226,16 @@ class LIRSStacks[K](stackS: Stack[K], stackQ: Stack[K]) {
 
 object Stack {
   def apply[K](maxSize:Int,
-               backingIndexMap:SortedMap[CyclicIncrement[Int], K] = SortedMap.empty[CyclicIncrement[Int], K],
-               backingKeyMap:Map[K, CyclicIncrement[Int]] = Map.empty[K, CyclicIncrement[Int]],
-               cyclicIncrementProvider:CyclicIncrementProvider[Int] = CyclicIncrementProvider.intIncrementer): Stack[K] =
+               backingIndexMap: SortedMap[CyclicIncrement[Int], K] = SortedMap.empty[CyclicIncrement[Int], K],
+               backingKeyMap: Map[K, CyclicIncrement[Int]] = Map.empty[K, CyclicIncrement[Int]],
+               cyclicIncrementProvider: IdProvider[CyclicIncrement[Int]] = CyclicIncrementProvider.intIncrementer): Stack[K] =
     new Stack[K](maxSize, backingIndexMap, backingKeyMap, cyclicIncrementProvider)
 }
 
-class Stack[K](maxSize:Int,
-               backingIndexMap:SortedMap[CyclicIncrement[Int], K],
-               backingKeyMap:Map[K, CyclicIncrement[Int]],
-               cyclicIncrementProvider:CyclicIncrementProvider[Int]) {
+class Stack[K](maxSize: Int,
+               backingIndexMap: SortedMap[CyclicIncrement[Int], K],
+               backingKeyMap: Map[K, CyclicIncrement[Int]],
+               cyclicIncrementProvider: IdProvider[CyclicIncrement[Int]]) {
   /**
    * Adds k to the top of the stack. If k is already in the Stack,
    * it will be put on the top. If k was not in the Stack and the

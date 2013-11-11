@@ -32,10 +32,10 @@ package com.twitter.storehaus.cache
 object CyclicIncrementProvider {
   def intIncrementer: CyclicIncrementProvider[Int] = CyclicIncrementProvider(0, { i: Int => i + 1 })
 
-  def apply[@specialized(Int) K: Ordering](zero: K, increment: K => K): CyclicIncrementProvider[K] =
+  def apply[@specialized(Int, Long) K: Ordering](zero: K, increment: K => K): CyclicIncrementProvider[K] =
     CyclicIncrementProvider(zero, increment, SideA, 0, zero, 0, zero)
 
-  def apply[@specialized(Int) K: Ordering](zero: K,
+  def apply[@specialized(Int, Long) K: Ordering](zero: K,
                increment: K => K,
                currentSide: Side,
                currentSideCount: Int,
@@ -47,9 +47,9 @@ object CyclicIncrementProvider {
 
 // Algorithm: we start on a side. We hand out values. Once we've handed out at least 1 value, we begin to give out values of side.nextSide. Once
 // all of the increments of the previous side have been culled, we now switch. side.nextSide becomes the current side. Then we repeat the algorithm.
-class CyclicIncrementProvider[@specialized(Int) K: Ordering]
+class CyclicIncrementProvider[@specialized(Int, Long) K: Ordering]
   (zero: K,
-   increment: K => K,
+   increment: K => K, //TODO once it is in algebird, make this a Successible
    currentSide: Side,
    currentSideCount: Int,
    maxCurrentSideVal: K,
@@ -93,32 +93,33 @@ object CyclicIncrement {
   implicit def ordering[K](implicit ordering:Ordering[K]):Ordering[CyclicIncrement[K]] = Ordering.by { _.value }
 }
 
-sealed trait CyclicIncrement[@specialized(Int) K] {
-  def side:Side
-  implicit def value:K
-  implicit def ordering(implicit ordering:Ordering[K]) = ordering
+sealed trait CyclicIncrement[@specialized(Int, Long) K] {
+  def value: K
+  def ordering(implicit ord: Ordering[K]): Ordering[K] = ord
+  def side: Side
   override def toString = side + ":" + value
 }
 
-case class SideACyclicIncrement[@specialized(Int) K: Ordering](override val value: K) extends CyclicIncrement[K] { def side = SideA }
-case class SideBCyclicIncrement[@specialized(Int) K: Ordering](override val value: K) extends CyclicIncrement[K] { def side = SideB }
-case class SideCCyclicIncrement[@specialized(Int) K: Ordering](override val value: K) extends CyclicIncrement[K] { def side = SideC }
+case class SideACyclicIncrement[@specialized(Int, Long) K: Ordering](override val value: K) extends CyclicIncrement[K] { def side = SideA }
+case class SideBCyclicIncrement[@specialized(Int, Long) K: Ordering](override val value: K) extends CyclicIncrement[K] { def side = SideB }
+case class SideCCyclicIncrement[@specialized(Int, Long) K: Ordering](override val value: K) extends CyclicIncrement[K] { def side = SideC }
 
-sealed trait Side extends Ordered[Side] {
+//TODO this should be a Successible once it is in algebird
+sealed trait Side {
   def nextSide: Side
-  def makeCyclicIncrement[@specialized(Int) K: Ordering](value: K): CyclicIncrement[K]
+  def makeCyclicIncrement[@specialized(Int, Long) K: Ordering](value: K): CyclicIncrement[K]
   override def toString = getClass.getSimpleName
-  def compare(that:Side) = if (this == that) 0 else if (nextSide == that) -1 else 1
+  def offset(that:Side) = if (this == that) 0 else if (nextSide == that) -1 else 1
 }
 object SideA extends Side {
   def nextSide = SideB
-  def makeCyclicIncrement[@specialized(Int) K: Ordering](value: K) = SideACyclicIncrement[K](value)
+  def makeCyclicIncrement[@specialized(Int, Long) K: Ordering](value: K) = SideACyclicIncrement[K](value)
 }
 object SideB extends Side {
   def nextSide = SideC
-  def makeCyclicIncrement[@specialized(Int) K: Ordering](value: K) = SideBCyclicIncrement[K](value)
+  def makeCyclicIncrement[@specialized(Int, Long) K: Ordering](value: K) = SideBCyclicIncrement[K](value)
 }
 object SideC extends Side {
   def nextSide = SideA
-  def makeCyclicIncrement[@specialized(Int) K: Ordering](value: K) = SideCCyclicIncrement[K](value)
+  def makeCyclicIncrement[@specialized(Int, Long) K: Ordering](value: K) = SideCCyclicIncrement[K](value)
 }
