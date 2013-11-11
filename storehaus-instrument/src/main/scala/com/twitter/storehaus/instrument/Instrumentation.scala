@@ -39,9 +39,9 @@ trait Instrumentation {
   }
 
   def time[T](
-    unit: TimeUnit, name: String*)
+    timeUnit: TimeUnit, name: String*)
     (f: => T): T =
-    time(unit, stat(name: _*))(f)
+    time(timeUnit, stat(name: _*))(f)
 
   def time[T](
     name: String*)
@@ -49,18 +49,18 @@ trait Instrumentation {
     time(TimeUnit.MILLISECONDS, name: _*)(f)
 
   def timeFuture[T](
-    unit: TimeUnit, stat: Stat)
+    timeUnit: TimeUnit, stat: Stat)
     (f: => Future[T]): Future[T] = {
     val elapsed = Stopwatch.start()
     f ensure {
-      stat.add(elapsed().inUnit(unit))
+      stat.add(elapsed().inUnit(timeUnit))
     }
   }
 
   def timeFuture[T](
-    unit: TimeUnit, name: String*)
+    timeUnit: TimeUnit, name: String*)
     (f: => Future[T]): Future[T] =
-    timeFuture(unit, stat(name: _*))(f)
+    timeFuture(timeUnit, stat(name: _*))(f)
 
   def timeFuture[T](
     name: String*)
