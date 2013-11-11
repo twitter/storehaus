@@ -24,12 +24,14 @@ import com.twitter.util.Future
  *  Instrumentation
  */
 trait Instrumented[T] extends ProxyStore[T] {
+  /** A protected reference to the Instrumented's
+   *  Instrumentation */
   protected def instrumentation: Instrumentation
 }
 
-/** An InstrumentedReadable store
+/** An InstrumentedReadableStore
  *  captures runtime information about
- *  a ReadableStores behavior.
+ *  a ReadableStore's behavior.
  */
 class InstrumentedReadableStore[K, V](
   protected val self: ReadableStore[K, V],
@@ -60,6 +62,10 @@ class InstrumentedReadableStore[K, V](
     }
 }
 
+/** An InstrumentedStore store
+ *  captures runtime information about
+ *  a Store's behavior.
+ */
 class InstrumentedStore[K, V](
   protected val self: Store[K, V],
   protected val instrumentation: Instrumentation)

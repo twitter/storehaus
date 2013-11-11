@@ -19,16 +19,32 @@ package com.twitter.storehaus.instrument
 import com.twitter.util.{ Future, Stopwatch }
 import java.util.concurrent.TimeUnit
 
+/** A writable Counter useful for documenting the number
+ *  of times a target operation occurs
+ */
 trait Counter {
   def incr(delta: Long = 1L): Unit
 }
 
+/** A Stat provides a way to export data in time-series format.
+ *  An example use case would be timing of operations
+ */
 trait Stat {
   def add(value: Float)
 }
 
+/** A Instrumentation implements a writable interface exporting a set of
+ *  primatives for capturing diagnostic information
+ */
 trait Instrumentation {
+  /** Resolves a Counter identified by set of Strings */
+  def counter(name: String*): Counter
 
+  /** Resolves a State identified by a set of Strings */
+  def stat(name: String*): Stat
+
+  /** Records the execution time of an arbitrary function in
+   *  the provided time unit attached to the provided stat */
   def time[T](
     timeUnit: TimeUnit, stat: Stat)
     (f: => T): T = {
@@ -38,16 +54,23 @@ trait Instrumentation {
     result
   }
 
+  /** Records the execution time of an arbitrary function
+   *  in the provided time unit to a Stat identified by
+   *  the provided Seq of Strings */
   def time[T](
     timeUnit: TimeUnit, name: String*)
     (f: => T): T =
     time(timeUnit, stat(name: _*))(f)
 
+  /** Records the execution time of an arbitrary function in milliseconds
+   *  to a Stat identified by the provided Seq of Strings */
   def time[T](
     name: String*)
     (f: => T): T =
     time(TimeUnit.MILLISECONDS, name: _*)(f)
 
+  /** Asyncrhonously records the execution time of a function
+   *  producing a Future in the provided time unit to the provided Stat */
   def timeFuture[T](
     timeUnit: TimeUnit, stat: Stat)
     (f: => Future[T]): Future[T] = {
@@ -57,20 +80,24 @@ trait Instrumentation {
     }
   }
 
+  /** Asyncronously records the execution time of a function
+   *  producing a Future in the provided time unit to a Stat
+   *  identified by the provided Seq of Strings */
   def timeFuture[T](
     timeUnit: TimeUnit, name: String*)
     (f: => Future[T]): Future[T] =
     timeFuture(timeUnit, stat(name: _*))(f)
 
+  /** Asyncronously records the execution time of a function producing
+   *  a Future in milliseconds to a Stat identified by the provided
+   *  Seq of Strings */
   def timeFuture[T](
     name: String*)
     (f: => Future[T]): Future[T] =
     timeFuture(TimeUnit.MILLISECONDS, name: _*)(f)
-  
-  def counter(name: String*): Counter
 
-  def stat(name: String*): Stat
-
+  /** Returns an Instrumentation which prefixes all
+   *  Stat and Counter paths with the provided name */
   def prefix(name: String): Instrumentation =
     new NameTranslatingInstrumentation(this) {
       private val seqPrefix = Seq(name)
@@ -78,6 +105,8 @@ trait Instrumentation {
         seqPrefix ++ name
     }
 
+  /** Returns an Instrumentation which applies A suffix
+   *  to all Stat and Counter paths with the provided name */
   def suffix(name: String): Instrumentation =
     new NameTranslatingInstrumentation(this) {
       private val seqSuffix = Seq(name)
@@ -85,6 +114,9 @@ trait Instrumentation {
         name ++ seqSuffix
     }
 
+  /** Produces an Instrumentation from a provided Instrumentation
+   *  which translates all stat and counter lookups with some path
+   *  augmentation */
   abstract class NameTranslatingInstrumentation(self: Instrumentation)
     extends Instrumentation {
     protected def translate(name: Seq[String]): Seq[String]
