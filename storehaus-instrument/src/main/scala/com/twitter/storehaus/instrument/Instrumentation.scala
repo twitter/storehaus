@@ -30,11 +30,11 @@ trait Stat {
 trait Instrumentation {
 
   def time[T](
-    unit: TimeUnit, stat: Stat)
+    timeUnit: TimeUnit, stat: Stat)
     (f: => T): T = {
     val elapsed = Stopwatch.start()
     val result = f
-    stat.add(elapsed().inUnit(unit))
+    stat.add(elapsed().inUnit(timeUnit))
     result
   }
 
