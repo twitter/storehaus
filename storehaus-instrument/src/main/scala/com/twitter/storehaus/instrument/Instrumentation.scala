@@ -20,7 +20,7 @@ import com.twitter.util.{ Future, Stopwatch }
 import java.util.concurrent.TimeUnit
 
 trait Counter {
-  def incr(delta: Int = 1): Unit
+  def incr(delta: Long = 1L): Unit
 }
 
 trait Stat {
