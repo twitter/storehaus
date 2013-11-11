@@ -16,7 +16,7 @@
 package com.twitter.storehaus.instrument
 
 import com.twitter.storehaus.{ AbstractReadableStore, Store, ReadableStore }
-import com.twitter.util.Future
+import com.twitter.util.{ Future, Time }
 
 /** Defines the base of a proxy for a given type.
  *  A proxy acts a simple forwarder for type T
@@ -38,7 +38,7 @@ trait ReadableStoreProxy[K, V]
   override def multiGet[K1 <: K](
     ks: Set[K1]): Map[K1, Future[Option[V]]] =
     self.multiGet(ks)
-  override def close = self.close
+  override def close(time: Time) = self.close(time)
 }
 
 /** A ProxyStore interface for Stores which may be
@@ -59,5 +59,5 @@ trait StoreProxy[K, V]
   override def multiGet[K1 <: K](
     ks: Set[K1]): Map[K1, Future[Option[V]]] =
     self.multiGet(ks)
-  override def close = self.close
+  override def close(time: Time) = self.close(time: Time)
 }

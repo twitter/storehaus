@@ -22,8 +22,8 @@ import scala.collection.mutable
 
 class InMemoryCacheStoreInstrumentation
   extends CacheStoreInstrumentation {
-  val counters = MutableMapCache(new mutable.HashMap[Seq[String], Int]
-                   with mutable.SynchronizedMap[Seq[String], Int])
+  val counters = MutableMapCache(new mutable.HashMap[Seq[String], Long]
+                   with mutable.SynchronizedMap[Seq[String], Long])
   val stats    = MutableMapCache(new mutable.HashMap[Seq[String], Seq[Float]]
                    with mutable.SynchronizedMap[Seq[String], Seq[Float]])
 }

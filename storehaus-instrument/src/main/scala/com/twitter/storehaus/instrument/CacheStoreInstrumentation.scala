@@ -20,13 +20,13 @@ import com.twitter.storehaus.cache.MutableCache
 
 /** Instrumentation backed by MutableCaches */
 trait CacheStoreInstrumentation extends Instrumentation {
-  def counters: MutableCache[Seq[String], Int]
+  def counters: MutableCache[Seq[String], Long]
   def stats: MutableCache[Seq[String], Seq[Float]]
 
   def counter(name: String*): Counter = {
     new Counter {
-      def incr(delta: Int) {
-        val oldValue = counters.get(name).getOrElse(0)
+      def incr(delta: Long = 1L) {
+        val oldValue = counters.get(name).getOrElse(0L)
         counters += (name, oldValue + delta)
       }
     }

@@ -134,6 +134,7 @@ object StorehausBuild extends Build {
     storehausMySQL,
     storehausRedis,
     storehausHBase,
+    storehausInstrument,
     storehausDynamoDB,
     storehausTesting
   )
