@@ -22,14 +22,14 @@ import com.twitter.util.{ Closable, Duration, Future, Time }
  * Instances may implement EITHER put, multiPut or both. The default implementations
  * are in terms of each other.
  */
-trait WritableStore[-K, V] extends Closable {
+trait WritableStore[-K, -V] extends Closable {
   /**
    * replace a value
    * Delete is the same as put((k,None))
    */
-  def put(kv: (K, Option[V])): Future[Unit] = multiPut(Map(kv)).apply(kv._1)
+  def put(kv: (K, V)): Future[Unit] = multiPut(Map(kv)).apply(kv._1)
   /** Replace a set of keys at one time */
-  def multiPut[K1 <: K](kvs: Map[K1, Option[V]]): Map[K1, Future[Unit]] =
+  def multiPut[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Unit]] =
     kvs.map { kv => (kv._1, put(kv)) }
 
   /** Close this store and release any resources.
@@ -41,6 +41,6 @@ trait WritableStore[-K, V] extends Closable {
 /**
  * Trait for building mutable store with TTL.
  */
-trait WithPutTtl[K, V, S <: WritableStore[K, V]] {
+trait WithPutTtl[K, V, S <: WritableStore[K, Option[V]]] {
   def withPutTtl(ttl: Duration): S
 }

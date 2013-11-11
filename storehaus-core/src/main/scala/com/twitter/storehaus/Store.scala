@@ -89,4 +89,4 @@ object Store {
 
 /** Main trait for stores can be both read from and written to
  */
-trait Store[-K, V] extends ReadableStore[K, V] with WritableStore[K, V]
+trait Store[-K, V] extends ReadableStore[K, V] with WritableStore[K, Option[V]]
