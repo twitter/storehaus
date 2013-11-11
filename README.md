@@ -4,21 +4,27 @@ Storehaus is a library that makes it easy to work with asynchronous key value st
 
 ### Storehaus-Core
 
-Storehaus's core module defines two traits; a read-only `ReadableStore` and a read-write `Store`. The traits themselves are tiny:
+Storehaus's core module defines three traits; a read-only `ReadableStore` a write-only `WritableStore` and a read-write `Store`. The traits themselves are tiny:
 
 ```scala
 package com.twitter.storehaus
 
+import com.twitter.util.{ Closable, Future, Time }
+
 trait ReadableStore[-K, +V] extends Closeable {
   def get(k: K): Future[Option[V]]
   def multiGet[K1 <: K](ks: Set[K1]): Map[K1, Future[Option[V]]]
-  override def close { }
+  override def close(time: Time) = Future.Unit
 }
 
-trait Store[-K, V] extends ReadableStore[K, V] {
-  def put(kv: (K, Option[V])): Future[Unit]
-  def multiPut[K1 <: K](kvs: Map[K1, Option[V]]): Map[K1, Future[Unit]]
+trait WritableStore[-K, -V] {
+  def put(kv: (K, V)): Future[Unit] = multiPut(Map(kv)).apply(kv._1)
+  def multiPut[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Unit]] =
+    kvs.map { kv => (kv._1, put(kv)) }
+  override def close(time: Time) = Future.Unit
 }
+
+trait Store[-K, V] extends ReadableStore[K, V] with WritableStore[K, Option[V]]
 ```
 
 The `ReadableStore` trait uses the `Future[Option[V]]` return type to communicate one of three states about each value. A value is either
