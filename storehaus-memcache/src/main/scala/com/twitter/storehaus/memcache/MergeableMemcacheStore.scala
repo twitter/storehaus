@@ -30,9 +30,14 @@ import scala.util.{ Failure, Success, Try }
 /** Factory for [[com.twitter.storehaus.memcache.MergeableMemcacheStore]] instances. */
 object MergeableMemcacheStore {
 
-  def apply[V](client: Client, ttl: Duration = MemcacheStore.DEFAULT_TTL, flag: Int = MemcacheStore.DEFAULT_FLAG)
+  // max retries for merge/cas operation
+  // this is to support multiple concurrent writers
+  val MAX_RETRIES = 10
+
+  def apply[V](client: Client, ttl: Duration = MemcacheStore.DEFAULT_TTL, flag: Int = MemcacheStore.DEFAULT_FLAG,
+      maxRetries: Int = MAX_RETRIES)
       (inj: Injection[V, ChannelBuffer], semigroup: Semigroup[V]) =
-    new MergeableMemcacheStore[V](MemcacheStore(client, ttl, flag))(inj, semigroup)
+    new MergeableMemcacheStore[V](MemcacheStore(client, ttl, flag), maxRetries)(inj, semigroup)
 }
 
 /** Returned when merge fails after a certain number of retries */
@@ -46,16 +51,17 @@ class MergeFailedException(val key: String)
  * see a performance hit if there are too many concurrent writes to a hot key.
  * The solution is to group by a hot key, and use only a single (or few) writers to that key.
  */
-class MergeableMemcacheStore[V](underlying: MemcacheStore)(implicit inj: Injection[V, ChannelBuffer],
+class MergeableMemcacheStore[V](underlying: MemcacheStore, maxRetries: Int)(implicit inj: Injection[V, ChannelBuffer],
     override val semigroup: Semigroup[V])
   extends ConvertedStore[String, String, ChannelBuffer, V](underlying)(identity)
   with MergeableStore[String, V] {
 
-  protected val MAX_RETRIES = 10 // make this configurable?
+  // NOTE: we might want exponential backoff if there are a lot of retries.
+  // use a timer to wait a random interval between [0,t), then [0,2t), then [0,4t), then [0,16t), etc...
 
   // retryable merge
   protected def doMerge(kv: (String, V), currentRetry: Int) : Future[Option[V]] =
-    (currentRetry > MAX_RETRIES) match {
+    (currentRetry > maxRetries) match {
       case false => // use 'gets' api to obtain casunique token
         underlying.client.gets(kv._1).flatMap { res : Option[(ChannelBuffer, ChannelBuffer)] =>
           res match {
@@ -71,8 +77,14 @@ class MergeableMemcacheStore[V](underlying: MemcacheStore)(implicit inj: Injecti
                   }
                 case Failure(ex) => Future.exception(ex)
               }
-            // no pre-existing value
-            case None => put((kv._1, Some(kv._2))).flatMap { u: Unit => Future.None }
+            // no pre-existing value, try to 'add' it
+            case None =>
+              underlying.client.add(kv._1, inj.apply(kv._2)).flatMap { success =>
+                success.booleanValue match {
+                  case true => Future.None
+                  case false => doMerge(kv, currentRetry + 1) // retry, next retry should call cas
+                }
+              }
           }
         }
       // no more retries
