@@ -127,7 +127,7 @@ The suffix denotes the scala version.
 
 ## Testing notes
 
-We use travis-ci to set up any underlying stores (e.g. MySQL and Redis) for the tests. In order for these tests to pass on your local machine, you may need additional setup.
+We use travis-ci to set up any underlying stores (e.g. MySQL, Redis, Memcached) for the tests. In order for these tests to pass on your local machine, you may need additional setup.
 
 ### MySQL tests
 
@@ -137,6 +137,10 @@ Once installed, run the `mysql` commands listed in [.travis.yml](https://github.
 ### Redis tests
 
 You will need [redis](http://redis.io/) installed on your local machine. Redis comes bundled with an executable for spinning up a server called `redis-server`. The Storehaus redis tests expect the factory defaults for connecting to one of these redis server instances, resolvable on `localhost` port `6379`.
+
+### Memcached
+
+You will need [Memcached](http://memcached.org/) installed on your local machine and running on the default port `11211`.
 
 ## Authors
 
