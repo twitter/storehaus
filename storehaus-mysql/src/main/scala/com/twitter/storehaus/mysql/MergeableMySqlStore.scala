@@ -36,9 +36,6 @@ class MergeableMySqlStore[V](underlying: MySqlStore)(implicit inj: Injection[V, 
   extends ConvertedStore[MySqlValue, MySqlValue, MySqlValue, V](underlying)(identity)
   with MergeableStore[MySqlValue, V] {
 
-  private val vToStrInjection = inj andThen MySqlStringInjection
-  // V => MySqlValue => String
-
   // Merges multiple keys inside a transaction.
   // 1. existing keys are fetched using multiGet (SELECT query)
   // 2. new keys are added using INSERT query
@@ -57,16 +54,7 @@ class MergeableMySqlStore[V](underlying: MySqlStore)(implicit inj: Injection[V, 
             val insertKvs = newKeys.map { k => k -> kvs.get(k).get }
             insertKvs.isEmpty match {
               case true => Future.Unit
-              case false =>
-                val insertSql = underlying.MULTI_INSERT_SQL_PREFIX +
-                  Stream.continually("(?, ?)").take(insertKvs.size).mkString(",")
-                val insertParams = insertKvs.map { kv =>
-                  List(MySqlStringInjection(kv._1).getBytes, vToStrInjection(kv._2).getBytes)
-                }.toSeq.flatten
-                underlying.client.prepareAndExecute(insertSql, insertParams:_*).map { case (ps, r) =>
-                  // close prepared statement on server
-                  underlying.client.closeStatement(ps)
-                }
+              case false => underlying.executeMultiInsert(insertKvs.toMap.mapValues { v => inj(v) })
             }
         }
 
@@ -76,22 +64,10 @@ class MergeableMySqlStore[V](underlying: MySqlStore)(implicit inj: Injection[V, 
           case true => Future.Unit
           case false =>
             val existingKvs = existingKeys.map { k => k -> kvs.get(k).get }
-            val updateSql = underlying.MULTI_UPDATE_SQL_PREFIX + Stream.continually("WHEN ? THEN ?")
-              .take(existingKvs.size).mkString(" ") +
-                underlying.MULTI_UPDATE_SQL_INFIX + Stream.continually("?").take(existingKvs.size).mkString("(", ",", ")")
-            val updateParams = existingKvs.map { kv =>
-              // value option is guaranteed to be present since this is an existing key
+            underlying.executeMultiUpdate(existingKvs.map { kv =>
               val resV = semigroup.plus(result.get(kv._1).get.get, kv._2)
-              (MySqlStringInjection(kv._1).getBytes, vToStrInjection(resV).getBytes)
-            }
-            // params for "WHEN ? THEN ?"
-            val updateCaseParams = updateParams.map { kv => List(kv._1, kv._2) }.toSeq.flatten
-            // params for "IN (?, ?, ?)"
-            val updateInParams = updateParams.map { kv => kv._1 }.toSeq
-            underlying.client.prepareAndExecute(updateSql, (updateCaseParams ++ updateInParams):_*).map { case (ps, r) =>
-              // close prepared statement on server
-              underlying.client.closeStatement(ps)
-            }
+              kv._1 -> inj(resV)
+            }.toMap)
         }
 
         // insert, update and commit or rollback accordingly

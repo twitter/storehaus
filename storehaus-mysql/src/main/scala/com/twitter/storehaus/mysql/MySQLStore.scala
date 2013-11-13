@@ -62,13 +62,13 @@ object MySqlStore {
 class MySqlStore(protected [mysql] val client: Client, table: String, kCol: String, vCol: String)
     extends Store[MySqlValue, MySqlValue] {
 
-  protected [mysql] val SELECT_SQL = "SELECT " + g(vCol) + " FROM " + g(table) + " WHERE " + g(kCol) + "=?"
-  protected [mysql] val MULTI_SELECT_SQL_PREFIX = "SELECT " + g(kCol) + ", " + g(vCol) + " FROM " + g(table) + " WHERE " + g(kCol) + " IN "
+  protected val SELECT_SQL = "SELECT " + g(vCol) + " FROM " + g(table) + " WHERE " + g(kCol) + "=?"
+  protected val MULTI_SELECT_SQL_PREFIX = "SELECT " + g(kCol) + ", " + g(vCol) + " FROM " + g(table) + " WHERE " + g(kCol) + " IN "
 
-  protected [mysql] val INSERT_SQL = "INSERT INTO " + g(table) + "(" + g(kCol) + "," + g(vCol) + ")" + " VALUES (?,?)"
-  protected [mysql] val MULTI_INSERT_SQL_PREFIX = "INSERT INTO " + g(table) + "(" + g(kCol) + "," + g(vCol) + ") VALUES "
+  protected val INSERT_SQL = "INSERT INTO " + g(table) + "(" + g(kCol) + "," + g(vCol) + ")" + " VALUES (?,?)"
+  protected val MULTI_INSERT_SQL_PREFIX = "INSERT INTO " + g(table) + "(" + g(kCol) + "," + g(vCol) + ") VALUES "
 
-  protected [mysql] val UPDATE_SQL = "UPDATE " + g(table) + " SET " + g(vCol) + "=? WHERE " + g(kCol) + "=?"
+  protected val UPDATE_SQL = "UPDATE " + g(table) + " SET " + g(vCol) + "=? WHERE " + g(kCol) + "=?"
 
   // update multiple rows together. e.g.
   // UDPATE table SET value = CASE key
@@ -76,11 +76,11 @@ class MySqlStore(protected [mysql] val client: Client, table: String, kCol: Stri
   //   WHEN "key2" THEN "value2"
   // END
   // WHERE key IN ("key1", "key2")
-  protected [mysql] val MULTI_UPDATE_SQL_PREFIX = "UPDATE " + g(table) + " SET " + g(vCol) + " = CASE " + g(kCol) + " "
-  protected [mysql] val MULTI_UPDATE_SQL_INFIX = " END WHERE " + g(kCol) + " IN "
+  protected val MULTI_UPDATE_SQL_PREFIX = "UPDATE " + g(table) + " SET " + g(vCol) + " = CASE " + g(kCol) + " "
+  protected val MULTI_UPDATE_SQL_INFIX = " END WHERE " + g(kCol) + " IN "
 
-  protected [mysql] val DELETE_SQL = "DELETE FROM " + g(table) + " WHERE " + g(kCol) + "=?"
-  protected [mysql] val MULTI_DELETE_SQL_PREFIX = "DELETE FROM " + g(table) + " WHERE " + g(kCol) + " IN "
+  protected val DELETE_SQL = "DELETE FROM " + g(table) + " WHERE " + g(kCol) + "=?"
+  protected val MULTI_DELETE_SQL_PREFIX = "DELETE FROM " + g(table) + " WHERE " + g(kCol) + " IN "
 
   protected val START_TXN_SQL = "START TRANSACTION"
   protected val COMMIT_TXN_SQL = "COMMIT"
@@ -97,6 +97,32 @@ class MySqlStore(protected [mysql] val client: Client, table: String, kCol: Stri
   protected [mysql] def commitTransaction : Future[Unit] = client.query(COMMIT_TXN_SQL).unit
   protected [mysql] def rollbackTransaction : Future[Unit] = client.query(ROLLBACK_TXN_SQL).unit
 
+  protected [mysql] def executeMultiInsert[K1 <: MySqlValue](kvs: Map[K1, MySqlValue]) = {
+    val insertSql = MULTI_INSERT_SQL_PREFIX + Stream.continually("(?, ?)").take(kvs.size).mkString(",")
+    val insertParams = kvs.map { kv =>
+      List(MySqlStringInjection(kv._1).getBytes, MySqlStringInjection(kv._2).getBytes)
+    }.toSeq.flatten
+    client.prepareAndExecute(insertSql, insertParams:_*).map { case (ps, r) =>
+      // close prepared statement on server
+      client.closeStatement(ps)
+    }
+  }
+
+  protected [mysql] def executeMultiUpdate[K1 <: MySqlValue](kvs: Map[K1, MySqlValue]) = {
+    val updateSql = MULTI_UPDATE_SQL_PREFIX + Stream.continually("WHEN ? THEN ?").take(kvs.size).mkString(" ") +
+      MULTI_UPDATE_SQL_INFIX + Stream.continually("?").take(kvs.size).mkString("(", ",", ")")
+    val updateParams = kvs.map { kv =>
+      (MySqlStringInjection(kv._1).getBytes, MySqlStringInjection(kv._2).getBytes)
+    }
+    // params for "WHEN ? THEN ?"
+    val updateCaseParams = updateParams.map { kv => List(kv._1, kv._2) }.toSeq.flatten
+    // params for "IN (?, ?, ?)"
+    val updateInParams = updateParams.map { kv => kv._1 }.toSeq
+    client.prepareAndExecute(updateSql, (updateCaseParams ++ updateInParams):_*).map { case (ps, r) =>
+      // close prepared statement on server
+      client.closeStatement(ps)
+    }
+  }
 
   override def get(k: MySqlValue): Future[Option[MySqlValue]] = {
     // finagle-mysql select() method lets you pass in a mapping function
@@ -153,17 +179,10 @@ class MySqlStore(protected [mysql] val client: Client, table: String, kCol: Stri
           case false =>
             // do not include None values in insert query
             val insertKvs = newKeys.map { k => k -> kvs.getOrElse(k, None) }.filter { ! _._2.isEmpty }
+              .toMap.mapValues { v => v.get }
             insertKvs.isEmpty match {
               case true => Future.Unit
-              case false =>
-                val insertSql = MULTI_INSERT_SQL_PREFIX + Stream.continually("(?, ?)").take(insertKvs.size).mkString(",")
-                val insertParams = insertKvs.map { kv =>
-                  List(MySqlStringInjection(kv._1).getBytes, MySqlStringInjection(kv._2.get).getBytes)
-                }.toSeq.flatten
-                client.prepareAndExecute(insertSql, insertParams:_*).map { case (ps, r) =>
-                  // close prepared statement on server
-                  client.closeStatement(ps)
-                }
+              case false => executeMultiInsert(insertKvs)
             }
         }
 
@@ -172,22 +191,10 @@ class MySqlStore(protected [mysql] val client: Client, table: String, kCol: Stri
 
         // do not include None values in update query
         val updateKvs = existingKvs.filter { ! _._2.isEmpty }
+          .toMap.mapValues { v => v.get }
         lazy val updateF = updateKvs.isEmpty match {
           case true => Future.Unit
-          case false =>
-            val updateSql = MULTI_UPDATE_SQL_PREFIX + Stream.continually("WHEN ? THEN ?").take(updateKvs.size).mkString(" ") +
-              MULTI_UPDATE_SQL_INFIX + Stream.continually("?").take(updateKvs.size).mkString("(", ",", ")")
-            val updateParams = updateKvs.map { kv =>
-              (MySqlStringInjection(kv._1).getBytes, MySqlStringInjection(kv._2.get).getBytes)
-            }
-            // params for "WHEN ? THEN ?"
-            val updateCaseParams = updateParams.map { kv => List(kv._1, kv._2) }.toSeq.flatten
-            // params for "IN (?, ?, ?)"
-            val updateInParams = updateParams.map { kv => kv._1 }.toSeq
-            client.prepareAndExecute(updateSql, (updateCaseParams ++ updateInParams):_*).map { case (ps, r) =>
-              // close prepared statement on server
-              client.closeStatement(ps)
-            }
+          case false => executeMultiUpdate(updateKvs)
         }
 
         // deletes
