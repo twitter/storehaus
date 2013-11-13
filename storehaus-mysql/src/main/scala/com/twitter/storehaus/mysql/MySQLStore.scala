@@ -59,16 +59,16 @@ object MySqlStore {
   * val store = MySqlStore(client, "storehaus-mysql-test", "key", "value")
   * }}}
   */
-class MySqlStore(client: Client, table: String, kCol: String, vCol: String)
+class MySqlStore(protected [mysql] val client: Client, table: String, kCol: String, vCol: String)
     extends Store[MySqlValue, MySqlValue] {
 
-  protected val SELECT_SQL = "SELECT " + g(vCol) + " FROM " + g(table) + " WHERE " + g(kCol) + "=?"
-  protected val MULTI_SELECT_SQL_PREFIX = "SELECT " + g(kCol) + ", " + g(vCol) + " FROM " + g(table) + " WHERE " + g(kCol) + " IN "
+  protected [mysql] val SELECT_SQL = "SELECT " + g(vCol) + " FROM " + g(table) + " WHERE " + g(kCol) + "=?"
+  protected [mysql] val MULTI_SELECT_SQL_PREFIX = "SELECT " + g(kCol) + ", " + g(vCol) + " FROM " + g(table) + " WHERE " + g(kCol) + " IN "
 
-  protected val INSERT_SQL = "INSERT INTO " + g(table) + "(" + g(kCol) + "," + g(vCol) + ")" + " VALUES (?,?)"
-  protected val MULTI_INSERT_SQL_PREFIX = "INSERT INTO " + g(table) + "(" + g(kCol) + "," + g(vCol) + ") VALUES "
+  protected [mysql] val INSERT_SQL = "INSERT INTO " + g(table) + "(" + g(kCol) + "," + g(vCol) + ")" + " VALUES (?,?)"
+  protected [mysql] val MULTI_INSERT_SQL_PREFIX = "INSERT INTO " + g(table) + "(" + g(kCol) + "," + g(vCol) + ") VALUES "
 
-  protected val UPDATE_SQL = "UPDATE " + g(table) + " SET " + g(vCol) + "=? WHERE " + g(kCol) + "=?"
+  protected [mysql] val UPDATE_SQL = "UPDATE " + g(table) + " SET " + g(vCol) + "=? WHERE " + g(kCol) + "=?"
 
   // update multiple rows together. e.g.
   // UDPATE table SET value = CASE key
@@ -76,11 +76,11 @@ class MySqlStore(client: Client, table: String, kCol: String, vCol: String)
   //   WHEN "key2" THEN "value2"
   // END
   // WHERE key IN ("key1", "key2")
-  protected val MULTI_UPDATE_SQL_PREFIX = "UPDATE " + g(table) + " SET " + g(vCol) + " = CASE " + g(kCol) + " "
-  protected val MULTI_UPDATE_SQL_INFIX = " END WHERE " + g(kCol) + " IN "
+  protected [mysql] val MULTI_UPDATE_SQL_PREFIX = "UPDATE " + g(table) + " SET " + g(vCol) + " = CASE " + g(kCol) + " "
+  protected [mysql] val MULTI_UPDATE_SQL_INFIX = " END WHERE " + g(kCol) + " IN "
 
-  protected val DELETE_SQL = "DELETE FROM " + g(table) + " WHERE " + g(kCol) + "=?"
-  protected val MULTI_DELETE_SQL_PREFIX = "DELETE FROM " + g(table) + " WHERE " + g(kCol) + " IN "
+  protected [mysql] val DELETE_SQL = "DELETE FROM " + g(table) + " WHERE " + g(kCol) + "=?"
+  protected [mysql] val MULTI_DELETE_SQL_PREFIX = "DELETE FROM " + g(table) + " WHERE " + g(kCol) + " IN "
 
   protected val START_TXN_SQL = "START TRANSACTION"
   protected val COMMIT_TXN_SQL = "COMMIT"

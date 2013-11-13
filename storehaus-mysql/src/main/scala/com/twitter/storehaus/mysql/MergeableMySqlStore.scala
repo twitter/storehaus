@@ -19,8 +19,9 @@ package com.twitter.storehaus.mysql
 import com.twitter.algebird.Semigroup
 import com.twitter.bijection.Injection
 import com.twitter.finagle.exp.mysql.Client
-import com.twitter.storehaus.ConvertedStore
 import com.twitter.storehaus.algebra.MergeableStore
+import com.twitter.storehaus.ConvertedStore
+import com.twitter.storehaus.FutureOps
 import com.twitter.util.{ Future, Throw }
 
 /**
@@ -35,20 +36,82 @@ class MergeableMySqlStore[V](underlying: MySqlStore)(implicit inj: Injection[V, 
   extends ConvertedStore[MySqlValue, MySqlValue, MySqlValue, V](underlying)(identity)
   with MergeableStore[MySqlValue, V] {
 
-  override def merge(kv: (MySqlValue, V)): Future[Option[V]] = {
-    underlying.startTransaction.flatMap { u: Unit =>
-      get(kv._1).flatMap { optV: Option[V] =>
-        val incV = kv._2
-        val resV = optV.map(semigroup.plus(_, incV)).orElse(Some(incV))
+  private val vToStrInjection = inj andThen MySqlStringInjection
+  // V => MySqlValue => String
 
-        put((kv._1, resV)).flatMap { u: Unit =>
-          underlying.commitTransaction.flatMap { u: Unit => Future.value(optV) }
-            .onFailure { case e: Exception =>
-              underlying.rollbackTransaction.flatMap { u: Unit => Future.exception(e) }
+  // Merges multiple keys inside a transaction.
+  // 1. existing keys are fetched using multiGet (SELECT query)
+  // 2. new keys are added using INSERT query
+  // 3. existing keys are merged using UPDATE query
+  // NOTE: merge on a single key also in turn calls this
+  override def multiMerge[K1 <: MySqlValue](kvs: Map[K1, V]): Map[K1, Future[Option[V]]] = {
+    val mergeResult : Future[Map[K1, Option[V]]] = underlying.startTransaction.flatMap { u: Unit =>
+      FutureOps.mapCollect(multiGet(kvs.keySet)).flatMap { result: Map[K1, Option[V]] =>
+        val existingKeys = result.filter { !_._2.isEmpty }.keySet
+        val newKeys = result.filter { _._2.isEmpty }.keySet
+
+        // handle inserts for new keys
+        val insertF = newKeys.isEmpty match {
+          case true => Future.Unit
+          case false =>
+            val insertKvs = newKeys.map { k => k -> kvs.get(k).get }
+            insertKvs.isEmpty match {
+              case true => Future.Unit
+              case false =>
+                val insertSql = underlying.MULTI_INSERT_SQL_PREFIX +
+                  Stream.continually("(?, ?)").take(insertKvs.size).mkString(",")
+                val insertParams = insertKvs.map { kv =>
+                  List(MySqlStringInjection(kv._1).getBytes, vToStrInjection(kv._2).getBytes)
+                }.toSeq.flatten
+                underlying.client.prepareAndExecute(insertSql, insertParams:_*).map { case (ps, r) =>
+                  // close prepared statement on server
+                  underlying.client.closeStatement(ps)
+                }
             }
+        }
+
+        // handle update/merge for existing keys
+        // lazy val realized inside of insertF.flatMap
+        lazy val updateF = existingKeys.isEmpty match {
+          case true => Future.Unit
+          case false =>
+            val existingKvs = existingKeys.map { k => k -> kvs.get(k).get }
+            val updateSql = underlying.MULTI_UPDATE_SQL_PREFIX + Stream.continually("WHEN ? THEN ?")
+              .take(existingKvs.size).mkString(" ") +
+                underlying.MULTI_UPDATE_SQL_INFIX + Stream.continually("?").take(existingKvs.size).mkString("(", ",", ")")
+            val updateParams = existingKvs.map { kv =>
+              // value option is guaranteed to be present since this is an existing key
+              val resV = semigroup.plus(result.get(kv._1).get.get, kv._2)
+              (MySqlStringInjection(kv._1).getBytes, vToStrInjection(resV).getBytes)
+            }
+            // params for "WHEN ? THEN ?"
+            val updateCaseParams = updateParams.map { kv => List(kv._1, kv._2) }.toSeq.flatten
+            // params for "IN (?, ?, ?)"
+            val updateInParams = updateParams.map { kv => kv._1 }.toSeq
+            underlying.client.prepareAndExecute(updateSql, (updateCaseParams ++ updateInParams):_*).map { case (ps, r) =>
+              // close prepared statement on server
+              underlying.client.closeStatement(ps)
+            }
+        }
+
+        // insert, update and commit or rollback accordingly
+        insertF.flatMap { f =>
+          updateF.flatMap { f =>
+            underlying.commitTransaction.flatMap { f =>
+              // return values before the merge
+              Future.value(result)
+            }
+          }
+          .onFailure { case e: Exception =>
+            underlying.rollbackTransaction.flatMap { f =>
+              // map values to exception
+              Future.value(result.mapValues { v => e })
+            }
+          }
         }
       }
     }
+    FutureOps.liftValues(kvs.keySet, mergeResult)
   }
 }
 

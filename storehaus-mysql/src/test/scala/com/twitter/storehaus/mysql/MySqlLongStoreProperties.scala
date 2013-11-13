@@ -53,7 +53,7 @@ object MySqlLongStoreProperties extends Properties("MySqlLongStore")
       }
     }
 
-  def mergeStoreTest(store: MySqlLongStore,
+  def multiMergeStoreTest(store: MySqlLongStore,
       pairs: Gen[List[(String, Option[Long])]] = NonEmpty.Pairing.alphaStrNumerics[Long](10)) =
     forAll(pairs) { (examples: List[(String, Option[Long])]) =>
       val kvs = examples.map { case (k, v) =>
@@ -87,8 +87,8 @@ object MySqlLongStoreProperties extends Properties("MySqlLongStore")
   property("MySqlLongStore put and get") =
     withStore(putAndGetStoreTest(_), "text", "bigint")
 
-  property("MySqlLongStore merge") =
-    withStore(mergeStoreTest(_), "text", "bigint", true)
+  property("MySqlLongStore multiMerge") =
+    withStore(multiMergeStoreTest(_), "text", "bigint", true)
 
   private def withStore[T](f: MySqlLongStore => T, kColType: String, vColType: String, merge: Boolean = false): T = {
     val client = Client("localhost:3306", "storehaususer", "test1234", "storehaus_test", Level.WARNING)
