@@ -16,6 +16,8 @@
 
 package com.twitter.storehaus.cache
 
+import com.twitter.algebird.Successible
+
 /**
  * This is an immutable implementation of a provider of cyclical increments. The motivation
  * is that we need ordered identifiers for caches, but we do not want to just increment
@@ -30,26 +32,25 @@ package com.twitter.storehaus.cache
  */
 
 object CyclicIncrementProvider {
-  def intIncrementer: CyclicIncrementProvider[Int] = CyclicIncrementProvider(0, { i: Int => i + 1 })
+  def intIncrementer: CyclicIncrementProvider[Int] = CyclicIncrementProvider(0)
 
-  def apply[@specialized(Int, Long) K: Ordering](zero: K, increment: K => K): CyclicIncrementProvider[K] =
-    CyclicIncrementProvider(zero, increment, SideA, 0, zero, 0, zero)
+  def apply[@specialized(Int, Long) K: Ordering: Successible](zero: K): CyclicIncrementProvider[K] =
+    CyclicIncrementProvider(zero, SideA, 0, zero, 0, zero)
 
-  def apply[@specialized(Int, Long) K: Ordering](zero: K,
-               increment: K => K,
-               currentSide: Side,
-               currentSideCount: Int,
-               maxCurrentSideVal: K,
-               nextSideCount: Int,
-               maxNextSideVal: K): CyclicIncrementProvider[K] =
-    new CyclicIncrementProvider[K](zero, increment, currentSide, currentSideCount, maxCurrentSideVal, nextSideCount, maxNextSideVal)
+  def apply[@specialized(Int, Long) K: Ordering: Successible]
+    (zero: K,
+     currentSide: Side,
+     currentSideCount: Int,
+     maxCurrentSideVal: K,
+     nextSideCount: Int,
+     maxNextSideVal: K): CyclicIncrementProvider[K] =
+    new CyclicIncrementProvider[K](zero, currentSide, currentSideCount, maxCurrentSideVal, nextSideCount, maxNextSideVal)
 }
 
 // Algorithm: we start on a side. We hand out values. Once we've handed out at least 1 value, we begin to give out values of side.nextSide. Once
 // all of the increments of the previous side have been culled, we now switch. side.nextSide becomes the current side. Then we repeat the algorithm.
-class CyclicIncrementProvider[@specialized(Int, Long) K: Ordering]
+class CyclicIncrementProvider[@specialized(Int, Long) K: Ordering: Successible]
   (zero: K,
-   increment: K => K, //TODO once it is in algebird, make this a Successible
    currentSide: Side,
    currentSideCount: Int,
    maxCurrentSideVal: K,
@@ -58,26 +59,30 @@ class CyclicIncrementProvider[@specialized(Int, Long) K: Ordering]
   def tick: (CyclicIncrement[K], CyclicIncrementProvider[K]) =
     if (nextSideCount > 0 || currentSideCount > 0) {
       // We hand one out of the next time
-      val nextVal = increment(maxNextSideVal)
+      val nextVal =
+        Successible.next(maxNextSideVal)
+          .getOrElse(throw new IllegalStateException("Hit maximum value for increment"))
       (currentSide.nextSide.makeCyclicIncrement(nextVal),
-       CyclicIncrementProvider[K](zero, increment, currentSide, currentSideCount, maxCurrentSideVal, nextSideCount+1, nextVal))
+       CyclicIncrementProvider[K](zero, currentSide, currentSideCount, maxCurrentSideVal, nextSideCount+1, nextVal))
     } else {
       // We hand out one of the current time
-      val nextVal = increment(maxCurrentSideVal)
+      val nextVal =
+        Successible.next(maxCurrentSideVal)
+          .getOrElse(throw new IllegalStateException("Hit maximum value for increment"))
       (currentSide.makeCyclicIncrement(nextVal),
-       CyclicIncrementProvider[K](zero, increment, currentSide, currentSideCount+1, nextVal, nextSideCount, maxNextSideVal))
+       CyclicIncrementProvider[K](zero, currentSide, currentSideCount+1, nextVal, nextSideCount, maxNextSideVal))
     }
 
   def cull(cyclicIncrement: CyclicIncrement[K]): CyclicIncrementProvider[K] =
     if (cyclicIncrement.side == currentSide) {
       val nextCurrentSidecount = currentSideCount - 1
       if (nextCurrentSidecount == 0) {
-        CyclicIncrementProvider[K](zero, increment, currentSide.nextSide, nextSideCount, maxNextSideVal, 0, zero)
+        CyclicIncrementProvider[K](zero, currentSide.nextSide, nextSideCount, maxNextSideVal, 0, zero)
       } else {
-        CyclicIncrementProvider[K](zero, increment, currentSide, nextCurrentSidecount, maxCurrentSideVal, nextSideCount, maxNextSideVal)
+        CyclicIncrementProvider[K](zero, currentSide, nextCurrentSidecount, maxCurrentSideVal, nextSideCount, maxNextSideVal)
       }
     } else if (cyclicIncrement.side == currentSide.nextSide) {
-      CyclicIncrementProvider[K](zero, increment, currentSide, currentSideCount, maxCurrentSideVal, nextSideCount-1, maxNextSideVal)
+      CyclicIncrementProvider[K](zero, currentSide, currentSideCount, maxCurrentSideVal, nextSideCount-1, maxNextSideVal)
     } else {
       throw new IllegalStateException("Shouldn't be culling a value of given type")
     }
@@ -86,11 +91,11 @@ class CyclicIncrementProvider[@specialized(Int, Long) K: Ordering]
       "CyclicIncrementProvider: zero:%d currentSide:%s currentSideCount:%d maxCurrentSideVal:%d nextSideCount:%d maxNextSideVal:%d"
         .format(zero, currentSide, currentSideCount, maxCurrentSideVal, nextSideCount, maxNextSideVal)
 
-    def empty = CyclicIncrementProvider(zero, increment)
+    def empty = CyclicIncrementProvider(zero)
 }
 
 object CyclicIncrement {
-  implicit def ordering[K](implicit ordering:Ordering[K]):Ordering[CyclicIncrement[K]] = Ordering.by { _.value }
+  implicit def ordering[K](implicit ordering:Ordering[K]): Ordering[CyclicIncrement[K]] = Ordering.by { _.value }
 }
 
 sealed trait CyclicIncrement[@specialized(Int, Long) K] {
@@ -104,7 +109,6 @@ case class SideACyclicIncrement[@specialized(Int, Long) K: Ordering](override va
 case class SideBCyclicIncrement[@specialized(Int, Long) K: Ordering](override val value: K) extends CyclicIncrement[K] { def side = SideB }
 case class SideCCyclicIncrement[@specialized(Int, Long) K: Ordering](override val value: K) extends CyclicIncrement[K] { def side = SideC }
 
-//TODO this should be a Successible once it is in algebird
 sealed trait Side {
   def nextSide: Side
   def makeCyclicIncrement[@specialized(Int, Long) K: Ordering](value: K): CyclicIncrement[K]
