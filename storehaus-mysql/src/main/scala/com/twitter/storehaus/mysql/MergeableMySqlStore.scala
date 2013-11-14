@@ -73,15 +73,15 @@ class MergeableMySqlStore[V](underlying: MySqlStore)(implicit inj: Injection[V, 
         // insert, update and commit or rollback accordingly
         insertF.flatMap { f =>
           updateF.flatMap { f =>
-            underlying.commitTransaction.flatMap { f =>
+            underlying.commitTransaction.map { f =>
               // return values before the merge
-              Future.value(result)
+              result
             }
           }
           .onFailure { case e: Exception =>
-            underlying.rollbackTransaction.flatMap { f =>
+            underlying.rollbackTransaction.map { f =>
               // map values to exception
-              Future.value(result.mapValues { v => e })
+              result.mapValues { v => e }
             }
           }
         }
