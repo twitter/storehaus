@@ -81,6 +81,10 @@ object ValueMapper {
       case _ => throw new UnsupportedOperationException(v.getClass.getName + " is currently not supported.")
     }
   }
+
+  def toLong(v: Value): Option[Long] = {
+    toString(v).map { _.toLong }
+  }
 }
 
 /** Factory for [[com.twitter.storehaus.mysql.MySqlValue]] instances. */
@@ -133,4 +137,9 @@ object MySqlStringInjection extends Injection[MySqlValue, String] {
 object MySqlCbInjection extends Injection[MySqlValue, ChannelBuffer] {
   def apply(a: MySqlValue): ChannelBuffer = ValueMapper.toChannelBuffer(a.v).getOrElse(ChannelBuffers.EMPTY_BUFFER)
   override def invert(b: ChannelBuffer) = Try(MySqlValue(RawStringValue(b.toString(UTF_8))))
+}
+
+object LongMySqlInjection extends Injection[Long, MySqlValue] {
+  def apply(a: Long): MySqlValue = MySqlValue(a)
+  override def invert(b: MySqlValue) = Try(ValueMapper.toLong(b.v).get)
 }

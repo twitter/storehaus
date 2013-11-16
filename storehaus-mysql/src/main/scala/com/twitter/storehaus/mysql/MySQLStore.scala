@@ -59,7 +59,7 @@ object MySqlStore {
   * val store = MySqlStore(client, "storehaus-mysql-test", "key", "value")
   * }}}
   */
-class MySqlStore(client: Client, table: String, kCol: String, vCol: String)
+class MySqlStore(protected [mysql] val client: Client, table: String, kCol: String, vCol: String)
     extends Store[MySqlValue, MySqlValue] {
 
   protected val SELECT_SQL = "SELECT " + g(vCol) + " FROM " + g(table) + " WHERE " + g(kCol) + "=?"
@@ -93,10 +93,36 @@ class MySqlStore(client: Client, table: String, kCol: String, vCol: String)
   protected val updateStmt = Await.result(client.prepare(UPDATE_SQL))
   protected val deleteStmt = Await.result(client.prepare(DELETE_SQL))
 
-  protected def startTransaction : Future[Unit] = client.query(START_TXN_SQL).unit
-  protected def commitTransaction : Future[Unit] = client.query(COMMIT_TXN_SQL).unit
-  protected def rollbackTransaction : Future[Unit] = client.query(ROLLBACK_TXN_SQL).unit
+  protected [mysql] def startTransaction : Future[Unit] = client.query(START_TXN_SQL).unit
+  protected [mysql] def commitTransaction : Future[Unit] = client.query(COMMIT_TXN_SQL).unit
+  protected [mysql] def rollbackTransaction : Future[Unit] = client.query(ROLLBACK_TXN_SQL).unit
 
+  protected [mysql] def executeMultiInsert[K1 <: MySqlValue](kvs: Map[K1, MySqlValue]) = {
+    val insertSql = MULTI_INSERT_SQL_PREFIX + Stream.continually("(?, ?)").take(kvs.size).mkString(",")
+    val insertParams = kvs.map { kv =>
+      List(MySqlStringInjection(kv._1).getBytes, MySqlStringInjection(kv._2).getBytes)
+    }.toSeq.flatten
+    client.prepareAndExecute(insertSql, insertParams:_*).map { case (ps, r) =>
+      // close prepared statement on server
+      client.closeStatement(ps)
+    }
+  }
+
+  protected [mysql] def executeMultiUpdate[K1 <: MySqlValue](kvs: Map[K1, MySqlValue]) = {
+    val updateSql = MULTI_UPDATE_SQL_PREFIX + Stream.continually("WHEN ? THEN ?").take(kvs.size).mkString(" ") +
+      MULTI_UPDATE_SQL_INFIX + Stream.continually("?").take(kvs.size).mkString("(", ",", ")")
+    val updateParams = kvs.map { kv =>
+      (MySqlStringInjection(kv._1).getBytes, MySqlStringInjection(kv._2).getBytes)
+    }
+    // params for "WHEN ? THEN ?"
+    val updateCaseParams = updateParams.map { kv => List(kv._1, kv._2) }.toSeq.flatten
+    // params for "IN (?, ?, ?)"
+    val updateInParams = updateParams.map { kv => kv._1 }.toSeq
+    client.prepareAndExecute(updateSql, (updateCaseParams ++ updateInParams):_*).map { case (ps, r) =>
+      // close prepared statement on server
+      client.closeStatement(ps)
+    }
+  }
 
   override def get(k: MySqlValue): Future[Option[MySqlValue]] = {
     // finagle-mysql select() method lets you pass in a mapping function
@@ -153,17 +179,10 @@ class MySqlStore(client: Client, table: String, kCol: String, vCol: String)
           case false =>
             // do not include None values in insert query
             val insertKvs = newKeys.map { k => k -> kvs.getOrElse(k, None) }.filter { ! _._2.isEmpty }
+              .toMap.mapValues { v => v.get }
             insertKvs.isEmpty match {
               case true => Future.Unit
-              case false =>
-                val insertSql = MULTI_INSERT_SQL_PREFIX + Stream.continually("(?, ?)").take(insertKvs.size).mkString(",")
-                val insertParams = insertKvs.map { kv =>
-                  List(MySqlStringInjection(kv._1).getBytes, MySqlStringInjection(kv._2.get).getBytes)
-                }.toSeq.flatten
-                client.prepareAndExecute(insertSql, insertParams:_*).map { case (ps, r) =>
-                  // close prepared statement on server
-                  client.closeStatement(ps)
-                }
+              case false => executeMultiInsert(insertKvs)
             }
         }
 
@@ -172,22 +191,10 @@ class MySqlStore(client: Client, table: String, kCol: String, vCol: String)
 
         // do not include None values in update query
         val updateKvs = existingKvs.filter { ! _._2.isEmpty }
+          .toMap.mapValues { v => v.get }
         lazy val updateF = updateKvs.isEmpty match {
           case true => Future.Unit
-          case false =>
-            val updateSql = MULTI_UPDATE_SQL_PREFIX + Stream.continually("WHEN ? THEN ?").take(updateKvs.size).mkString(" ") +
-              MULTI_UPDATE_SQL_INFIX + Stream.continually("?").take(updateKvs.size).mkString("(", ",", ")")
-            val updateParams = updateKvs.map { kv =>
-              (MySqlStringInjection(kv._1).getBytes, MySqlStringInjection(kv._2.get).getBytes)
-            }
-            // params for "WHEN ? THEN ?"
-            val updateCaseParams = updateParams.map { kv => List(kv._1, kv._2) }.toSeq.flatten
-            // params for "IN (?, ?, ?)"
-            val updateInParams = updateParams.map { kv => kv._1 }.toSeq
-            client.prepareAndExecute(updateSql, (updateCaseParams ++ updateInParams):_*).map { case (ps, r) =>
-              // close prepared statement on server
-              client.closeStatement(ps)
-            }
+          case false => executeMultiUpdate(updateKvs)
         }
 
         // deletes
