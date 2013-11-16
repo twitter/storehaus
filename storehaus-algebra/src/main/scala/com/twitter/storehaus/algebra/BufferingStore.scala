@@ -17,8 +17,8 @@
 package com.twitter.storehaus.algebra
 
 import com.twitter.algebird.{ Monoid, Semigroup, StatefulSummer }
-import com.twitter.util.{ Future, Promise }
-import com.twitter.storehaus.{ FutureOps, FutureCollector }
+import com.twitter.util.{ Future, Promise, Time }
+import com.twitter.storehaus.{ FutureOps, FutureCollector, Store }
 import scala.collection.mutable.{ Map => MMap }
 import scala.collection.breakOut
 
@@ -29,32 +29,18 @@ trait SummerConstructor[K] {
 }
 
 /** A Mergeable that sits on top of another mergeable and pre-aggregates before pushing into merge/multiMerge
- * This is very useful for cases where you have some keys that are very hot, or you have a remote store that
+ * This is very useful for cases where you have some keys that are very hot, or you have a remote mergeable that
  * you don't want to constantly hit.
- * Note that calling a get/put forces a flush on this store.  Also note that the Futures returned by merge
- * are completed only when the underlying store is finally merged.
  */
-class BufferingStore[K, V](store: MergeableStore[K, V], summerCons: SummerConstructor[K])
-  extends MergeableStore[K, V] {
+class BufferingMergeable[K, V](store: Mergeable[K, V], summerCons: SummerConstructor[K])
+  extends Mergeable[K, V] {
   protected implicit val collector = FutureCollector.bestEffort[Any]
   protected val summer: StatefulSummer[Map[K, PromiseLink[V]]] = summerCons(new PromiseLinkSemigroup(semigroup))
 
   override def semigroup = store.semigroup
 
-  // Assumes m has k, which is true by construction below
-  private def wait[K1<:K, W](k: K1, m: Future[Map[K1, Future[W]]]): Future[W] = m.flatMap { _.apply(k) }
-
-  override def multiGet[K1 <: K](ks: Set[K1]): Map[K1, Future[Option[V]]] = {
-    val allGets = flush.map( _ => store.multiGet(ks))
-    ks.map { k => k -> wait(k, allGets) }(breakOut)
-  }
-
-  override def multiPut[K1 <: K](kvs: Map[K1, Option[V]]) = {
-    val allPuts = flush.map(_ => store.multiPut(kvs))
-    kvs.map { case (k, _) => k -> wait(k, allPuts) }
-  }
-
-  private def flush: Future[Unit] =
+  // Flush the underlying buffer
+  def flush: Future[Unit] =
     summer.flush.map(mergeFlush(_)) match {
       case None => Future.Unit
       case Some(mKV) => collector(mKV.values.toSeq).unit
@@ -76,4 +62,26 @@ class BufferingStore[K, V](store: MergeableStore[K, V], summerCons: SummerConstr
     summer.put(links).foreach(mergeFlush(_))
     kvs.map { case (k, _) => k -> links(k).promise }
   }
+
+  override def close(t: Time) = store.close(t)
 }
+/** A MergeableStore that does the same buffering as BufferingMergeable, but
+ * flushes on put/get.
+ */
+class BufferingStore[K, V](store: MergeableStore[K, V], summerCons: SummerConstructor[K])
+  extends BufferingMergeable[K, V](store, summerCons) with MergeableStore[K, V] {
+
+  // Assumes m has k, which is true by construction below
+  private def wait[K1<:K, W](k: K1, m: Future[Map[K1, Future[W]]]): Future[W] = m.flatMap { _.apply(k) }
+
+  override def multiGet[K1 <: K](ks: Set[K1]): Map[K1, Future[Option[V]]] = {
+    val allGets = flush.map(_ => store.multiGet(ks))
+    ks.map { k => k -> wait(k, allGets) }(breakOut)
+  }
+
+  override def multiPut[K1 <: K](kvs: Map[K1, Option[V]]) = {
+    val allPuts = flush.map(_ => store.multiPut(kvs))
+    kvs.map { case (k, _) => k -> wait(k, allPuts) }
+  }
+}
+
