@@ -17,13 +17,15 @@
 package com.twitter.storehaus
 
 import com.twitter.bijection.Injection
+import com.twitter.storehaus.testing.SelfAggregatingCloseableCleanup
 import com.twitter.util.Await
 
 import org.scalacheck.Properties
 
 import scala.util.Try
 
-object PivotedReadableStoreProperties extends Properties("PivotedReadableStore") {
+object PivotedReadableStoreProperties extends Properties("PivotedReadableStore")
+  with SelfAggregatingCloseableCleanup[PivotedReadableStore[String, String, Int, String]] {
 
   // (prefix, num) => "prefix/num"
   object PivotInjection extends Injection[(String, Int), String] {
