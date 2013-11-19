@@ -43,7 +43,6 @@ class PivotedReadableStore[K, -OuterK, InnerK, +V](store: ReadableStore[K, V])(i
     Future.value(Some(new ReadableStore[InnerK, V]() {
       override def get(innerK: InnerK) = store.get(inj((outerK, innerK)))
     }))
-    // any semantic diff between Future.None and Future(Map.empty)?
 
   override def close(time: Time) = store.close(time)
 }

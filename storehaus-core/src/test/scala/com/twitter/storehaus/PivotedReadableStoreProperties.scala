@@ -34,7 +34,26 @@ object PivotedReadableStoreProperties extends Properties("PivotedReadableStore")
     }
   }
 
-  property("PivotedReadableStore gets over mapstore") = {
+  def getStoreTest(store: PivotedReadableStore[String, String, Int, String]) = {
+    val innerStore1 = Await.result(store.get("prefix1")).get
+    val innerStore2 = Await.result(store.get("prefix2")).get
+    (0 until 100).toList.forall { case n =>
+      Await.result(innerStore1.get(n)).get == "value1" + n.toString
+      Await.result(innerStore2.get(n)).get == "value2" + n.toString
+    }
+  }
+
+  def multiGetStoreTest(store: PivotedReadableStore[String, String, Int, String]) = {
+    val innerStores = store.multiGet(Set("prefix1", "prefix2"))
+    val innerStore1 = Await.result(innerStores.get("prefix1").get).get
+    val innerStore2 = Await.result(innerStores.get("prefix2").get).get
+    (0 until 100).toList.forall { case n =>
+      Await.result(innerStore1.get(n)).get == "value1" + n.toString
+      Await.result(innerStore2.get(n)).get == "value2" + n.toString
+    }
+  }
+
+  property("PivotedReadableStore gets over MapStore") = {
     val map1 : Map[String, String] = (0 until 100).toList.map { case n =>
       (PivotInjection(("prefix1", n)), "value1" + n.toString)
     }.toMap
@@ -42,11 +61,7 @@ object PivotedReadableStoreProperties extends Properties("PivotedReadableStore")
       (PivotInjection(("prefix2", n)), "value2" + n.toString)
     }.toMap
     val store = PivotedReadableStore.fromMap[String, String, Int, String](map1 ++ map2)(PivotInjection)
-    val innerStore1 = Await.result(store.get("prefix1")).get
-    val innerStore2 = Await.result(store.get("prefix2")).get
-    (0 until 100).toList.forall { case n =>
-      Await.result(innerStore1.get(n)).get == "value1" + n.toString
-      Await.result(innerStore2.get(n)).get == "value2" + n.toString
-    }
+
+    getStoreTest(store) && multiGetStoreTest(store)
   }
 }
