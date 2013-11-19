@@ -16,30 +16,34 @@
 
 package com.twitter.storehaus
 
-import com.twitter.bijection.Bijection
+import com.twitter.bijection.Injection
 import com.twitter.util.{ Future, Time }
 
+import scala.util.{ Failure, Success }
+
 /**
- * ReadableStore enrichment for ReadableStore[OuterK, Map[InnerK, V]]
+ * ReadableStore enrichment for ReadableStore[OuterK, ReadableStore[InnerK, V]]
  * on top of a ReadableStore[K, V]
  *
  * @author Ruban Monu
  */
-class PivotedReadableStore[K, -OuterK, InnerK, +V](store: IterableReadableStore[K, V])(bij: Bijection[(OuterK, InnerK), K])
-    extends ReadableStore[OuterK, Map[InnerK, V]] {
+object PivotedReadableStore {
 
-  override def get(outerK: OuterK) : Future[Option[Map[InnerK, V]]] =
-    store.getAllWithFilter({ k: K => bij.invert(k)._1 == outerK }).map { case kvIter =>
-      Some(kvIter.map { case kv =>
-        val (outerK, innerK) = bij.invert(kv._1)
-        (innerK -> kv._2)
-      }.toMap)
-    }
+  def fromMap[K, OuterK, InnerK, V](m: Map[K, V])(inj: Injection[(OuterK, InnerK), K]) =
+    new PivotedReadableStore[K, OuterK, InnerK, V](ReadableStore.fromMap(m))(inj)
+
+  def fromReadableStore[K, OuterK, InnerK, V](store: ReadableStore[K, V])(inj: Injection[(OuterK, InnerK), K]) =
+    new PivotedReadableStore[K, OuterK, InnerK, V](store)(inj)
+}
+
+class PivotedReadableStore[K, -OuterK, InnerK, +V](store: ReadableStore[K, V])(inj: Injection[(OuterK, InnerK), K])
+    extends ReadableStore[OuterK, ReadableStore[InnerK, V]] {
+
+  override def get(outerK: OuterK) : Future[Option[ReadableStore[InnerK, V]]] =
+    Future.value(Some(new ReadableStore[InnerK, V]() {
+      override def get(innerK: InnerK) = store.get(inj((outerK, innerK)))
+    }))
     // any semantic diff between Future.None and Future(Map.empty)?
-
-  override def multiGet[T <: OuterK](ks: Set[T]): Map[T, Future[Option[Map[InnerK, V]]]] =
-    ks.map { case k => k -> get(k) }.toMap
-    // TODO: call getAll once and reuse for each key in ks
 
   override def close(time: Time) = store.close(time)
 }
