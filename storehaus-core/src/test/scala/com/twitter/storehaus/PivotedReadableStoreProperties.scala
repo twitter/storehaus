@@ -28,7 +28,7 @@ object PivotedReadableStoreProperties extends Properties("PivotedReadableStore")
   with SelfAggregatingCloseableCleanup[PivotedReadableStore[String, String, Int, String]] {
 
   // (prefix, num) => "prefix/num"
-  object PivotInjection extends Injection[(String, Int), String] {
+  implicit object PivotInjection extends Injection[(String, Int), String] {
     def apply(pair: (String, Int)): String = pair._1 + "/" + pair._2.toString
     override def invert(s: String) = {
       val parts = s.split('/')
@@ -62,7 +62,8 @@ object PivotedReadableStoreProperties extends Properties("PivotedReadableStore")
     val map2 : Map[String, String] = (0 until 100).toList.map { case n =>
       (PivotInjection(("prefix2", n)), "value2" + n.toString)
     }.toMap
-    val store = PivotedReadableStore.fromMap[String, String, Int, String](map1 ++ map2)(PivotInjection)
+
+    val store = PivotedReadableStore.fromMap[String, String, Int, String](map1 ++ map2)
 
     getStoreTest(store) && multiGetStoreTest(store)
   }

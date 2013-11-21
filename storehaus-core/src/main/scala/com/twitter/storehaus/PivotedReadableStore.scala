@@ -29,14 +29,14 @@ import scala.util.{ Failure, Success }
  */
 object PivotedReadableStore {
 
-  def fromMap[K, OuterK, InnerK, V](m: Map[K, V])(inj: Injection[(OuterK, InnerK), K]) =
+  def fromMap[K, OuterK, InnerK, V](m: Map[K, V])(implicit inj: Injection[(OuterK, InnerK), K]) =
     new PivotedReadableStore[K, OuterK, InnerK, V](ReadableStore.fromMap(m))(inj)
 
-  def fromReadableStore[K, OuterK, InnerK, V](store: ReadableStore[K, V])(inj: Injection[(OuterK, InnerK), K]) =
+  def fromReadableStore[K, OuterK, InnerK, V](store: ReadableStore[K, V])(implicit inj: Injection[(OuterK, InnerK), K]) =
     new PivotedReadableStore[K, OuterK, InnerK, V](store)(inj)
 }
 
-class PivotedReadableStore[K, -OuterK, InnerK, +V](store: ReadableStore[K, V])(inj: Injection[(OuterK, InnerK), K])
+class PivotedReadableStore[K, -OuterK, InnerK, +V](store: ReadableStore[K, V])(implicit inj: Injection[(OuterK, InnerK), K])
     extends ReadableStore[OuterK, ReadableStore[InnerK, V]] {
 
   override def get(outerK: OuterK) : Future[Option[ReadableStore[InnerK, V]]] =
