@@ -150,7 +150,7 @@ object StorehausBuild extends Build {
 
   lazy val storehausCore = module("core").settings(
     libraryDependencies ++= Seq(
-      withCross("com.twitter" %% "util-core" % utilVersion),
+      withCross("com.twitter" %% "util-core" % utilVersion % "provided"),
       "com.twitter" %% "bijection-core" % bijectionVersion,
       "com.twitter" %% "bijection-util" % bijectionVersion
     )
