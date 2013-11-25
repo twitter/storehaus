@@ -16,10 +16,12 @@
 
 package com.twitter.storehaus
 
+import com.twitter.storehaus.kafka.KafkaSink.Dispatcher
+
 /**
  * @author Mansur Ashraf
  * @since 11/23/13
  */
 package object kafka {
-  implicit def sinkToEnrichedSink[K, V](sink: KafkaSink[K, V]) = new EnrichedKafkaSink[K, V](sink)
+  implicit def dispatch[K, V](sink: KafkaSink[K, V]): () => Dispatcher[K, V] = sink.write
 }

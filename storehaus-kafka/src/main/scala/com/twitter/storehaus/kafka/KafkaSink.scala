@@ -18,8 +18,9 @@ package com.twitter.storehaus.kafka
 
 import com.twitter.util.Future
 import KafkaSink.Dispatcher
-import kafka.serializer.Encoder
-import KafkaEncoders._
+import com.twitter.bijection.{Codec, Injection}
+import org.apache.avro.specific.SpecificRecordBase
+import com.twitter.bijection.avro.AvroCodecs
 
 /**
  * @author Mansur Ashraf
@@ -28,56 +29,65 @@ import KafkaEncoders._
 class KafkaSink[K, V](dispatcher: Dispatcher[K, V]) {
   def write: () => Dispatcher[K, V] = () => dispatcher
 
-  def convert[K1, V1](fn: ((K1, V1)) => ((K, V))): KafkaSink[K1, V1] = {
-    val f: Dispatcher[K1, V1] = {
-      x: (K1, V1) => dispatcher(fn(x))
+  def convert[K1, V1](kfn: K1 => K)(implicit inj: Injection[V1, V]) = {
+    val fn: Dispatcher[K1, V1] = {
+      kv: (K1, V1) => dispatcher(compose(kfn, inj)(kv))
     }
-    new KafkaSink[K1, V1](f)
+    new KafkaSink[K1, V1](fn)
   }
 
-  def filter(fn: ((K, V)) => Boolean): KafkaSink[K, V] = {
+  def filter(fn: ((K, V)) => Boolean) = {
     val f: Dispatcher[K, V] = {
-      x: (K, V) =>
-        if (fn(x)) dispatcher(x)
+      kv: (K, V) =>
+        if (fn(kv)) dispatcher(kv)
         else Future.Unit
     }
     new KafkaSink[K, V](f)
+  }
+
+  private def compose[K1, V1](kfn: K1 => K, inj: Injection[V1, V]): ((K1, V1)) => ((K, V)) = {
+    case (k: K1, v: V1) => (kfn(k), inj(v))
   }
 }
 
 object KafkaSink {
   type Dispatcher[A, B] = ((A, B)) => Future[Unit]
 
-  def apply[K, V](store: KafkaStore[K, V]): () => Dispatcher[K, V] = {
-    val sink = new KafkaSink[K, V](store.put)
-    sink.write
+  def apply[K, V](store: KafkaStore[K, V]) = {
+    lazy val sink = new KafkaSink[K, V](store.put)
+    sink
   }
 
   def apply[K, V](zkQuorum: Seq[String],
-                  topic: String,
-                  serializer: Class[_]): () => Dispatcher[K, V] = {
+                  topic: String, serializer: Class[_]) = {
     lazy val store = KafkaStore[K, V](zkQuorum, topic, serializer)
-    lazy val sink = new KafkaSink[K, V](store.put)
-    sink.write
+    lazy val sink = apply[K, V](store)
+    sink
   }
 
-  def getSink[K, V](zkQuorum: Seq[String],
-                    topic: String,
-                    serializer: Class[_]): KafkaSink[K, V] = {
-    lazy val store = KafkaStore[K, V](zkQuorum, topic, serializer)
-    new KafkaSink[K, V](store.put)
+  def apply(zkQuorum: Seq[String],
+            topic: String) = {
+    import KafkaEncoders.byteArrayEncoder
+    apply[Array[Byte], Array[Byte]](zkQuorum, topic, byteArrayEncoder)
   }
 }
 
-object KafkaByteArraySink {
-  def apply(zkQuorum: Seq[String], topic: String): () => Dispatcher[Array[Byte], Array[Byte]] = KafkaSink[Array[Byte], Array[Byte]](zkQuorum, topic, classOf[ByteArrayEncoder])
+object KafkaAvroSink {
 
-  def apply[T <: Class[Encoder[Array[Byte]]]](zkQuorum: Seq[String], topic: String)(implicit serializer: T = classOf[ByteArrayEncoder]): KafkaSink[Array[Byte], Array[Byte]] = KafkaSink.getSink[Array[Byte], Array[Byte]](zkQuorum, topic, serializer)
-}
+  import com.twitter.bijection.StringCodec.utf8
 
-object KafkaLongSink {
-  def apply(zkQuorum: Seq[String], topic: String): () => Dispatcher[String, Long] = KafkaSink[String, Long](zkQuorum, topic, classOf[LongEncoder])
+  def apply[V <: SpecificRecordBase : Manifest](zkQuorum: Seq[String], topic: String) = {
+    implicit val inj = AvroCodecs[V]
+    lazy val sink = KafkaSink(zkQuorum: Seq[String], topic: String)
+      .convert[String, V](utf8.toFunction)
+    sink
+  }
 
-  def apply[T <: Class[Encoder[Long]]](zkQuorum: Seq[String], topic: String)(implicit serializer: T = classOf[LongEncoder]): KafkaSink[String, Long] = KafkaSink.getSink[String, Long](zkQuorum, topic, serializer)
+  def apply[K: Codec, V <: SpecificRecordBase : Manifest](zkQuorum: Seq[String], topic: String) = {
+    implicit val inj = AvroCodecs[V]
+    lazy val sink = KafkaSink(zkQuorum: Seq[String], topic: String)
+      .convert[K, V](implicitly[Codec[K]].toFunction)
+    sink
+  }
 }
 

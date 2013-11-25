@@ -72,8 +72,8 @@ object StorehausBuild extends Build {
     publishArtifact in Test := false,
     pomIncludeRepository := { x => false },
     publishTo <<= version { v =>
-      Some(if (v.trim.toUpperCase.endsWith("SNAPSHOT")) Opts.resolver.sonatypeSnapshots
-           else Opts.resolver.sonatypeStaging)
+      Some(if (v.trim.toUpperCase.endsWith("SNAPSHOT")) Opts.resolver.mavenLocalFile
+           else Opts.resolver.mavenLocalFile)
     },
     pomExtra := (
       <url>https://github.com/twitter/storehaus</url>
@@ -215,10 +215,11 @@ object StorehausBuild extends Build {
   lazy val storehausKafka = module("kafka").settings(
     libraryDependencies ++= Seq (
       "com.twitter" %% "bijection-core" % bijectionVersion,
+      "com.twitter" %% "bijection-avro" % bijectionVersion,
       "com.twitter"%"kafka_2.9.2"%"0.7.0" excludeAll(
-        ExclusionRule(organization = "com.sun.jdmk"),
-        ExclusionRule(organization = "com.sun.jmx"),
-        ExclusionRule(organization = "javax.jms")
+        ExclusionRule("com.sun.jdmk", "jmxtools"),
+        ExclusionRule("com.sun.jmx","jmxri"),
+        ExclusionRule( "javax.jms","jms")
         )
     ),
     // we don't want various tests clobbering each others keys

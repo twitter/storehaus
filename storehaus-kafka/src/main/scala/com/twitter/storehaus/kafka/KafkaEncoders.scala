@@ -18,18 +18,15 @@ package com.twitter.storehaus.kafka
 
 import kafka.serializer.Encoder
 import kafka.message.Message
-import com.twitter.bijection.Injection
 
 /**
- * @author Muhammad Ashraf
+ * @author Mansur Ashraf
  * @since 11/23/13
  */
 object KafkaEncoders {
+  implicit val byteArrayEncoder = classOf[ByteArrayEncoder]
+
   class ByteArrayEncoder extends Encoder[Array[Byte]] {
     def toMessage(event: Array[Byte]): Message = new Message(event)
-  }
-
-  class LongEncoder extends Encoder[Long] {
-    def toMessage(event: Long): Message = new Message(Injection[Long, Array[Byte]](event))
   }
 }
