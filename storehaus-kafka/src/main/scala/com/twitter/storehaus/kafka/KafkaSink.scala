@@ -20,7 +20,9 @@ import com.twitter.util.Future
 import KafkaSink.Dispatcher
 import com.twitter.bijection.{Codec, Injection}
 import org.apache.avro.specific.SpecificRecordBase
+import org.apache.avro.Schema
 import com.twitter.bijection.avro.AvroCodecs
+import com.twitter.storehaus.kafka.KafkaEncoders._
 
 /**
  * @author Mansur Ashraf
