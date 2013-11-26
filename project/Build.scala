@@ -62,7 +62,8 @@ object StorehausBuild extends Build {
     resolvers ++= Seq(
       Opts.resolver.sonatypeSnapshots,
       Opts.resolver.sonatypeReleases,
-      "Twitter Maven" at "http://maven.twttr.com"
+      "Twitter Maven" at "http://maven.twttr.com",
+      "Conjars Repository" at "http://conjars.org/repo"
     ),
     parallelExecution in Test := true,
     scalacOptions ++= Seq(Opts.compile.unchecked, Opts.compile.deprecation),
