@@ -23,6 +23,7 @@ import kafka.producer.{ProducerData, Producer, ProducerConfig}
 
 
 /**
+ * Store capable of writing to a Kafka Topic.
  * @author Mansur Ashraf
  * @since 11/22/13
  */
@@ -31,6 +32,11 @@ class KafkaStore[K, V](topic: String, props: Properties) extends WritableStore[K
   private lazy val producerConfig = new ProducerConfig(props)
   private lazy val producer = new Producer[K, V](producerConfig)
 
+  /**
+   * Puts a key/value pair on a Kafka Topic
+   * @param kv (key,value)
+   * @return Future.unit
+   */
   override def put(kv: (K, V)): Future[Unit] = Future {
     val (key, value) = kv
     producer.send(new ProducerData[K, V](topic, key, List(value)))
@@ -38,9 +44,25 @@ class KafkaStore[K, V](topic: String, props: Properties) extends WritableStore[K
 }
 
 object KafkaStore {
-
+  /**
+   * Creates an instance of Kafka store based on given properties.
+   * @param topic Kafka topic.
+   * @param props Kafka properties {@see http://kafka.apache.org/07/configuration.html}.
+   * @tparam K Key
+   * @tparam V Value
+   * @return Kafka Store
+   */
   def apply[K, V](topic: String, props: Properties) = new KafkaStore[K, V](topic, props)
 
+  /**
+   * Creates a Kafka store.
+   * @param zkQuorum zookeeper quorum.
+   * @param topic  Kafka topic.
+   * @param serializer message encoder {@see http://kafka.apache.org/07/quickstart.html}
+   * @tparam K  Key
+   * @tparam V Value
+   * @return Kafka Store
+   */
   def apply[K, V](zkQuorum: Seq[String],
                   topic: String,
                   serializer: Class[_]) = new KafkaStore[K, V](topic, createProp(zkQuorum, serializer))
