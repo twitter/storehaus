@@ -27,14 +27,22 @@ object IterableStoreProperties extends Properties("IterableStore") {
   def iteratorLaw[K: Arbitrary, V: Arbitrary](fn: Map[K, V] => IterableStore[K, V]) =
     forAll { m: Map[K,V] =>
       val store = fn(m)
-      Await.result(store.iterator).toMap == m
+      val m2 = new scala.collection.mutable.HashMap[K, V]()
+      Await.result(store.iterator).foreach { kv =>
+        m2.put(kv._1, kv._2)
+      }
+      m == m2
     }
 
   def withFilterLaw[K: Arbitrary, V: Arbitrary](fn: Map[K, V] => IterableStore[K, V],
       filter: ((K, V)) => Boolean) =
     forAll { m: Map[K,V] =>
       val store = fn(m)
-      Await.result(store.withFilter(filter)).toMap == m.iterator.withFilter(filter).toMap
+      val m2 = new scala.collection.mutable.HashMap[K, V]()
+      Await.result(store.withFilter(filter)).foreach { kv =>
+        m2.put(kv._1, kv._2)
+      }
+      m.iterator.withFilter(filter).toMap == m2
     }
 
   def iterableStoreLaws[K: Arbitrary, V: Arbitrary](fn: Map[K, V] => IterableStore[K, V],

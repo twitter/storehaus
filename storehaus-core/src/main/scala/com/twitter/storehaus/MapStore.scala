@@ -23,7 +23,10 @@ import com.twitter.util.Future
  *  @author Oscar Boykin
  *  @author Sam Ritchie
  */
-class MapStore[K, +V](val backingStore: Map[K, V] = Map[K, V]()) extends IterableStore[K, V] {
+class MapStore[K, V](val backingStore: Map[K, V] = Map[K, V]()) extends IterableStore[K, V] {
   override def get(k: K) = Future.value(backingStore.get(k))
-  def iterator = Future.value(backingStore.iterator)
+
+  def iterator = iteratorToSpool(backingStore.iterator)
+
+  def withFilter(f: ((K, V)) => Boolean) = iteratorToSpool(backingStore.iterator.withFilter(f))
 }

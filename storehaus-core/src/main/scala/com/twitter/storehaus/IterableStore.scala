@@ -16,7 +16,9 @@
 
 package com.twitter.storehaus
 
-import com.twitter.util.Future
+import com.twitter.util.{ Future, Promise, Return }
+import com.twitter.concurrent.Spool
+import com.twitter.concurrent.Spool.*::
 
 object IterableStore {
   /** Factory method to create a IterableStore from a Map. */
@@ -30,10 +32,26 @@ object IterableStore {
  * In general, this should be okay to use with cache stores.
  * For other stores, the iterable should ideally be backed by a stream.
  */
-trait IterableStore[K, +V] extends ReadableStore[K, V] {
-  def iterator: Future[Iterator[(K, V)]]
+trait IterableStore[K, V] extends ReadableStore[K, V] {
 
-  def withFilter(f: ((K, V)) => Boolean): Future[Iterator[(K, V)]] =
-    iterator.map { _.withFilter(f) }
+  protected def iteratorToSpool(it: Iterator[(K, V)]): Future[Spool[(K, V)]] = {
+    val s = new Promise[Spool[(K, V)]]
+    fillSpool(it, s)
+    s
+  }
+
+  protected def fillSpool(it: Iterator[(K, V)], s: Promise[Spool[(K, V)]]): Unit = {
+    if (it.isEmpty) {
+      s() = Return(Spool.empty[(K, V)])
+    } else {
+      val next = new Promise[Spool[(K, V)]]
+      s() = Return(it.next *:: next)
+      fillSpool(it, next)
+    }
+  }
+
+  def iterator: Future[Spool[(K, V)]]
+
+  def withFilter(f: ((K, V)) => Boolean): Future[Spool[(K, V)]]
 }
 
