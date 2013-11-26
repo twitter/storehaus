@@ -28,12 +28,12 @@ import kafka.producer.{ProducerData, Producer, ProducerConfig}
  * @since 11/22/13
  */
 class KafkaStore[K, V](topic: String, props: Properties) extends WritableStore[K, V] {
-
+  props.put("producer.type", "async")   //force async producer
   private lazy val producerConfig = new ProducerConfig(props)
   private lazy val producer = new Producer[K, V](producerConfig)
 
   /**
-   * Puts a key/value pair on a Kafka Topic
+   * Puts a key/value pair on a Kafka Topic using kafka.producer.AyncProducer and does not block thread
    * @param kv (key,value)
    * @return Future.unit
    */
