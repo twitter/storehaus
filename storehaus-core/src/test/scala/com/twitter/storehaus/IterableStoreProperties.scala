@@ -24,34 +24,15 @@ import org.scalacheck.Prop._
 
 object IterableStoreProperties extends Properties("IterableStore") {
 
-  def iteratorLaw[K: Arbitrary, V: Arbitrary](fn: Map[K, V] => IterableStore[K, V]) =
+  def iterableStoreLaw[K: Arbitrary, V: Arbitrary](fn: Map[K, V] => IterableStore[K, V]) =
     forAll { m: Map[K,V] =>
       val store = fn(m)
-      val m2 = new scala.collection.mutable.HashMap[K, V]()
-      Await.result(store.iterator).foreach { kv =>
-        m2.put(kv._1, kv._2)
-      }
-      m == m2
+      Await.result(store.items.flatMap { _.toSeq }).toMap == m
     }
-
-  def withFilterLaw[K: Arbitrary, V: Arbitrary](fn: Map[K, V] => IterableStore[K, V],
-      filter: ((K, V)) => Boolean) =
-    forAll { m: Map[K,V] =>
-      val store = fn(m)
-      val m2 = new scala.collection.mutable.HashMap[K, V]()
-      Await.result(store.withFilter(filter)).foreach { kv =>
-        m2.put(kv._1, kv._2)
-      }
-      m.iterator.withFilter(filter).toMap == m2
-    }
-
-  def iterableStoreLaws[K: Arbitrary, V: Arbitrary](fn: Map[K, V] => IterableStore[K, V],
-      filter: ((K, V)) => Boolean) =
-    iteratorLaw(fn) && withFilterLaw(fn, filter)
 
   property("MapStore obeys the IterableStore laws") = {
     val filter : (((Int, String)) => Boolean) = { case ((k, v)) => k % 2 == 0 }
-    iterableStoreLaws[Int, String](IterableStore.fromMap(_), filter)
+    iterableStoreLaw[Int, String](IterableStore.fromMap(_))
   }
 }
 

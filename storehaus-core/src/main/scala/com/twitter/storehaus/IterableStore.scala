@@ -23,24 +23,15 @@ import com.twitter.concurrent.Spool.*::
 object IterableStore {
   /** Factory method to create a IterableStore from a Map. */
   def fromMap[K, V](m: Map[K, V]): IterableStore[K, V] = new MapStore(m)
-}
 
-/**
- * Trait for stores with iterator over their key-value pairs.
- *
- * Depending on the backing store, this may have performance implications. So use with caution.
- * In general, this should be okay to use with cache stores.
- * For other stores, the iterable should ideally be backed by a stream.
- */
-trait IterableStore[K, V] extends ReadableStore[K, V] {
-
-  protected def iteratorToSpool(it: Iterator[(K, V)]): Future[Spool[(K, V)]] = {
+  /** Helper method to convert Iterator to Spool. */
+  def iteratorToSpool[K, V](it: Iterator[(K, V)]): Future[Spool[(K, V)]] = {
     val s = new Promise[Spool[(K, V)]]
     fillSpool(it, s)
     s
   }
 
-  protected def fillSpool(it: Iterator[(K, V)], s: Promise[Spool[(K, V)]]): Unit = {
+  protected def fillSpool[K, V](it: Iterator[(K, V)], s: Promise[Spool[(K, V)]]): Unit = {
     if (it.isEmpty) {
       s() = Return(Spool.empty[(K, V)])
     } else {
@@ -49,9 +40,17 @@ trait IterableStore[K, V] extends ReadableStore[K, V] {
       fillSpool(it, next)
     }
   }
+}
 
-  def iterator: Future[Spool[(K, V)]]
+/**
+ * Trait for stores that allow iterating over their key-value pairs.
+ *
+ * Depending on the backing store, this may have performance implications. So use with caution.
+ * In general, this should be okay to use with cache stores.
+ * For other stores, the iterable should ideally be backed by a stream.
+ */
+trait IterableStore[K, V] extends ReadableStore[K, V] {
 
-  def withFilter(f: ((K, V)) => Boolean): Future[Spool[(K, V)]]
+  def items: Future[Spool[(K, V)]]
 }
 
