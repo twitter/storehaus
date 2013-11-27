@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus.kafka
 
-import com.twitter.storehaus.WritableStore
+import com.twitter.storehaus.{FutureOps, WritableStore}
 import com.twitter.util.Future
 import java.util.Properties
 import kafka.producer.{ProducerData, Producer, ProducerConfig}
@@ -28,7 +28,8 @@ import kafka.producer.{ProducerData, Producer, ProducerConfig}
  * @since 11/22/13
  */
 class KafkaStore[K, V](topic: String, props: Properties) extends WritableStore[K, V] {
-  props.put("producer.type", "async")   //force async producer
+  props.put("producer.type", "async")
+  //force async producer
   private lazy val producerConfig = new ProducerConfig(props)
   private lazy val producer = new Producer[K, V](producerConfig)
 
@@ -41,13 +42,24 @@ class KafkaStore[K, V](topic: String, props: Properties) extends WritableStore[K
     val (key, value) = kv
     producer.send(new ProducerData[K, V](topic, key, List(value)))
   }
+
+  /** Replace a set of keys at one time */
+  override def multiPut[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Unit]] = {
+    val batch = kvs.foldLeft(List[ProducerData[K, V]]()) {
+      case (seed, kv) => new ProducerData[K, V](topic, kv._1, List(kv._2)) :: seed
+    }
+    val future = Future {
+      producer.send(batch: _*)
+    }
+    kvs.mapValues(v => future.unit)
+  }
 }
 
 object KafkaStore {
   /**
    * Creates an instance of Kafka store based on given properties.
    * @param topic Kafka topic.
-   * @param props Kafka properties {@see http://kafka.apache.org/07/configuration.html}.
+   * @param props Kafka properties { @see http://kafka.apache.org/07/configuration.html}.
    * @tparam K Key
    * @tparam V Value
    * @return Kafka Store
@@ -58,7 +70,7 @@ object KafkaStore {
    * Creates a Kafka store.
    * @param zkQuorum zookeeper quorum.
    * @param topic  Kafka topic.
-   * @param serializer message encoder {@see http://kafka.apache.org/07/quickstart.html}
+   * @param serializer message encoder { @see http://kafka.apache.org/07/quickstart.html}
    * @tparam K  Key
    * @tparam V Value
    * @return Kafka Store
