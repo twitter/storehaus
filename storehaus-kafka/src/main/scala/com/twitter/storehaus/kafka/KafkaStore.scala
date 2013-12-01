@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus.kafka
 
-import com.twitter.storehaus.{FutureOps, WritableStore}
+import com.twitter.storehaus.WritableStore
 import com.twitter.util.Future
 import java.util.Properties
 import kafka.producer.{ProducerData, Producer, ProducerConfig}
@@ -45,6 +45,9 @@ class KafkaStore[K, V](topic: String, props: Properties) extends WritableStore[K
 
   /** Replace a set of keys at one time */
   override def multiPut[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Unit]] = {
+
+    kvs.map{case (k,v) => new ProducerData[K, V](topic, k, List(v))}
+
     val batch = kvs.foldLeft(List[ProducerData[K, V]]()) {
       case (seed, kv) => new ProducerData[K, V](topic, kv._1, List(kv._2)) :: seed
     }

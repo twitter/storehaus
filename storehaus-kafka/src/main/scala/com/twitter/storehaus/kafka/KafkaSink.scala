@@ -20,9 +20,8 @@ import com.twitter.util.Future
 import KafkaSink.Dispatcher
 import com.twitter.bijection.{Codec, Injection}
 import org.apache.avro.specific.SpecificRecordBase
-import org.apache.avro.Schema
 import com.twitter.bijection.avro.AvroCodecs
-import com.twitter.storehaus.kafka.KafkaEncoders._
+import scala.Array
 
 /**
  * Kafka Sink that can be used with SummingBird to sink messages to a Kafka Queue
@@ -80,7 +79,7 @@ object KafkaSink {
    * @tparam V value
    * @return KafkaSink
    */
-  def apply[K, V](store: KafkaStore[K, V]) = {
+  def apply[K, V](store: KafkaStore[K, V]):KafkaSink[K, V] = {
     lazy val sink = new KafkaSink[K, V](store.put)
     sink
   }
@@ -95,7 +94,7 @@ object KafkaSink {
    * @return KafkaSink[K,V]
    */
   def apply[K, V](zkQuorum: Seq[String],
-                  topic: String, serializer: Class[_]) = {
+                  topic: String, serializer: Class[_]): KafkaSink[K, V] = {
     lazy val store = KafkaStore[K, V](zkQuorum, topic, serializer)
     lazy val sink = apply[K, V](store)
     sink
@@ -104,12 +103,12 @@ object KafkaSink {
   /**
    * Returns KafkaSink[Array[Byte], Array[Byte]]. This should be your default implementation
    * in most scenarios
-    * @param zkQuorum zookeeper quorum
+   * @param zkQuorum zookeeper quorum
    * @param topic kafka encoder
    * @return KafkaSink[Array[Byte], Array[Byte]]
    */
   def apply(zkQuorum: Seq[String],
-            topic: String) = {
+            topic: String): KafkaSink[Array[Byte], Array[Byte]] = {
     import KafkaEncoders.byteArrayEncoder
     apply[Array[Byte], Array[Byte]](zkQuorum, topic, byteArrayEncoder)
   }
