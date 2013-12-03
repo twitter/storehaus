@@ -22,6 +22,8 @@ import com.twitter.bijection.{Codec, Injection}
 import org.apache.avro.specific.SpecificRecordBase
 import com.twitter.bijection.avro.AvroCodecs
 import scala.Array
+import java.util.concurrent.{Executors, ExecutorService}
+import com.twitter.concurrent.NamedPoolThreadFactory
 
 /**
  * Kafka Sink that can be used with SummingBird to sink messages to a Kafka Queue
@@ -70,6 +72,11 @@ class KafkaSink[K, V](dispatcher: Dispatcher[K, V]) {
 }
 
 object KafkaSink {
+
+  private lazy val defaultExecutor = Executors.newCachedThreadPool(new NamedPoolThreadFactory("KafkaSinkUnboundedFuturePool"))
+  private val defaultPermits = 0
+  private val defaultWaiter = 0
+
   type Dispatcher[A, B] = ((A, B)) => Future[Unit]
 
   /**
@@ -79,7 +86,7 @@ object KafkaSink {
    * @tparam V value
    * @return KafkaSink
    */
-  def apply[K, V](store: KafkaStore[K, V]):KafkaSink[K, V] = {
+  def apply[K, V](store: KafkaStore[K, V]): KafkaSink[K, V] = {
     lazy val sink = new KafkaSink[K, V](store.put)
     sink
   }
@@ -93,9 +100,10 @@ object KafkaSink {
    * @tparam V value
    * @return KafkaSink[K,V]
    */
-  def apply[K, V](zkQuorum: Seq[String],
-                  topic: String, serializer: Class[_]): KafkaSink[K, V] = {
-    lazy val store = KafkaStore[K, V](zkQuorum, topic, serializer)
+  def apply[K, V](zkQuorum: Seq[String], topic: String, serializer: Class[_], executor: => ExecutorService,
+                  initialPermits: Int,
+                  maxWaiters: Int): KafkaSink[K, V] = {
+    lazy val store = KafkaStore[K, V](zkQuorum, topic, serializer)(executor, initialPermits, maxWaiters)
     lazy val sink = apply[K, V](store)
     sink
   }
@@ -110,7 +118,7 @@ object KafkaSink {
   def apply(zkQuorum: Seq[String],
             topic: String): KafkaSink[Array[Byte], Array[Byte]] = {
     import KafkaEncoders.byteArrayEncoder
-    apply[Array[Byte], Array[Byte]](zkQuorum, topic, byteArrayEncoder)
+    apply[Array[Byte], Array[Byte]](zkQuorum, topic, byteArrayEncoder, defaultExecutor, defaultPermits, defaultWaiter)
   }
 }
 

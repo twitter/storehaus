@@ -17,9 +17,11 @@
 package com.twitter.storehaus.kafka
 
 import com.twitter.storehaus.WritableStore
-import com.twitter.util.Future
+import com.twitter.util.{FuturePool, Future}
 import java.util.Properties
 import kafka.producer.{ProducerData, Producer, ProducerConfig}
+import java.util.concurrent.ExecutorService
+import com.twitter.concurrent.AsyncSemaphore
 
 
 /**
@@ -27,38 +29,46 @@ import kafka.producer.{ProducerData, Producer, ProducerConfig}
  * @author Mansur Ashraf
  * @since 11/22/13
  */
-class KafkaStore[K, V](topic: String, props: Properties) extends WritableStore[K, V] {
+class KafkaStore[K, V](topic: String, props: Properties)(executor: => ExecutorService,
+                                                         initialPermits: Int,
+                                                         maxWaiters: Int) extends WritableStore[K, V] {
   props.put("producer.type", "async")
   //force async producer
   private lazy val producerConfig = new ProducerConfig(props)
   private lazy val producer = new Producer[K, V](producerConfig)
+  private lazy val futurePool = FuturePool(executor)
 
   /**
    * Puts a key/value pair on a Kafka Topic using kafka.producer.AyncProducer and does not block thread
    * @param kv (key,value)
    * @return Future.unit
    */
-  override def put(kv: (K, V)): Future[Unit] = Future {
+  override def put(kv: (K, V)): Future[Unit] = futurePool {
     val (key, value) = kv
     producer.send(new ProducerData[K, V](topic, key, List(value)))
   }
 
-  /** Replace a set of keys at one time */
   override def multiPut[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Unit]] = {
-
-    kvs.map{case (k,v) => new ProducerData[K, V](topic, k, List(v))}
-
-    val batch = kvs.foldLeft(List[ProducerData[K, V]]()) {
-      case (seed, kv) => new ProducerData[K, V](topic, kv._1, List(kv._2)) :: seed
+    val s = new AsyncSemaphore(initialPermits, maxWaiters)
+    val future = s.acquire().flatMap {
+      p => futurePool {
+        try {
+          val batch = kvs.map {
+            case (k, v) => new ProducerData[K, V](topic, k, List(v))
+          }.toList
+          producer.send(batch: _*)
+        }
+        finally {
+          p.release()
+        }
+      }
     }
-    val future = Future {
-      producer.send(batch: _*)
-    }
-    kvs.mapValues(v => future.unit)
+    kvs.mapValues(v => future)
   }
 }
 
 object KafkaStore {
+
   /**
    * Creates an instance of Kafka store based on given properties.
    * @param topic Kafka topic.
@@ -67,7 +77,9 @@ object KafkaStore {
    * @tparam V Value
    * @return Kafka Store
    */
-  def apply[K, V](topic: String, props: Properties) = new KafkaStore[K, V](topic, props)
+  def apply[K, V](topic: String, props: Properties)(executor: => ExecutorService,
+                                                    initialPermits: Int,
+                                                    maxWaiters: Int) = new KafkaStore[K, V](topic, props)(executor, initialPermits, maxWaiters)
 
   /**
    * Creates a Kafka store.
@@ -80,7 +92,9 @@ object KafkaStore {
    */
   def apply[K, V](zkQuorum: Seq[String],
                   topic: String,
-                  serializer: Class[_]) = new KafkaStore[K, V](topic, createProp(zkQuorum, serializer))
+                  serializer: Class[_])(executor: => ExecutorService,
+                                        initialPermits: Int,
+                                        maxWaiters: Int) = new KafkaStore[K, V](topic, createProp(zkQuorum, serializer))
 
 
   private def createProp(zkQuorum: Seq[String],
