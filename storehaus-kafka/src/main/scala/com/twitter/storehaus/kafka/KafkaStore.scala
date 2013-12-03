@@ -94,7 +94,7 @@ object KafkaStore {
                   topic: String,
                   serializer: Class[_])(executor: => ExecutorService,
                                         initialPermits: Int,
-                                        maxWaiters: Int) = new KafkaStore[K, V](topic, createProp(zkQuorum, serializer))
+                                        maxWaiters: Int) = new KafkaStore[K, V](topic, createProp(zkQuorum, serializer))(executor, initialPermits, maxWaiters)
 
 
   private def createProp(zkQuorum: Seq[String],
