@@ -17,7 +17,7 @@
 package com.twitter.storehaus.kafka
 
 import com.twitter.storehaus.WritableStore
-import com.twitter.util.{FuturePool, Future}
+import com.twitter.util.{Time, FuturePool, Future}
 import java.util.Properties
 import kafka.producer.{ProducerData, Producer, ProducerConfig}
 import java.util.concurrent.ExecutorService
@@ -32,8 +32,6 @@ import com.twitter.concurrent.AsyncSemaphore
 class KafkaStore[K, V](topic: String, props: Properties)(executor: => ExecutorService,
                                                          initialPermits: Int,
                                                          maxWaiters: Int) extends WritableStore[K, V] {
-  props.put("producer.type", "async")
-  //force async producer
   private lazy val producerConfig = new ProducerConfig(props)
   private lazy val producer = new Producer[K, V](producerConfig)
   private lazy val futurePool = FuturePool(executor)
@@ -64,6 +62,13 @@ class KafkaStore[K, V](topic: String, props: Properties)(executor: => ExecutorSe
       }
     }
     kvs.mapValues(v => future)
+  }
+
+  /** Close this store and release any resources.
+    * It is undefined what happens on get/multiGet after close
+    */
+  override def close(time: Time): Future[Unit] = futurePool {
+    producer.close()
   }
 }
 
