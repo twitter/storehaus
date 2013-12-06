@@ -55,6 +55,7 @@ object StorehausBuild extends Build {
   val sharedSettings = extraSettings ++ ciSettings ++ Seq(
     organization := "com.twitter",
     scalaVersion := "2.9.3",
+    version := "0.8.0",
     crossScalaVersions := Seq("2.9.3", "2.10.0"),
     javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
     javacOptions in doc := Seq("-source", "1.6"),
@@ -112,10 +113,10 @@ object StorehausBuild extends Build {
   def youngestForwardCompatible(subProj: String) =
     Some(subProj)
       .filterNot(unreleasedModules.contains(_))
-      .map { s => "com.twitter" % ("storehaus-" + s + "_2.9.3") % "0.7.0" }
+      .map { s => "com.twitter" % ("storehaus-" + s + "_2.9.3") % "0.8.0" }
 
-  val algebirdVersion = "0.3.0"
-  val bijectionVersion = "0.5.4"
+  val algebirdVersion = "0.3.1"
+  val bijectionVersion = "0.6.0"
   val utilVersion = "6.3.7"
 
   lazy val storehaus = Project(
@@ -150,7 +151,7 @@ object StorehausBuild extends Build {
 
   lazy val storehausCore = module("core").settings(
     libraryDependencies ++= Seq(
-      withCross("com.twitter" %% "util-core" % utilVersion),
+      withCross("com.twitter" %% "util-core" % utilVersion % "provided"),
       "com.twitter" %% "bijection-core" % bijectionVersion,
       "com.twitter" %% "bijection-util" % bijectionVersion
     )
@@ -173,7 +174,7 @@ object StorehausBuild extends Build {
 
   lazy val storehausMySQL = module("mysql").settings(
     libraryDependencies += Finagle.module("mysql")
-  ).dependsOn(storehausCore % "test->test;compile->compile")
+  ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
   lazy val storehausRedis = module("redis").settings(
     libraryDependencies ++= Seq (
