@@ -20,7 +20,7 @@ import com.twitter.util.Future
 import KafkaSink.Dispatcher
 import com.twitter.bijection.{Codec, Injection}
 import org.apache.avro.specific.SpecificRecordBase
-import com.twitter.bijection.avro.AvroCodecs
+import com.twitter.bijection.avro.SpecificAvroCodecs
 import scala.Array
 import java.util.concurrent.{Executors, ExecutorService}
 import com.twitter.concurrent.NamedPoolThreadFactory
@@ -137,7 +137,7 @@ object KafkaAvroSink {
    * @return KafkaSink[String,SpecificRecordBase]
    */
   def apply[V <: SpecificRecordBase : Manifest](zkQuorum: Seq[String], topic: String) = {
-    implicit val inj = AvroCodecs[V]
+    implicit val inj = SpecificAvroCodecs[V]
     lazy val sink = KafkaSink(zkQuorum: Seq[String], topic: String)
       .convert[String, V](utf8.toFunction)
     sink
@@ -152,7 +152,7 @@ object KafkaAvroSink {
    * @return KafkaSink[T,SpecificRecordBase]
    */
   def apply[K: Codec, V <: SpecificRecordBase : Manifest](zkQuorum: Seq[String], topic: String) = {
-    implicit val inj = AvroCodecs[V]
+    implicit val inj = SpecificAvroCodecs[V]
     lazy val sink = KafkaSink(zkQuorum: Seq[String], topic: String)
       .convert[K, V](implicitly[Codec[K]].toFunction)
     sink

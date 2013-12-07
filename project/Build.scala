@@ -116,7 +116,7 @@ object StorehausBuild extends Build {
       .map { s => "com.twitter" % ("storehaus-" + s + "_2.9.3") % "0.7.0" }
 
   val algebirdVersion = "0.3.0"
-  val bijectionVersion = "0.5.4"
+  val bijectionVersion = "0.6.0"
   val utilVersion = "6.3.7"
 
   lazy val storehaus = Project(
