@@ -17,13 +17,9 @@
 package com.twitter.storehaus.kafka
 
 import org.specs2.mutable.Specification
-import org.specs2.specification.Scope
-import java.util.concurrent.Executors
-import com.twitter.concurrent.NamedPoolThreadFactory
-import kafka.serializer.{StringDecoder, StringEncoder}
-import com.twitter.util.Await
-import java.util.{Random, Properties}
-import kafka.consumer.{ConsumerTimeoutException, Whitelist, Consumer, ConsumerConfig}
+import kafka.serializer.StringDecoder
+import com.twitter.util.{Future, Await}
+import kafka.consumer.{ConsumerTimeoutException, Whitelist}
 
 /**
  * @author Mansur Ashraf
@@ -33,7 +29,7 @@ class KafkaStoreSpec extends Specification {
 
   "Kafka store" should {
     "put a value on a topic" in new KafkaContext {
-      Await.result(store.put("testKey", "testValue"))
+      Await.result(store(topic).put("testKey", "testValue"))
       try {
         val stream = consumer.createMessageStreamsByFilter[String](new Whitelist(topic), 1, new StringDecoder)(0)
         stream.iterator().next().message === "testValue"
@@ -42,29 +38,25 @@ class KafkaStoreSpec extends Specification {
         case e: ConsumerTimeoutException => failure("test failed as consumer timed out without getting any msges")
       }
     }
+
+    "put multiple values on a topic" in new KafkaContext {
+      private val map = Map(
+        "Key_1" -> "value_1",
+        "Key_2" -> "value_2",
+        "Key_3" -> "value_3"
+      )
+
+      private val multiputResponse = store(multiput_topic).multiPut(map)
+      Await.result(Future.collect(multiputResponse.values.toList))
+      try {
+        val stream = consumer.createMessageStreamsByFilter[String](new Whitelist(multiput_topic), 1, new StringDecoder)(0)
+        stream.iterator().next().message === "value_1"
+        stream.iterator().next().message === "value_2"
+        stream.iterator().next().message === "value_3"
+      }
+      catch {
+        case e: ConsumerTimeoutException => failure("test failed as consumer timed out without getting any msges")
+      }
+    }
   }
-}
-
-trait KafkaContext extends Scope {
-
-  val zK = "localhost:2181"
-  lazy val executor = Executors.newCachedThreadPool(new NamedPoolThreadFactory("KafkaTestPool"))
-  val waiter = 0
-  val permits = 0
-  val topic = "test-" + new Random().nextInt(100000)
-  lazy val store = KafkaStore[String, String](Seq(zK), topic, classOf[StringEncoder])(executor, waiter, permits)
-
-  //Consumer props
-  val props = new Properties()
-  props.put("groupid", "consumer-" + new Random().nextInt(100000))
-  props.put("socket.buffersize", (2 * 1024 * 1024).toString)
-  props.put("fetch.size", (1024 * 1024).toString)
-  props.put("auto.commit", "true")
-  props.put("autocommit.interval.ms", (10 * 1000).toString)
-  props.put("autooffset.reset", "smallest")
-  props.put("zk.connect", zK)
-  props.put("consumer.timeout.ms", (2 * 60 * 1000).toString)
-  val config = new ConsumerConfig(props)
-  val topicCountMap = Map(topic -> 1)
-  lazy val consumer = Consumer.create(config)
 }
