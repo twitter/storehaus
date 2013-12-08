@@ -18,9 +18,8 @@ package com.twitter.storehaus.kafka
 
 import org.specs2.mutable.Specification
 import com.twitter.bijection.StringCodec.utf8
-import com.twitter.util.Await
-import kafka.consumer.Whitelist
-import com.twitter.bijection.Injection
+import com.twitter.util.{Future, Await}
+import kafka.consumer.{ConsumerTimeoutException, Whitelist}
 
 /**
  * @author Muhammad Ashraf
@@ -32,12 +31,34 @@ class KafkaSinkSpec extends Specification {
 
     "be able to convert and sink value" in new KafkaContext {
       val topic = "long_topic-" + random
-      val longStore = sink(topic).convert[String, Long](utf8.toFunction)
-      Await.result(longStore.write()("1", 1L))
-      private val bytes = Injection[Long,Array[Byte]](1)
-      Injection.invert[Long,Array[Byte]](bytes)
-      val stream = consumer.createMessageStreamsByFilter(new Whitelist(topic), 1, new LongDecoder)(0)
-      stream.iterator().next().message === 1L
+      val longSink = sink(topic).convert[String, Long](utf8.toFunction)
+      Await.result(longSink.write()("1", 1L))
+      try {
+        val stream = consumer.createMessageStreamsByFilter(new Whitelist(topic), 1, new LongDecoder)(0)
+        stream.iterator().next().message === 1L
+      } catch {
+        case e: ConsumerTimeoutException => failure("test failed as consumer timed out without getting any msges")
+      }
+    }
+
+    "be able to filter value" in new KafkaContext {
+      val topic = "filter_topic-" + random
+      val filteredSink = sink(topic)
+        .convert[String, Long](utf8.toFunction)
+        .filter(_._2 % 2 == 0) //only send even values
+
+      val futures = Future.collect((1 to 10).map(v => filteredSink()("key", v)))
+      Await.result(futures)
+      try {
+        val stream = consumer.createMessageStreamsByFilter(new Whitelist(topic), 1, new LongDecoder)(0)
+        stream.iterator().next().message % 2 == 0
+        stream.iterator().next().message % 2 == 0
+        stream.iterator().next().message % 2 == 0
+        stream.iterator().next().message % 2 == 0
+        !stream.iterator().hasNext()
+      } catch {
+        case e: ConsumerTimeoutException => failure("test failed as consumer timed out without getting any msges")
+      }
     }
   }
 }
