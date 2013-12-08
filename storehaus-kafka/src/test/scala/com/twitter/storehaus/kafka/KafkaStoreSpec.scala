@@ -54,9 +54,11 @@ class KafkaStoreSpec extends Specification {
       Await.result(Future.collect(multiputResponse.values.toList))
       try {
         val stream = consumer.createMessageStreamsByFilter(new Whitelist(multiput_topic), 1, new StringDecoder)(0)
-        stream.iterator().next().message === "value_1"
-        stream.iterator().next().message === "value_2"
-        stream.iterator().next().message === "value_3"
+        val iterator = stream.iterator()
+        iterator.next().message === "value_1"
+        iterator.next().message === "value_2"
+        iterator.next().message === "value_3"
+        !iterator.hasNext()
       }
       catch {
         case e: ConsumerTimeoutException => failure("test failed as consumer timed out without getting any msges")

@@ -22,7 +22,7 @@ import com.twitter.util.{Future, Await}
 import kafka.consumer.{ConsumerTimeoutException, Whitelist}
 
 /**
- * @author Muhammad Ashraf
+ * @author Mansur Ashraf
  * @since 12/7/13
  */
 class KafkaSinkSpec extends Specification {
@@ -51,11 +51,12 @@ class KafkaSinkSpec extends Specification {
       Await.result(futures)
       try {
         val stream = consumer.createMessageStreamsByFilter(new Whitelist(topic), 1, new LongDecoder)(0)
-        stream.iterator().next().message % 2 == 0
-        stream.iterator().next().message % 2 == 0
-        stream.iterator().next().message % 2 == 0
-        stream.iterator().next().message % 2 == 0
-        !stream.iterator().hasNext()
+        val iterator = stream.iterator()
+        iterator.next().message % 2 === 0
+        iterator.next().message % 2 === 0
+        iterator.next().message % 2 === 0
+        iterator.next().message % 2 === 0
+        !iterator.hasNext()
       } catch {
         case e: ConsumerTimeoutException => failure("test failed as consumer timed out without getting any msges")
       }

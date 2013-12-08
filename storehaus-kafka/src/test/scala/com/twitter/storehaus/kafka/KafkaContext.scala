@@ -26,6 +26,8 @@ import kafka.consumer.{Consumer, ConsumerConfig}
 import kafka.message.Message
 import com.twitter.bijection.Injection
 import java.nio.ByteBuffer
+import org.apache.avro.specific.SpecificRecordBase
+import com.twitter.bijection.avro.SpecificAvroCodecs
 
 /**
  * @author Mansur Ashraf
@@ -62,6 +64,13 @@ class LongDecoder extends Decoder[Long] {
   def toEvent(message: Message): Long = {
     val bytes = Injection[ByteBuffer, Array[Byte]](message.payload)
     Injection.invert[Long, Array[Byte]](bytes).get
+  }
+}
+
+class AvroDecoder[T<:SpecificRecordBase:Manifest] extends Decoder[T]{
+  def toEvent(message: Message): T = {
+    val bytes = Injection[ByteBuffer, Array[Byte]](message.payload)
+    SpecificAvroCodecs[T].invert(bytes).get
   }
 }
 
