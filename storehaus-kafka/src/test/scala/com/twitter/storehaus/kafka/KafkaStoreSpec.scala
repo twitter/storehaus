@@ -29,9 +29,11 @@ class KafkaStoreSpec extends Specification {
 
   "Kafka store" should {
     "put a value on a topic" in new KafkaContext {
+      val topic = "test-topic-" + random
+
       Await.result(store(topic).put("testKey", "testValue"))
       try {
-        val stream = consumer.createMessageStreamsByFilter[String](new Whitelist(topic), 1, new StringDecoder)(0)
+        val stream = consumer.createMessageStreamsByFilter(new Whitelist(topic), 1, new StringDecoder)(0)
         stream.iterator().next().message === "testValue"
       }
       catch {
@@ -40,6 +42,8 @@ class KafkaStoreSpec extends Specification {
     }
 
     "put multiple values on a topic" in new KafkaContext {
+      val multiput_topic = "multiput-test-topic-" + random
+
       private val map = Map(
         "Key_1" -> "value_1",
         "Key_2" -> "value_2",
@@ -49,7 +53,7 @@ class KafkaStoreSpec extends Specification {
       private val multiputResponse = store(multiput_topic).multiPut(map)
       Await.result(Future.collect(multiputResponse.values.toList))
       try {
-        val stream = consumer.createMessageStreamsByFilter[String](new Whitelist(multiput_topic), 1, new StringDecoder)(0)
+        val stream = consumer.createMessageStreamsByFilter(new Whitelist(multiput_topic), 1, new StringDecoder)(0)
         stream.iterator().next().message === "value_1"
         stream.iterator().next().message === "value_2"
         stream.iterator().next().message === "value_3"

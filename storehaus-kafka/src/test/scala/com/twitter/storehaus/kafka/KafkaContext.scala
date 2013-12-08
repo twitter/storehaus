@@ -14,14 +14,18 @@
  *    limitations under the License.
  */
 
+
 package com.twitter.storehaus.kafka
 
 import org.specs2.specification.Scope
 import java.util.concurrent.Executors
 import com.twitter.concurrent.NamedPoolThreadFactory
 import java.util.{Properties, Random}
-import kafka.serializer.StringEncoder
+import kafka.serializer.{Decoder, StringEncoder}
 import kafka.consumer.{Consumer, ConsumerConfig}
+import kafka.message.Message
+import com.twitter.bijection.Injection
+import java.nio.ByteBuffer
 
 /**
  * @author Mansur Ashraf
@@ -33,14 +37,16 @@ trait KafkaContext extends Scope {
   lazy val executor = Executors.newCachedThreadPool(new NamedPoolThreadFactory("KafkaTestPool"))
   val waiter = 10
   val permits = 0
-  val multiput_topic = "test-" + new Random().nextInt(100000)
-  val topic = "test-" + new Random().nextInt(100000)
 
   def store(topic: String) = KafkaStore[String, String](Seq(zK), topic, classOf[StringEncoder])(executor, waiter, permits)
 
+  def sink(topic: String) = KafkaSink(Seq(zK), topic)
+
+  def random = new Random().nextInt(100000)
+
   //Consumer props
   val props = new Properties()
-  props.put("groupid", "consumer-" + new Random().nextInt(100000))
+  props.put("groupid", "consumer-" + random)
   props.put("socket.buffersize", (2 * 1024 * 1024).toString)
   props.put("fetch.size", (1024 * 1024).toString)
   props.put("auto.commit", "true")
@@ -50,5 +56,12 @@ trait KafkaContext extends Scope {
   props.put("consumer.timeout.ms", (2 * 60 * 1000).toString)
   val config = new ConsumerConfig(props)
   lazy val consumer = Consumer.create(config)
+}
+
+class LongDecoder extends Decoder[Long] {
+  def toEvent(message: Message): Long = {
+    val bytes = Injection[ByteBuffer, Array[Byte]](message.payload)
+    Injection.invert[Long, Array[Byte]](bytes).get
+  }
 }
 
