@@ -23,6 +23,7 @@ import com.twitter.util.{Future, Await}
 import kafka.consumer.{ConsumerTimeoutException, Whitelist}
 
 /**
+ * Integration Test! Remove .pendingUntilFixed if testing against a Kafka Cluster
  * @author Mansur Ashraf
  * @since 12/8/13
  */
@@ -52,6 +53,6 @@ class KafkaAvroSinkSpec extends Specification {
       } catch {
         case e: ConsumerTimeoutException => failure("test failed as consumer timed out without getting any msges")
       }
-    }
+    } .pendingUntilFixed
   }
 }

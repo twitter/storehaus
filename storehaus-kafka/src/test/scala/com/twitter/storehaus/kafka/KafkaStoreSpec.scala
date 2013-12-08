@@ -22,6 +22,7 @@ import com.twitter.util.{Future, Await}
 import kafka.consumer.{ConsumerTimeoutException, Whitelist}
 
 /**
+ * Integration Test! Remove .pendingUntilFixed if testing against a Kafka Cluster
  * @author Mansur Ashraf
  * @since 12/7/13
  */
@@ -39,7 +40,7 @@ class KafkaStoreSpec extends Specification {
       catch {
         case e: ConsumerTimeoutException => failure("test failed as consumer timed out without getting any msges")
       }
-    }
+    }.pendingUntilFixed
 
     "put multiple values on a topic" in new KafkaContext {
       val multiput_topic = "multiput-test-topic-" + random
@@ -63,6 +64,6 @@ class KafkaStoreSpec extends Specification {
       catch {
         case e: ConsumerTimeoutException => failure("test failed as consumer timed out without getting any msges")
       }
-    }
+    }.pendingUntilFixed
   }
 }
