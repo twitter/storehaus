@@ -1,5 +1,30 @@
 # Storehaus #
 
+### Version 0.8.0 ###
+* add BatchedStore for writes: https://github.com/twitter/storehaus/pull/175
+* MySQL batched multiPut: https://github.com/twitter/storehaus/pull/173
+* MergeableMemcacheStore: https://github.com/twitter/storehaus/pull/182
+* Writeable stores: https://github.com/twitter/storehaus/pull/180
+* Add readme notes for memcached tests: https://github.com/twitter/storehaus/pull/184
+* Add the Mergeable type: https://github.com/twitter/storehaus/pull/183
+* MergeableMySqlStore and MySqlLongStore: https://github.com/twitter/storehaus/pull/181
+* PivotedStore: https://github.com/twitter/storehaus/pull/186
+* Make twitter util provided: https://github.com/twitter/storehaus/pull/190
+* Remove version file: https://github.com/twitter/storehaus/pull/194
+
+### Version 0.7.1 ###
+* Remove sources req on specs2, breaks downstream deps
+
+### Version 0.7.1 ###
+* Upgrade to specs2, include sbt runner: https://github.com/twitter/storehaus/pull/170
+
+### Version 0.7.0 ###
+* Read from two stores concurrently: https://github.com/twitter/storehaus/pull/158
+* Merge returns the value before: https://github.com/twitter/storehaus/pull/163
+* Mergeable uses Semigroup (swap store is possible): https://github.com/twitter/storehaus/pull/165
+* Better sorted set support in redis: https://github.com/twitter/storehaus/pull/152
+* Move from java Closeable to twitter.util.Closable (Future[Unit] return)
+
 ### Version.0.6.0 ###
 * Fix readme link to mysql store: https://github.com/twitter/storehaus/pull/143
 * Tunable Replicated Store: https://github.com/twitter/storehaus/pull/142

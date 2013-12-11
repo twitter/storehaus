@@ -22,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap
 import scala.collection.mutable.ConcurrentMap
 import scala.collection.JavaConverters._
 
-import com.twitter.util.{ Future, Promise, Return, Throw }
+import com.twitter.util.{ Future, Promise, Return, Throw, Time }
 
 /**
  * N - total replicas
@@ -120,7 +120,7 @@ object TunableReplicatedStore {
   def fromSeq[K,V](replicas: Seq[Store[K, V]], readConsistency: ConsistencyLevel,
       writeConsistency: ConsistencyLevel, readRepair: Boolean = false, writeRollback: Boolean = false): Store[K, V] = {
     new TunableReplicatedStore[K, V](replicas, readConsistency, writeConsistency, readRepair, writeRollback) {
-      override def close { replicas.foreach { _.close } }
+      override def close(time: Time) = Future.collect(replicas.map(_.close(time))).unit
     }
   }
 }

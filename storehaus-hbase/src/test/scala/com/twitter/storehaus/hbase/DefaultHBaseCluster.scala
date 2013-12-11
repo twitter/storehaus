@@ -19,13 +19,13 @@ package com.twitter.storehaus.hbase
 import org.apache.hadoop.hbase.HBaseTestingUtility
 import org.apache.hadoop.hbase.client.HTablePool
 import com.twitter.storehaus.testing.CloseableCleanup
-import java.io.Closeable
+import com.twitter.util.Closable
 
 /**
  * @author MansurAshraf
  * @since 9/8/13
  */
-trait DefaultHBaseCluster[C <: Closeable] extends CloseableCleanup[C] {
+trait DefaultHBaseCluster[C <: Closable] extends CloseableCleanup[C] {
   val quorumNames = Seq("localhost:2181")
   val table = "summing_bird"
   val columnFamily = "sb"
@@ -35,7 +35,7 @@ trait DefaultHBaseCluster[C <: Closeable] extends CloseableCleanup[C] {
   val conf = testingUtil.getConfiguration
   val pool = new HTablePool(conf, 1)
 
-  override def cleanup() {
+  override def cleanup() = {
     super.cleanup()
    /* testingUtil.shutdownMiniZKCluster()
     testingUtil.shutdownMiniCluster()*/

@@ -18,8 +18,7 @@ package com.twitter.storehaus
 
 import com.twitter.bijection.Injection
 import com.twitter.storehaus.cache.MutableCache
-import com.twitter.util.{Duration, Future, Timer}
-import java.io.Closeable
+import com.twitter.util.{ Duration, Future, Timer }
 import java.util.{ Map => JMap }
 
 /** Factory methods and some combinators on Stores */
@@ -57,7 +56,7 @@ object Store {
     select(stores)(_ => true)
 
   /**
-   * Returns a new ReadableStore[K, V] that queries all of the stores
+   * Returns a new Store[K, V] that queries all of the stores
    * and returns the first values that are not exceptions and that are
    * present (ie, not equivalent to Future.None). Writes are routed to
    * every store in the supplied sequence.
@@ -88,24 +87,6 @@ object Store {
     new RetryingStore(store, backoffs)(pred)
 }
 
-/** Main trait for mutable stores.
- * Instances must implement EITHER put, multiPut or both. The default implementations
- * are in terms of each other.
+/** Main trait for stores can be both read from and written to
  */
-trait Store[-K, V] extends ReadableStore[K, V] { self =>
-  /**
-   * replace a value
-   * Delete is the same as put((k,None))
-   */
-  def put(kv: (K, Option[V])): Future[Unit] = multiPut(Map(kv)).apply(kv._1)
-  /** Replace a set of keys at one time */
-  def multiPut[K1 <: K](kvs: Map[K1, Option[V]]): Map[K1, Future[Unit]] =
-    kvs.map { kv => (kv._1, put(kv)) }
-}
-
-/**
- * Trait for building mutable store with TTL.
- */
-trait WithPutTtl[K, V, S <: Store[K, V]] {
-  def withPutTtl(ttl: Duration): S
-}
+trait Store[-K, V] extends ReadableStore[K, V] with WritableStore[K, Option[V]]

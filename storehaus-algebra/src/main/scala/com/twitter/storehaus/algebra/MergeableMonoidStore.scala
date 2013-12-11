@@ -16,35 +16,38 @@
 
 package com.twitter.storehaus.algebra
 
-import com.twitter.algebird.Monoid
+import com.twitter.algebird.{Monoid, Semigroup}
 import com.twitter.storehaus.{ FutureCollector, Store }
 import com.twitter.util.Future
 
+/** Uses the monoid and filters zeros on put. On get, empty is replaced with Monoid.zero.
+ * This store never returns Future.None. The design choice of never returning None is
+ * to make sure users do not mistake zero for meaning empty. Clearly, we cannot tell the
+ * difference, but returning zero is assumed to make it less likely the user thinks the
+ * key is absent (which this store can never confirm).
+ */
 class MergeableMonoidStore[-K, V: Monoid](store: Store[K, V], fc: FutureCollector[(K, Option[V])] = FutureCollector.default[(K, Option[V])])
-  extends MergeableStore[K, V] {
-  override val monoid: Monoid[V] = implicitly[Monoid[V]]
+  extends MergeableStoreViaGetPut[K, V](store, fc) {
+  override def semigroup: Semigroup[V] = implicitly[Monoid[V]]
 
-  override def get(k: K) = store.get(k)
-  override def multiGet[K1 <: K](ks: Set[K1]) = store.multiGet(ks)
-  override def put(kv: (K, Option[V])) = store.put(kv)
-  override def multiPut[K1 <: K](kvs: Map[K1, Option[V]]) = store.multiPut(kvs)
+  private def default: Some[V] = Some(Monoid.zero)
 
-  /**
-   * sets to monoid.plus(get(kv._1).get.getOrElse(monoid.zero), kv._2)
-   * but maybe more efficient implementations
-   */
-  override def merge(kv: (K, V)): Future[Unit] =
-    for {
-      vOpt <- get(kv._1)
-      oldV = vOpt.getOrElse(Monoid.zero[V])
-      newV = Monoid.plus(oldV, kv._2)
-      finalUnit <- put((kv._1, Monoid.nonZeroOption(newV)))
-    } yield finalUnit
+  private def orElse(opt: Option[V]): Some[V] =
+    opt match {
+      case s@Some(_) => s
+      case None => default
+    }
 
-  override def multiMerge[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Unit]] = {
-    // FutureCollector is invariant, but clearly it will accept K1 <: K
-    // and the contract is that it should not change K1 at all.
-    implicit val collector = fc.asInstanceOf[FutureCollector[(K1, Option[V])]]
-    MergeableStore.multiMergeFromMultiSet(this, kvs)
+  override def get(k: K): Future[Some[V]] =
+    store.get(k).map(orElse(_))
+
+  override def multiGet[K1 <: K](ks: Set[K1]) =
+    store.multiGet(ks).mapValues { futv => futv.map(_.orElse(default)) }
+
+  override def put(kv: (K, Option[V])) = {
+    val (k, optV) = kv
+    store.put((k, optV.filter(Monoid.isNonZero(_))))
   }
+  override def multiPut[K1 <: K](kvs: Map[K1, Option[V]]) =
+    store.multiPut(kvs.mapValues(_.filter(v => Monoid.isNonZero(v))))
 }

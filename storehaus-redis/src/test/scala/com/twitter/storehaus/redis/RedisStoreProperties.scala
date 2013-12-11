@@ -17,7 +17,6 @@
 package com.twitter.storehaus.redis
 
 import com.twitter.bijection.Injection
-import com.twitter.finagle.redis.Client
 import com.twitter.finagle.redis.util.{ CBToString, StringToChannelBuffer }
 import com.twitter.storehaus.{ FutureOps, Store }
 import com.twitter.storehaus.algebra.ConvertedStore
@@ -59,14 +58,12 @@ object RedisStoreProperties extends Properties("RedisStore")
   def storeTest(store: Store[String, String]) =
     putStoreTest(store, validPairs) && multiPutStoreTest(store, validPairs)
 
-  implicit def strToCb = new Injection[String, ChannelBuffer] {
-    def apply(a: String): ChannelBuffer = StringToChannelBuffer(a)
-    override def invert(b: ChannelBuffer) = Try(CBToString(b))
-  }
+  implicit def strToCb =
+    Injection.build(StringToChannelBuffer(_: String))(
+      (b: ChannelBuffer) => Try(CBToString(b)))
+
   val closeable =
     RedisStore(client).convert(StringToChannelBuffer(_: String))
 
-
- property("RedisStore test") =
-   storeTest(closeable)
+  property("RedisStore test") = storeTest(closeable)
 }
