@@ -30,7 +30,7 @@ import com.twitter.concurrent.NamedPoolThreadFactory
  * @author Mansur Ashraf
  * @since 11/22/13
  */
-class KafkaSink[K, V](dispatcher: Dispatcher[K, V]) {
+class KafkaSink[K, V](dispatcher: Dispatcher[K, V]) extends Serializable {
   /**
    * Function that satisfies Storm#Sink {@see SummingBird-Storm}
    * @return  () => (K,V) => Future[Unit]

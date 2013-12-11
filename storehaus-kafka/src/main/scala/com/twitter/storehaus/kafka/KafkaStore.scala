@@ -31,7 +31,7 @@ import com.twitter.concurrent.AsyncSemaphore
  */
 class KafkaStore[K, V](topic: String, props: Properties)(executor: => ExecutorService,
                                                          initialPermits: Int,
-                                                         maxWaiters: Int) extends WritableStore[K, V] {
+                                                         maxWaiters: Int) extends WritableStore[K, V] with Serializable {
   private lazy val producerConfig = new ProducerConfig(props)
   private lazy val producer = new Producer[K, V](producerConfig)
   private lazy val futurePool = FuturePool(executor)
