@@ -26,10 +26,8 @@ import com.twitter.bijection.Conversion._
  * @since 11/23/13
  */
 object KafkaInjections {
-  implicit val byteArrayEncoder = classOf[ByteArrayEncoder]
-
-  class ByteArrayEncoder extends Encoder[Array[Byte]] {
-    def toMessage(event: Array[Byte]): Message = new Message(event)
+  class ByteArrayEncoder extends FromInjectionEncoder[Array[Byte]] {
+    def injection: Injection[Array[Byte], Array[Byte]] = Injection.identity[Array[Byte]]
   }
 
   trait FromInjectionDecoder[T] extends Decoder[T] {
