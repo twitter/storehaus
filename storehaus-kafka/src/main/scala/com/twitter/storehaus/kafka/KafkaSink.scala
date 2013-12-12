@@ -18,9 +18,7 @@ package com.twitter.storehaus.kafka
 
 import com.twitter.util.Future
 import KafkaSink.Dispatcher
-import com.twitter.bijection.{Codec, Injection}
-import org.apache.avro.specific.SpecificRecordBase
-import com.twitter.bijection.avro.SpecificAvroCodecs
+import com.twitter.bijection.Injection
 import scala.Array
 import java.util.concurrent.{Executors, ExecutorService}
 import com.twitter.concurrent.NamedPoolThreadFactory
@@ -115,43 +113,6 @@ object KafkaSink {
   def apply(zkQuorum: Seq[String],
             topic: String): KafkaSink[Array[Byte], Array[Byte]] = {
     apply[Array[Byte], Array[Byte], ByteArrayEncoder](zkQuorum, topic, defaultExecutor)
-  }
-}
-
-/**
- * KafkaSink capable of sending Avro messages to a Kafka Topic
- */
-object KafkaAvroSink {
-
-  import com.twitter.bijection.StringCodec.utf8
-
-  /**
-   * Creates KafkaSink that can sends message of form (String,SpecificRecord) to a Kafka Topic
-   * @param zkQuorum zookeeper quorum
-   * @param topic  Kafka Topic
-   * @tparam V  Avro Record
-   * @return KafkaSink[String,SpecificRecordBase]
-   */
-  def apply[V <: SpecificRecordBase : Manifest](zkQuorum: Seq[String], topic: String) = {
-    implicit val inj = SpecificAvroCodecs[V]
-    lazy val sink = KafkaSink(zkQuorum: Seq[String], topic: String)
-      .convert[String, V](utf8.toFunction)
-    sink
-  }
-
-  /**
-   * Creates KafkaSink that can sends message of form (T,SpecificRecord) to a Kafka Topic
-   * @param zkQuorum zookeeper quorum
-   * @param topic  Kafka Topic
-   * @tparam V  Avro Record
-   * @tparam K key
-   * @return KafkaSink[T,SpecificRecordBase]
-   */
-  def apply[K: Codec, V <: SpecificRecordBase : Manifest](zkQuorum: Seq[String], topic: String) = {
-    implicit val inj = SpecificAvroCodecs[V]
-    lazy val sink = KafkaSink(zkQuorum: Seq[String], topic: String)
-      .convert[K, V](implicitly[Codec[K]].toFunction)
-    sink
   }
 }
 
