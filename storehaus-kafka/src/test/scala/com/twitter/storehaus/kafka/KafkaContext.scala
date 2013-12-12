@@ -40,7 +40,7 @@ trait KafkaContext extends Scope {
   val waiter = 10
   val permits = 0
 
-  def store(topic: String) = KafkaStore[String, String](Seq(zK), topic, classOf[StringEncoder])(executor, waiter, permits)
+  def store(topic: String) = KafkaStore[String, String,StringEncoder](Seq(zK), topic)(executor)
 
   def sink(topic: String) = KafkaSink(Seq(zK), topic)
 

@@ -20,6 +20,7 @@ import org.specs2.mutable.Specification
 import kafka.serializer.StringDecoder
 import com.twitter.util.{Future, Await}
 import kafka.consumer.{ConsumerTimeoutException, Whitelist}
+import com.twitter.storehaus.FutureOps
 
 /**
  * Integration Test! Remove .pendingUntilFixed if testing against a Kafka Cluster

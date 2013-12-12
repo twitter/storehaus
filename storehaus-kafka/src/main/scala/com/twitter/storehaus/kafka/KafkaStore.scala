@@ -21,7 +21,8 @@ import com.twitter.util.{Time, FuturePool, Future}
 import java.util.Properties
 import kafka.producer.{ProducerData, Producer, ProducerConfig}
 import java.util.concurrent.ExecutorService
-import com.twitter.concurrent.AsyncSemaphore
+import com.twitter.concurrent.AsyncMutex
+import kafka.serializer.Encoder
 
 
 /**
@@ -29,36 +30,37 @@ import com.twitter.concurrent.AsyncSemaphore
  * @author Mansur Ashraf
  * @since 11/22/13
  */
-class KafkaStore[K, V](topic: String, props: Properties)(executor: => ExecutorService,
-                                                         initialPermits: Int,
-                                                         maxWaiters: Int) extends WritableStore[K, V] with Serializable {
+class KafkaStore[K, V](topic: String, props: Properties)(executor: => ExecutorService) extends WritableStore[K, V] with Serializable {
   private lazy val producerConfig = new ProducerConfig(props)
   private lazy val producer = new Producer[K, V](producerConfig)
   private lazy val futurePool = FuturePool(executor)
+  private[this] lazy val mutex = new AsyncMutex
 
   /**
    * Puts a key/value pair on a Kafka Topic using kafka.producer.AyncProducer and does not block thread
    * @param kv (key,value)
    * @return Future.unit
    */
-  override def put(kv: (K, V)): Future[Unit] = futurePool {
-    val (key, value) = kv
-    producer.send(new ProducerData[K, V](topic, key, List(value)))
+  override def put(kv: (K, V)): Future[Unit] = mutex.acquire().flatMap {
+    p =>
+      futurePool {
+        val (key, value) = kv
+        producer.send(new ProducerData[K, V](topic, key, List(value)))
+      } ensure {
+        p.release()
+      }
   }
 
   override def multiPut[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Unit]] = {
-    val s = new AsyncSemaphore(initialPermits, maxWaiters)
-    val future = s.acquire().flatMap {
+    val future = mutex.acquire().flatMap {
       p => futurePool {
-        try {
-          val batch = kvs.map {
-            case (k, v) => new ProducerData[K, V](topic, k, List(v))
-          }.toList
-          producer.send(batch: _*)
-        }
-        finally {
-          p.release()
-        }
+        val batch = kvs.map {
+          case (k, v) => new ProducerData[K, V](topic, k, List(v))
+        }.toList
+        producer.send(batch: _*)
+
+      } ensure {
+        p.release()
       }
     }
     kvs.mapValues(v => future)
@@ -82,30 +84,23 @@ object KafkaStore {
    * @tparam V Value
    * @return Kafka Store
    */
-  def apply[K, V](topic: String, props: Properties)(executor: => ExecutorService,
-                                                    initialPermits: Int,
-                                                    maxWaiters: Int) = new KafkaStore[K, V](topic, props)(executor, initialPermits, maxWaiters)
+  def apply[K, V](topic: String, props: Properties)(executor: => ExecutorService) = new KafkaStore[K, V](topic, props)(executor)
 
   /**
    * Creates a Kafka store.
    * @param zkQuorum zookeeper quorum.
    * @param topic  Kafka topic.
-   * @param serializer message encoder { @see http://kafka.apache.org/07/quickstart.html}
    * @tparam K  Key
    * @tparam V Value
    * @return Kafka Store
    */
-  def apply[K, V](zkQuorum: Seq[String],
-                  topic: String,
-                  serializer: Class[_])(executor: => ExecutorService,
-                                        initialPermits: Int,
-                                        maxWaiters: Int) = new KafkaStore[K, V](topic, createProp(zkQuorum, serializer))(executor, initialPermits, maxWaiters)
+  def apply[K, V, E <: Encoder[V] : Manifest](zkQuorum: Seq[String],
+                                              topic: String)(executor: => ExecutorService) = new KafkaStore[K, V](topic, createProp[V,E](zkQuorum))(executor)
 
 
-  private def createProp(zkQuorum: Seq[String],
-                         serializer: Class[_]): Properties = {
+  private def createProp[V, E <: Encoder[V] : Manifest](zkQuorum: Seq[String]): Properties = {
     val prop = new Properties()
-    prop.put("serializer.class", serializer.getName)
+    prop.put("serializer.class", implicitly[Manifest[E]].erasure.getName)
     prop.put("zk.connect", zkQuorum.mkString(","))
     prop
   }

@@ -24,6 +24,8 @@ import com.twitter.bijection.avro.SpecificAvroCodecs
 import scala.Array
 import java.util.concurrent.{Executors, ExecutorService}
 import com.twitter.concurrent.NamedPoolThreadFactory
+import kafka.serializer.Encoder
+import com.twitter.storehaus.kafka.KafkaEncoders.ByteArrayEncoder
 
 /**
  * Kafka Sink that can be used with SummingBird to sink messages to a Kafka Queue
@@ -74,10 +76,8 @@ class KafkaSink[K, V](dispatcher: Dispatcher[K, V]) extends Serializable {
 object KafkaSink {
 
   private lazy val defaultExecutor = Executors.newCachedThreadPool(new NamedPoolThreadFactory("KafkaSinkUnboundedFuturePool"))
-  private val defaultPermits = 0
-  private val defaultWaiter = 0
 
-  type Dispatcher[A, B] = ((A, B)) => Future[Unit]
+  type Dispatcher[K, V] = ((K, V)) => Future[Unit]
 
   /**
    * Creates KafkaSink by wrapping KafkaStore
@@ -95,15 +95,12 @@ object KafkaSink {
    * Returns KafkaSink[K,V]
    * @param zkQuorum  zookeeper quorum
    * @param topic kafka topic.
-   * @param serializer kafka encoder
    * @tparam K key
    * @tparam V value
    * @return KafkaSink[K,V]
    */
-  def apply[K, V](zkQuorum: Seq[String], topic: String, serializer: Class[_], executor: => ExecutorService,
-                  initialPermits: Int,
-                  maxWaiters: Int): KafkaSink[K, V] = {
-    lazy val store = KafkaStore[K, V](zkQuorum, topic, serializer)(executor, initialPermits, maxWaiters)
+  def apply[K, V, E <: Encoder[V] : Manifest](zkQuorum: Seq[String], topic: String, executor: => ExecutorService): KafkaSink[K, V] = {
+    lazy val store = KafkaStore[K, V, E](zkQuorum, topic)(executor)
     lazy val sink = apply[K, V](store)
     sink
   }
@@ -117,8 +114,7 @@ object KafkaSink {
    */
   def apply(zkQuorum: Seq[String],
             topic: String): KafkaSink[Array[Byte], Array[Byte]] = {
-    import KafkaEncoders.byteArrayEncoder
-    apply[Array[Byte], Array[Byte]](zkQuorum, topic, byteArrayEncoder, defaultExecutor, defaultPermits, defaultWaiter)
+    apply[Array[Byte], Array[Byte], ByteArrayEncoder](zkQuorum, topic, defaultExecutor)
   }
 }
 
