@@ -28,6 +28,7 @@ import com.twitter.bijection.Injection
 import java.nio.ByteBuffer
 import org.apache.avro.specific.SpecificRecordBase
 import com.twitter.bijection.avro.SpecificAvroCodecs
+import kafka.DataTuple
 
 /**
  * @author Mansur Ashraf
@@ -37,8 +38,7 @@ trait KafkaContext extends Scope {
 
   val zK = "localhost:2181"
   lazy val executor = Executors.newCachedThreadPool(new NamedPoolThreadFactory("KafkaTestPool"))
-  val waiter = 10
-  val permits = 0
+  implicit val dataTupleInj= SpecificAvroCodecs[DataTuple]
 
   def store(topic: String) = KafkaStore[String, String,StringEncoder](Seq(zK), topic)(executor)
 
@@ -58,19 +58,5 @@ trait KafkaContext extends Scope {
   props.put("consumer.timeout.ms", (2 * 60 * 1000).toString)
   val config = new ConsumerConfig(props)
   lazy val consumer = Consumer.create(config)
-}
-
-class LongDecoder extends Decoder[Long] {
-  def toEvent(message: Message): Long = {
-    val bytes = Injection[ByteBuffer, Array[Byte]](message.payload)
-    Injection.invert[Long, Array[Byte]](bytes).get
-  }
-}
-
-class AvroDecoder[T<:SpecificRecordBase:Manifest] extends Decoder[T]{
-  def toEvent(message: Message): T = {
-    val bytes = Injection[ByteBuffer, Array[Byte]](message.payload)
-    SpecificAvroCodecs[T].invert(bytes).get
-  }
 }
 

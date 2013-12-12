@@ -16,17 +16,43 @@
 
 package com.twitter.storehaus.kafka
 
-import kafka.serializer.Encoder
+import kafka.serializer.{Decoder, Encoder}
 import kafka.message.Message
+import com.twitter.bijection.{Codec, Injection}
+import com.twitter.bijection.Conversion._
 
 /**
  * @author Mansur Ashraf
  * @since 11/23/13
  */
-object KafkaEncoders {
+object KafkaInjections {
   implicit val byteArrayEncoder = classOf[ByteArrayEncoder]
 
   class ByteArrayEncoder extends Encoder[Array[Byte]] {
     def toMessage(event: Array[Byte]): Message = new Message(event)
   }
+
+  trait FromInjectionDecoder[T] extends Decoder[T] {
+    def injection: Injection[T, Array[Byte]]
+
+    def toEvent(m: Message) = injection.invert(m.payload.as[Array[Byte]]).get
+  }
+
+  trait FromInjectionEncoder[T] extends Encoder[T] {
+    def injection: Injection[T, Array[Byte]]
+
+    def toMessage(event: T): Message = new Message(injection(event))
+  }
+
+  def fromInjection[T: Codec]: (Encoder[T], Decoder[T]) = {
+    val result = new FromInjectionEncoder[T] with FromInjectionDecoder[T] {
+      def injection: Injection[T, Array[Byte]] = implicitly[Codec[T]]
+    }
+    (result, result)
+  }
+
+  implicit def injectionEncoder[T: Codec] = fromInjection[T]._1
+
+  implicit def injectionDecoder[T: Codec] = fromInjection[T]._2
+
 }

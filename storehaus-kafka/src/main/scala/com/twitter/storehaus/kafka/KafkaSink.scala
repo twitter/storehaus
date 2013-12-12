@@ -23,7 +23,7 @@ import scala.Array
 import java.util.concurrent.{Executors, ExecutorService}
 import com.twitter.concurrent.NamedPoolThreadFactory
 import kafka.serializer.Encoder
-import com.twitter.storehaus.kafka.KafkaEncoders.ByteArrayEncoder
+import com.twitter.storehaus.kafka.KafkaInjections.ByteArrayEncoder
 
 /**
  * Kafka Sink that can be used with SummingBird to sink messages to a Kafka Queue

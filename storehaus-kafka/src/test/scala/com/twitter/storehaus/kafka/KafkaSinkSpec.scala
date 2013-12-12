@@ -20,6 +20,8 @@ import org.specs2.mutable.Specification
 import com.twitter.bijection.StringCodec.utf8
 import com.twitter.util.{Future, Await}
 import kafka.consumer.{ConsumerTimeoutException, Whitelist}
+import kafka.serializer.Decoder
+import KafkaInjections._
 
 /**
  * Integration Test! Remove .pendingUntilFixed if testing against a Kafka Cluster
@@ -35,7 +37,7 @@ class KafkaSinkSpec extends Specification {
       val longSink = sink(topic).convert[String, Long](utf8.toFunction)
       Await.result(longSink.write()("1", 1L))
       try {
-        val stream = consumer.createMessageStreamsByFilter(new Whitelist(topic), 1, new LongDecoder)(0)
+        val stream = consumer.createMessageStreamsByFilter(new Whitelist(topic), 1,implicitly[Decoder[Long]])(0)
         stream.iterator().next().message === 1L
       } catch {
         case e: ConsumerTimeoutException => failure("test failed as consumer timed out without getting any msges")
@@ -51,7 +53,7 @@ class KafkaSinkSpec extends Specification {
       val futures = Future.collect((1 to 10).map(v => filteredSink()("key", v)))
       Await.result(futures)
       try {
-        val stream = consumer.createMessageStreamsByFilter(new Whitelist(topic), 1, new LongDecoder)(0)
+        val stream = consumer.createMessageStreamsByFilter(new Whitelist(topic), 1, implicitly[Decoder[Long]])(0)
         val iterator = stream.iterator()
         iterator.next().message % 2 === 0
         iterator.next().message % 2 === 0
