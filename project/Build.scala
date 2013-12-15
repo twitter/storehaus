@@ -63,7 +63,8 @@ object StorehausBuild extends Build {
     resolvers ++= Seq(
       Opts.resolver.sonatypeSnapshots,
       Opts.resolver.sonatypeReleases,
-      "Twitter Maven" at "http://maven.twttr.com"
+      "Twitter Maven" at "http://maven.twttr.com",
+      "Conjars Repository" at "http://conjars.org/repo"
     ),
     parallelExecution in Test := true,
     scalacOptions ++= Seq(Opts.compile.unchecked, Opts.compile.deprecation),
@@ -136,6 +137,7 @@ object StorehausBuild extends Build {
     storehausRedis,
     storehausHBase,
     storehausDynamoDB,
+    storehausKafka,
     storehausTesting
   )
 
@@ -209,6 +211,20 @@ object StorehausBuild extends Build {
       ////use alternator for local testing
       //"com.michelboudreau" % "alternator" % "0.6.4" % "test"
     ),
+    parallelExecution in Test := false
+  ).dependsOn(storehausAlgebra % "test->test;compile->compile")
+
+  lazy val storehausKafka = module("kafka").settings(
+    libraryDependencies ++= Seq (
+      "com.twitter" %% "bijection-core" % bijectionVersion,
+      "com.twitter" %% "bijection-avro" % bijectionVersion,
+      "com.twitter"%"kafka_2.9.2"%"0.7.0" excludeAll(
+        ExclusionRule("com.sun.jdmk","jmxtools"),
+        ExclusionRule( "com.sun.jmx","jmxri"),
+        ExclusionRule( "javax.jms","jms")
+        )
+    ),
+    // we don't want various tests clobbering each others keys
     parallelExecution in Test := false
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
