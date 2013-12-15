@@ -20,46 +20,41 @@ import com.twitter.scalding.{RichDate, DateRange, Duration, AbsoluteDuration, Ye
 import java.util.TimeZone
 import scala.annotation.tailrec
 
-case class Bucket(typeIndx: Int, startTime: Long) {
-  override def toString = Buckets.durationToName(Buckets.indexToDuration(typeIndx)) + " starting at : " + RichDate(startTime) + "Indx is : " + typeIndx
-  def length: Long = {
-    val endTime = Buckets.indexToDuration(typeIndx).addTo(RichDate(startTime)).timestamp
-    endTime - startTime
-  }
-}
-object Buckets {
-  private val allBuckets = {
-    implicit val tz = TimeZone.getTimeZone("UTC")
-    List(Years(1), Months(1), Days(1), Hours(1), Minutes(1))
-  }
-
-  def indexToDuration(indx: Int) = allBuckets(indx)
-
-  def durationToName(x: Duration): String = x.getClass.getName.split('.').reverse.head
-
-  def get = allBuckets
-  // def getDuration(bucket: Bucket) = allBuckets(bucket.indx)
-  // def getName(bucket: Bucket) = durationToName(allBuckets(bucket.indx))
-  def tsToBuckets(msSinceEpoch: Long) =  {
-    val richDate = RichDate(msSinceEpoch)
-    allBuckets.zipWithIndex.map { case (duration, indx) =>
-      Bucket(indx, duration.floorOf(richDate).timestamp)
-    }.toSet
-  }
-}
+case class CalendarBucket(typeIndx: Int, startTime: Long)
 
 /** A query strategy for time with named buckets.
  */
-class CalendarTimeStrategy extends QueryStrategy[DateRange, Long, Bucket] {
+class CalendarTimeStrategy(strategyTimezone: TimeZone = TimeZone.getTimeZone("UTC")) extends QueryStrategy[DateRange, Long, CalendarBucket] {
+
+  private val allBuckets = {
+    implicit val tz = strategyTimezone
+    List(Years(1), Months(1), Days(1), Hours(1), Minutes(1))
+  }
+
+  def bucketLength(bucket: CalendarBucket) = {
+    val endTime = indexToDuration(bucket.typeIndx).addTo(RichDate(bucket.startTime)).timestamp
+    endTime - bucket.startTime
+  }
+
+  protected def indexToDuration(indx: Int) = allBuckets(indx)
+  protected def durationToName(x: Duration): String = x.getClass.getName.split('.').reverse.head
+
+  private def tsToBuckets(msSinceEpoch: Long) =  {
+    val richDate = RichDate(msSinceEpoch)
+    allBuckets.zipWithIndex.map { case (duration, indx) =>
+      CalendarBucket(indx, duration.floorOf(richDate).timestamp)
+    }.toSet
+  }
+
   private def len(dr: DateRange) = AbsoluteDuration.fromMillisecs(dr.end.timestamp - dr.start.timestamp + 1L)
 
   private def outsideRange(filterDR: DateRange, child: DateRange) =
     (child.start >= filterDR.end || child.end <= filterDR.start)
 
-  def query(dr: DateRange): Set[Bucket] = extract(dr, Set(dr), 0, Buckets.get, Set[Bucket]())
+  def query(dr: DateRange): Set[CalendarBucket] = extract(dr, Set(dr), 0, allBuckets, Set[CalendarBucket]())
 
   @tailrec
-  private def extract(filterDr: DateRange, drSet: Set[DateRange], curIndx: Int, remainingDurations: List[Duration], acc: Set[Bucket]): Set[Bucket] = {
+  private def extract(filterDr: DateRange, drSet: Set[DateRange], curIndx: Int, remainingDurations: List[Duration], acc: Set[CalendarBucket]): Set[CalendarBucket] = {
     remainingDurations match {
       case Nil => acc
       case head :: tail =>
@@ -76,10 +71,10 @@ class CalendarTimeStrategy extends QueryStrategy[DateRange, Long, Bucket] {
         // Things which fit fully in this time range
         val fullyInRange = expandedOut
                               .filter(filterDr.contains(_))
-                              .map(x => Bucket(curIndx, x.start.timestamp))
+                              .map(x => CalendarBucket(curIndx, x.start.timestamp))
         extract(filterDr, others, curIndx + 1, tail, acc ++ fullyInRange)
     }
   }
 
-  def index(ts: Long) = Buckets.tsToBuckets(ts)
+  def index(ts: Long):Set[CalendarBucket] = tsToBuckets(ts)
 }

@@ -49,7 +49,7 @@ object CalendarTimeQueryRangeProperties extends Properties("CalendarTimeStrategy
     val strategy = new CalendarTimeStrategy
     val timeLen = exclusiveUpperLen(dr).toMillisecs
     val buckets = strategy.query(dr)
-    val reSummed = buckets.toList.map(_.length).foldLeft(0L){_ + _}
+    val reSummed = buckets.toList.map(strategy.bucketLength(_)).foldLeft(0L){_ + _}
     reSummed == timeLen
   }
 }
