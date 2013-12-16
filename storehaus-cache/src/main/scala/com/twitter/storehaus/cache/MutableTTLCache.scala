@@ -55,7 +55,7 @@ class MutableTTLCache[K, V](val ttl: Long, protected val backingCache: MutableCa
     this
   }
 
-  override def contains(k: K) = get(k).map(_ => true).getOrElse(false)
+  override def contains(k: K) = get(k).isDefined
   override def empty = new MutableTTLCache(ttl, backingCache.empty)(clock)
   override def iterator = {
     val iteratorStartTime = clock()
@@ -64,7 +64,7 @@ class MutableTTLCache[K, V](val ttl: Long, protected val backingCache: MutableCa
         Some((k, v))
       else
         None
-    }
+    }.toList.iterator
   }
 
   /* Returns a [[scala.util.collection.immutable.Map]] containing all
