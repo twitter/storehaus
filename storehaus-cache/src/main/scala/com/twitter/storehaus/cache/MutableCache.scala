@@ -28,6 +28,8 @@ object MutableCache {
     * returning an empty version of a specific map.
     */
   def fromJMap[K, V](fn: => JMap[K, V]) = JMapCache[K, V](fn)
+
+  def ttl[K, V](ttlInMillis: Long, capacity: Int) = MutableTTLCache[K, V](ttlInMillis, capacity)
 }
 
 trait MutableCache[K, V] {
