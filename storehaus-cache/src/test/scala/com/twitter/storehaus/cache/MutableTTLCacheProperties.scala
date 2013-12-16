@@ -55,7 +55,7 @@ object MutableTTLCacheProperties extends Properties("MutableTTLCache") {
       items.foreach{ item =>
         cache += (item, item)
       }
-      val sleepTime = ttl.get - delta.get
+      val sleepTime = ttl.get - 10
       if(sleepTime > 0) spinSleep(10)
       items.iterator.forall{ item =>
         if(cache.get(item) != Some(item)) {
