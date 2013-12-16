@@ -21,20 +21,22 @@ import org.specs2.mutable._
 class MutableTTLCacheTest extends Specification {
 
   "TTLCache exhibits proper TTL-ness" in {
-    val cache = MutableCache.ttl[String, Int](200, 100)
+    val ttl = 500 // ms
+    val cache = MutableCache.ttl[String, Int](ttl, 100)
     cache += ("a" -> 1)
     cache += ("b" -> 2)
     cache.toNonExpiredMap must be_==(Map("a" -> 1, "b" -> 2))
-    Thread.sleep(500)
+    Thread.sleep(ttl)
     cache += ("c" -> 3)
     cache.toNonExpiredMap must be_==(Map("c" -> 3))
   }
 
   "TTLCache does not return an expired value" in {
-    val cache = MutableCache.ttl[String, Int](200, 100)
+    val ttl = 500 // ms
+    val cache = MutableCache.ttl[String, Int](ttl, 100)
     cache += ("a" -> 10)
     cache.get("a") must be_==(Some(10))
-    Thread.sleep(500)
+    Thread.sleep(ttl)
     cache.get("a") must be_==(None)
   }
 }
