@@ -119,6 +119,7 @@ object StorehausBuild extends Build {
   val algebirdVersion = "0.3.1"
   val bijectionVersion = "0.6.0"
   val utilVersion = "6.3.7"
+  val scaldingVersion = "0.9.0rc4"
 
   lazy val storehaus = Project(
     id = "storehaus",
@@ -162,7 +163,8 @@ object StorehausBuild extends Build {
   lazy val storehausAlgebra = module("algebra").settings(
     libraryDependencies += "com.twitter" %% "algebird-core" % algebirdVersion,
     libraryDependencies += "com.twitter" %% "algebird-util" % algebirdVersion,
-    libraryDependencies += "com.twitter" %% "algebird-bijection" % algebirdVersion
+    libraryDependencies += "com.twitter" %% "algebird-bijection" % algebirdVersion,
+    libraryDependencies += "com.twitter" %% "scalding-date" % scaldingVersion
   ).dependsOn(storehausCore % "test->test;compile->compile")
 
   lazy val storehausMemcache = module("memcache").settings(
