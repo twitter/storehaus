@@ -37,7 +37,7 @@ trait QueryStrategy[-Q,-L,X] extends Serializable { self =>
   /** Used in your summingbird job to flatmap your keys, increment all these X with the value */
   def index(key: L): Set[X]
 
-  def withOptionalStrategy: QueryStrategy[Option[Q],L,Option[X]] = new AbstractQueryStrategy[Option[Q], L, Option[X]] {
+  def withOption: QueryStrategy[Option[Q],L,Option[X]] = new AbstractQueryStrategy[Option[Q], L, Option[X]] {
     def query(q: Option[Q]) = q match {
       case Some(innerQ) => self.query(innerQ).map(Some(_))
       case None => Set(None)
