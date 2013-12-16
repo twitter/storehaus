@@ -55,7 +55,7 @@ class MutableTTLCache[K, V](val ttl: Long, protected val backingCache: MutableCa
     this
   }
 
-  override def contains(k: K) = backingCache.contains(k)
+  override def contains(k: K) = get(k).map(_ => true).getOrElse(false)
   override def empty = new MutableTTLCache(ttl, backingCache.empty)(clock)
   override def iterator = {
     val iteratorStartTime = clock()
