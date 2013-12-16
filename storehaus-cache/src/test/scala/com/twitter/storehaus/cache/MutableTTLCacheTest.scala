@@ -25,7 +25,7 @@ class MutableTTLCacheTest extends Specification {
     cache += ("a" -> 1)
     cache += ("b" -> 2)
     cache.toNonExpiredMap must be_==(Map("a" -> 1, "b" -> 2))
-    Thread.sleep(300)
+    Thread.sleep(500)
     cache += ("c" -> 3)
     cache.toNonExpiredMap must be_==(Map("c" -> 3))
   }
@@ -34,7 +34,7 @@ class MutableTTLCacheTest extends Specification {
     val cache = MutableCache.ttl[String, Int](200, 100)
     cache += ("a" -> 10)
     cache.get("a") must be_==(Some(10))
-    Thread.sleep(300)
+    Thread.sleep(500)
     cache.get("a") must be_==(None)
   }
 }

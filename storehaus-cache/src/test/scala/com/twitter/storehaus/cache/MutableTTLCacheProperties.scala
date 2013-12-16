@@ -23,7 +23,6 @@ import org.scalacheck.Prop._
 object MutableTTLCacheProperties extends Properties("MutableTTLCache") {
   case class PositiveTTLTime(get: Long)
   case class NegativeTTLTime(get: Long)
-  case class DeltaTime(get: Long)
   implicit def genPositiveTTLTime: Arbitrary[PositiveTTLTime] = Arbitrary (
       for {
         x <- choose(0, 40)
@@ -31,34 +30,38 @@ object MutableTTLCacheProperties extends Properties("MutableTTLCache") {
     )
    implicit def genNegativeTTLTime: Arbitrary[NegativeTTLTime] = Arbitrary (
       for {
-        x <- choose(40, 120)
+        x <- choose(80, 480)
       } yield NegativeTTLTime(x)
     )
-  implicit def genDeltaTime: Arbitrary[DeltaTime] = Arbitrary (
-      for {
-        x <- choose(10, 20)
-      } yield DeltaTime(x)
-    )
 
+  def spinSleep(howLong: Long) {
+    val finishTime = System.currentTimeMillis + howLong
+    while(System.currentTimeMillis < finishTime){}
+  }
 
-  property("If insert an item with a TTL of X, and wait X + delta then it cannot be there") = forAll { (ttl: PositiveTTLTime, delta: DeltaTime, items: List[Long])  =>
+  property("If insert an item with a TTL of X, and wait X + delta then it cannot be there") = forAll { (ttl: PositiveTTLTime, items: List[Long])  =>
       val cache = MutableCache.ttl[Long, Long](ttl.get, items.size + 2)
       items.foreach{ item =>
         cache += (item, item)
       }
-      Thread.sleep(ttl.get + delta.get)
-      items.forall{ item =>
+      spinSleep(ttl.get + 10)
+      items.iterator.forall{ item =>
         cache.get(item) == None
       }
   }
 
-  property("if you put with TTL t, and wait 0 time, it should always (almost, except due to scheduling) be in there") = forAll { (ttl: NegativeTTLTime, delta: DeltaTime, items: List[Long])  =>
+  property("if you put with TTL t, and wait 0 time, it should always (almost, except due to scheduling) be in there") = forAll { (ttl: NegativeTTLTime, items: List[Long])  =>
       val cache = MutableCache.ttl[Long, Long](ttl.get, items.size + 2)
       items.foreach{ item =>
         cache += (item, item)
       }
-      Thread.sleep(ttl.get - delta.get)
-      items.forall{ item =>
+      val sleepTime = ttl.get - delta.get
+      if(sleepTime > 0) spinSleep(10)
+      items.iterator.forall{ item =>
+        if(cache.get(item) != Some(item)) {
+          println(item)
+          println(cache.get(item))
+        }
         cache.get(item) == Some(item)
       }
   }
