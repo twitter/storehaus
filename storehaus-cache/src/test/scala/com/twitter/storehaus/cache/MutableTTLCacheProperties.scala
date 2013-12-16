@@ -21,12 +21,18 @@ import org.scalacheck.Gen.choose
 import org.scalacheck.Prop._
 
 object MutableTTLCacheProperties extends Properties("MutableTTLCache") {
-  case class TTLTime(get: Long)
+  case class PositiveTTLTime(get: Long)
+  case class NegativeTTLTime(get: Long)
   case class DeltaTime(get: Long)
-  implicit def genTTLTime: Arbitrary[TTLTime] = Arbitrary (
+  implicit def genPositiveTTLTime: Arbitrary[PositiveTTLTime] = Arbitrary (
       for {
-        x <- choose(20, 40)
-      } yield TTLTime(x)
+        x <- choose(0, 40)
+      } yield PositiveTTLTime(x)
+    )
+   implicit def genNegativeTTLTime: Arbitrary[NegativeTTLTime] = Arbitrary (
+      for {
+        x <- choose(40, 120)
+      } yield NegativeTTLTime(x)
     )
   implicit def genDeltaTime: Arbitrary[DeltaTime] = Arbitrary (
       for {
@@ -35,7 +41,7 @@ object MutableTTLCacheProperties extends Properties("MutableTTLCache") {
     )
 
 
-  property("If insert an item with a TTL of X, and wait X + delta then it cannot be there") = forAll { (ttl: TTLTime, delta: DeltaTime, items: List[Long])  =>
+  property("If insert an item with a TTL of X, and wait X + delta then it cannot be there") = forAll { (ttl: PositiveTTLTime, delta: DeltaTime, items: List[Long])  =>
       val cache = MutableCache.ttl[Long, Long](ttl.get, items.size + 2)
       items.foreach{ item =>
         cache += (item, item)
@@ -46,7 +52,7 @@ object MutableTTLCacheProperties extends Properties("MutableTTLCache") {
       }
   }
 
-  property("if you put with TTL t, and wait 0 time, it should always (almost, except due to scheduling) be in there") = forAll { (ttl: TTLTime, delta: DeltaTime, items: List[Long])  =>
+  property("if you put with TTL t, and wait 0 time, it should always (almost, except due to scheduling) be in there") = forAll { (ttl: NegativeTTLTime, delta: DeltaTime, items: List[Long])  =>
       val cache = MutableCache.ttl[Long, Long](ttl.get, items.size + 2)
       items.foreach{ item =>
         cache += (item, item)
