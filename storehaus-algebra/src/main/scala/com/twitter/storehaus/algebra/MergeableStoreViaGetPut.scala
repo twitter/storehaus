@@ -26,10 +26,6 @@ import com.twitter.util.Future
  * in the store
  */
 
-/**
- * Creates a store that merges using a single get and put for each key. Useful in certain cases where multiGets and
- * multiPuts may result in higher error rates or lower throughput.
- */
 class MergeableStoreViaSingleGetPut[-K, V: Semigroup](store: Store[K, V]) extends MergeableStore[K, V] {
   override def semigroup: Semigroup[V] = implicitly[Semigroup[V]]
 
