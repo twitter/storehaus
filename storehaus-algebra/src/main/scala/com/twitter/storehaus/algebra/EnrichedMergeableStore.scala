@@ -49,4 +49,17 @@ class EnrichedMergeableStore[K, V](store: MergeableStore[K, V]) {
 
   def convert[K1, V1](fn: K1 => K)(implicit bij: ImplicitBijection[V1, V]): MergeableStore[K1, V1] =
     MergeableStore.convert(store)(fn)
+
+  def onFailure(rescueException: Throwable => Unit): MergeableStore[K, V] = new MergeableStore[K, V] {
+    override def semigroup = store.semigroup
+    override def get(k: K) = store.get(k)
+    override def multiGet[K1 <: K](ks: Set[K1]) = store.multiGet(ks)
+    override def put(kv: (K, Option[V])) = store.put(kv)
+    override def multiPut[K1 <: K](kvs: Map[K1, Option[V]]) = store.multiPut(kvs)
+
+    override def merge(kv: (K, V)) = store.merge(kv).onFailure(rescueException)
+
+    override def multiMerge[K1 <: K](kvs: Map[K1, V]) =
+      store.multiMerge(kvs).mapValues { _.onFailure(rescueException) }
+  }
 }
