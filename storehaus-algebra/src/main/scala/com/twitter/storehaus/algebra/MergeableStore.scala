@@ -71,8 +71,9 @@ object MergeableStore {
       fc: FutureCollector[(K, Option[V])]): MergeableStore[K,V] =
     new MergeableStoreViaGetPut[K, V](store, fc)
 
-  /** Create a mergeable by implementing merge with single get followed by put for each key.
-    * Only safe if each key is owned by a single thread. Useful in certain cases where multiGets and
+  /** Create a mergeable by implementing merge with single get followed by put for each key. Also forces multiGet and
+    * multiPut to use the store's default implementation of a single get and put.
+    * The merge is only safe if each key is owned by a single thread. Useful in certain cases where multiGets and
     * multiPuts may result in higher error rates or lower throughput.
     */
   def fromStoreNoMulti[K,V](store: Store[K,V])(implicit sg: Semigroup[V]): MergeableStore[K,V] =
