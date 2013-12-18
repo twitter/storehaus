@@ -17,24 +17,25 @@
 package com.twitter.storehaus.cache
 
 import java.util.{ LinkedHashMap => JLinkedHashMap, Map => JMap }
+import com.twitter.util.Duration
 
 object MutableTTLCache {
-  def apply[K, V](ttlInMillis: Long, capacity: Int) = {
+  def apply[K, V](ttl: Duration, capacity: Int) = {
     val backingCache = JMapCache[K, (Long, V)](
       new JLinkedHashMap[K, (Long, V)](capacity + 1, 0.75f) {
         override protected def removeEldestEntry(eldest: JMap.Entry[K, (Long, V)]) =
           super.size > capacity
       })
-    new MutableTTLCache(ttlInMillis, backingCache)(() => System.currentTimeMillis)
+    new MutableTTLCache(ttl, backingCache)(() => System.currentTimeMillis)
   }
 }
 
-class MutableTTLCache[K, V](val ttl: Long, protected val backingCache: MutableCache[K, (Long, V)])(val clock: () => Long) extends MutableCache[K, V] {
+class MutableTTLCache[K, V](val ttl: Duration, protected val backingCache: MutableCache[K, (Long, V)])(val clock: () => Long) extends MutableCache[K, V] {
   def get(k: K) = backingCache.get(k).filter(_._1 > clock()).map(_._2)
 
   def +=(kv: (K, V)): this.type = {
     removeExpired
-    backingCache += (kv._1, (clock() + ttl, kv._2))
+    backingCache += (kv._1, (clock() + ttl.inMilliseconds, kv._2))
     this
   }
 

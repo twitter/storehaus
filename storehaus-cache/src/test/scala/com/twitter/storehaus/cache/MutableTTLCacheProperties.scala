@@ -19,6 +19,7 @@ package com.twitter.storehaus.cache
 import org.scalacheck.{ Arbitrary, Properties }
 import org.scalacheck.Gen.choose
 import org.scalacheck.Prop._
+import com.twitter.conversions.time._
 
 object MutableTTLCacheProperties extends Properties("MutableTTLCache") {
   case class PositiveTTLTime(get: Long)
@@ -40,7 +41,7 @@ object MutableTTLCacheProperties extends Properties("MutableTTLCache") {
   }
 
   property("If insert an item with a TTL of X, and wait X + delta then it cannot be there") = forAll { (ttl: PositiveTTLTime, items: List[Long])  =>
-      val cache = MutableCache.ttl[Long, Long](ttl.get, items.size + 2)
+      val cache = MutableCache.ttl[Long, Long](ttl.get.milliseconds, items.size + 2)
       items.foreach{ item =>
         cache += (item, item)
       }
@@ -51,7 +52,7 @@ object MutableTTLCacheProperties extends Properties("MutableTTLCache") {
   }
 
   property("if you put with TTL t, and wait 0 time, it should always (almost, except due to scheduling) be in there") = forAll { (ttl: NegativeTTLTime, items: List[Long])  =>
-      val cache = MutableCache.ttl[Long, Long](ttl.get, items.size + 2)
+      val cache = MutableCache.ttl[Long, Long](ttl.get.milliseconds, items.size + 2)
       items.foreach{ item =>
         cache += (item, item)
       }
