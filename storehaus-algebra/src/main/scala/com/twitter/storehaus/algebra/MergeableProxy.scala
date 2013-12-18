@@ -22,7 +22,7 @@ import com.twitter.util.{ Future, Time }
 
 /** Proxy for Mergeables. Methods not overrided in extensions will be forwared to Proxied
  *  self member */
-trait MergeableProxy[K, V] extends Proxied[Mergeable[K,V]] with Mergeable[K, V] {
+trait MergeableProxy[K, V] extends Mergeable[K, V] with Proxied[Mergeable[K,V]] {
   override def semigroup: Semigroup[V] = self.semigroup
   override def merge(kv: (K, V)): Future[Option[V]] = self.merge(kv)
   override def multiMerge[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Option[V]]] = self.multiMerge(kvs)
@@ -31,7 +31,7 @@ trait MergeableProxy[K, V] extends Proxied[Mergeable[K,V]] with Mergeable[K, V] 
 
 /** Proxy for MergeableStoress. Methods not overrided in extensions will be forwared to Proxied
  *  self member */
-trait MergeableStoreProxy[K, V] extends Proxied[MergeableStore[K, V]] with MergeableStore[K, V] {
+trait MergeableStoreProxy[K, V] extends MergeableStore[K, V] with Proxied[MergeableStore[K, V]] {
   override def semigroup: Semigroup[V] = self.semigroup
   override def merge(kv: (K, V)): Future[Option[V]] = self.merge(kv)
   override def multiMerge[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Option[V]]] = self.multiMerge(kvs)

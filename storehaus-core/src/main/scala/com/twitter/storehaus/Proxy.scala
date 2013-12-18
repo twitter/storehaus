@@ -60,7 +60,7 @@ trait Proxied[T] {
 /** A proxy for ReadableStores. Methods not overridden in extensions will be forwarded to
  *  Proxied self member
  */
-trait ReadableStoreProxy[K, V] extends Proxied[ReadableStore[K, V]] with ReadableStore[K, V] {
+trait ReadableStoreProxy[K, V] extends ReadableStore[K, V] with Proxied[ReadableStore[K, V]]  {
   override def get(k: K): Future[Option[V]] = self.get(k)
   override def multiGet[K1 <: K](ks: Set[K1]): Map[K1, Future[Option[V]]] = self.multiGet(ks)
   override def close(time: Time) = self.close(time)
@@ -68,7 +68,7 @@ trait ReadableStoreProxy[K, V] extends Proxied[ReadableStore[K, V]] with Readabl
 
 /** A Proxy for WritableStores. Methods not overriden in extensions will be forwarded to
  *  Proxied self member */
-trait WritableStoreProxy[K, V] extends Proxied[WritableStore[K, V]] with WritableStore[K, V] {
+trait WritableStoreProxy[K, V] extends WritableStore[K, V] with Proxied[WritableStore[K, V]]  {
   override def put(kv: (K, V)): Future[Unit] = self.put(kv)
   override def multiPut[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Unit]] = self.multiPut(kvs)
   override def close(time: Time) = self.close(time)
@@ -76,7 +76,7 @@ trait WritableStoreProxy[K, V] extends Proxied[WritableStore[K, V]] with Writabl
 
 /** A Proxy for Stores. Methods not overrided in extensions will be forwared to Proxied
  *  self member */
-trait StoreProxy[K, V] extends Proxied[Store[K, V]] with Store[K, V] {
+trait StoreProxy[K, V] extends Store[K, V] with Proxied[Store[K, V]] {
   override def put(kv: (K, Option[V])): Future[Unit] = self.put(kv)
   override def multiPut[K1 <: K](kvs: Map[K1, Option[V]]): Map[K1, Future[Unit]] = self.multiPut(kvs)
   override def get(k: K): Future[Option[V]] = self.get(k)
