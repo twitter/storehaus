@@ -65,6 +65,4 @@ object MutableTTLCacheProperties extends Properties("MutableTTLCache") {
         cache.get(item) == Some(item)
       }
   }
-// I think you can make a law here: if you put something with a TTL of T, and wait >= T, then it cannot be in there.
-//  Also, if you put with TTL t, and wait 0 time, it should always (almost, except due to scheduling) be in there.
 }
