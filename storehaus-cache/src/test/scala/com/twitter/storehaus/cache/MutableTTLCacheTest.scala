@@ -18,12 +18,11 @@ package com.twitter.storehaus.cache
 
 import org.specs2.mutable._
 import com.twitter.util.Duration
-import java.util.concurrent.TimeUnit
 
 class MutableTTLCacheTest extends Specification {
 
   "TTLCache exhibits proper TTL-ness" in {
-    val ttl: Duration = Duration.fromTimeUnit(500, TimeUnit.MILLISECONDS)
+    val ttl: Duration = Duration.fromMilliseconds(500)
     val cache = MutableCache.ttl[String, Int](ttl, 100)
     cache += ("a" -> 1)
     cache += ("b" -> 2)
@@ -34,7 +33,7 @@ class MutableTTLCacheTest extends Specification {
   }
 
   "TTLCache does not return an expired value" in {
-    val ttl: Duration = Duration.fromTimeUnit(500, TimeUnit.MILLISECONDS)
+    val ttl: Duration = Duration.fromMilliseconds(500)
     val cache = MutableCache.ttl[String, Int](ttl, 100)
     cache += ("a" -> 10)
     cache.get("a") must be_==(Some(10))

@@ -18,12 +18,11 @@ package com.twitter.storehaus.cache
 
 import org.specs2.mutable._
 import com.twitter.util.Duration
-import java.util.concurrent.TimeUnit
 
 
 class TTLCacheTest extends Specification {
   val ttlMS = 600
-  val cache = Cache.ttl[String, Int](Duration.fromTimeUnit(ttlMS, TimeUnit.MILLISECONDS))
+  val cache = Cache.ttl[String, Int](Duration.fromMilliseconds(ttlMS))
 
   "TTLCache exhibits proper TTL-ness" in {
     val abCache = cache.putClocked("a" -> 1)._2.putClocked("b" -> 2)._2
