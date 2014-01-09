@@ -15,13 +15,14 @@
  */
 package com.twitter.storehaus.mongodb
 
+import java.util.concurrent.Executors
+
 import com.twitter.storehaus.Store
-import com.twitter.util.Future
+import com.twitter.util.{ Future, FuturePool }
 
-import com.mongodb.casbah.MongoClient
-import com.mongodb.casbah.commons.Imports._
+import com.mongodb.casbah.Imports._
 
-import scala.reflect._
+import scala.reflect.Manifest
 
 /**
  *  @author Bin Lan
@@ -29,38 +30,50 @@ import scala.reflect._
 
 object MongoStore {
 
-  def apply[K, V](client: MongoClient, dbName: String, colName: String, keyName: String = "key", valueName: String = "value"): MongoStore[K, V] = {
-    new MongoStore[K, V](client, dbName, colName, keyName, valueName)
+  def apply[K, V: Manifest](
+      client: MongoClient,
+      dbName: String,
+      colName: String,
+      keyName: String = "key",
+      valueName: String = "value",
+      backgroundIndex: Boolean = false,
+      threadNumber: Int = 3): MongoStore[K, V] = {
+    new MongoStore[K, V](client, dbName, colName, keyName, valueName, backgroundIndex, threadNumber)
   }
-
 }
 
-class MongoStore[K, V] (val client: MongoClient, val dbName: String, val colName: String, val keyName: String, val valueName: String)
+/**
+ * Use this for simple types, e.g. Int, String, Long, use MongoObjectStore for complex objects.
+ */
+class MongoStore[K, V: Manifest] (
+    val client: MongoClient,
+    val dbName: String,
+    val colName: String,
+    val keyName: String,
+    val valueName: String,
+    val backgroundIndex: Boolean,
+    val threadNumber: Int)
   extends Store[K, V] {
 
   protected val db = client(dbName)
   protected val col = db(colName)
   // make sure we build an index
-  col.ensureIndex(MongoDBObject(keyName -> 1), keyName+"Idx", unique = true)
-
-  private def getAs[V: Manifest](key: K): Option[V] = {
-    col.findOne(MongoDBObject(keyName -> key)).flatMap(_.getAs[V](valueName))
-  }
+  col.ensureIndex(MongoDBObject(keyName -> 1), MongoDBObject("name" -> (keyName + "Idx"), "background" -> backgroundIndex))
+  protected val futurePool = FuturePool(Executors.newFixedThreadPool(threadNumber))
 
   override def put(kv: (K, Option[V])): Future[Unit] = {
     kv match {
-      case (key, Some(value)) => {
+      case (key, Some(value)) => futurePool {
         col.update(MongoDBObject(keyName -> key), MongoDBObject(keyName -> key, valueName -> value), upsert = true)
       }
-      case (key, None) => {
-        col remove MongoDBObject(keyName -> key)
+      case (key, None) => futurePool {
+        col.remove(MongoDBObject(keyName -> key))
       }
     }
-    Future.Unit
   }
 
-  override def get(key: K): Future[Option[V]] = {
-    Future.value(getAs(key))
+  override def get(key: K): Future[Option[V]] = futurePool {
+    col.findOne(MongoDBObject(keyName -> key)).flatMap(_.getAs[V](valueName))
   }
-
 }
+
