@@ -19,22 +19,25 @@ package com.twitter.storehaus.cache
 import org.specs2.mutable._
 import com.twitter.util.Duration
 
-
-class TTLCacheTest extends Specification {
-  val ttlMS = 600
-  val cache = Cache.ttl[String, Int](Duration.fromMilliseconds(ttlMS))
+class MutableTTLCacheTest extends Specification {
 
   "TTLCache exhibits proper TTL-ness" in {
-    val abCache = cache.putClocked("a" -> 1)._2.putClocked("b" -> 2)._2
-    abCache.toNonExpiredMap must be_==(Map("a" -> 1, "b" -> 2))
-    Thread.sleep(ttlMS)
-    (abCache.putClocked("c" -> 3)._2).toNonExpiredMap must be_==(Map("c" -> 3))
+    val ttl: Duration = Duration.fromMilliseconds(500)
+    val cache = MutableCache.ttl[String, Int](ttl, 100)
+    cache += ("a" -> 1)
+    cache += ("b" -> 2)
+    cache.toNonExpiredMap must be_==(Map("a" -> 1, "b" -> 2))
+    Thread.sleep(ttl.inMilliseconds)
+    cache += ("c" -> 3)
+    cache.toNonExpiredMap must be_==(Map("c" -> 3))
   }
 
   "TTLCache does not return an expired value" in {
-    val withV = cache.putClocked("a" -> 10)._2
-    withV.getNonExpired("a") must be_==(Some(10))
-    Thread.sleep(ttlMS)
-    withV.getNonExpired("a") must be_==(None)
+    val ttl: Duration = Duration.fromMilliseconds(500)
+    val cache = MutableCache.ttl[String, Int](ttl, 100)
+    cache += ("a" -> 10)
+    cache.get("a") must be_==(Some(10))
+    Thread.sleep(ttl.inMilliseconds)
+    cache.get("a") must be_==(None)
   }
 }
