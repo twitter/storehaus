@@ -67,7 +67,7 @@ object Algebra {
   }
 
   implicit val jvalueMonoid = new Monoid[JValue] {
-    def plus(l: JValue, r: JValue): JValue = l merge  r
+    def plus(l: JValue, r: JValue): JValue = l ++  r
 
     def zero: JValue = JNothing
   }
