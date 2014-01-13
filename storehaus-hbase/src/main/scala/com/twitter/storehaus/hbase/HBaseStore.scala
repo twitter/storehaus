@@ -67,32 +67,33 @@ trait HBaseStore {
     require(isNotEmpty(column), "column is required")
   }
 
-  def getValue[K, V](key: K)(implicit keyInj: Injection[K, Array[Byte]], valueInj: Injection[V, Array[Byte]]): Future[Option[V]] = futurePool {
+  def getValue[K, V](key: K)(implicit keyInj: Injection[K, Array[Byte]], valueInj: Injection[V, Array[Byte]]): Future[Option[V]] = {
     val tbl = pool.getTable(table)
-    val g = new Get(keyInj(key))
-    g.addColumn(columnFamily.as[StringBytes], column.as[StringBytes])
+    futurePool {
+      val g = new Get(keyInj(key))
+      g.addColumn(columnFamily.as[StringBytes], column.as[StringBytes])
 
-    val result = tbl.get(g)
-    val value = result.getValue(columnFamily.as[StringBytes], column.as[StringBytes])
-    tbl.close()
-    Option(value).map(v => valueInj.invert(v).get)
+      val result = tbl.get(g)
+      val value = result.getValue(columnFamily.as[StringBytes], column.as[StringBytes])
+
+      Option(value).map(v => valueInj.invert(v).get)
+    } ensure tbl.close
   }
 
   def putValue[K, V](kv: (K, Option[V]))(implicit keyInj: Injection[K, Array[Byte]], valueInj: Injection[V, Array[Byte]]): Future[Unit] = {
+    val tbl = pool.getTable(table)
     kv match {
       case (k, Some(v)) => futurePool {
         val p = new Put(keyInj(k))
         p.add(columnFamily.as[StringBytes], column.as[StringBytes], valueInj(v))
-        val tbl = pool.getTable(table)
         tbl.put(p)
-        tbl.close()
-      }
+      } ensure tbl.close
+
       case (k, None) => futurePool {
         val delete = new Delete(keyInj(k))
-        val tbl = pool.getTable(table)
         tbl.delete(delete)
         tbl.close()
-      }
+      } ensure tbl.close
     }
   }
 }
