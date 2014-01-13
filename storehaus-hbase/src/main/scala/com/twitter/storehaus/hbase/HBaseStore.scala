@@ -92,7 +92,6 @@ trait HBaseStore {
       case (k, None) => futurePool {
         val delete = new Delete(keyInj(k))
         tbl.delete(delete)
-        tbl.close()
       } ensure tbl.close
     }
   }
