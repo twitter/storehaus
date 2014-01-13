@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Twitter inc.
+ * Copyright 2014 Twitter inc.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import org.scalacheck.Prop._
 import com.twitter.util.Await
 
 /**
- * @author MansurAshraf
+ * @author Mansur Ashraf
  * @since 9/8/13
  */
 object HBaseStringStoreProperties extends Properties("HBaseStore")
