@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Twitter inc.
+ * Copyright 2014 Twitter inc.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -74,6 +74,7 @@ trait HBaseStore {
 
     val result = tbl.get(g)
     val value = result.getValue(columnFamily.as[StringBytes], column.as[StringBytes])
+    tbl.close()
     Option(value).map(v => valueInj.invert(v).get)
   }
 
@@ -84,11 +85,13 @@ trait HBaseStore {
         p.add(columnFamily.as[StringBytes], column.as[StringBytes], valueInj(v))
         val tbl = pool.getTable(table)
         tbl.put(p)
+        tbl.close()
       }
       case (k, None) => futurePool {
         val delete = new Delete(keyInj(k))
         val tbl = pool.getTable(table)
         tbl.delete(delete)
+        tbl.close()
       }
     }
   }
