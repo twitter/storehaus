@@ -32,17 +32,8 @@ import com.twitter.algebird.bijection.BijectedMonoid
  * @author Mansur Ashraf
  * @since 1/8/14
  */
-object Algebra {
+object Injections {
   private implicit val formats = native.Serialization.formats(NoTypeHints)
-
-  /**
-   * JValue to Json Injection
-   */
-  implicit val jvalue2Json: Injection[JValue, String] = new AbstractInjection[JValue, String] {
-    override def apply(a: JValue): String = compact(render(a))
-
-    override def invert(b: String): Try[JValue] = attempt(b)(parse(_))
-  }
 
   /**
    * Case Class to Json Injection
@@ -53,16 +44,5 @@ object Algebra {
     override def apply(a: A): String = write(a)
 
     override def invert(b: String): Try[A] = attempt(b)(read[A])
-  }
-
-  /**
-   * Case Class to JValue Injection
-   * @tparam A Case Class
-   * @return JValue
-   */
-  implicit def caseClass2JValue[A <: Product : Manifest]: Injection[A, JValue] = new AbstractInjection[A, JValue] {
-    override def apply(a: A): JValue = Extraction.decompose(a)
-
-    override def invert(b: JValue): Try[A] = attempt(b)(_.extract[A])
   }
 }

@@ -67,6 +67,5 @@ trait DefaultElasticContext extends Scope {
   def blockAndRefreshIndex = {
     block(DEFAULT_TIMEOUT)
     refreshIndex()
-    block(DEFAULT_TIMEOUT)
   }
 }

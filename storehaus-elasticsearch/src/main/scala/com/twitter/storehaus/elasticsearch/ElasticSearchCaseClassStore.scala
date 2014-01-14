@@ -17,7 +17,8 @@
 package com.twitter.storehaus.elasticsearch
 
 import org.elasticsearch.client.Client
-import Algebra._
+import Injections._
+import com.twitter.storehaus.Store
 
 /**
  * @author Mansur Ashraf
@@ -26,5 +27,5 @@ import Algebra._
 object ElasticSearchCaseClassStore {
   def apply[V <: Product : Manifest](index: String,
                                      tipe: String,
-                                     client: Client) = new ElasticSearchStringStore(index, tipe, client).convert[String, V](identity)
+                                     client: Client):Store[String,V] = new ElasticSearchStringStore(index, tipe, client).convert[String, V](identity)
 }

@@ -19,7 +19,7 @@ package com.twitter.storehaus.elasticsearch
 import org.specs2.mutable.Specification
 import com.twitter.util.Await
 import com.twitter.bijection.Conversion._
-import Algebra._
+import Injections._
 import com.twitter.storehaus.FutureOps
 
 /**
