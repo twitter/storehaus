@@ -21,10 +21,10 @@ import com.twitter.util.Await
 import com.twitter.storehaus.FutureOps
 
 /**
- * @author Muhammad Ashraf
+ * @author Mansur Ashraf
  * @since 1/13/14
  */
-class ElasticSearcStoreSpecs extends Specification {
+class ElasticSearchStoreSpecs extends Specification {
 
 
   private val person = Person("Joe", "Smith", 29)
