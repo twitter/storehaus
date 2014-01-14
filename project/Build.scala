@@ -237,7 +237,8 @@ object StorehausBuild extends Build {
   lazy val storehausElastic = module("elasticsearch").settings(
     libraryDependencies ++= Seq (
       "org.elasticsearch" % "elasticsearch" % "0.90.9",
-      "org.json4s" %% "json4s-native" % "3.2.6"
+      "org.json4s" %% "json4s-native" % "3.2.6",
+      "com.google.code.findbugs" % "jsr305" % "1.3.+"
     ),
     // we don't want various tests clobbering each others keys
     parallelExecution in Test := false

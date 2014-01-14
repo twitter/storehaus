@@ -26,27 +26,26 @@ import org.elasticsearch.action.delete.DeleteRequest
 import org.elasticsearch.action.bulk.BulkRequest
 import scala.collection.JavaConverters._
 import com.twitter.concurrent.AsyncMutex
+import org.elasticsearch.client.Client
 
 /**
  * @author Mansur Ashraf
  * @since 1/9/14
  */
-class ElasticSearchStore(private val nodes: Map[String, Int],
-                         private val index: String,
-                         private val tipe: String, //tipe -> type since type is a reserved keyword
-                         private val settings: Settings = ImmutableSettings.EMPTY) extends Store[String, String] {
+
+object ElasticSearchStringStore {
+
+  def apply(index: String,
+            tipe: String,
+            client: Client) = new ElasticSearchStringStore(index, tipe, client)
+}
+
+class ElasticSearchStringStore(private val index: String,
+                               private val tipe: String, //tipe -> type since type is a reserved keyword
+                               @transient private val client: Client) extends Store[String, String] {
 
   private lazy val futurePool = FuturePool.unboundedPool
   private[this] lazy val mutex = new AsyncMutex
-
-
-  private lazy val client = {
-    val client = new TransportClient(settings)
-    nodes.foreach {
-      case (host, port) => client.addTransportAddress(new InetSocketTransportAddress(host, port))
-    }
-    client
-  }
 
   /** get a single key from the store.
     * Prefer multiGet if you are getting more than one key at a time
@@ -65,8 +64,11 @@ class ElasticSearchStore(private val nodes: Map[String, Int],
   override def multiGet[K1 <: String](ks: Set[K1]): Map[K1, Future[Option[String]]] = {
     val f = futurePool {
       val request = client.prepareMultiGet()
+
       ks.foreach(request.add(index, tipe, _))
+
       val response = request.execute().actionGet()
+
       response.iterator().asScala.map {
         r => r.getResponse.getId -> Option(r.getResponse.getSourceAsString)
       }.toMap
@@ -110,7 +112,9 @@ class ElasticSearchStore(private val nodes: Map[String, Int],
   /** Close this store and release any resources.
     * It is undefined what happens on get/multiGet after close
     */
-  override def close(time: Time): Future[Unit] = futurePool {
-    client.close()
+  override def close(time: Time): Future[Unit] = mutex.acquire().flatMap {
+    p => futurePool {
+      client.close()
+    } ensure p.release()
   }
 }
