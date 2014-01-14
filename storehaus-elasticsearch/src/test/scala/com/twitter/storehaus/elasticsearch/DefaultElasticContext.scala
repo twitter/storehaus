@@ -34,6 +34,7 @@ trait DefaultElasticContext extends Scope {
   val test_index = "test_index"
   val test_type = "test_type"
   val DEFAULT_TIMEOUT = 1 * 1000
+
   homeDir.mkdir()
   homeDir.deleteOnExit()
   tempFile.deleteOnExit()
@@ -47,7 +48,7 @@ trait DefaultElasticContext extends Scope {
 
   val client = nodeBuilder().local(true).data(true).settings(settings).node().client()
 
-  lazy val store = new ElasticSearchStringStore(test_index, test_type, client)
+  lazy val store = ElasticSearchCaseClassStore[Person](test_index, test_type, client)
 
   def refreshIndex(): Unit = {
     refresh(test_index)
@@ -69,3 +70,5 @@ trait DefaultElasticContext extends Scope {
     refreshIndex()
   }
 }
+
+case class Person(fname: String, lname: String, age: Int)

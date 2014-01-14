@@ -18,46 +18,43 @@ package com.twitter.storehaus.elasticsearch
 
 import org.specs2.mutable.Specification
 import com.twitter.util.Await
-import com.twitter.bijection.Conversion._
-import Injections._
 import com.twitter.storehaus.FutureOps
 
 /**
  * @author Muhammad Ashraf
  * @since 1/13/14
  */
-class ElasticSearchStringStoreSpecs extends Specification {
+class ElasticSearcStoreSpecs extends Specification {
 
-  case class Person(fname: String, lname: String, age: Int)
+
+  private val person = Person("Joe", "Smith", 29)
 
   "ElasticSearch String Store" should {
 
     "Put a value" in new DefaultElasticContext {
-      private val json = Person("Joe", "Smith", 29).as[String]
       private val key = "put_key"
-
-      store.put(key, Some(json))
+      store.put((key, Some(person)))
 
       blockAndRefreshIndex
 
       val result = Await.result(store.get(key))
-      result === Some(json)
+      result === Some(person)
     }
 
     "Update a value" in new DefaultElasticContext {
       private val key = "update_key"
-      store.put(key, Some(Person("Joe", "Smith", 29).as[String]))
-      store.put(key, Some(Person("Joe", "Smith", 30).as[String]))
+      store.put(key, Some(person))
+      store.put(key, Some(person.copy(age = 30)))
 
       blockAndRefreshIndex
 
       val result = Await.result(store.get(key))
-      result === Some(Person("Joe", "Smith", 30).as[String])
+      result === Some(person.copy(age = 30))
     }
 
     "Delete a value" in new DefaultElasticContext {
       private val key = "delete_key"
-      store.put(key, Some(Person("Joe", "Smith", 29).as[String]))
+      store.put(key, Some(person))
       store.put(key, None)
 
       blockAndRefreshIndex
@@ -67,9 +64,8 @@ class ElasticSearchStringStoreSpecs extends Specification {
     }
 
     "Put multiple values" in new DefaultElasticContext {
-      val person = Person("Joe", "Smith", -1)
       val key = "_put_key"
-      val persons = (1 to 10).map(i => i + key -> Some(person.copy(age = i).as[String])).toMap
+      val persons = (1 to 10).map(i => i + key -> Some(person.copy(age = i))).toMap
 
       store.multiPut(persons)
 
@@ -80,12 +76,11 @@ class ElasticSearchStringStoreSpecs extends Specification {
       result === persons
     }
 
-    "update multiple values" in new DefaultElasticContext {
-      val person = Person("Joe", "Smith", -1)
+    "Update multiple values" in new DefaultElasticContext {
       val key = "_update_key"
 
-      val persons = (1 to 10).map(i => i + key -> Some(person.copy(age = i).as[String])).toMap
-      val persons_updated = (1 to 10).map(i => i + key -> Some(person.copy(age = i * 2).as[String])).toMap
+      val persons = (1 to 10).map(i => i + key -> Some(person.copy(age = i))).toMap
+      val persons_updated = (1 to 10).map(i => i + key -> Some(person.copy(age = i * 2))).toMap
 
       store.multiPut(persons)
       store.multiPut(persons_updated)
@@ -94,6 +89,21 @@ class ElasticSearchStringStoreSpecs extends Specification {
       val response = store.multiGet(persons_updated.keySet)
       val result = Await.result(FutureOps.mapCollect(response))
       result === persons_updated
+    }
+
+    "Delete multiple values" in new DefaultElasticContext {
+      val key = "_delete_key"
+
+      val persons = (1 to 10).map(i => i + key -> Some(person.copy(age = i))).toMap
+      val deleted_persons = (1 to 10).map(i => i + key -> None).toMap
+
+      store.multiPut(persons)
+      store.multiPut(deleted_persons)
+      blockAndRefreshIndex
+
+      val response = store.multiGet(deleted_persons.keySet)
+      val result = Await.result(FutureOps.mapCollect(response))
+      result === deleted_persons
     }
   }
 
