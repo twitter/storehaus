@@ -16,17 +16,15 @@
 
 package com.twitter.storehaus.elasticsearch
 
-import com.twitter.storehaus.{FutureOps, Store}
+import com.twitter.storehaus.FutureOps
 import com.twitter.util.{FuturePool, Future, Time}
-import org.elasticsearch.common.settings.{ImmutableSettings, Settings}
-import org.elasticsearch.client.transport.TransportClient
-import org.elasticsearch.common.transport.InetSocketTransportAddress
 import org.elasticsearch.action.index.IndexRequest
 import org.elasticsearch.action.delete.DeleteRequest
 import org.elasticsearch.action.bulk.BulkRequest
-import scala.collection.JavaConverters._
 import com.twitter.concurrent.AsyncMutex
 import org.elasticsearch.client.Client
+import org.elasticsearch.action.search.SearchRequest
+import scala.collection.JavaConverters._
 
 /**
  * @author Mansur Ashraf
@@ -42,7 +40,7 @@ object ElasticSearchStringStore {
 
 class ElasticSearchStringStore(private val index: String,
                                private val tipe: String, //tipe -> type since type is a reserved keyword
-                               @transient private val client: Client) extends Store[String, String] {
+                               @transient private val client: Client) extends QueryableStore[String, String, SearchRequest] {
 
   private lazy val futurePool = FuturePool.unboundedPool
   private[this] lazy val mutex = new AsyncMutex
@@ -64,9 +62,7 @@ class ElasticSearchStringStore(private val index: String,
   override def multiGet[K1 <: String](ks: Set[K1]): Map[K1, Future[Option[String]]] = {
     val f = futurePool {
       val request = client.prepareMultiGet()
-
       ks.foreach(request.add(index, tipe, _))
-
       val response = request.execute().actionGet()
 
       response.iterator().asScala.map {
@@ -116,5 +112,13 @@ class ElasticSearchStringStore(private val index: String,
     p => futurePool {
       client.close()
     } ensure p.release()
+  }
+
+  def query(query: SearchRequest): Future[Option[List[String]]] = futurePool {
+    val searchHits = client.search(query).actionGet().getHits
+    searchHits.totalHits() match {
+      case 0 => None
+      case _ => Some(searchHits.hits().toList.map(_.getSourceAsString))
+    }
   }
 }

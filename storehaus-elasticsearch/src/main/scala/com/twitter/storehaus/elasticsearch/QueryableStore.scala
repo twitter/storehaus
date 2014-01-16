@@ -16,16 +16,14 @@
 
 package com.twitter.storehaus.elasticsearch
 
-import org.elasticsearch.client.Client
-import Injections._
-import org.elasticsearch.action.search.SearchRequest
+import com.twitter.util.Future
+import com.twitter.storehaus.Store
 
 /**
  * @author Mansur Ashraf
- * @since 1/13/14
+ * @since 1/14/14
  */
-object ElasticSearchCaseClassStore {
-  def apply[V <: Product : Manifest](index: String,
-                                     tipe: String,
-                                     client: Client) = QueryableConvertedStore.convert[String,String,String,V,SearchRequest](new ElasticSearchStringStore(index, tipe, client))(_.toString)
+trait QueryableStore[-K, V, Q] extends Store[K,V]{
+
+  def query(query: Q): Future[Option[Seq[V]]]
 }

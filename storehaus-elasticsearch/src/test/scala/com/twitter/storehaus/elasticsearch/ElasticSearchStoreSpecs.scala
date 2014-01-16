@@ -29,7 +29,7 @@ class ElasticSearchStoreSpecs extends Specification {
 
   private val person = Person("Joe", "Smith", 29)
 
-  "ElasticSearch String Store" should {
+  "ElasticSearch Store" should {
 
     "Put a value" in new DefaultElasticContext {
       private val key = "put_key"
