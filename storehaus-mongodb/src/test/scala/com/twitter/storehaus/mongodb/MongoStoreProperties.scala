@@ -37,7 +37,6 @@ object MongoStoreProperties extends Properties("MongoStore") {
           case (k, v) => {
             Await.result(store.put((k, v)))
             val found = Await.result(store.get(k))
-            //println("expected: " + (k, v) + ", actual: " + (k, found))
             found == v
           }
         }
