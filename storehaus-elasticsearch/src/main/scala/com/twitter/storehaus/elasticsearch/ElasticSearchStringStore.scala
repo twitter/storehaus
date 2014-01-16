@@ -114,9 +114,14 @@ class ElasticSearchStringStore(private val index: String,
     } ensure p.release()
   }
 
+  /**
+   * Given Query Q return all the values that match that query
+   * @param query
+   * @return Optional list of values
+   */
   def query(query: SearchRequest): Future[Option[List[String]]] = futurePool {
     //Force to use the index and Type this story is configured for.
-    val updatedQuery=query.indices(Array(index): _*).types(Array(tipe): _*)
+    val updatedQuery = query.indices(Array(index): _*).types(Array(tipe): _*)
     val searchHits = client.search(updatedQuery).actionGet().getHits
     searchHits.totalHits() match {
       case 0 => None
