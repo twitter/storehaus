@@ -65,20 +65,6 @@ object MongoStoreProperties extends Properties("MongoStore") {
         "data.intMap"
       ), NonEmpty.Pairing.numerics[Int]())
 
-  property("MongoStore[Short, Short]") =
-    putAndGetStoreTest[Short, Short](MongoStore[Short, Short](
-        MongoClient("127.0.0.1", 27017),
-        "storehaus",
-        "data.shortMap"
-      ), NonEmpty.Pairing.numerics[Short]())
-
-  property("MongoStore[Float, Float]") =
-    putAndGetStoreTest[Float, Float](MongoStore[Float, Float](
-        MongoClient("127.0.0.1", 27017),
-        "storehaus",
-        "data.floatMap"
-      ), NonEmpty.Pairing.numerics[Float]())
-
   property("MongoStore[Double, Double]") =
     putAndGetStoreTest[Double, Double](MongoStore[Double, Double](
         MongoClient("127.0.0.1", 27017),

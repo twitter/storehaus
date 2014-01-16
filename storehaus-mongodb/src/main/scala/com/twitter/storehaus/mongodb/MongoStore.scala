@@ -28,16 +28,27 @@ import scala.reflect.Manifest
  *  @author Bin Lan
  */
 
+trait MongoValue[T]
+
+object MongoValue {
+  implicit object MongoInt extends MongoValue[Int]
+  implicit object MongoLong extends MongoValue[Long]
+  implicit object MongoDouble extends MongoValue[Double]
+  implicit object MongoBoolean extends MongoValue[Boolean]
+  implicit object MongoString extends MongoValue[String]
+  implicit object MongoObject extends MongoValue[DBObject]
+}
+
 object MongoStore {
 
-  def apply[K, V: Manifest](
+  def apply[K: MongoValue, V: MongoValue: Manifest](
       client: MongoClient,
       dbName: String,
       colName: String,
       keyName: String = "key",
       valueName: String = "value",
       backgroundIndex: Boolean = false,
-      threadNumber: Int = 3): MongoStore[K, V] = {
+      threadNumber: Int = Runtime.getRuntime.availableProcessors): MongoStore[K, V] = {
     new MongoStore[K, V](client, dbName, colName, keyName, valueName, backgroundIndex, threadNumber)
   }
 }
@@ -45,7 +56,7 @@ object MongoStore {
 /**
  * Use this for simple types, e.g. Int, String, Long, use MongoObjectStore for complex objects.
  */
-class MongoStore[K, V: Manifest] (
+class MongoStore[K: MongoValue, V: MongoValue: Manifest] (
     val client: MongoClient,
     val dbName: String,
     val colName: String,
@@ -73,7 +84,33 @@ class MongoStore[K, V: Manifest] (
   }
 
   override def get(key: K): Future[Option[V]] = futurePool {
-    col.findOne(MongoDBObject(keyName -> key)).flatMap(_.getAs[V](valueName))
+    col.findOne(MongoDBObject(keyName -> key)).flatMap { valueObject => {
+        getValue[V](valueObject)
+      }
+    }
+  }
+
+  protected def getValue[T: Manifest](valueObject: MongoDBObject): Option[T] = {
+    valueObject.getAs[T](valueName) match {
+      case None => {
+        if (valueObject.get(valueName) == None) None
+        else throw new ClassCastException("Cannot convert %s to %s".format(valueObject.get(valueName).getClass(), manifest[T]))
+      }
+      case Some(value) => {
+        if (getManifest[T]().isInstance(value)) Some(value)
+        else throw new ClassCastException("Cannot convert %s to %s".format(value.getClass(), manifest[T]))
+      }
+    }
+  }
+
+  protected def getManifest[T: Manifest]() = {
+    manifest[T] match {
+      case Manifest.Int => classOf[java.lang.Integer]
+      case Manifest.Long => classOf[java.lang.Long]
+      case Manifest.Double => classOf[java.lang.Double]
+      case Manifest.Boolean => classOf[java.lang.Boolean]
+      case m => m.erasure
+    }
   }
 }
 
