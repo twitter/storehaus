@@ -19,6 +19,9 @@ package com.twitter.storehaus.elasticsearch
 import org.specs2.mutable.Specification
 import com.twitter.util.Await
 import com.twitter.storehaus.FutureOps
+import org.elasticsearch.action.search.SearchRequestBuilder
+import org.elasticsearch.index.query.QueryBuilders._
+import org.elasticsearch.index.query.FilterBuilders._
 
 /**
  * @author Mansur Ashraf
@@ -104,6 +107,41 @@ class ElasticSearchStoreSpecs extends Specification {
       val response = store.multiGet(deleted_persons.keySet)
       val result = Await.result(FutureOps.mapCollect(response))
       result === deleted_persons
+    }
+
+    "Search for  values" in new DefaultElasticContext {
+      val bookStore = ElasticSearchCaseClassStore[Book]("books", "programming", client)
+      val books = Map(
+        "0735619670" -> Some(Book(name = "Code Complete", authors = Array("Steve McConnel"), published = 2004)),
+        "020161622X" -> Some(Book(name = "The Pragmatic Programmer", authors = Array("Andy Hunt", "Dave Thomas"), published = 1999)),
+        "0131103628" -> Some(Book(name = "C Programming Language", authors = Array("Dennis Ritchie", "Brian Kernighan"), published = 1988)),
+        "0262033844" -> Some(Book(name = "Introduction to Algorithms", authors = Array("Thomas Cormen", "Charlie Leiserson", "Ronald Rivest", "Clifford Stein"), published = 2009)),
+        "0321356683" -> Some(Book(name = "Effective Java", authors = Array("Josh Bloch"), published = 2008))
+      )
+
+      bookStore.multiPut(books)
+      blockAndRefreshIndex
+
+      //search for a particular author
+      val request1 = new SearchRequestBuilder(client).setQuery(termQuery("authors", "josh")).request()
+      val response1 = Await.result(bookStore.query(request1))
+      response1 !== None
+      response1.get.head.name === "Effective Java"
+
+
+      //find all the books published after 2001 where author is not Josh Bloch
+
+      val request2 = new SearchRequestBuilder(client)
+        .setQuery(
+          boolQuery().mustNot(termQuery("authors", "josh"))
+        )
+        .setPostFilter(
+          rangeFilter("published").gt(2001)
+        ).request()
+
+      val response2 = Await.result(bookStore.query(request2))
+      response2 !== None
+      response2.get.size === 2
     }
   }
 

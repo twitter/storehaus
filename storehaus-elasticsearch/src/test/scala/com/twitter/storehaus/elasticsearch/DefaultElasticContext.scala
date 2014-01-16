@@ -21,6 +21,8 @@ import java.util.UUID
 import java.io.File
 import org.elasticsearch.node.NodeBuilder._
 import org.specs2.specification.Scope
+import org.elasticsearch.client.transport.TransportClient
+import org.elasticsearch.common.transport.InetSocketTransportAddress
 
 
 /**
@@ -33,7 +35,7 @@ trait DefaultElasticContext extends Scope {
   val homeDir = new File(tempFile.getParent + "/" + UUID.randomUUID().toString)
   val test_index = "test_index"
   val test_type = "test_type"
-  val DEFAULT_TIMEOUT = 1 * 1000
+  val DEFAULT_TIMEOUT = 2 * 1000
 
   homeDir.mkdir()
   homeDir.deleteOnExit()
@@ -47,7 +49,8 @@ trait DefaultElasticContext extends Scope {
     .put("index.number_of_replicas", 0)
 
   val client = nodeBuilder().local(true).data(true).settings(settings).node().client()
-
+  lazy val tclient = new TransportClient()
+    .addTransportAddress(new InetSocketTransportAddress("localhost", 9300))
   lazy val store = ElasticSearchCaseClassStore[Person](test_index, test_type, client)
 
   def refreshIndex(): Unit = {
@@ -72,3 +75,5 @@ trait DefaultElasticContext extends Scope {
 }
 
 case class Person(fname: String, lname: String, age: Int)
+
+case class Book(name: String, authors: Array[String], published: Int)

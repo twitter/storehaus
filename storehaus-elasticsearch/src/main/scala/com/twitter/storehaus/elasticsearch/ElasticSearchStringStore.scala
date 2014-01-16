@@ -115,7 +115,9 @@ class ElasticSearchStringStore(private val index: String,
   }
 
   def query(query: SearchRequest): Future[Option[List[String]]] = futurePool {
-    val searchHits = client.search(query).actionGet().getHits
+    //Force to use the index and Type this story is configured for.
+    val updatedQuery=query.indices(Array(index): _*).types(Array(tipe): _*)
+    val searchHits = client.search(updatedQuery).actionGet().getHits
     searchHits.totalHits() match {
       case 0 => None
       case _ => Some(searchHits.hits().toList.map(_.getSourceAsString))

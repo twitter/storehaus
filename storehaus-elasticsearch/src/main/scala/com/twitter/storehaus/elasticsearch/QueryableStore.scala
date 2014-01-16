@@ -23,7 +23,11 @@ import com.twitter.storehaus.Store
  * @author Mansur Ashraf
  * @since 1/14/14
  */
-trait QueryableStore[-K, V, Q] extends Store[K,V]{
-
+trait QueryableStore[-K, V, Q] extends Store[K, V] {
+  /**
+   * Given Query Q return all the values that match that query
+   * @param query
+   * @return Optional list of values
+   */
   def query(query: Q): Future[Option[Seq[V]]]
 }
