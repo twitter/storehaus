@@ -40,7 +40,7 @@ object Injections {
    * @tparam A Case Class
    * @return Json String
    */
-  implicit def caseClass2Json[A <: Product : Manifest]: Injection[A, String] = new AbstractInjection[A, String] {
+  implicit def caseClass2Json[A <: AnyRef : Manifest]: Injection[A, String] = new AbstractInjection[A, String] {
     override def apply(a: A): String = write(a)
 
     override def invert(b: String): Try[A] = attempt(b)(read[A])

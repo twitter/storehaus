@@ -25,7 +25,7 @@ import org.elasticsearch.action.search.SearchRequest
  * @since 1/13/14
  */
 object ElasticSearchCaseClassStore {
-  def apply[V <: Product : Manifest](index: String,
+  def apply[V <: AnyRef : Manifest](index: String,
                                      tipe: String,
                                      client: Client) = QueryableConvertedStore.convert[String,String,String,V,SearchRequest](new ElasticSearchStringStore(index, tipe, client))(_.toString)
 }
