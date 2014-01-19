@@ -237,7 +237,7 @@ object StorehausBuild extends Build {
   lazy val storehausMongoDB= module("mongodb").settings(
     libraryDependencies ++= Seq(
       "com.twitter" %% "bijection-core" % bijectionVersion,
-      "org.mongodb" %% "casbah" % "2.6.4"
+      "org.mongodb" %% "casbah" % "2.7.0"
     ),
     parallelExecution in Test := false
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")

@@ -37,6 +37,7 @@ object MongoValue {
   implicit object MongoBoolean extends MongoValue[Boolean]
   implicit object MongoString extends MongoValue[String]
   implicit object MongoObject extends MongoValue[DBObject]
+  implicit object MongoDate extends MongoValue[java.util.Date]
 }
 
 object MongoStore {
@@ -54,7 +55,7 @@ object MongoStore {
 }
 
 /**
- * Use this for simple types, e.g. Int, String, Long, use MongoObjectStore for complex objects.
+ * A simple implementation for storehaus using MongoDB as backend storage.
  */
 class MongoStore[K: MongoValue, V: MongoValue: Manifest] (
     val client: MongoClient,
@@ -85,26 +86,26 @@ class MongoStore[K: MongoValue, V: MongoValue: Manifest] (
 
   override def get(key: K): Future[Option[V]] = futurePool {
     col.findOne(MongoDBObject(keyName -> key)).flatMap { valueObject => {
-        getValue[V](valueObject)
+        getValue(valueObject)
       }
     }
   }
 
-  protected def getValue[T: Manifest](valueObject: MongoDBObject): Option[T] = {
-    valueObject.getAs[T](valueName) match {
+  protected def getValue(valueObject: MongoDBObject): Option[V] = {
+    valueObject.getAs[V](valueName) match {
       case None => {
         if (valueObject.get(valueName) == None) None
-        else throw new ClassCastException("Cannot convert %s to %s".format(valueObject.get(valueName).getClass(), manifest[T]))
+        else throw new ClassCastException("Cannot convert %s to %s".format(valueObject.get(valueName).getClass(), manifest[V]))
       }
       case Some(value) => {
-        if (getManifest[T]().isInstance(value)) Some(value)
-        else throw new ClassCastException("Cannot convert %s to %s".format(value.getClass(), manifest[T]))
+        if (getManifest().isInstance(value)) Some(value)
+        else throw new ClassCastException("Cannot convert %s to %s".format(value.getClass(), manifest[V]))
       }
     }
   }
 
-  protected def getManifest[T: Manifest]() = {
-    manifest[T] match {
+  protected def getManifest() = {
+    manifest[V] match {
       case Manifest.Int => classOf[java.lang.Integer]
       case Manifest.Long => classOf[java.lang.Long]
       case Manifest.Double => classOf[java.lang.Double]
