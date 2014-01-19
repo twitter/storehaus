@@ -48,9 +48,12 @@ trait DefaultElasticContext extends Scope {
     .put("index.number_of_shards", 1)
     .put("index.number_of_replicas", 0)
 
-  val client = nodeBuilder().local(true).data(true).settings(settings).node().client()
-  lazy val tclient = new TransportClient()
-    .addTransportAddress(new InetSocketTransportAddress("localhost", 9300))
+  val client = {
+    val node = nodeBuilder().local(true).data(true).settings(settings).node()
+    node.client().admin().cluster().prepareHealth()
+      .setWaitForYellowStatus().execute().actionGet()
+    node.client()
+  }
   lazy val store = ElasticSearchCaseClassStore[Person](test_index, test_type, client)
 
   def refreshIndex(): Unit = {
