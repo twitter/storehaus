@@ -47,7 +47,7 @@ import IterableStore._
 /**
  * Trait for stores that allow iterating over their key-value pairs.
  */
-trait IterableStore[K, V] {
+trait IterableStore[+K, +V] {
 
   /** Returns a lazy Spool that wraps the store's keyspace. */
   def getAll: Future[Spool[(K, V)]] =
