@@ -1,5 +1,17 @@
 # Storehaus #
 
+### Version 0.8.0 ###
+* add BatchedStore for writes: https://github.com/twitter/storehaus/pull/175
+* MySQL batched multiPut: https://github.com/twitter/storehaus/pull/173
+* MergeableMemcacheStore: https://github.com/twitter/storehaus/pull/182
+* Writeable stores: https://github.com/twitter/storehaus/pull/180
+* Add readme notes for memcached tests: https://github.com/twitter/storehaus/pull/184
+* Add the Mergeable type: https://github.com/twitter/storehaus/pull/183
+* MergeableMySqlStore and MySqlLongStore: https://github.com/twitter/storehaus/pull/181
+* PivotedStore: https://github.com/twitter/storehaus/pull/186
+* Make twitter util provided: https://github.com/twitter/storehaus/pull/190
+* Remove version file: https://github.com/twitter/storehaus/pull/194
+
 ### Version 0.7.1 ###
 * Remove sources req on specs2, breaks downstream deps
 
