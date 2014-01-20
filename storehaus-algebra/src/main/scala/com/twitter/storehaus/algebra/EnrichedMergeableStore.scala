@@ -49,4 +49,12 @@ class EnrichedMergeableStore[K, V](store: MergeableStore[K, V]) {
 
   def convert[K1, V1](fn: K1 => K)(implicit bij: ImplicitBijection[V1, V]): MergeableStore[K1, V1] =
     MergeableStore.convert(store)(fn)
+
+  def onMergeFailure(rescueException: Throwable => Unit): MergeableStore[K, V] =
+    new MergeableStoreProxy[K, V] {
+      override def self = store
+      override def merge(kv: (K, V)) = store.merge(kv).onFailure(rescueException)
+      override def multiMerge[K1 <: K](kvs: Map[K1, V]) =
+        store.multiMerge(kvs).mapValues { _.onFailure(rescueException) }
+    }
 }
