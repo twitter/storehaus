@@ -36,21 +36,31 @@ object IterableStore {
       s() = Return(Spool.empty[(K, V)])
     } else {
       val next = new Promise[Spool[(K, V)]]
+      // *:: for lazy/deferred tail
       s() = Return(it.next *:: next)
       fillSpool(it, next)
     }
   }
 }
+import IterableStore._
 
 /**
  * Trait for stores that allow iterating over their key-value pairs.
- *
- * Depending on the backing store, this may have performance implications. So use with caution.
- * In general, this should be okay to use with cache stores.
- * For other stores, the iterable should ideally be backed by a stream.
  */
-trait IterableStore[K, V] extends ReadableStore[K, V] {
+trait IterableStore[K, V] {
 
-  def items: Future[Spool[(K, V)]]
+  /** Returns a lazy Spool that wraps the store's keyspace. */
+  def getAll: Future[Spool[(K, V)]] =
+    multiGetAll.flatMap { batchSpool =>
+      batchSpool.flatMap { seq =>
+        iteratorToSpool(seq.iterator)
+      }
+    }
+
+  /** Batched version of getAll. Useful for paging stores. */
+  def multiGetAll: Future[Spool[Seq[(K, V)]]] =
+    getAll.map { spool =>
+      spool.map(Seq(_))
+    }
 }
 

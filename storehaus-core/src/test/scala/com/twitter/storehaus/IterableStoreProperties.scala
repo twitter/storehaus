@@ -27,11 +27,10 @@ object IterableStoreProperties extends Properties("IterableStore") {
   def iterableStoreLaw[K: Arbitrary, V: Arbitrary](fn: Map[K, V] => IterableStore[K, V]) =
     forAll { m: Map[K,V] =>
       val store = fn(m)
-      Await.result(store.items.flatMap { _.toSeq }).toMap == m
+      Await.result(store.getAll.flatMap { _.toSeq }).toMap == m
     }
 
   property("MapStore obeys the IterableStore laws") = {
-    val filter : (((Int, String)) => Boolean) = { case ((k, v)) => k % 2 == 0 }
     iterableStoreLaw[Int, String](IterableStore.fromMap(_))
   }
 }
