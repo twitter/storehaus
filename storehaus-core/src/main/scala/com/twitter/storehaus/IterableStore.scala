@@ -25,21 +25,12 @@ object IterableStore {
   def fromMap[K, V](m: Map[K, V]): IterableStore[K, V] = new MapStore(m)
 
   /** Helper method to convert Iterator to Spool. */
-  def iteratorToSpool[K, V](it: Iterator[(K, V)]): Future[Spool[(K, V)]] = {
-    val s = new Promise[Spool[(K, V)]]
-    fillSpool(it, s)
-    s
-  }
-
-  protected def fillSpool[K, V](it: Iterator[(K, V)], s: Promise[Spool[(K, V)]]): Unit = {
-    if (it.isEmpty) {
-      s() = Return(Spool.empty[(K, V)])
-    } else {
-      val next = new Promise[Spool[(K, V)]]
+  def iteratorToSpool[K, V](it: Iterator[(K, V)]): Future[Spool[(K, V)]] = Future.value {
+    if (it.hasNext)
       // *:: for lazy/deferred tail
-      s() = Return(it.next *:: next)
-      fillSpool(it, next)
-    }
+      it.next *:: iteratorToSpool(it)
+    else
+      Spool.empty
   }
 }
 import IterableStore._
