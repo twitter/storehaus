@@ -14,20 +14,23 @@
  *    limitations under the License.
  */
 
-package com.twitter.storehaus.elasticsearch
+package com.twitter.storehaus
 
-import com.twitter.util.Future
-import com.twitter.storehaus.Store
 
 /**
  * @author Mansur Ashraf
  * @since 1/14/14
  */
-trait QueryableStore[-K, V, Q] extends Store[K, V] {
+trait QueryableStore[Q, V] {
+
   /**
-   * Given Query Q return all the values that match that query
-   * @param query
-   * @return Optional list of values
+   * Returns a store which take Query Q as a key and returns a Seq of value matching that Query
+   * @return
    */
-  def query(query: Q): Future[Option[Seq[V]]]
+  def queryable: ReadableStore[Q, Seq[V]]
+}
+
+object QueryableStore {
+  implicit def enrich[K, V, Q](store: Store[K, V] with QueryableStore[Q, V]): EnrichedQueryableStore[K, V, Q] =
+    new EnrichedQueryableStore(store)
 }

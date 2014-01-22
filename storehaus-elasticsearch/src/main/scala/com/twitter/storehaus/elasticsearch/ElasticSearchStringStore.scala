@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus.elasticsearch
 
-import com.twitter.storehaus.FutureOps
+import com.twitter.storehaus.{QueryableStore, ReadableStore, Store, FutureOps}
 import com.twitter.util.{FuturePool, Future, Time}
 import org.elasticsearch.action.index.IndexRequest
 import org.elasticsearch.action.delete.DeleteRequest
@@ -40,7 +40,7 @@ object ElasticSearchStringStore {
 
 class ElasticSearchStringStore(private val index: String,
                                private val tipe: String, //tipe -> type since type is a reserved keyword
-                               @transient private val client: Client) extends QueryableStore[String, String, SearchRequest] {
+                               @transient private val client: Client) extends Store[String,String] with QueryableStore[SearchRequest,String] {
 
   private lazy val futurePool = FuturePool.unboundedPool
   private[this] lazy val mutex = new AsyncMutex
@@ -114,12 +114,28 @@ class ElasticSearchStringStore(private val index: String,
     } ensure p.release()
   }
 
+
+  def queryable: ReadableStore[SearchRequest, Seq[String]] = new ReadableStore[SearchRequest,Seq[String]] {
+    /** get a single key from the store.
+      * Prefer multiGet if you are getting more than one key at a time
+      */
+    override def get(k: SearchRequest): Future[Option[Seq[String]]] =futurePool {
+      //Force to use the index and Type this store is configured for.
+      val updatedQuery = k.indices(Array(index): _*).types(Array(tipe): _*)
+      val searchHits = client.search(updatedQuery).actionGet().getHits
+      searchHits.totalHits() match {
+        case 0 => None
+        case _ => Some(searchHits.hits().toList.map(_.getSourceAsString))
+      }
+    }
+  }
+
   /**
    * Given Query Q return all the values that match that query
    * @param query
    * @return Optional list of values
    */
-  def query(query: SearchRequest): Future[Option[List[String]]] = futurePool {
+  /*def query(query: SearchRequest): Future[Option[List[String]]] = futurePool {
     //Force to use the index and Type this store is configured for.
     val updatedQuery = query.indices(Array(index): _*).types(Array(tipe): _*)
     val searchHits = client.search(updatedQuery).actionGet().getHits
@@ -127,5 +143,5 @@ class ElasticSearchStringStore(private val index: String,
       case 0 => None
       case _ => Some(searchHits.hits().toList.map(_.getSourceAsString))
     }
-  }
+  }*/
 }

@@ -124,7 +124,7 @@ class ElasticSearchStoreSpecs extends Specification {
 
       //search for a particular author
       val request1 = new SearchRequestBuilder(client).setQuery(termQuery("authors", "josh")).request()
-      val response1 = Await.result(bookStore.query(request1))
+      val response1 = Await.result(bookStore.queryable.get(request1))
       response1 !== None
       response1.get.head.name === "Effective Java"
 
@@ -139,7 +139,7 @@ class ElasticSearchStoreSpecs extends Specification {
           rangeFilter("published").gt(2001)
         ).request()
 
-      val response2 = Await.result(bookStore.query(request2))
+      val response2 = Await.result(bookStore.queryable.get(request2))
       response2 !== None
       response2.get.size === 2
     }

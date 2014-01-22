@@ -18,7 +18,6 @@ package com.twitter.storehaus.elasticsearch
 
 import org.elasticsearch.client.Client
 import Injections._
-import org.elasticsearch.action.search.SearchRequest
 
 /**
  * @author Mansur Ashraf
@@ -27,5 +26,5 @@ import org.elasticsearch.action.search.SearchRequest
 object ElasticSearchCaseClassStore {
   def apply[V <: AnyRef : Manifest](index: String,
                                      tipe: String,
-                                     client: Client) = QueryableConvertedStore.convert[String,String,String,V,SearchRequest](new ElasticSearchStringStore(index, tipe, client))(_.toString)
+                                     client: Client) =  ElasticSearchStringStore(index, tipe, client).convert[String,V](identity[String])
 }
