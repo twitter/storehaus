@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 Twitter Inc.
+ * Copyright 2013 Twitter Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -16,16 +16,22 @@
 
 package com.twitter.storehaus
 
-import com.twitter.util.Future
+import com.twitter.util.{ Await, Future }
 
-/** MapStore is a ReadableStore backed by a scala immutable Map.
- *
- *  @author Oscar Boykin
- *  @author Sam Ritchie
- */
-class MapStore[K, +V](val backingStore: Map[K, V] = Map[K, V]()) extends ReadableStore[K, V]
-    with IterableStore[K, V] {
-  override def get(k: K) = Future.value(backingStore.get(k))
+import org.scalacheck.{ Arbitrary, Properties }
+import org.scalacheck.Gen.choose
+import org.scalacheck.Prop._
 
-  override def getAll = IterableStore.iteratorToSpool(backingStore.iterator)
+object IterableStoreProperties extends Properties("IterableStore") {
+
+  def iterableStoreLaw[K: Arbitrary, V: Arbitrary](fn: Map[K, V] => IterableStore[K, V]) =
+    forAll { m: Map[K,V] =>
+      val store = fn(m)
+      Await.result(store.getAll.flatMap { _.toSeq }).toMap == m
+    }
+
+  property("MapStore obeys the IterableStore laws") = {
+    iterableStoreLaw[Int, String](IterableStore.fromMap(_))
+  }
 }
+
