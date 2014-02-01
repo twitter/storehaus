@@ -26,11 +26,19 @@ import com.twitter.util.{ Future, Throw, Return }
  */
 class MissingValueException[K](val key: K) extends RuntimeException("Missing value for " + key)
 
+/**
+ * This is thrown when a retryable store runs out of retries
+ * when looking for a key.
+ */
+class RetriesExhaustedException[K](val key: K) extends RuntimeException("Retries exhausted for key " + key)
+
 /** Some combinators on Futures or Seqs of Futures that are used internally
  * These should arguably exist in util-core.
  */
 object FutureOps {
   def missingValueFor[K](k: K) = Future.exception(new MissingValueException(k))
+
+  def retriesExhaustedFor[K](k: K) = Future.exception(new RetriesExhaustedException(k))
 
   /** Kleisli operator for Future[Option[_]] Monad.  I knew it would come to this. */
   def combineFOFn[A, B, C](f1: A => Future[Option[B]], f2: B => Future[Option[C]])(a: A): Future[Option[C]] = {

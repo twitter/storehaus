@@ -30,7 +30,7 @@ class RetryingReadableStore[-K, +V](store: ReadableStore[K, V], backoffs: Iterab
       case Return(t) => Future.value(t)
       case Throw(e) =>
         backoffs.headOption match {
-          case None => FutureOps.missingValueFor(k)
+          case None => FutureOps.retriesExhaustedFor(k)
           case Some(interval) => interval match {
             case Duration.Zero => getWithRetry(k, backoffs.tail)
             case Duration.Top => FutureOps.missingValueFor(k)
