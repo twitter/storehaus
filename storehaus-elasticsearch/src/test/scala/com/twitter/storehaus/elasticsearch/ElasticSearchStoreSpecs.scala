@@ -17,7 +17,7 @@
 package com.twitter.storehaus.elasticsearch
 
 import org.specs2.mutable.Specification
-import com.twitter.util.Await
+import com.twitter.util.{Future, Await}
 import com.twitter.storehaus.FutureOps
 import org.elasticsearch.action.search.SearchRequestBuilder
 import org.elasticsearch.index.query.QueryBuilders._
@@ -42,6 +42,16 @@ class ElasticSearchStoreSpecs extends Specification {
 
       val result = Await.result(store.get(key))
       result === Some(person)
+    }
+
+    "Retrieve a value that doesnt exist" in new DefaultElasticContext {
+      private val key = "put_key"
+      store.put((key, Some(person)))
+
+      blockAndRefreshIndex
+
+      val result = Await.result(store.get("missing_key"))
+      result === None
     }
 
     "Update a value" in new DefaultElasticContext {
@@ -77,6 +87,19 @@ class ElasticSearchStoreSpecs extends Specification {
       val response = store.multiGet(persons.keySet)
       val result = Await.result(FutureOps.mapCollect(response))
       result === persons
+    }
+
+    "Retrieve values that do not exist" in new DefaultElasticContext {
+      val key = "_put_key"
+      val persons = (1 to 10).map(i => i + key -> Some(person.copy(age = i))).toMap
+
+      store.multiPut(persons)
+
+      blockAndRefreshIndex
+
+      val response = store.multiGet(Set[String]())
+      val result = Await.result(FutureOps.mapCollect(response))
+      result === Map[String,Future[Option[String]]]()
     }
 
     "Update multiple values" in new DefaultElasticContext {

@@ -40,7 +40,7 @@ object ElasticSearchStringStore {
 
 class ElasticSearchStringStore(private val index: String,
                                private val tipe: String, //tipe -> type since type is a reserved keyword
-                               @transient private val client: Client) extends Store[String,String] with QueryableStore[SearchRequest,String] {
+                               @transient private val client: Client) extends Store[String, String] with QueryableStore[SearchRequest, String] {
 
   private lazy val futurePool = FuturePool.unboundedPool
   private[this] lazy val mutex = new AsyncMutex
@@ -60,16 +60,20 @@ class ElasticSearchStringStore(private val index: String,
     * Future.exception.
     */
   override def multiGet[K1 <: String](ks: Set[K1]): Map[K1, Future[Option[String]]] = {
-    val f = futurePool {
-      val request = client.prepareMultiGet()
-      ks.foreach(request.add(index, tipe, _))
-      val response = request.execute().actionGet()
+    if (ks.isEmpty) {
+      Map[K1, Future[Option[String]]]()
+    } else {
+      val f = futurePool {
+        val request = client.prepareMultiGet()
+        ks.foreach(request.add(index, tipe, _))
+        val response = request.execute().actionGet()
 
-      response.iterator().asScala.map {
-        r => r.getResponse.getId -> Option(r.getResponse.getSourceAsString)
-      }.toMap
+        response.iterator().asScala.map {
+          r => r.getResponse.getId -> Option(r.getResponse.getSourceAsString)
+        }.toMap
+      }
+      FutureOps.liftValues(ks, f)
     }
-    FutureOps.liftValues(ks, f)
   }
 
 
@@ -115,11 +119,11 @@ class ElasticSearchStringStore(private val index: String,
   }
 
 
-  def queryable: ReadableStore[SearchRequest, Seq[String]] = new ReadableStore[SearchRequest,Seq[String]] {
+  def queryable: ReadableStore[SearchRequest, Seq[String]] = new ReadableStore[SearchRequest, Seq[String]] {
     /** get a single key from the store.
       * Prefer multiGet if you are getting more than one key at a time
       */
-    override def get(k: SearchRequest): Future[Option[Seq[String]]] =futurePool {
+    override def get(k: SearchRequest): Future[Option[Seq[String]]] = futurePool {
       //Force to use the index and Type this store is configured for.
       val updatedQuery = k.indices(Array(index): _*).types(Array(tipe): _*)
       val searchHits = client.search(updatedQuery).actionGet().getHits
