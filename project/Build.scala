@@ -139,6 +139,7 @@ object StorehausBuild extends Build {
     storehausHBase,
     storehausDynamoDB,
     storehausKafka,
+    storehausMongoDB,
     storehausTesting
   )
 
@@ -230,6 +231,14 @@ object StorehausBuild extends Build {
         )
     ),
     // we don't want various tests clobbering each others keys
+    parallelExecution in Test := false
+  ).dependsOn(storehausAlgebra % "test->test;compile->compile")
+
+  lazy val storehausMongoDB= module("mongodb").settings(
+    libraryDependencies ++= Seq(
+      "com.twitter" %% "bijection-core" % bijectionVersion,
+      "org.mongodb" %% "casbah" % "2.6.4"
+    ),
     parallelExecution in Test := false
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
