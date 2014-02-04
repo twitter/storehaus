@@ -68,11 +68,11 @@ class ElasticSearchStringStore(private val index: String,
         ks.foreach(request.add(index, tipe, _))
         val response = request.execute().actionGet()
 
-        response.iterator().asScala.map {
-          r => r.getResponse.getId -> Option(r.getResponse.getSourceAsString)
-        }.toMap
+        response.iterator().asScala
+          .filter(r=>Option(r.getResponse)!=None)
+          .map {r => r.getResponse.getId -> Option(r.getResponse.getSourceAsString)}.toMap
       }
-      FutureOps.liftValues(ks, f)
+      FutureOps.liftValues(ks, f,k=>Future(None))
     }
   }
 
