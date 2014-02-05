@@ -138,6 +138,7 @@ object StorehausBuild extends Build {
     storehausRedis,
     storehausHBase,
     storehausDynamoDB,
+    storehausCassandra,
     storehausKafka,
     storehausTesting
   )
@@ -215,6 +216,15 @@ object StorehausBuild extends Build {
       "com.amazonaws" % "aws-java-sdk" % "1.5.7"
       ////use alternator for local testing
       //"com.michelboudreau" % "alternator" % "0.6.4" % "test"
+    ),
+    parallelExecution in Test := false
+  ).dependsOn(storehausAlgebra % "test->test;compile->compile")
+
+  lazy val storehausCassandra= module("cassandra").settings(
+    libraryDependencies ++= Seq(
+      "com.twitter" %% "algebird-core" % algebirdVersion,
+      "com.twitter" %% "bijection-core" % bijectionVersion,
+      "org.hectorclient" % "hector-core" % "1.1-4"
     ),
     parallelExecution in Test := false
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
