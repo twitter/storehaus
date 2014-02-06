@@ -17,14 +17,15 @@
 package com.twitter.storehaus.elasticsearch
 
 import org.elasticsearch.client.Client
-import Injections._
+import com.twitter.bijection.json4s.Json4sInjections.caseClass2Json
+import org.json4s.Formats
 
 /**
  * @author Mansur Ashraf
  * @since 1/13/14
  */
 object ElasticSearchCaseClassStore {
-  def apply[V <: AnyRef : Manifest](index: String,
-                                     tipe: String,
-                                     client: Client) =  ElasticSearchStringStore(index, tipe, client).convert[String,V](identity[String])
+  def apply[V <: AnyRef](index: String,
+                         tipe: String,
+                         client: Client)(implicit mf: Manifest[V], fmt: Formats) = ElasticSearchStringStore(index, tipe, client).convert[String, V](identity[String])
 }

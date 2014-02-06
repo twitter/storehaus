@@ -22,13 +22,14 @@ import com.twitter.storehaus.FutureOps
 import org.elasticsearch.action.search.SearchRequestBuilder
 import org.elasticsearch.index.query.QueryBuilders._
 import org.elasticsearch.index.query.FilterBuilders._
+import org.json4s.{native, NoTypeHints}
 
 /**
  * @author Mansur Ashraf
  * @since 1/13/14
  */
 class ElasticSearchStoreSpecs extends Specification {
-
+  private implicit val formats = native.Serialization.formats(NoTypeHints)
 
   private val person = Person("Joe", "Smith", 29)
 
@@ -133,6 +134,7 @@ class ElasticSearchStoreSpecs extends Specification {
     }
 
     "Search for  values" in new DefaultElasticContext {
+
       val bookStore = ElasticSearchCaseClassStore[Book]("books", "programming", client)
       val books = Map(
         "0735619670" -> Some(Book(name = "Code Complete", authors = Array("Steve McConnel"), published = 2004)),

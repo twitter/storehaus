@@ -117,7 +117,7 @@ object StorehausBuild extends Build {
       .map { s => "com.twitter" % ("storehaus-" + s + "_2.9.3") % "0.8.0" }
 
   val algebirdVersion = "0.3.1"
-  val bijectionVersion = "0.6.0"
+  val bijectionVersion = "0.6.2"
   val utilVersion = "6.3.7"
   val scaldingVersion = "0.9.0rc4"
 
@@ -247,7 +247,8 @@ object StorehausBuild extends Build {
     libraryDependencies ++= Seq (
       "org.elasticsearch" % "elasticsearch" % "0.90.9",
       "org.json4s" %% "json4s-native" % "3.2.6",
-      "com.google.code.findbugs" % "jsr305" % "1.3.+"
+      "com.google.code.findbugs" % "jsr305" % "1.3.+",
+      "com.twitter" %% "bijection-json4s" % bijectionVersion
     ),
     // we don't want various tests clobbering each others keys
     parallelExecution in Test := false

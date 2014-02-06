@@ -21,6 +21,7 @@ import java.util.UUID
 import java.io.File
 import org.elasticsearch.node.NodeBuilder._
 import org.specs2.specification.Scope
+import org.json4s.{native, NoTypeHints}
 
 
 /**
@@ -52,6 +53,7 @@ trait DefaultElasticContext extends Scope {
       .setWaitForYellowStatus().execute().actionGet()
     node.client()
   }
+  private implicit val formats = native.Serialization.formats(NoTypeHints)
   lazy val store = ElasticSearchCaseClassStore[Person](test_index, test_type, client)
 
   def refreshIndex(): Unit = {
