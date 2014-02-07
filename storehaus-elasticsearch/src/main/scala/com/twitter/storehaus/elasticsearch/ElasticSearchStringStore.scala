@@ -25,6 +25,7 @@ import com.twitter.concurrent.AsyncMutex
 import org.elasticsearch.client.Client
 import org.elasticsearch.action.search.SearchRequest
 import scala.collection.JavaConverters._
+import scala.collection.breakOut
 
 /**
  * @author Mansur Ashraf
@@ -35,12 +36,12 @@ object ElasticSearchStringStore {
 
   def apply(index: String,
             tipe: String,
-            client: Client) = new ElasticSearchStringStore(index, tipe, client)
+            client: Client):ElasticSearchStringStore = new ElasticSearchStringStore(index, tipe, client)
 }
 
 class ElasticSearchStringStore(private val index: String,
                                private val tipe: String, //tipe -> type since type is a reserved keyword
-                               @transient private val client: Client) extends Store[String, String] with QueryableStore[SearchRequest, String] {
+                                private val client: Client) extends Store[String, String] with QueryableStore[SearchRequest, String] {
 
   private lazy val futurePool = FuturePool.unboundedPool
   private[this] lazy val mutex = new AsyncMutex
@@ -91,6 +92,7 @@ class ElasticSearchStringStore(private val index: String,
         } ensure p.release()
     }
     kvs.mapValues[Future[Unit]](v => f.unit)
+    kvs.map{case (k,_)=>k->f.unit}(breakOut)
   }
 
   /**

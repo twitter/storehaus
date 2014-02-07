@@ -19,6 +19,8 @@ package com.twitter.storehaus.elasticsearch
 import org.elasticsearch.client.Client
 import com.twitter.bijection.json4s.Json4sInjections.caseClass2Json
 import org.json4s.Formats
+import com.twitter.storehaus.{QueryableStore, Store, EnrichedQueryableStore}
+import org.elasticsearch.action.search.SearchRequest
 
 /**
  * @author Mansur Ashraf
@@ -27,5 +29,5 @@ import org.json4s.Formats
 object ElasticSearchCaseClassStore {
   def apply[V <: AnyRef](index: String,
                          tipe: String,
-                         client: Client)(implicit mf: Manifest[V], fmt: Formats) = ElasticSearchStringStore(index, tipe, client).convert[String, V](identity[String])
+                         client: Client)(implicit mf: Manifest[V], fmt: Formats):Store[String, V] with QueryableStore[SearchRequest, V]= ElasticSearchStringStore(index, tipe, client).convert[String, V](identity[String])
 }

@@ -24,19 +24,21 @@ import com.twitter.util.Future
  * @since 1/22/14
  */
 class EnrichedQueryableStore[-K, V, Q](store: Store[K, V] with QueryableStore[Q, V]) extends EnrichedStore[K, V](store) {
-   /*/
-     Converts a QueryableStore
-    */
-  override def convert[K2, V2](kfn: K2 => K)(implicit inj: Injection[V2, V]): Store[K2, V2] with QueryableStore[Q, V2] = new ConvertedStore[K, K2, V, V2](store)(kfn)(inj) with QueryableStore[Q, V2] {
-    def queryable: ReadableStore[Q, Seq[V2]] = store.queryable.convert[Q, Seq[V2]](identity[Q]) {
-      v => Future {
-        v.map {
-          inj.invert(_).get
+  /*/
+    Converts a QueryableStore
+   */
+  override def convert[K2, V2](kfn: K2 => K)(implicit inj: Injection[V2, V]): Store[K2, V2] with QueryableStore[Q, V2] =
+    new ConvertedStore[K, K2, V, V2](store)(kfn)(inj) with QueryableStore[Q, V2] {
+      def queryable: ReadableStore[Q, Seq[V2]] = store.queryable.convert[Q, Seq[V2]](identity[Q]) {
+        v => Future {
+          v.map {
+            inj.invert(_).get
+          }
         }
       }
     }
-  }
 
-  override def mapValues[V1](implicit inj: Injection[V1, V]): Store[K, V1] with QueryableStore[Q, V1] = convert[K,V1](identity[K])
+  override def mapValues[V1](implicit inj: Injection[V1, V]): Store[K, V1] with QueryableStore[Q, V1] =
+    convert[K, V1](identity[K])
 
 }
