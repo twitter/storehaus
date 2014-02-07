@@ -118,6 +118,8 @@ object StorehausBuild extends Build {
 
   val algebirdVersion = "0.3.1"
   val bijectionVersion = "0.6.0"
+  val cascadingVersion = "2.5.2"
+  val hadoopVersion = "1.1.2"
   val utilVersion = "6.11.0"
   val scaldingVersion = "0.9.0rc4"
 
@@ -131,6 +133,7 @@ object StorehausBuild extends Build {
     publishLocal := { }
   ).aggregate(
     storehausCache,
+    storehausCascading,
     storehausCore,
     storehausAlgebra,
     storehausMemcache,
@@ -252,4 +255,13 @@ object StorehausBuild extends Build {
         withCross("com.twitter" %% "util-core" % utilVersion))
     )
   )
+
+  lazy val storehausCascading = module("cascading").settings(
+    libraryDependencies ++= Seq(
+      "cascading" % "cascading-core" % cascadingVersion,
+      "cascading" % "cascading-hadoop" % cascadingVersion,
+      "org.apache.hadoop" % "hadoop-core" % hadoopVersion
+    ),
+    parallelExecution in Test := false
+  ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 }
