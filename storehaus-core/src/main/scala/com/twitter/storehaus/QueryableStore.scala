@@ -21,7 +21,7 @@ package com.twitter.storehaus
  * @author Mansur Ashraf
  * @since 1/14/14
  */
-trait QueryableStore[Q, V] {
+trait QueryableStore[Q, +V] {
 
   /**
    * Returns a store which take Query Q as a key and returns a Seq of value matching that Query

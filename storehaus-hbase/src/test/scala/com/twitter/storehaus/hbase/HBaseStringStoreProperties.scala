@@ -64,4 +64,6 @@ with DefaultHBaseCluster[Store[String, String]] {
   val closeable =HBaseStringStore(quorumNames, table, columnFamily, column, createTable,pool,conf,4)
   property("HBaseStore test") =storeTest(closeable)
 
+  val store=HBaseStringStore(quorumNames, table, columnFamily, column, createTable,pool,conf,4)
+  store.convert[Long,Long](_.toString)
 }

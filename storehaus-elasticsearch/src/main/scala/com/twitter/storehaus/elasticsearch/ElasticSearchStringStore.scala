@@ -91,7 +91,6 @@ class ElasticSearchStringStore(private val index: String,
           client.bulk(bulkRequest).actionGet()
         } ensure p.release()
     }
-    kvs.mapValues[Future[Unit]](v => f.unit)
     kvs.map{case (k,_)=>k->f.unit}(breakOut)
   }
 
