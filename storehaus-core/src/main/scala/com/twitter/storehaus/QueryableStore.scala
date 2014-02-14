@@ -16,22 +16,21 @@
 
 package com.twitter.storehaus
 
-import com.twitter.util.{ Await, Future }
 
-import org.scalacheck.{ Arbitrary, Properties }
-import org.scalacheck.Gen.choose
-import org.scalacheck.Prop._
+/**
+ * @author Mansur Ashraf
+ * @since 1/14/14
+ */
+trait QueryableStore[Q, +V] {
 
-object IterableStoreProperties extends Properties("IterableStore") {
-
-  def iterableStoreLaw[K: Arbitrary, V: Arbitrary](fn: Map[K, V] => IterableStore[K, V]) =
-    forAll { m: Map[K,V] =>
-      val store = fn(m)
-      Await.result(store.getAll.flatMap { _.toSeq }).toMap == m
-    }
-
-  property("MapStore obeys the IterableStore laws") = {
-    iterableStoreLaw[Int, String](IterableStore.fromMap(_))
-  }
+  /**
+   * Returns a store which take Query Q as a key and returns a Seq of value matching that Query
+   * @return
+   */
+  def queryable: ReadableStore[Q, Seq[V]]
 }
 
+object QueryableStore {
+  implicit def enrich[K, V, Q](store: Store[K, V] with QueryableStore[Q, V]): EnrichedQueryableStore[K, V, Q] =
+    new EnrichedQueryableStore(store)
+}
