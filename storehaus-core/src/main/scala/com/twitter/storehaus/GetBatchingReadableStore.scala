@@ -41,9 +41,9 @@ class GetBatchingReadableStore[K, V](
    * This future completes when all of the multiGets are done
    */
   def flush: Future[Unit] =
-    toGet.effect { ks =>
-      if (ks._2.isEmpty) (None, empty)
-      else (Some(ks._2), empty)
+    toGet.effect { case (_, list) =>
+      if (list.isEmpty) (None, empty)
+      else (Some(list), empty)
     }
     ._1 match {
       case None => Future.Unit
@@ -57,11 +57,20 @@ class GetBatchingReadableStore[K, V](
     called
   }
 
-  override def get(k: K) = {
-    val res = new Promise[Option[V]]()
+  /** Always go through multGet so we don't leave keys sitting around too long
+   * be careful to note this is not self.multiGet, which would directly
+   * issue the query and be what we have if we don't override the Proxy
+   */
+  override def get(k: K) = multiGet(Set(k)).apply(k)
+
+  override def multiGet[K1 <: K](keys: Set[K1]): Map[K1, Future[Option[V]]] = {
+    val res: Map[K1, Promise[Option[V]]] =
+      keys.map(_ -> new Promise[Option[V]]())(breakOut)
+
     toGet.effect { case (size, pending) =>
-      val next = (k, res) :: pending
-      val newSize = size + 1
+      // order does not matter, so just push on
+      val next = res.foldLeft(pending) { (l, pair) => pair::l }
+      val newSize = size + res.size
       if (newSize >= minMultiGetSize) {
         // time to run:
         (Some(next), empty)
@@ -76,9 +85,4 @@ class GetBatchingReadableStore[K, V](
     // always return the promise
     res
   }
-
-  /** Always go through get so we don't leave keys sitting around too long
-   */
-  override def multiGet[K1 <: K](keys: Set[K1]): Map[K1, Future[Option[V]]] =
-    keys.map { k => (k, get(k)) }(breakOut)
 }
