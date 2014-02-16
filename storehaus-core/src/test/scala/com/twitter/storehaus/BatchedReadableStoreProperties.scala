@@ -19,11 +19,29 @@ package com.twitter.storehaus
 import org.scalacheck.Properties
 import org.scalacheck.Prop._
 
+import com.twitter.util.{JavaTimer, Duration, Try}
+import java.util.concurrent.TimeUnit.MILLISECONDS
+
 object BatchedReadableStoreProperties extends Properties("BatchedReadableStoreProperties") {
   import ReadableStoreProperties.readableStoreLaws
 
   property("BatchedReadableStore obeys the ReadableStore laws") =
     readableStoreLaws[String, Int] { m =>
       new BatchedReadableStore(ReadableStore.fromMap(m), 3, 3)
+    }
+  property("GetBatchingReadableStore obeys the ReadableStore laws with min 1") =
+    readableStoreLaws[String, Int] { m =>
+      // This should work without any flushing, each get calls through
+      new GetBatchingReadableStore(ReadableStore.fromMap(m), 1)
+    }
+
+  property("GetBatchingReadableStore obeys the ReadableStore laws with min 5") =
+    readableStoreLaws[String, Int] { m =>
+      val timer = new JavaTimer()
+      // We need to flush periodically
+      val s = new GetBatchingReadableStore(ReadableStore.fromMap(m), 5)
+      // We need a lot of flushes because the tests do a lot of blocking
+      timer.schedule(Duration(10, MILLISECONDS)) { s.flush }
+      s
     }
 }
