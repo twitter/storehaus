@@ -24,9 +24,9 @@ import scala.collection.breakOut
  * enough gets have been created.
  *
  * @param self the store to fetch values from
- * @param minMultiGetSize a multiGet to `store` will fetch values for at most `maxMultiGetSize` keys
+ * @param minMultiGetSize a multiGet to `store` will fetch values for at most `minMultiGetSize` keys
  */
-class GetBatchingReadableStore[K, V](
+class MinBatchingReadableStore[K, V](
     override protected val self: ReadableStore[K, V],
     minMultiGetSize: Int)
     (implicit fc: FutureCollector[(K, V)]) extends ReadableStoreProxy[K, V] {
@@ -41,14 +41,11 @@ class GetBatchingReadableStore[K, V](
    * This future completes when all of the multiGets are done
    */
   def flush: Future[Unit] =
-    toGet.effect { case (_, list) =>
-      if (list.isEmpty) (None, empty)
-      else (Some(list), empty)
-    }
-    ._1 match {
-      case None => Future.Unit
-      case Some(ks) => FutureOps.mapCollect(doMulti(ks)).unit
-    }
+    toGet.effect { case (_, list) => (list, empty) }
+      ._1 match {
+        case Nil => Future.Unit
+        case list => FutureOps.mapCollect(doMulti(list)).unit
+      }
 
   private def doMulti(items: Iterable[(K, Promise[Option[V]])]): Map[K, Future[Option[V]]] = {
     // time to run:

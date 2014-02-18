@@ -29,17 +29,17 @@ object BatchedReadableStoreProperties extends Properties("BatchedReadableStorePr
     readableStoreLaws[String, Int] { m =>
       new BatchedReadableStore(ReadableStore.fromMap(m), 3, 3)
     }
-  property("GetBatchingReadableStore obeys the ReadableStore laws with min 1") =
+  property("MinBatchingReadableStore obeys the ReadableStore laws with min 1") =
     readableStoreLaws[String, Int] { m =>
       // This should work without any flushing, each get calls through
-      new GetBatchingReadableStore(ReadableStore.fromMap(m), 1)
+      new MinBatchingReadableStore(ReadableStore.fromMap(m), 1)
     }
 
-  property("GetBatchingReadableStore obeys the ReadableStore laws with min 5") =
+  property("MinBatchingReadableStore obeys the ReadableStore laws with min 5") =
     readableStoreLaws[String, Int] { m =>
       val timer = new JavaTimer()
       // We need to flush periodically
-      val s = new GetBatchingReadableStore(ReadableStore.fromMap(m), 5)
+      val s = new MinBatchingReadableStore(ReadableStore.fromMap(m), 5)
       // We need a lot of flushes because the tests do a lot of blocking
       timer.schedule(Duration(10, MILLISECONDS)) { s.flush }
       s
