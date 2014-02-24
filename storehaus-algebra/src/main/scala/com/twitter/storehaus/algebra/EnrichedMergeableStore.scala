@@ -55,6 +55,6 @@ class EnrichedMergeableStore[K, V](store: MergeableStore[K, V]) {
       override def self = store
       override def merge(kv: (K, V)) = store.merge(kv).onFailure(rescueException)
       override def multiMerge[K1 <: K](kvs: Map[K1, V]) =
-        store.multiMerge(kvs).mapValues { _.onFailure(rescueException) }
+        store.multiMerge(kvs).map { case (key, value) => (key, value.onFailure(rescueException)) }
     }
 }
