@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Twitter inc.
+ * Copyright 2014 Twitter inc.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -117,7 +117,7 @@ object StorehausBuild extends Build {
       .map { s => "com.twitter" % ("storehaus-" + s + "_2.9.3") % "0.8.0" }
 
   val algebirdVersion = "0.3.1"
-  val bijectionVersion = "0.6.0"
+  val bijectionVersion = "0.6.2"
   val utilVersion = "6.11.0"
   val scaldingVersion = "0.9.0rc4"
 
@@ -139,6 +139,8 @@ object StorehausBuild extends Build {
     storehausHBase,
     storehausDynamoDB,
     storehausKafka,
+    storehausMongoDB,
+    storehausElastic,
     storehausTesting
   )
 
@@ -232,6 +234,26 @@ object StorehausBuild extends Build {
     // we don't want various tests clobbering each others keys
     parallelExecution in Test := false
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
+
+  lazy val storehausMongoDB= module("mongodb").settings(
+    libraryDependencies ++= Seq(
+      "com.twitter" %% "bijection-core" % bijectionVersion,
+      "org.mongodb" %% "casbah" % "2.6.4"
+    ),
+    parallelExecution in Test := false
+  ).dependsOn(storehausAlgebra % "test->test;compile->compile")
+
+  lazy val storehausElastic = module("elasticsearch").settings(
+    libraryDependencies ++= Seq (
+      "org.elasticsearch" % "elasticsearch" % "0.90.9",
+      "org.json4s" %% "json4s-native" % "3.2.6",
+      "com.google.code.findbugs" % "jsr305" % "1.3.+",
+      "com.twitter" %% "bijection-json4s" % bijectionVersion
+    ),
+    // we don't want various tests clobbering each others keys
+    parallelExecution in Test := false
+  ).dependsOn(storehausAlgebra % "test->test;compile->compile")
+
 
   val storehausTesting = Project(
     id = "storehaus-testing",

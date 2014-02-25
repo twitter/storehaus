@@ -38,14 +38,14 @@ object MergeableStore {
     val keySet = kvs.keySet
     val collected: Future[Map[K, Future[Option[V]]]] =
       collect {
-        store.multiGet(keySet).view.map {
+        store.multiGet(keySet).iterator.map {
           case (k, futureOptV) =>
             futureOptV.map { init =>
               val incV = kvs(k)
               val resV = init.map(Semigroup.plus(_, incV)).orElse(Some(incV))
               k -> (init, resV)
             }
-        }.toSeq
+        }.toIndexedSeq
       }.map { pairs: Seq[(K, (Option[V], Option[V]))] =>
         val pairMap = pairs.toMap
         store.multiPut(pairMap.mapValues(_._2))
