@@ -39,16 +39,20 @@ class ReadThroughStore[K, V](backingStore: ReadableStore[K, V], cache: Store[K, 
 
   protected [this] lazy val mutex = new AsyncMutex
 
-  private [this] def getFromBackingStore(k: K) : Future[Option[V]] =
+  private [this] def getFromBackingStore(k: K) : Future[Option[V]] = {
     // attempt to fetch the key from backing store and
     // write the key to cache, best effort
     backingStore.get(k).flatMap { storeValue =>
-      cache.put((k, storeValue))
-        .map { u : Unit => storeValue }
-        .onFailure { case x: Exception => storeValue }
+      mutex.acquire.flatMap { p =>
+        cache.put((k, storeValue))
+          .map { u : Unit => storeValue }
+          .onFailure { case x: Exception => storeValue }
+          .ensure { p.release }
+      }
     }
+  }
 
-  override def get(k: K): Future[Option[V]] = mutex.acquire.flatMap { p =>
+  override def get(k: K): Future[Option[V]] =
     cache.get(k).flatMap { cacheValue =>
       cacheValue match {
         case None => getFromBackingStore(k)
@@ -56,20 +60,17 @@ class ReadThroughStore[K, V](backingStore: ReadableStore[K, V], cache: Store[K, 
       }
     } onFailure { case x: Exception =>
       getFromBackingStore(k)
-    } ensure {
-      p.release
     }
-  }
 
   override def multiGet[K1 <: K](ks: Set[K1]): Map[K1, Future[Option[V]]] = {
-    val f : Future[Map[K1, Option[V]]] = mutex.acquire.flatMap { p =>
-      // attempt to read from cache first
-      val cacheResults : Map[K1, Future[Either[Option[V], Exception]]] =
-        cache.multiGet(ks).map { case (k, f) =>
-          (k, f.map { optv => Left(optv) } onFailure { case x: Exception => Right(x) })
-        }
+    // attempt to read from cache first
+    val cacheResults : Map[K1, Future[Either[Option[V], Exception]]] =
+      cache.multiGet(ks).map { case (k, f) =>
+        (k, f.map { optv => Left(optv) } onFailure { case x: Exception => Right(x) })
+      }
 
-      // attempt to read all failed keys and cache misses from backing store
+    // attempt to read all failed keys and cache misses from backing store
+    val f: Future[Map[K1, Option[V]]] =
       FutureOps.mapCollect(cacheResults).flatMap { cacheResult =>
         val failedKeys = cacheResult.filter { _._2.isRight }.keySet
         val responses = cacheResult.filter { _._2.isLeft }.map { case (k, r) => (k, r.left.get) }
@@ -78,13 +79,13 @@ class ReadThroughStore[K, V](backingStore: ReadableStore[K, V], cache: Store[K, 
 
         FutureOps.mapCollect(backingStore.multiGet(missedKeys ++ failedKeys)).flatMap { storeResult =>
           // write fetched keys to cache, best effort
-          FutureOps.mapCollect(cache.multiPut(storeResult))(FutureCollector.bestEffort[(K1, Unit)])
-            .map { u => hits ++ storeResult }
+          mutex.acquire.flatMap { p =>
+            FutureOps.mapCollect(cache.multiPut(storeResult))(FutureCollector.bestEffort[(K1, Unit)])
+              .map { u => hits ++ storeResult }
+              .ensure { p.release }
+          }
         }
-      } ensure {
-        p.release
       }
-    }
     FutureOps.liftValues(ks, f, { (k: K1) => Future.None })
   }
 }
