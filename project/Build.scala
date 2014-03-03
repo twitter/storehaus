@@ -23,10 +23,10 @@ import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
 import com.typesafe.tools.mima.plugin.MimaKeys.previousArtifact
 
 object StorehausBuild extends Build {
-  def withCross(dep: ModuleID) =
+  def withCross(dep: ModuleID, useZeroEnding : Boolean = false) =
     dep cross CrossVersion.binaryMapped {
       case "2.9.3" => "2.9.2" // TODO: hack because twitter hasn't built things against 2.9.3
-      case version if version startsWith "2.10" => "2.10" // TODO: hack because sbt is broken
+      case version if version startsWith "2.10" => {if (useZeroEnding) "2.10.0" else "2.10"} // TODO: hack because sbt is broken
       case x => x
     }
 
@@ -118,6 +118,7 @@ object StorehausBuild extends Build {
 
   val algebirdVersion = "0.3.1"
   val bijectionVersion = "0.6.0"
+//  val utilVersion = "6.12.1"
   val utilVersion = "6.11.0"
   val scaldingVersion = "0.9.0rc4"
 
@@ -224,7 +225,10 @@ object StorehausBuild extends Build {
     libraryDependencies ++= Seq(
       "com.twitter" %% "algebird-core" % algebirdVersion,
       "com.twitter" %% "bijection-core" % bijectionVersion,
-      "org.hectorclient" % "hector-core" % "1.1-4"
+      "org.hectorclient" % "hector-core" % "1.1-4",
+      "com.eaio.uuid" % "uuid" % "3.2",
+      withCross("com.twitter" %% "util-zk" % utilVersion),
+      withCross("com.chuusai" %% "shapeless" % "1.2.4", true)
     ),
     parallelExecution in Test := false
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
