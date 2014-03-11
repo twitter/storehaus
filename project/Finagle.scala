@@ -5,7 +5,7 @@ package storehaus
  *  dependency */
 object Finagle {
   import sbt._
-  val LatestVersion = "6.5.1"
+  val LatestVersion = "6.12.2"
   def module(name: String, version: String = LatestVersion) =
     StorehausBuild.withCross("com.twitter" %% "finagle-%s".format(name) % version)
 }

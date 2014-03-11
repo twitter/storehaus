@@ -34,7 +34,7 @@ object MutableCacheAlgebra {
 
   def mutableFromTTL[K, V](ttlCache: TTLCache[K, V]): MutableCache[K, V] =
     ttlCache.toMutable()
-      .inject(new TTLInjection[K, Long, V](ttlCache.ttl)(ttlCache.clock))
+      .inject(new TTLInjection[K, Long, V](ttlCache.ttl.inMilliseconds)(ttlCache.clock))
 }
 
 class AlgebraicMutableCache[K, V](cache: MutableCache[K, V]) {

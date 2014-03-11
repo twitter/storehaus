@@ -24,11 +24,12 @@ import com.twitter.finagle.exp.mysql.{
   IntValue,
   LongValue,
   NullValue,
-  RawBinaryValue,
-  RawStringValue,
+  RawValue,
   ShortValue,
   StringValue,
-  Value
+  Value,
+  Charset,
+  Type
 }
 
 import org.jboss.netty.buffer.ChannelBuffer
@@ -46,16 +47,16 @@ object ValueMapper {
   // INTEGER, INT, MEDIUMINT  => IntValue
   // BIGINT => LongValue
   // SMALLINT => ShortValue
-  // BLOB => RawBinaryValue
-  // TEXT => RawStringValue
+  // BLOB => RawValue
+  // TEXT => RawValue
   // CHAR/VARCHAR => StringValue
 
   def toChannelBuffer(v: Value): Option[ChannelBuffer] = {
     v match {
       case IntValue(d) => Some(ChannelBuffers.copiedBuffer(d.toString, UTF_8))
       case LongValue(d) => Some(ChannelBuffers.copiedBuffer(d.toString, UTF_8))
-      case RawBinaryValue(d) => Some(ChannelBuffers.copiedBuffer(d)) // from byte array
-      case RawStringValue(d) => Some(ChannelBuffers.copiedBuffer(d, UTF_8))
+      case RawValue(_,_, true, d) => Some(ChannelBuffers.copiedBuffer(d)) // from byte array
+      case RawValue(_, _, false, d) => Some(ChannelBuffers.copiedBuffer(new String(d), UTF_8))
       case ShortValue(d) => Some(ChannelBuffers.copiedBuffer(d.toString, UTF_8))
       case StringValue(d) => Some(ChannelBuffers.copiedBuffer(d, UTF_8))
       case EmptyValue => Some(ChannelBuffers.EMPTY_BUFFER)
@@ -69,8 +70,7 @@ object ValueMapper {
     v match {
       case IntValue(v) => Some(v.toString)
       case LongValue(v) => Some(v.toString)
-      case RawBinaryValue(v) => Some(new String(v)) // from byte array
-      case RawStringValue(v) => Some(v)
+      case RawValue(_, _, _, v) => Some(new String(v)) // from byte array
       case ShortValue(v) => Some(v.toString)
       case StringValue(v) => Some(v)
       // finagle-mysql text protocol wraps null strings as NullValue
@@ -81,17 +81,21 @@ object ValueMapper {
       case _ => throw new UnsupportedOperationException(v.getClass.getName + " is currently not supported.")
     }
   }
+
+  def toLong(v: Value): Option[Long] = {
+    toString(v).map { _.toLong }
+  }
 }
 
 /** Factory for [[com.twitter.storehaus.mysql.MySqlValue]] instances. */
 object MySqlValue {
   def apply(v: Any) = v match {
     case v: Value => new MySqlValue(v)
-    case v: String => new MySqlValue(RawStringValue(v))
+    case v: String => new MySqlValue(RawValue(Type.String, Charset.Utf8_general_ci, false, v.getBytes))
     case v: Int => new MySqlValue(IntValue(v))
     case v: Long => new MySqlValue(LongValue(v))
     case v: Short => new MySqlValue(ShortValue(v))
-    case v: ChannelBuffer => new MySqlValue(RawStringValue(v.toString(UTF_8)))
+    case v: ChannelBuffer => new MySqlValue(RawValue(Type.String, Charset.Utf8_general_ci, false, v.toString(UTF_8).getBytes))
     case _ => throw new UnsupportedOperationException(v.getClass.getName + " is currently not supported.")
   }
 }
@@ -122,7 +126,7 @@ class MySqlValue(val v: Value) {
  */
 object MySqlStringInjection extends Injection[MySqlValue, String] {
   def apply(a: MySqlValue): String = ValueMapper.toString(a.v).getOrElse("") // should this be null: String instead?
-  override def invert(b: String) = Try(MySqlValue(RawStringValue(b)))
+  override def invert(b: String) = Try(MySqlValue(RawValue(Type.String, Charset.Utf8_general_ci, false, b.getBytes)))
 }
 
 /**
@@ -132,5 +136,10 @@ object MySqlStringInjection extends Injection[MySqlValue, String] {
  */
 object MySqlCbInjection extends Injection[MySqlValue, ChannelBuffer] {
   def apply(a: MySqlValue): ChannelBuffer = ValueMapper.toChannelBuffer(a.v).getOrElse(ChannelBuffers.EMPTY_BUFFER)
-  override def invert(b: ChannelBuffer) = Try(MySqlValue(RawStringValue(b.toString(UTF_8))))
+  override def invert(b: ChannelBuffer) = Try(MySqlValue((Type.String, Charset.Utf8_general_ci, false, b.toString(UTF_8))))
+}
+
+object LongMySqlInjection extends Injection[Long, MySqlValue] {
+  def apply(a: Long): MySqlValue = MySqlValue(a)
+  override def invert(b: MySqlValue) = Try(ValueMapper.toLong(b.v).get)
 }

@@ -22,19 +22,7 @@ import com.twitter.storehaus.{ CollectionOps, FutureCollector, Store }
 import com.twitter.util.Future
 
 /** Main trait to represent stores that are used for aggregation */
-trait MergeableStore[-K, V] extends Store[K, V] {
-  /** The semigroup equivalent to the merge operation of this store */
-  def semigroup: Semigroup[V]
-  /** Returns the value JUST BEFORE the merge. If it is empty, it is like a zero.
-   * the key should hold:
-   * val (k,v) = kv
-   * result = get(k)
-   * key is set to: result.map(Semigroup.plus(_, Some(v)).getOrElse(v) after this.
-   */
-  def merge(kv: (K, V)): Future[Option[V]] = multiMerge(Map(kv)).apply(kv._1)
-  /** merge a set of keys. */
-  def multiMerge[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Option[V]]] = kvs.map { kv => (kv._1, merge(kv)) }
-}
+trait MergeableStore[-K, V] extends Store[K, V] with Mergeable[K, V]
 
 /** Some factory methods and combinators on MergeableStore */
 object MergeableStore {
@@ -50,14 +38,14 @@ object MergeableStore {
     val keySet = kvs.keySet
     val collected: Future[Map[K, Future[Option[V]]]] =
       collect {
-        store.multiGet(keySet).view.map {
+        store.multiGet(keySet).iterator.map {
           case (k, futureOptV) =>
             futureOptV.map { init =>
               val incV = kvs(k)
               val resV = init.map(Semigroup.plus(_, incV)).orElse(Some(incV))
               k -> (init, resV)
             }
-        }.toSeq
+        }.toIndexedSeq
       }.map { pairs: Seq[(K, (Option[V], Option[V]))] =>
         val pairMap = pairs.toMap
         store.multiPut(pairMap.mapValues(_._2))
@@ -82,6 +70,14 @@ object MergeableStore {
   def fromStore[K,V](store: Store[K,V])(implicit sg: Semigroup[V],
       fc: FutureCollector[(K, Option[V])]): MergeableStore[K,V] =
     new MergeableStoreViaGetPut[K, V](store, fc)
+
+  /** Create a mergeable by implementing merge with single get followed by put for each key. Also forces multiGet and
+    * multiPut to use the store's default implementation of a single get and put.
+    * The merge is only safe if each key is owned by a single thread. Useful in certain cases where multiGets and
+    * multiPuts may result in higher error rates or lower throughput.
+    */
+  def fromStoreNoMulti[K,V](store: Store[K,V])(implicit sg: Semigroup[V]): MergeableStore[K,V] =
+    new MergeableStoreViaSingleGetPut[K, V](store)
 
   /** Create a mergeable by implementing merge with get followed by put.
    * Only safe if each key is owned by a single thread.

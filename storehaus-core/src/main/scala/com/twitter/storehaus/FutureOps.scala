@@ -1,17 +1,17 @@
 /*
- * Copyright 2013 Twitter Inc.
+ * Copyright 2014 Twitter inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may
- * not use this file except in compliance with the License. You may obtain
- * a copy of the License at
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
  */
 
 package com.twitter.storehaus
@@ -26,11 +26,19 @@ import com.twitter.util.{ Future, Throw, Return }
  */
 class MissingValueException[K](val key: K) extends RuntimeException("Missing value for " + key)
 
+/**
+ * This is thrown when a retryable store runs out of retries
+ * when looking for a key.
+ */
+class RetriesExhaustedException[K](val key: K) extends RuntimeException("Retries exhausted for key " + key)
+
 /** Some combinators on Futures or Seqs of Futures that are used internally
  * These should arguably exist in util-core.
  */
 object FutureOps {
   def missingValueFor[K](k: K) = Future.exception(new MissingValueException(k))
+
+  def retriesExhaustedFor[K](k: K) = Future.exception(new RetriesExhaustedException(k))
 
   /** Kleisli operator for Future[Option[_]] Monad.  I knew it would come to this. */
   def combineFOFn[A, B, C](f1: A => Future[Option[B]], f2: B => Future[Option[C]])(a: A): Future[Option[C]] = {

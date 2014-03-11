@@ -16,6 +16,8 @@
 
 package com.twitter.storehaus.cache
 
+import com.twitter.util.Duration
+
 /**
  * Companion object to Cache. Contains a number of methods for
  * generating various cache implementations.
@@ -32,7 +34,10 @@ object Cache {
 
   /* Returns an immutable TTLCache configured with the supplied ttl in
    * milliseconds. */
-  def ttl[K, V](ttlInMillis: Long) = TTLCache(ttlInMillis, Map.empty[K, (Long, V)])
+  @deprecated("Use com.twitter.storehaus.cache.Cache#ttl", "0.6.1")
+  def ttl[K, V](ttlInMillis: Long) = TTLCache(Duration.fromMilliseconds(ttlInMillis), Map.empty[K, (Long, V)])
+
+  def ttl[K, V](ttl: Duration) = TTLCache(ttl, Map.empty[K, (Long, V)])
 
   def toMutable[K, V](cache: Cache[K, V])(exhaustFn: Set[K] => Unit): MutableCache[K, V] =
     new MutableFromImmutableCache(cache)(exhaustFn)

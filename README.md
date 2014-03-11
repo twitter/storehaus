@@ -4,21 +4,27 @@ Storehaus is a library that makes it easy to work with asynchronous key value st
 
 ### Storehaus-Core
 
-Storehaus's core module defines two traits; a read-only `ReadableStore` and a read-write `Store`. The traits themselves are tiny:
+Storehaus's core module defines three traits; a read-only `ReadableStore` a write-only `WritableStore` and a read-write `Store`. The traits themselves are tiny:
 
 ```scala
 package com.twitter.storehaus
 
+import com.twitter.util.{ Closable, Future, Time }
+
 trait ReadableStore[-K, +V] extends Closeable {
   def get(k: K): Future[Option[V]]
   def multiGet[K1 <: K](ks: Set[K1]): Map[K1, Future[Option[V]]]
-  override def close { }
+  override def close(time: Time) = Future.Unit
 }
 
-trait Store[-K, V] extends ReadableStore[K, V] {
-  def put(kv: (K, Option[V])): Future[Unit]
-  def multiPut[K1 <: K](kvs: Map[K1, Option[V]]): Map[K1, Future[Unit]]
+trait WritableStore[-K, -V] {
+  def put(kv: (K, V)): Future[Unit] = multiPut(Map(kv)).apply(kv._1)
+  def multiPut[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Unit]] =
+    kvs.map { kv => (kv._1, put(kv)) }
+  override def close(time: Time) = Future.Unit
 }
+
+trait Store[-K, V] extends ReadableStore[K, V] with WritableStore[K, Option[V]]
 ```
 
 The `ReadableStore` trait uses the `Future[Option[V]]` return type to communicate one of three states about each value. A value is either
@@ -127,7 +133,7 @@ The suffix denotes the scala version.
 
 ## Testing notes
 
-We use travis-ci to set up any underlying stores (e.g. MySQL and Redis) for the tests. In order for these tests to pass on your local machine, you may need additional setup.
+We use travis-ci to set up any underlying stores (e.g. MySQL, Redis, Memcached) for the tests. In order for these tests to pass on your local machine, you may need additional setup.
 
 ### MySQL tests
 
@@ -137,6 +143,10 @@ Once installed, run the `mysql` commands listed in [.travis.yml](https://github.
 ### Redis tests
 
 You will need [redis](http://redis.io/) installed on your local machine. Redis comes bundled with an executable for spinning up a server called `redis-server`. The Storehaus redis tests expect the factory defaults for connecting to one of these redis server instances, resolvable on `localhost` port `6379`.
+
+### Memcached
+
+You will need [Memcached](http://memcached.org/) installed on your local machine and running on the default port `11211`.
 
 ## Authors
 
