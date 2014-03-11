@@ -17,7 +17,7 @@
 package com.twitter.storehaus.algebra.reporting
 
 import com.twitter.util.{ Await, Future }
-import com.twitter.storehaus.ReadableStore
+import com.twitter.storehaus.{ReadableStore, ReadableStoreProxy}
 import org.scalacheck.{ Arbitrary, Properties }
 import org.scalacheck.Gen.choose
 import org.scalacheck.Prop._
@@ -27,17 +27,22 @@ object ReportingReadableStoreProperties extends Properties("ReportingReadableSto
     * get returns none when not in either store
     */
 
-  def buildStoreRunQueries[K, V](mA: Map[K, V], others: Set[K], reporter: ReadableStoreReporter[K, V]) = {
+   class DummyReporter[K, V](val self: ReadableStore[K, V]) extends ReadableStoreProxy[K, V] with ReadableStoreReporter[K, V] {
+    def traceMultiGet[K1 <: K](ks: Set[K1], request: Map[K1, Future[Option[V]]]) = request.mapValues(_.unit)
+    def traceGet(k: K, request: Future[Option[V]]) = request.unit
+  }
+
+  def buildStoreRunQueries[K, V](mA: Map[K, V], others: Set[K], builder: (ReadableStore[K, V]) => ReadableStore[K, V]) = {
     val baseStore = ReadableStore.fromMap(mA)
-    val wrappedStore = ReportingReadableStore(baseStore, reporter)
+    val wrappedStore = builder(baseStore)
     val expanded: Set[K] = (mA.keySet ++ others)
     // We use call to list, or it keeps the results of the map as a set and we loose data
     expanded.toList.map{k: K => (mA.get(k), Await.result(wrappedStore.get(k)))}
   }
 
-  def buildStoreRunMultiGetQueries[K, V](mA: Map[K, V], others: Set[K], reporter: ReadableStoreReporter[K, V]) = {
+  def buildStoreRunMultiGetQueries[K, V](mA: Map[K, V], others: Set[K], builder: (ReadableStore[K, V]) => ReadableStore[K, V]) = {
     val baseStore = ReadableStore.fromMap(mA)
-    val wrappedStore = ReportingReadableStore(baseStore, reporter)
+    val wrappedStore = builder(baseStore)
     val expanded: Set[K] = (mA.keySet ++ others)
     // We use call to list, or it keeps the results of the map as a set and we loose data
     (expanded.map{k => (k, mA.get(k))}.toMap,
@@ -45,7 +50,7 @@ object ReportingReadableStoreProperties extends Properties("ReportingReadableSto
   }
 
   property("Stats store matches raw get for all queries") = forAll { (mA: Map[Int, String], others: Set[Int]) =>
-        val reporter = new ReadableStoreReporter[Int, String] {}
+        def reporter(store: ReadableStore[Int, String]) = new DummyReporter[Int, String](store)
         val queryResults = buildStoreRunQueries(mA, others, reporter)
         queryResults.forall{case (a, b) => a == b}
   }
@@ -53,7 +58,7 @@ object ReportingReadableStoreProperties extends Properties("ReportingReadableSto
   property("Present/Absent count matches") = forAll { (mA: Map[Int, String], others: Set[Int]) =>
         var presentCount = 0
         var absentCount = 0
-        val reporter = new ReadableStoreReporter[Int, String] {
+        def reporter(store: ReadableStore[Int, String]) = new DummyReporter[Int, String](store) {
           override def traceGet(k: Int, request: Future[Option[String]]) = {
             request.map{ optV =>
               optV match {
@@ -71,7 +76,7 @@ object ReportingReadableStoreProperties extends Properties("ReportingReadableSto
   }
 
   property("Stats store matches raw get for multiget all queries") = forAll { (mA: Map[Int, String], others: Set[Int]) =>
-        val reporter = new ReadableStoreReporter[Int, String] {}
+        def reporter(store: ReadableStore[Int, String]) = new DummyReporter[Int, String](store)
         val (mapRes, storeResults) = buildStoreRunMultiGetQueries(mA, others, reporter)
         mapRes.size == storeResults.size &&
           mapRes.keySet.forall(k => mapRes.get(k) == storeResults.get(k))
@@ -80,7 +85,8 @@ object ReportingReadableStoreProperties extends Properties("ReportingReadableSto
   property("Present/Absent count matches in multiget") = forAll { (mA: Map[Int, String], others: Set[Int]) =>
         var presentCount = 0
         var absentCount = 0
-        val reporter = new ReadableStoreReporter[Int, String] {
+
+        def reporter(store: ReadableStore[Int, String]) = new DummyReporter[Int, String](store) {
           override def traceMultiGet[K1 <: Int](ks: Set[K1], request: Map[K1, Future[Option[String]]]) = {
             request.mapValues{fOptV =>
               fOptV.map {optV =>

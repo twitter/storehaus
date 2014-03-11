@@ -27,10 +27,20 @@ import com.twitter.storehaus.algebra._
 object ReportingStoreProperties extends Properties("ReportingStore") {
   def newStore[K, V] = new JMapStore[K, V]
 
+  class DummyReporter[K, V](val self: Store[K, V]) extends StoreProxy[K, V] with StoreReporter[K, V] {
+    def traceMultiGet[K1 <: K](ks: Set[K1], request: Map[K1, Future[Option[V]]]) = request.mapValues(_.unit)
+    def traceGet(k: K, request: Future[Option[V]]) = request.unit
+
+    def tracePut(kv: (K, Option[V]), request: Future[Unit]) = request.unit
+    def traceMultiPut[K1 <: K](kvs: Map[K1, Option[V]], request: Map[K1, Future[Unit]]) = request.mapValues(_.unit)
+  }
+
   property("Put Some/None count matches") = forAll { (inserts: Map[Int, Option[Int]]) =>
         var putSomeCount = 0
         var putNoneCount = 0
-        val reporter = new StoreReporter[Int, Int] {
+        val baseStore = newStore[Int, Int]
+
+        val wrappedStore = new DummyReporter[Int, Int](baseStore) {
           override def tracePut(kv: (Int, Option[Int]), request: Future[Unit]) = {
             Future {
                 kv._2 match {
@@ -40,8 +50,6 @@ object ReportingStoreProperties extends Properties("ReportingStore") {
             }.unit
           }
         }
-        val baseStore = newStore[Int, Int]
-        val wrappedStore = ReportingStore[Int, Int](baseStore, reporter)
 
         inserts.foreach{ i =>
           wrappedStore.put(i._1, i._2)
@@ -53,8 +61,10 @@ object ReportingStoreProperties extends Properties("ReportingStore") {
   property("MultiPut Some/None count matches") = forAll { (inserts: Map[Int, Option[Int]]) =>
         var multiPutSomeCount = 0
         var multiPutNoneCount = 0
-        val reporter = new StoreReporter[Int, Int] {
-          override def traceMultiPut[K1 <: Int](kvs: Map[K1, Option[Int]], request: Map[K1, Future[Unit]]): Map[K1, Future[Unit]] = {
+        val baseStore = newStore[Int, Int]
+
+        val wrappedStore = new DummyReporter[Int, Int](baseStore) {
+         override def traceMultiPut[K1 <: Int](kvs: Map[K1, Option[Int]], request: Map[K1, Future[Unit]]): Map[K1, Future[Unit]] = {
             kvs.mapValues {v =>
               Future {
                 v match {
@@ -65,9 +75,6 @@ object ReportingStoreProperties extends Properties("ReportingStore") {
             }
           }
         }
-        val baseStore = newStore[Int, Int]
-        val wrappedStore = ReportingStore[Int, Int](baseStore, reporter)
-
 
         wrappedStore.multiPut(inserts)
 

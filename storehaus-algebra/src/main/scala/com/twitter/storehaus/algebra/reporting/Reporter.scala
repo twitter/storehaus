@@ -16,6 +16,8 @@
 
 package com.twitter.storehaus.algebra.reporting
 
+import com.twitter.storehaus.{Store, ReadableStore, WritableStore}
+import com.twitter.storehaus.algebra.Mergeable
 import com.twitter.util.Future
 
 object Reporter {
@@ -29,23 +31,38 @@ object Reporter {
             (k, Future.join(v, unitF).map(_._1))
         }
       }
+}
 
+trait ReadableStoreReporter[K, V] extends ReadableStore[K, V] {
+  def self: ReadableStore[K, V]
+  override def get(k: K): Future[Option[V]] = Reporter.sideEffect(k, self.get(k), traceGet)
+  override def multiGet[K1 <: K](keys: Set[K1]) = Reporter.sideEffect(keys, self.multiGet(keys), traceMultiGet)
+
+  def traceMultiGet[K1 <: K](ks: Set[K1], request: Map[K1, Future[Option[V]]]): Map[K1, Future[Unit]]
+  def traceGet(k: K, request: Future[Option[V]]): Future[Unit]
 }
 
 
-trait ReadableStoreReporter[K, V]{
-  def traceMultiGet[K1 <: K](ks: Set[K1], request: Map[K1, Future[Option[V]]]) = request.mapValues(_.unit)
-  def traceGet(k: K, request: Future[Option[V]]) = request.unit
+trait WritableStoreReporter[K, V] extends WritableStore[K, V] {
+  def self: WritableStore[K, V]
+  override def put(kv: (K, V)): Future[Unit] = Reporter.sideEffect(kv, self.put(kv), tracePut)
+  override def multiPut[K1 <: K](kvs: Map[K1, V]) = Reporter.sideEffect(kvs, self.multiPut(kvs), traceMultiPut)
+
+  def tracePut(kv: (K, V), request: Future[Unit]): Future[Unit]
+  def traceMultiPut[K1 <: K](kvs: Map[K1, V], request: Map[K1, Future[Unit]]): Map[K1, Future[Unit]]
 }
 
-trait WritableStoreReporter[K, V] {
-  def tracePut(kv: (K, Option[V]), request: Future[Unit]) = request
-  def traceMultiPut[K1 <: K](kvs: Map[K1, Option[V]], request: Map[K1, Future[Unit]]): Map[K1, Future[Unit]] = request
+
+trait MergeableReporter[K, V] extends Mergeable[K, V] {
+  def self: Mergeable[K, V]
+  override def merge(kv: (K, V)) = Reporter.sideEffect(kv, self.merge(kv), traceMerge)
+  override def multiMerge[K1 <: K](kvs: Map[K1, V]) = Reporter.sideEffect(kvs, self.multiMerge(kvs), traceMultiMerge)
+
+  def traceMerge(kv: (K, V), request: Future[Option[V]]): Future[Unit]
+  def traceMultiMerge[K1 <: K](kvs: Map[K1, V], request: Map[K1, Future[Option[V]]]): Map[K1, Future[Unit]]
 }
 
-trait StoreReporter[K, V] extends ReadableStoreReporter[K, V] with WritableStoreReporter[K, V]
 
-trait MergeableStoreReporter[K, V] extends StoreReporter[K, V]{
-  def traceMerge(kv: (K, V), request: Future[Option[V]]) = request.unit
-  def traceMultiMerge[K1 <: K](kvs: Map[K1, V], request: Map[K1, Future[Option[V]]]) = request.mapValues(_.unit)
+trait StoreReporter[K, V] extends ReadableStoreReporter[K, V] with WritableStoreReporter[K, Option[V]] {
+  def self: Store[K, V]
 }
