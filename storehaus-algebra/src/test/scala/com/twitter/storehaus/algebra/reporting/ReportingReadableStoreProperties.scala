@@ -27,7 +27,7 @@ object ReportingReadableStoreProperties extends Properties("ReportingReadableSto
     * get returns none when not in either store
     */
 
-   class DummyReporter[K, V](val self: ReadableStore[K, V]) extends ReadableStoreProxy[K, V] with ReadableStoreReporter[K, V] {
+   class DummyReporter[K, V](val self: ReadableStore[K, V]) extends ReadableStoreProxy[K, V] with ReadableStoreReporter[ReadableStore[K, V], K, V] {
     def traceMultiGet[K1 <: K](ks: Set[K1], request: Map[K1, Future[Option[V]]]) = request.mapValues(_.unit)
     def traceGet(k: K, request: Future[Option[V]]) = request.unit
   }

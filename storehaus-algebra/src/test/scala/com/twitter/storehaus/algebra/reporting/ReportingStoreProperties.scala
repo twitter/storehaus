@@ -27,7 +27,7 @@ import com.twitter.storehaus.algebra._
 object ReportingStoreProperties extends Properties("ReportingStore") {
   def newStore[K, V] = new JMapStore[K, V]
 
-  class DummyReporter[K, V](val self: Store[K, V]) extends StoreProxy[K, V] with StoreReporter[K, V] {
+  class DummyReporter[K, V](val self: Store[K, V]) extends StoreProxy[K, V] with StoreReporter[Store[K, V], K, V] {
     def traceMultiGet[K1 <: K](ks: Set[K1], request: Map[K1, Future[Option[V]]]) = request.mapValues(_.unit)
     def traceGet(k: K, request: Future[Option[V]]) = request.unit
 

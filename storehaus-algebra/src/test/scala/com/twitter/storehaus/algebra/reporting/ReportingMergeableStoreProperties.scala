@@ -29,7 +29,7 @@ object ReportingMergeableStoreProperties extends Properties("ReportingMergeableS
 
 
 
-  class DummyReporter[K, V](val self: Mergeable[K, V]) extends MergeableProxy[K, V] with MergeableReporter[K, V] {
+  class DummyReporter[K, V](val self: Mergeable[K, V]) extends MergeableProxy[K, V] with MergeableReporter[Mergeable[K, V], K, V] {
     def traceMerge(kv: (K, V), request: Future[Option[V]]) = request.unit
     def traceMultiMerge[K1 <: K](kvs: Map[K1, V], request: Map[K1, Future[Option[V]]]) = request.mapValues(_.unit)
   }
@@ -37,7 +37,7 @@ object ReportingMergeableStoreProperties extends Properties("ReportingMergeableS
   property("Mergable stat store obeys the mergeable store proporites") =
     mergeableStoreTest {
       val store = newStore[Int, Int]
-      new MergeableStoreProxy[Int, Int] with MergeableReporter[Int, Int] {
+      new MergeableStoreProxy[Int, Int] with MergeableReporter[Mergeable[Int, Int], Int, Int] {
         val self = store
         def traceMerge(kv: (Int, Int), request: Future[Option[Int]]) = request.unit
         def traceMultiMerge[K1 <: Int](kvs: Map[K1, Int], request: Map[K1, Future[Option[Int]]]) = request.mapValues(_.unit)
