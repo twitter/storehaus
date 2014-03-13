@@ -25,7 +25,7 @@ import me.prettyprint.cassandra.serializers.{AbstractSerializer, DoubleSerialize
   ByteBufferSerializer, BytesArraySerializer}
 import me.prettyprint.hector.api.Serializer
 import me.prettyprint.hector.api.ddl.ComparatorType
-import scala.collection.mutable.{Buffer, ArrayBuffer}
+import scala.collection.mutable.{Buffer, ArrayBuffer, ArraySeq}
 import scala.util.Try
 
 
@@ -56,6 +56,41 @@ object ScalaSerializables {
   implicit val cassScalaTimeUUIDSerializer = new ScalaTimeUUIDSerializer
   implicit val cassScalaByteBufferSerializer = new ScalaByteBufferSerializer
   implicit val cassScalaBytesArraysSerializer = new ScalaBytesArraySerializer
+  val serializerList : Seq[Any => Option[CassandraSerializable[_]]] = ArraySeq(
+            buildSerializerChecker[Long](cassScalaLongSerializer),
+            buildSerializerChecker[Double](cassScalaDoubleSerializer),
+            buildSerializerChecker[Int](cassScalaIntSerializer), 
+            buildSerializerChecker[Float](cassScalaFloatSerializer),
+            buildSerializerChecker[Short](cassScalaShortSerializer),
+            buildSerializerChecker[String](cassScalaStringSerialier),
+            buildSerializerChecker[BigInteger](cassScalaBigIntegerSerializer),
+            buildSerializerChecker[BigDecimal](cassScalaBigDecimalSerializer),
+            buildSerializerChecker[Boolean](cassScalaBooleanSerializer),
+            buildSerializerChecker[Character](cassScalaCharSerializer),
+            buildSerializerChecker[Date](cassScalaDateSerializer),
+            buildSerializerChecker[UUID](cassScalaUUIDSerializer),
+            buildSerializerChecker[ByteBuffer](cassScalaByteBufferSerializer),
+            buildSerializerChecker[Array[Byte]](cassScalaBytesArraysSerializer),
+            buildSerializerChecker[Object](cassScalaObjectSerializer))
+   def buildSerializerChecker[T](serializer: CassandraSerializable[T]) : Any => Option[CassandraSerializable[T]] = {
+	 value: Any => 
+     value match { 
+       case _:T => Some(serializer)
+       case _ => None
+     }
+   }
+   def getSerializerForEntity(entity: Any, 
+       serializers: List[Any => Option[CassandraSerializable[_]]]) :
+       Option[CassandraSerializable[_]] = {
+     if(serializers.length > 0) { 
+       serializers.head(entity) match {
+    	 case Some(value) => Some(value)
+    	 case None => getSerializerForEntity(entity, serializers.tail)
+	   }
+     } else {
+       None
+     }
+   }
 }
 
 /**

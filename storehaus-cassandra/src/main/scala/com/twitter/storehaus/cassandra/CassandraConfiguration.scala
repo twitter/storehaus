@@ -13,7 +13,8 @@ object CassandraConfiguration {
   val DEFAULT_FUTURE_POOL_SIZE = 10
   val DEFAULT_COUNTER_COLUMN_CONSISTENCY_LEVEL = getConsistencyLevelRONEWONE
   val DEFAULT_TTL_DURATION = None
-  val DEFAULT_SYNC = new NoSync
+  val DEFAULT_SYNC = new CassandraLongSync(new NoSync, new NoSync)
+  val DEFAULT_SERIALIZER_LIST = ScalaSerializables.serializerList
 
   def getHostConfigurator(
     hostNames: StoreHost,

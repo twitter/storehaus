@@ -55,7 +55,7 @@ object CassandraLongStore {
       columnFamily: CassandraConfiguration.StoreColumnFamily,
       valueColumnName: String = CassandraConfiguration.DEFAULT_VALUE_COLUMN_NAME,
       policy: ConsistencyLevelPolicy = CassandraConfiguration.DEFAULT_COUNTER_COLUMN_CONSISTENCY_LEVEL,
-      sync: ExternalSynchronization = CassandraConfiguration.DEFAULT_SYNC,
+      sync: CassandraLongSync = CassandraConfiguration.DEFAULT_SYNC,
       poolSize: Int = CassandraConfiguration.DEFAULT_FUTURE_POOL_SIZE): CassandraLongStore[K] = {
     val cassStore = CassandraStore[K, Long](keyspace, columnFamily, valueColumnName, policy, poolSize, None)
     new CassandraLongStore(cassStore, sync)
@@ -80,7 +80,7 @@ object CassandraLongStore {
 
 }
 
-class CassandraLongStore[K](val underlying: CassandraStore[K, Long], val sync: ExternalSynchronization)
+class CassandraLongStore[K](val underlying: CassandraStore[K, Long], val sync: CassandraLongSync = CassandraConfiguration.DEFAULT_SYNC)
   /* extends ConvertedStore[K, K, Long, Long](underlying)(identity) */
   extends MergeableStore[K, Long] {
 
@@ -100,7 +100,7 @@ class CassandraLongStore[K](val underlying: CassandraStore[K, Long], val sync: E
       key.toString
     val counterColumn: HCounterColumn[String] = HFactory.createCounterColumn(underlying.valueColumnName, value, StringSerializer.get);
     underlying.futurePool {
-      sync.lock(lockId, Future {
+      sync.merge.lock(lockId, Future {
         val mutator = HFactory.createMutator(underlying.keyspace.getKeyspace, underlying.keySerializer.getSerializer)
         mutator.insertCounter(key, underlying.columnFamily.name, counterColumn)
         mutator.execute()
@@ -129,7 +129,7 @@ class CassandraLongStore[K](val underlying: CassandraStore[K, Long], val sync: E
       key.toString
     optvalue match {
       case Some(value) => underlying.futurePool {
-        sync.lock(lockId, Future {
+        sync.put.lock(lockId, Future {
           // read value, if existing
           val counters = HFactory.createCounterColumnQuery(underlying.keyspace.getKeyspace, underlying.keySerializer.getSerializer, StringSerializer.get);
           counters.setKey(key);
@@ -147,7 +147,7 @@ class CassandraLongStore[K](val underlying: CassandraStore[K, Long], val sync: E
       }
 
       case None => underlying.futurePool {
-        sync.lock(lockId, Future {
+        sync.put.lock(lockId, Future {
           // delete the entry
           val mutator = HFactory.createMutator(underlying.keyspace.getKeyspace, underlying.keySerializer.getSerializer)
           mutator.deleteCounter(key, underlying.columnFamily.name, underlying.valueColumnName, StringSerializer.get)

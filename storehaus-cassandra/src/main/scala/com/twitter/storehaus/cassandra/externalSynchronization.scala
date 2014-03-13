@@ -6,6 +6,16 @@ import com.twitter.zk.ZkClient
 import com.twitter.concurrent.Permit
 
 /**
+ * setup two types of synchronization for the
+ * CassandraLongStore individually
+ */
+case class CassandraLongSync (
+  val put : ExternalSynchronization,
+  val merge : ExternalSynchronization
+)
+
+
+/**
  * for some cases external synchronization is required to provide
  * a higher level of consistency
  */
@@ -30,3 +40,6 @@ case class ZkSync(val zkclient: ZkClient) extends ExternalSynchronization {
     semaphore.acquire().flatMap { permit => future.ensure(permit.release)}
   }
 } 
+
+
+
