@@ -17,6 +17,7 @@
 package com.twitter.storehaus.cache
 
 import scala.collection.breakOut
+import com.twitter.util.Duration
 
 /**
  * Immutable implementation of a *T*ime *T*o *L*ive cache.
@@ -33,11 +34,11 @@ import scala.collection.breakOut
  */
 
 object TTLCache {
-  def apply[K, V](ttlInMillis: Long, backingMap: Map[K, (Long, V)] = Map.empty[K, (Long, V)]) =
-    new TTLCache(ttlInMillis, backingMap)(() => System.currentTimeMillis)
+  def apply[K, V](ttl: Duration, backingMap: Map[K, (Long, V)] = Map.empty[K, (Long, V)]) =
+    new TTLCache(ttl, backingMap)(() => System.currentTimeMillis)
 }
 
-class TTLCache[K, V](val ttl: Long, cache: Map[K, (Long, V)])(val clock: () => Long) extends Cache[K, (Long, V)] {
+class TTLCache[K, V](val ttl: Duration, cache: Map[K, (Long, V)])(val clock: () => Long) extends Cache[K, (Long, V)] {
   override def get(k: K) = cache.get(k)
   override def contains(k: K) = cache.contains(k)
   override def hit(k: K) = this
@@ -94,6 +95,6 @@ class TTLCache[K, V](val ttl: Long, cache: Map[K, (Long, V)])(val clock: () => L
   def putClocked(kv: (K, V)): (Set[K], TTLCache[K, V]) = {
     val (k, v) = kv
     val now = clock()
-    putWithTime((k, (now + ttl, v)), now)
+    putWithTime((k, (now + ttl.inMilliseconds, v)), now)
   }
 }

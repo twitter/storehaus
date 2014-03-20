@@ -28,26 +28,24 @@ import com.twitter.concurrent.AsyncSemaphore
  * @param maxConcurrentMultiGets the maximum number of multigets to concurrently issue
  */
 class BatchedReadableStore[K, V](
-    store: ReadableStore[K, V],
+    override protected val self: ReadableStore[K, V],
     maxMultiGetSize: Int,
     maxConcurrentMultiGets: Int)
-    (implicit fc: FutureCollector[(K, V)]) extends ReadableStore[K, V] {
+    (implicit fc: FutureCollector[(K, V)]) extends ReadableStoreProxy[K, V] {
 
   protected val connectionLock = new AsyncSemaphore(maxConcurrentMultiGets)
 
-  override def get(k: K): Future[Option[V]] = store.get(k)
-
-  override def multiGet[K1 <: K](keys: Set[K1]): Map[K1, Future[Option[V]]] = {
-
+  override def multiGet[K1 <: K](keys: Set[K1]): Map[K1, Future[Option[V]]] =
     keys
       .grouped(maxMultiGetSize)
-      .map{ keyBatch: Set[K1] =>
+      .map { keyBatch: Set[K1] =>
 
         // mapCollect the result of the multiget so we can release the permit at the end
         val batchResult: Future[Map[K1, Option[V]]] = connectionLock
           .acquire()
           .flatMap { permit =>
-            FutureOps.mapCollect(store.multiGet(keyBatch)).ensure{ permit.release() }
+            FutureOps.mapCollect(self.multiGet(keyBatch))
+              .ensure { permit.release() }
           }
 
         // now undo the mapCollect to yield a Map of future
@@ -55,5 +53,4 @@ class BatchedReadableStore[K, V](
       }
       .reduceOption(_ ++ _)
       .getOrElse(Map.empty)
-  }
 }

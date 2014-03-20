@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Twitter inc.
+ * Copyright 2014 Twitter inc.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -55,7 +55,7 @@ object StorehausBuild extends Build {
   val sharedSettings = extraSettings ++ ciSettings ++ Seq(
     organization := "com.twitter",
     scalaVersion := "2.9.3",
-    version := "0.8.0",
+    version := "0.9.0",
     crossScalaVersions := Seq("2.9.3", "2.10.0"),
     javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
     javacOptions in doc := Seq("-source", "1.6"),
@@ -63,7 +63,8 @@ object StorehausBuild extends Build {
     resolvers ++= Seq(
       Opts.resolver.sonatypeSnapshots,
       Opts.resolver.sonatypeReleases,
-      "Twitter Maven" at "http://maven.twttr.com"
+      "Twitter Maven" at "http://maven.twttr.com",
+      "Conjars Repository" at "http://conjars.org/repo"
     ),
     parallelExecution in Test := true,
     scalacOptions ++= Seq(Opts.compile.unchecked, Opts.compile.deprecation),
@@ -113,11 +114,12 @@ object StorehausBuild extends Build {
   def youngestForwardCompatible(subProj: String) =
     Some(subProj)
       .filterNot(unreleasedModules.contains(_))
-      .map { s => "com.twitter" % ("storehaus-" + s + "_2.9.3") % "0.8.0" }
+      .map { s => "com.twitter" % ("storehaus-" + s + "_2.9.3") % "0.9.0" }
 
-  val algebirdVersion = "0.3.1"
-  val bijectionVersion = "0.6.0"
-  val utilVersion = "6.3.7"
+  val algebirdVersion = "0.5.0"
+  val bijectionVersion = "0.6.2"
+  val utilVersion = "6.11.0"
+  val scaldingVersion = "0.9.0rc15"
 
   lazy val storehaus = Project(
     id = "storehaus",
@@ -136,6 +138,9 @@ object StorehausBuild extends Build {
     storehausRedis,
     storehausHBase,
     storehausDynamoDB,
+    storehausKafka,
+    storehausMongoDB,
+    storehausElastic,
     storehausTesting
   )
 
@@ -147,7 +152,10 @@ object StorehausBuild extends Build {
     ).dependsOn(storehausTesting % "test->test")
   }
 
-  lazy val storehausCache = module("cache")
+  lazy val storehausCache = module("cache").settings(
+    libraryDependencies += "com.twitter" %% "algebird-core" % algebirdVersion,
+    libraryDependencies += withCross("com.twitter" %% "util-core" % utilVersion)
+  )
 
   lazy val storehausCore = module("core").settings(
     libraryDependencies ++= Seq(
@@ -160,7 +168,8 @@ object StorehausBuild extends Build {
   lazy val storehausAlgebra = module("algebra").settings(
     libraryDependencies += "com.twitter" %% "algebird-core" % algebirdVersion,
     libraryDependencies += "com.twitter" %% "algebird-util" % algebirdVersion,
-    libraryDependencies += "com.twitter" %% "algebird-bijection" % algebirdVersion
+    libraryDependencies += "com.twitter" %% "algebird-bijection" % algebirdVersion,
+    libraryDependencies += "com.twitter" %% "scalding-date" % scaldingVersion
   ).dependsOn(storehausCore % "test->test;compile->compile")
 
   lazy val storehausMemcache = module("memcache").settings(
@@ -211,6 +220,40 @@ object StorehausBuild extends Build {
     ),
     parallelExecution in Test := false
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
+
+  lazy val storehausKafka = module("kafka").settings(
+    libraryDependencies ++= Seq (
+      "com.twitter" %% "bijection-core" % bijectionVersion,
+      "com.twitter" %% "bijection-avro" % bijectionVersion,
+      "com.twitter"%"kafka_2.9.2"%"0.7.0" excludeAll(
+        ExclusionRule("com.sun.jdmk","jmxtools"),
+        ExclusionRule( "com.sun.jmx","jmxri"),
+        ExclusionRule( "javax.jms","jms")
+        )
+    ),
+    // we don't want various tests clobbering each others keys
+    parallelExecution in Test := false
+  ).dependsOn(storehausAlgebra % "test->test;compile->compile")
+
+  lazy val storehausMongoDB= module("mongodb").settings(
+    libraryDependencies ++= Seq(
+      "com.twitter" %% "bijection-core" % bijectionVersion,
+      "org.mongodb" %% "casbah" % "2.6.4"
+    ),
+    parallelExecution in Test := false
+  ).dependsOn(storehausAlgebra % "test->test;compile->compile")
+
+  lazy val storehausElastic = module("elasticsearch").settings(
+    libraryDependencies ++= Seq (
+      "org.elasticsearch" % "elasticsearch" % "0.90.9",
+      "org.json4s" %% "json4s-native" % "3.2.6",
+      "com.google.code.findbugs" % "jsr305" % "1.3.+",
+      "com.twitter" %% "bijection-json4s" % bijectionVersion
+    ),
+    // we don't want various tests clobbering each others keys
+    parallelExecution in Test := false
+  ).dependsOn(storehausAlgebra % "test->test;compile->compile")
+
 
   val storehausTesting = Project(
     id = "storehaus-testing",
