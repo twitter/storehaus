@@ -20,7 +20,7 @@ import com.twitter.storehaus.{Store, WithPutTtl}
 import java.util.concurrent.Executors
 import me.prettyprint.cassandra.service.ThriftKsDef
 import me.prettyprint.cassandra.serializers.StringSerializer
-import me.prettyprint.hector.api.{Serializer, ConsistencyLevelPolicy}
+import me.prettyprint.hector.api.{Serializer, ConsistencyLevelPolicy, Cluster}
 import me.prettyprint.hector.api.ddl.KeyspaceDefinition
 import me.prettyprint.hector.api.factory.HFactory
 import scala.collection.JavaConversions._
@@ -102,7 +102,10 @@ class CassandraStore[K : CassandraSerializable, V : CassandraSerializable] (
     	kvs.foreach{
     	  case (key, Some(value)) => {
     	    val column = HFactory.createColumn(valueColumnName, value)
-    	    ttl match { case Some(duration) => column.setTtl(duration.inSeconds) }
+    	    ttl match { 
+    	      case Some(duration) => column.setTtl(duration.inSeconds)
+    	      case _ =>
+    	    }
     	    mutator.addInsertion(key, columnFamily.name, column)
     	  }
     	  case (key, None) => mutator.addDeletion(key, columnFamily.name, valueColumnName, StringSerializer.get)

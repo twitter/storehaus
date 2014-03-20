@@ -30,6 +30,9 @@ import me.prettyprint.cassandra.service.{ CassandraHostConfigurator, ThriftKsDef
 import scala.collection.JavaConversions._
 import ScalaSerializables._
 import com.twitter.util.Duration
+import com.twitter.storehaus.FutureOps
+import scala.collection.mutable.ArrayOps
+import com.twitter.storehaus.WithPutTtl
 
 /**
  *  A Cassandra wrapper using dynamic composite keys
@@ -89,8 +92,8 @@ class CassandraDynamicCompositeStore[V: CassandraSerializable] (
   val policy: ConsistencyLevelPolicy = CassandraConfiguration.DEFAULT_CONSISTENCY_LEVEL,
   val poolSize: Int = CassandraConfiguration.DEFAULT_FUTURE_POOL_SIZE,
   val ttl: Option[Duration] = CassandraConfiguration.DEFAULT_TTL_DURATION,
-  val serializerList: List[Any => Option[CassandraSerializable[_]]] = CassandraConfiguration.DEFAULT_SERIALIZER_LIST)
-  	extends Store[(Any, Any), V] {
+  val serializerList: Seq[Any => Option[CassandraSerializable[_]]] = CassandraConfiguration.DEFAULT_SERIALIZER_LIST)
+  	extends Store[(Any, Any), V] with WithPutTtl[(Any, Any), V, CassandraDynamicCompositeStore[V]] {
   keyspace.getKeyspace.setConsistencyLevelPolicy(policy)
   
   val valueSerializer = implicitly[CassandraSerializable[V]]
@@ -112,7 +115,10 @@ class CassandraDynamicCompositeStore[V: CassandraSerializable] (
     	  valueOpt match {
     	    case Some(value) => {
     	      val column = HFactory.createColumn(colKey, value)
-    	      ttl match { case Some(duration) => column.setTtl(duration.inSeconds) }
+    	      ttl match { 
+    	        case Some(duration) => column.setTtl(duration.inSeconds)
+    	        case _ =>
+    	      }
       	      mutator.addInsertion(rowKey, columnFamily.name, column)
     	    }
     	    case None => mutator.addDeletion(rowKey, columnFamily.name, colKey, DynamicCompositeSerializer.get)
@@ -126,11 +132,11 @@ class CassandraDynamicCompositeStore[V: CassandraSerializable] (
     }
   }
 
-  def createDynamicKey(orgKey: Any): DynamicComposite = {
+  private def createDynamicKey(orgKey: Any): DynamicComposite = {
     val result = new DynamicComposite
     orgKey match {
       // most collections fit into the first case
-      case _: Traversable[Any] => orgKey.asInstanceOf[Traversable[Any]]
+      case _: Traversable[_] => orgKey.asInstanceOf[Traversable[Any]]
         .foreach(key => { result.addComponent(key, ScalaSerializables.getSerializerForEntity(key, serializerList).get.getSerializer.asInstanceOf[Serializer[Any]])})
       case _ => result.addComponent(orgKey, ScalaSerializables.getSerializerForEntity(orgKey, serializerList).get.getSerializer.asInstanceOf[Serializer[Any]])
     }
@@ -151,5 +157,17 @@ class CassandraDynamicCompositeStore[V: CassandraSerializable] (
       if (result.get == null) None else Some(result.get.getValue)
     }
   }
+  
+//  override def multiGet[K1 <: (Any, Any)](ks: Set[K1]): Map[K1, Future[Option[V]]] = {
+//    import ArrayOps._
+//    val future = futurePool {
+//      ArrayOps.toArray(ks). .toBuffer[(Any,Any)].a.sortBy(_._1)
+//    }
+//    
+//    FutureOps.liftValues(ks,
+//      future
+//      ,
+//      { (k: K1) => Future.None })
+//  }
 }
 

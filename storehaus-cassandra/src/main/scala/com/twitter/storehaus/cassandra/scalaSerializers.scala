@@ -57,30 +57,32 @@ object ScalaSerializables {
   implicit val cassScalaByteBufferSerializer = new ScalaByteBufferSerializer
   implicit val cassScalaBytesArraysSerializer = new ScalaBytesArraySerializer
   val serializerList : Seq[Any => Option[CassandraSerializable[_]]] = ArraySeq(
-            buildSerializerChecker[Long](cassScalaLongSerializer),
-            buildSerializerChecker[Double](cassScalaDoubleSerializer),
-            buildSerializerChecker[Int](cassScalaIntSerializer), 
-            buildSerializerChecker[Float](cassScalaFloatSerializer),
-            buildSerializerChecker[Short](cassScalaShortSerializer),
-            buildSerializerChecker[String](cassScalaStringSerialier),
-            buildSerializerChecker[BigInteger](cassScalaBigIntegerSerializer),
-            buildSerializerChecker[BigDecimal](cassScalaBigDecimalSerializer),
-            buildSerializerChecker[Boolean](cassScalaBooleanSerializer),
-            buildSerializerChecker[Character](cassScalaCharSerializer),
-            buildSerializerChecker[Date](cassScalaDateSerializer),
-            buildSerializerChecker[UUID](cassScalaUUIDSerializer),
-            buildSerializerChecker[ByteBuffer](cassScalaByteBufferSerializer),
-            buildSerializerChecker[Array[Byte]](cassScalaBytesArraysSerializer),
-            buildSerializerChecker[Object](cassScalaObjectSerializer))
-   def buildSerializerChecker[T](serializer: CassandraSerializable[T]) : Any => Option[CassandraSerializable[T]] = {
-	 value: Any => 
+            buildSerializerChecker2[Long,java.lang.Long](cassScalaLongSerializer),
+            buildSerializerChecker2[Double,java.lang.Double](cassScalaDoubleSerializer),
+            buildSerializerChecker2[Int,java.lang.Integer](cassScalaIntSerializer), 
+            buildSerializerChecker2[Float,java.lang.Float](cassScalaFloatSerializer),
+            buildSerializerChecker2[Short,java.lang.Short](cassScalaShortSerializer),
+            buildSerializerChecker1[String](cassScalaStringSerialier),
+            buildSerializerChecker1[BigInteger](cassScalaBigIntegerSerializer),
+            buildSerializerChecker1[BigDecimal](cassScalaBigDecimalSerializer),
+            buildSerializerChecker2[Boolean,java.lang.Boolean](cassScalaBooleanSerializer),
+            buildSerializerChecker2[Character,java.lang.Character](cassScalaCharSerializer),
+            buildSerializerChecker1[Date](cassScalaDateSerializer),
+            buildSerializerChecker1[UUID](cassScalaUUIDSerializer),
+            buildSerializerChecker1[ByteBuffer](cassScalaByteBufferSerializer),
+            buildSerializerChecker1[Array[Byte]](cassScalaBytesArraysSerializer),
+            buildSerializerChecker1[Object](cassScalaObjectSerializer))
+   def buildSerializerChecker1[T](serializer: CassandraSerializable[T])(implicit manifest: Manifest[T]) : Any => Option[CassandraSerializable[T]] =
+     buildSerializerChecker2[T,T](serializer)(manifest)
+   def buildSerializerChecker2[T,U](serializer: CassandraSerializable[T])(implicit manifest: Manifest[U]) : Any => Option[CassandraSerializable[T]] = {
+	 value => 
      value match { 
-       case _:T => Some(serializer)
+       case f if manifest.erasure.isAssignableFrom(value.getClass) => Some(serializer)
        case _ => None
      }
    }
    def getSerializerForEntity(entity: Any, 
-       serializers: List[Any => Option[CassandraSerializable[_]]]) :
+       serializers: Seq[Any => Option[CassandraSerializable[_]]]) :
        Option[CassandraSerializable[_]] = {
      if(serializers.length > 0) { 
        serializers.head(entity) match {
