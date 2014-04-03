@@ -26,5 +26,11 @@ object ReadThroughStoreProperties extends Properties("ReadThroughStoreProperties
     readableStoreLaws[String, Int] { m =>
       new ReadThroughStore(ReadableStore.fromMap(m), new ConcurrentHashMapStore[String,Int])
     }
+
+  property("ReadThroughStore should ignore exceptions on the cache-store") =
+    readableStoreLaws[String, Int] { m =>
+      new ReadThroughStore(ReadableStore.fromMap(m),
+        new ExceptionStore())
+    }
 }
 
