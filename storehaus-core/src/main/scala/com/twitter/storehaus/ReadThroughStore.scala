@@ -17,7 +17,7 @@
 package com.twitter.storehaus
 
 import com.twitter.concurrent.AsyncMutex
-import com.twitter.util.Future
+import com.twitter.util.{ Future, Return }
 
 /**
  * Provides read-through caching on a readable store fronted by a cache.
@@ -46,27 +46,22 @@ class ReadThroughStore[K, V](backingStore: ReadableStore[K, V], cache: Store[K, 
       mutex.acquire.flatMap { p =>
         cache.put((k, storeValue))
           .map { u : Unit => storeValue }
-          .onFailure { case x: Exception => storeValue }
+          .rescue { case x: Exception => Future.value(storeValue) }
           .ensure { p.release }
       }
     }
   }
 
-  override def get(k: K): Future[Option[V]] =
-    cache.get(k).flatMap { cacheValue =>
-      cacheValue match {
-        case None => getFromBackingStore(k)
-        case some => Future.value(some)
-      }
-    } onFailure { case x: Exception =>
-      getFromBackingStore(k)
-    }
+  override def get(k: K): Future[Option[V]] = cache.get(k) transform {
+    case Return(v @ Some(_)) => Future.value(v)
+    case _ => getFromBackingStore(k)
+  }
 
   override def multiGet[K1 <: K](ks: Set[K1]): Map[K1, Future[Option[V]]] = {
     // attempt to read from cache first
     val cacheResults : Map[K1, Future[Either[Option[V], Exception]]] =
       cache.multiGet(ks).map { case (k, f) =>
-        (k, f.map { optv => Left(optv) } onFailure { case x: Exception => Right(x) })
+        (k, f.map { optv => Left(optv) } rescue { case x: Exception => Future.value(Right(x)) })
       }
 
     // attempt to read all failed keys and cache misses from backing store
@@ -89,4 +84,3 @@ class ReadThroughStore[K, V](backingStore: ReadableStore[K, V], cache: Store[K, 
     FutureOps.liftValues(ks, f, { (k: K1) => Future.None })
   }
 }
-
