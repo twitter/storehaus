@@ -40,16 +40,16 @@ class WriteThroughStore[K, V](backingStore: Store[K, V], cache: Store[K, V], inv
 
   override def put(kv: (K, Option[V])): Future[Unit] = mutex.acquire.flatMap { p =>
     // write key to backing store first
-    backingStore.put(kv).flatMap { u: Unit =>
+    backingStore.put(kv).flatMap { _ =>
       // now write key to cache, best effort
-      cache.put(kv) onFailure { case x: Exception => u }
-    } onFailure { case x: Exception =>
+      cache.put(kv) rescue { case _ => Future.Unit }
+    } rescue { case x =>
       // write to backing store failed
       // now optionally invalidate the key in cache, best effort
       if (invalidate) {
-        cache.put((kv._1, None)).flatMap { u: Unit => throw x } onFailure { throw x }
+        cache.put((kv._1, None)) transform { _ => Future.exception(x) }
       } else {
-        throw x
+        Future.exception(x)
       }
     } ensure {
       p.release
@@ -61,7 +61,7 @@ class WriteThroughStore[K, V](backingStore: Store[K, V], cache: Store[K, V], inv
       // write keys to backing store first
       val storeResults : Map[K1, Future[Either[Unit, Exception]]] =
         backingStore.multiPut(kvs).map { case (k, f) =>
-          (k, f.map { u: Unit => Left(u) }.onFailure { case x: Exception => Right(x) })
+          (k, f.map { u: Unit => Left(u) }.rescue { case x: Exception => Future.value(Right(x)) })
         }
 
       // perform cache operations based on how writes to backing store go

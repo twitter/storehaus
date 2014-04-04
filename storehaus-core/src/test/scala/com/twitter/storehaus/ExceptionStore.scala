@@ -16,21 +16,17 @@
 
 package com.twitter.storehaus
 
-import org.scalacheck.Properties
-import org.scalacheck.Prop._
+import com.twitter.util.Future
 
-object ReadThroughStoreProperties extends Properties("ReadThroughStoreProperties") {
-  import ReadableStoreProperties.readableStoreLaws
+import scala.util.Random
 
-  property("ReadThroughStore obeys the ReadableStore laws") =
-    readableStoreLaws[String, Int] { m =>
-      new ReadThroughStore(ReadableStore.fromMap(m), new ConcurrentHashMapStore[String,Int])
-    }
+class ExceptionStore[K, V](possibility: Float = 0.5f) extends ConcurrentHashMapStore[K, V] {
+  private[this] def wrap[A](f: => Future[A]): Future[A] = {
+    if (Random.nextFloat() < possibility) Future.exception(new RuntimeException())
+    else f
+  }
 
-  property("ReadThroughStore should ignore exceptions on the cache-store") =
-    readableStoreLaws[String, Int] { m =>
-      new ReadThroughStore(ReadableStore.fromMap(m),
-        new ExceptionStore())
-    }
+  override def get(k: K): Future[Option[V]] = wrap(super.get(k))
+
+  override def put(kv: (K, Option[V])): Future[Unit] = wrap(super.put(kv))
 }
-
