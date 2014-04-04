@@ -36,6 +36,6 @@ object WriteThroughStoreProperties extends Properties("WriteThroughStoreProperti
   property("WriteThroughStore should ignore on the cache-store") =
     storeTest {
       new WriteThroughStore(new ConcurrentHashMapStore[String, Int],
-        new ExceptionStore())
+        new ExceptionStore(1.0f))
     }
 }
