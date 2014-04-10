@@ -119,13 +119,17 @@ trait HBaseStore {
     val result = futurePool {
       val (puts, deletes) = kvs.partition(_._2.isDefined)
 
-      tbl.put(puts.map {
-        case (k, Some(v)) => createPut(k, v)
-      }.toList.asJava)
+      if (!puts.isEmpty) {
+        tbl.put(puts.map {
+          case (k, Some(v)) => createPut(k, v)
+        }.toList.asJava)
+      }
 
-      tbl.delete(deletes.map {
-        case (k, None) => createDelete[K](k)
-      }.toList.asJava)
+      if (!deletes.isEmpty) {
+        tbl.delete(deletes.map {
+          case (k, None) => createDelete[K](k)
+        }.toList.asJava)
+      }
 
     } ensure tbl.close
     kvs.map {
