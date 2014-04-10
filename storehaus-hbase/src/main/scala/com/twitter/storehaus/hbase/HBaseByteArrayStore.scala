@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Twitter inc.
+ * Copyright 2014 Twitter inc.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import org.apache.hadoop.hbase.client.HTablePool
 import com.twitter.storehaus.Store
 import com.twitter.util.{Future, Time}
 import org.apache.hadoop.conf.Configuration
+import com.twitter.bijection.Injection
+import scala.util.Try
 
 /**
  * @author MansurAshraf
@@ -70,6 +72,18 @@ class HBaseByteArrayStore(protected val quorumNames: Seq[String],
   override def put(kv: (Array[Byte], Option[Array[Byte]])): Future[Unit] = {
     putValue(kv)
   }
+
+
+  /** Replace a set of keys at one time */
+  override def multiPut[K1 <: Array[Byte]](kvs: Map[K1, Option[Array[Byte]]]): Map[K1, Future[Unit]] = multiPutValues(kvs)
+
+  /** Get a set of keys from the store.
+    * Important: all keys in the input set are in the resulting map. If the store
+    * fails to return a value for a given key, that should be represented by a
+    * Future.exception.
+    */
+  override def multiGet[K1 <: Array[Byte]](ks: Set[K1]): Map[K1, Future[Option[Array[Byte]]]] = multiGetValues[K1, Array[Byte]](ks)
+
 
   /** Close this store and release any resources.
     * It is undefined what happens on get/multiGet after close

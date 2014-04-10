@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Twitter inc.
+ * Copyright 2014 Twitter inc.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import com.twitter.storehaus.Store
 import com.twitter.util.{Future, Time}
 import com.twitter.bijection.Injection._
 import org.apache.hadoop.conf.Configuration
+import com.twitter.bijection.hbase.HBaseBijections._
+
 
 /**
  * @author Mansur Ashraf
@@ -72,10 +74,30 @@ class HBaseLongStore(protected val quorumNames: Seq[String],
    * Delete is the same as put((k,None))
    */
   override def put(kv: (String, Option[Long])): Future[Unit] = {
-    import com.twitter.bijection.hbase.HBaseBijections._
     implicit val stringInj = fromBijectionRep[String, StringBytes]
     implicit val LongInj = fromBijectionRep[Long, LongBytes]
     putValue(kv)
+  }
+
+
+
+  /** Replace a set of keys at one time */
+  override def multiPut[K1 <: String](kvs: Map[K1, Option[Long]]): Map[K1, Future[Unit]] ={
+    implicit val stringFn = fromBijectionRep[String, StringBytes].toFunction
+    implicit val LongInj = fromBijectionRep[Long, LongBytes]
+    multiPutValues(kvs)
+  }
+
+
+  /** Get a set of keys from the store.
+    * Important: all keys in the input set are in the resulting map. If the store
+    * fails to return a value for a given key, that should be represented by a
+    * Future.exception.
+    */
+  override def multiGet[K1 <: String](ks: Set[K1]): Map[K1, Future[Option[Long]]] = {
+    implicit val stringFn = fromBijectionRep[String, StringBytes].toFunction
+    implicit val LongInj = fromBijectionRep[Long, LongBytes]
+    multiGetValues[K1,Long](ks)
   }
 
   /** Close this store and release any resources.
