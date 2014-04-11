@@ -29,6 +29,7 @@ import com.twitter.storehaus.FutureOps
 import scala.Some
 import scala.Seq
 import scala.collection.breakOut
+import java.util
 
 /**
  * @author Mansur Ashraf
@@ -99,11 +100,10 @@ trait HBaseStore {
   def multiGetValues[K <% Array[Byte], V: Codec](ks: Set[K]): Map[K, Future[Option[V]]] = {
     val tbl = pool.getTable(table)
     val result = futurePool {
-
       val indexedKeys = ks.map(k1 => (k1: Array[Byte]) -> k1).toMap
       val keys = ks.map(k => createGet(k)).toList.asJava
+      val results= tbl.get(keys)
 
-      val results: Array[Result] = tbl.get(keys)
       results.toList.map {
         r =>
           val key = indexedKeys(r.getRow)
@@ -128,7 +128,7 @@ trait HBaseStore {
       if (!deletes.isEmpty) {
         tbl.delete(deletes.map {
           case (k, None) => createDelete[K](k)
-        }.toList.asJava)
+        }.toBuffer.asJava)
       }
 
     } ensure tbl.close

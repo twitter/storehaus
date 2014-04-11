@@ -19,9 +19,9 @@ package com.twitter.storehaus.hbase
 import org.apache.hadoop.hbase.client.HTablePool
 import com.twitter.storehaus.Store
 import com.twitter.util.{Future, Time}
-import org.apache.hadoop.conf.Configuration
 import com.twitter.bijection.Injection
 import scala.util.Try
+import org.apache.hadoop.conf.Configuration
 
 /**
  * @author MansurAshraf
