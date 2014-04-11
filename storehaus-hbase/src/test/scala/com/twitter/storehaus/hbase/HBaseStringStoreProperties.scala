@@ -21,6 +21,8 @@ import com.twitter.storehaus.{FutureOps, Store}
 import com.twitter.storehaus.testing.generator.NonEmpty
 import org.scalacheck.Prop._
 import com.twitter.util.Await
+import com.twitter.algebird.Semigroup
+import java.util.Date
 
 /**
  * @author Mansur Ashraf
@@ -28,8 +30,14 @@ import com.twitter.util.Await
  */
 object HBaseStringStoreProperties extends Properties("HBaseStore")
 with DefaultHBaseCluster[Store[String, String]] {
-  def validPairs: Gen[List[(String, Option[String])]] =
-    NonEmpty.Pairing.alphaStrs()
+  def validPairs: Gen[List[(String, Option[String])]] = {
+
+    def uniqueKeyStringPair: Gen[(String, Option[String])] = for {
+      str <- for (cs <- Gen.listOf1(Gen.alphaChar)) yield cs.mkString + new Date().getTime
+      opt <- NonEmpty.alphaStrOpt
+    } yield (str, opt)
+    Gen.listOfN(10, uniqueKeyStringPair)
+  }
 
   def baseTest[K: Arbitrary, V: Arbitrary : Equiv](store: Store[K, V], validPairs: Gen[List[(K, Option[V])]])
                                                   (put: (Store[K, V], List[(K, Option[V])]) => Unit) =
@@ -65,5 +73,4 @@ with DefaultHBaseCluster[Store[String, String]] {
   property("HBaseStore test") =storeTest(closeable)
 
   val store=HBaseStringStore(quorumNames, table, columnFamily, column, createTable,pool,conf,4)
-  store.convert[Long,Long](_.toString)
 }
