@@ -17,29 +17,19 @@
 package com.twitter.storehaus
 
 import com.twitter.conversions.time._
-import com.twitter.storehaus.{ Store, StoreProxy }
-import com.twitter.finagle.stats.{ Counter, NullStatsReceiver, StatsReceiver }
+import com.twitter.storehaus.Store
 import com.twitter.util._
 
 /**
  * Read/Write retrying Store.
- * Make this to be shared by all storehaus users.
+ * Make this available to all storehaus users.
  */
-class RetryingRWStore[-K, V](store: Store[K, V], backoffs: Iterable[Duration],
-    statsReceiver: StatsReceiver = NullStatsReceiver)(implicit timer: Timer)
+class RetryingRWStore[-K, V](store: Store[K, V], backoffs: Iterable[Duration])(implicit timer: Timer)
     extends Store[K, V] {
-
-  private lazy val stats = new {
-    val receiver = statsReceiver.scope("retry_store")
-
-    val multiGetExceptions = receiver.counter("multi_get_exceptions")
-    val multiPutExceptions = receiver.counter("multi_put_exceptions")
-  }
 
   private val padded_backoffs = backoffs ++ Seq(0.second)
 
-  private def find[T](futures: Iterator[(Future[T], Duration)],
-      errorCounter: Counter)(pred: T => Boolean): Future[T] = {
+  private def find[T](futures: Iterator[(Future[T], Duration)])(pred: T => Boolean): Future[T] = {
     if (!futures.hasNext) {
       Future.exception(new RuntimeException("RetryingRWStore: empty iterator in function find"))
     } else {
@@ -49,9 +39,8 @@ class RetryingRWStore[-K, V](store: Store[K, V], backoffs: Iterable[Duration],
       } else {
         next.filter(pred).rescue {
           case e: Exception =>
-            errorCounter.incr()
             timer.doLater(delay)(()) flatMap { _ =>
-              find(futures, errorCounter)(pred)
+              find(futures)(pred)
             }
         }
       }
@@ -65,7 +54,7 @@ class RetryingRWStore[-K, V](store: Store[K, V], backoffs: Iterable[Duration],
     store.multiPut(kvs) map { case (k, future) =>
       val retryStream = (Iterator(future) ++ Iterator.continually { store.put((k, kvs(k)))})
           .zip(padded_backoffs.iterator)
-      (k, find(retryStream, stats.multiPutExceptions) { t => true })
+      (k, find(retryStream) { t => true })
     }
   }
 
@@ -76,7 +65,7 @@ class RetryingRWStore[-K, V](store: Store[K, V], backoffs: Iterable[Duration],
     store.multiGet(ks) map { case (k, future) =>
       val retryStream = (Iterator(future) ++ Iterator.continually { store.get(k) })
           .zip(padded_backoffs.iterator)
-      (k, find(retryStream, stats.multiGetExceptions) { t => true })
+      (k, find(retryStream) { t => true })
     }
   }
 }
