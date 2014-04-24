@@ -118,7 +118,6 @@ object StorehausBuild extends Build {
 
   val algebirdVersion = "0.3.1"
   val bijectionVersion = "0.6.0"
-//  val utilVersion = "6.12.1"
   val utilVersion = "6.11.0"
   val scaldingVersion = "0.9.0rc4"
 
