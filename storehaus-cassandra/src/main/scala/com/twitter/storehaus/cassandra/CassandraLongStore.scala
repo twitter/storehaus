@@ -30,7 +30,6 @@ import me.prettyprint.cassandra.serializers.{ LongSerializer, StringSerializer }
 import me.prettyprint.cassandra.service.ThriftKsDef
 import scala.collection.JavaConversions._
 import scala.util.Try
-import me.prettyprint.cassandra.model.QuorumAllConsistencyLevelPolicy
 
 /**
  * CassandraLongStore is *planned* as a *MergeableStore* for Longs
@@ -65,23 +64,21 @@ object CassandraLongStore {
    * Optionally this method can be used to setup storage on the Cassandra cluster.
    *
    */
-  def setupStore[K](
+  def setupStore[K: CassandraSerializable](
       cluster: CassandraConfiguration.StoreCluster,
       keyspaceName: String,
-      columnFamily: CassandraConfiguration.StoreColumnFamily,
-      keySerializer: Serializer[K],
-      replicationFactor: Int) = {
-    val cfDef = HFactory.createColumnFamilyDefinition(keyspaceName, columnFamily.name, keySerializer.getComparatorType());
-    val keyspace: KeyspaceDefinition = HFactory.createKeyspaceDefinition(keyspaceName, ThriftKsDef.DEF_STRATEGY_CLASS, replicationFactor,
-      Array(cfDef).toList)
+      columnFamily: CassandraConfiguration.StoreColumnFamily) = {
+    val keySerializer = implicitly[CassandraSerializable[K]]
+    val cfDef = HFactory.createColumnFamilyDefinition(keyspaceName, columnFamily.name, keySerializer.getSerializer.getComparatorType());
     cfDef.setDefaultValidationClass(ComparatorType.COUNTERTYPE.getClassName())
-    cluster.getCluster.addKeyspace(keyspace, true)
+    cluster.getCluster.addColumnFamily(cfDef, true)
   }
 
 }
 
-class CassandraLongStore[K](val underlying: CassandraStore[K, Long], val sync: CassandraLongSync = CassandraConfiguration.DEFAULT_SYNC)
-  /* extends ConvertedStore[K, K, Long, Long](underlying)(identity) */
+class CassandraLongStore[K: CassandraSerializable](
+    val underlying: CassandraStore[K, Long], 
+    val sync: CassandraLongSync = CassandraConfiguration.DEFAULT_SYNC)
   extends MergeableStore[K, Long] {
 
   def semigroup = implicitly[Semigroup[Long]]
@@ -101,15 +98,15 @@ class CassandraLongStore[K](val underlying: CassandraStore[K, Long], val sync: C
     val counterColumn: HCounterColumn[String] = HFactory.createCounterColumn(underlying.valueColumnName, value, StringSerializer.get);
     underlying.futurePool {
       sync.merge.lock(lockId, Future {
-        val mutator = HFactory.createMutator(underlying.keyspace.getKeyspace, underlying.keySerializer.getSerializer)
-        mutator.insertCounter(key, underlying.columnFamily.name, counterColumn)
-        mutator.execute()
         val counters = HFactory.createCounterColumnQuery(underlying.keyspace.getKeyspace, underlying.keySerializer.getSerializer, StringSerializer.get)
         counters.setKey(key)
         counters.setColumnFamily(underlying.columnFamily.name)
         counters.setName(underlying.valueColumnName)
         val result = counters.execute()
-        Option(result.get).map(_.getValue - value)
+        val mutator = HFactory.createMutator(underlying.keyspace.getKeyspace, underlying.keySerializer.getSerializer)
+        mutator.insertCounter(key, underlying.columnFamily.name, counterColumn)
+        mutator.execute()
+        Option(result.get).map(_.getValue.longValue())
       }).get
     }
   }

@@ -66,13 +66,10 @@ object CassandraStore {
   def setupStore[K : CassandraSerializable](
       cluster: CassandraConfiguration.StoreCluster, 
       keyspaceName : String, 
-      columnFamily: CassandraConfiguration.StoreColumnFamily, 
-      replicationFactor: Int) = {
+      columnFamily: CassandraConfiguration.StoreColumnFamily) = {
     val keySerializer = implicitly[CassandraSerializable[K]]
     val cfDef = HFactory.createColumnFamilyDefinition(keyspaceName, columnFamily.name, keySerializer.getSerializer.getComparatorType());
-    val keyspace : KeyspaceDefinition = HFactory.createKeyspaceDefinition(keyspaceName, ThriftKsDef.DEF_STRATEGY_CLASS, replicationFactor,
-                                                                   Array(cfDef).toList)
-    cluster.getCluster.addKeyspace(keyspace, true)
+    cluster.getCluster.addColumnFamily(cfDef, true)
   }
 
 }
@@ -80,7 +77,7 @@ object CassandraStore {
 class CassandraStore[K : CassandraSerializable, V : CassandraSerializable] (
 		val keyspace : CassandraConfiguration.StoreKeyspace, 
 		val columnFamily: CassandraConfiguration.StoreColumnFamily,
-		val valueColumnName: String,
+		val valueColumnName: String = CassandraConfiguration.DEFAULT_VALUE_COLUMN_NAME,
 		val policy: ConsistencyLevelPolicy = CassandraConfiguration.DEFAULT_CONSISTENCY_LEVEL,
 		val poolSize: Int = CassandraConfiguration.DEFAULT_FUTURE_POOL_SIZE,
 		val ttl: Option[Duration] = CassandraConfiguration.DEFAULT_TTL_DURATION)

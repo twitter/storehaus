@@ -16,54 +16,30 @@
 package com.twitter.storehaus.cassandra
 
 import java.util.concurrent.Executors
-import com.twitter.util.{ Future, FuturePool }
-import com.twitter.storehaus.Store
-import me.prettyprint.hector.api.factory.HFactory
-import me.prettyprint.hector.api.{ Cluster, Keyspace, HConsistencyLevel, ConsistencyLevelPolicy, Serializer }
-import me.prettyprint.hector.api.beans.HColumn
-import me.prettyprint.hector.api.ddl.{ ComparatorType, KeyspaceDefinition }
-import me.prettyprint.hector.api.exceptions.HNotFoundException
-import me.prettyprint.hector.api.beans.DynamicComposite
-import me.prettyprint.cassandra.model.{ QuorumAllConsistencyLevelPolicy, ConfigurableConsistencyLevel }
-import me.prettyprint.cassandra.serializers.{ DynamicCompositeSerializer, StringSerializer }
-import me.prettyprint.cassandra.service.{ CassandraHostConfigurator, ThriftKsDef }
 import scala.collection.JavaConversions._
-import ScalaSerializables._
-import com.twitter.util.Duration
-import com.twitter.storehaus.FutureOps
 import scala.collection.mutable.ArrayOps
-import com.twitter.storehaus.WithPutTtl
+import com.twitter.storehaus.{ Store, WithPutTtl }
+import com.twitter.util.{ Duration, Future, FuturePool }
+import ScalaSerializables._
+import me.prettyprint.cassandra.model.HColumnImpl
+import me.prettyprint.cassandra.serializers.DynamicCompositeSerializer
+import me.prettyprint.cassandra.service.ThriftKsDef
+import me.prettyprint.hector.api.{ Cluster, Serializer, Keyspace, ConsistencyLevelPolicy }
+import me.prettyprint.hector.api.beans.{ DynamicComposite, HColumn, AbstractComposite }
+import me.prettyprint.hector.api.ddl.{ ComparatorType, KeyspaceDefinition }
+import me.prettyprint.hector.api.factory.HFactory
+import javax.naming.OperationNotSupportedException
+import com.twitter.util.ExecutorServiceFuturePool
 
 /**
- *  A Cassandra wrapper using dynamic composite keys
- *
- *  The Store variant provided here has the ability to do slice queries over column slices, which allows
- *  for better performance and unknown column names (i.e. to store values in column names).
- *
- *  For convenience type parameters are more flexible than needed. One can pass in a bunch of
- *  Cassandra/Hector-serializbale objects and the corresponding serializers:
- *  	RK: represents the type(s) of the Cassandra-composite-row-key.
- *   		One can either pass in a single type or a List of types.
- *     		Remember it might not possible to peform range scans with random-partitioners like Murmur3.
- *   	CK: represents the type(s) of the Cassandra-composite-column-key.
- *    		See RK for details.
- *      	It is possible to perform queries on column slices.
- *       V: The type of the value.
- *
+ *  Hector-Cassandra wrapper using dynamic composite keys.
+ *  For convenience type parameters are not provided, except for the type of the value.
+ *  The serializers needed for the composite key are provided using a Seq of functions (serializerList).
+ *  Serializers for the most common types are already included by default. 
  *  @author Andreas Petter
  */
 
 object CassandraDynamicCompositeStore {
-
-//  def apply[RK, CK, V: CassandraSerializable](
-//    keyspace: CassandraConfiguration.StoreKeyspace,
-//    columnFamily: CassandraConfiguration.StoreColumnFamily,
-//    rowKeySerializers: List[CassandraSerializable],
-//    columnKeySerializers: List[CassandraSerializable],
-//    policy: ConsistencyLevelPolicy = CassandraConfiguration.DEFAULT_CONSISTENCY_LEVEL,
-//    poolSize: Int = CassandraConfiguration.DEFAULT_FUTURE_POOL_SIZE,
-//    ttl: Option[Duration] = CassandraConfiguration.DEFAULT_TTL_DURATION): CassandraDynamicCompositeStore[RK, CK, V] =
-//    new CassandraDynamicCompositeStore[RK, CK, V](keyspace, columnFamily, valueSerializer, policy, poolSize, ttl)
 
   /**
    * Optionally this method can be used to setup storage on the Cassandra cluster.
@@ -72,17 +48,14 @@ object CassandraDynamicCompositeStore {
   def setupStore[V: CassandraSerializable](
       cluster: CassandraConfiguration.StoreCluster, 
       keyspaceName: String, 
-      columnFamily: CassandraConfiguration.StoreColumnFamily,  
-      replicationFactor: Int) = {
+      columnFamily: CassandraConfiguration.StoreColumnFamily) = {
     val valueSerializer = implicitly[CassandraSerializable[V]]
     val cfDef = HFactory.createColumnFamilyDefinition(keyspaceName, columnFamily.name, ComparatorType.DYNAMICCOMPOSITETYPE);
     cfDef.setComparatorTypeAlias(DynamicComposite.DEFAULT_DYNAMIC_COMPOSITE_ALIASES)
     cfDef.setKeyValidationClass(ComparatorType.DYNAMICCOMPOSITETYPE.getClassName())
     cfDef.setKeyValidationAlias(DynamicComposite.DEFAULT_DYNAMIC_COMPOSITE_ALIASES)
     cfDef.setDefaultValidationClass(valueSerializer.getSerializer.getComparatorType().getClassName())
-    val keyspace: KeyspaceDefinition = HFactory.createKeyspaceDefinition(keyspaceName, ThriftKsDef.DEF_STRATEGY_CLASS, replicationFactor,
-      Array(cfDef).toList)
-    cluster.getCluster.addKeyspace(keyspace, true)
+    cluster.getCluster.addColumnFamily(cfDef, true)
   }
 }
 
@@ -93,7 +66,9 @@ class CassandraDynamicCompositeStore[V: CassandraSerializable] (
   val poolSize: Int = CassandraConfiguration.DEFAULT_FUTURE_POOL_SIZE,
   val ttl: Option[Duration] = CassandraConfiguration.DEFAULT_TTL_DURATION,
   val serializerList: Seq[Any => Option[CassandraSerializable[_]]] = CassandraConfiguration.DEFAULT_SERIALIZER_LIST)
-  	extends Store[(Any, Any), V] with WithPutTtl[(Any, Any), V, CassandraDynamicCompositeStore[V]] {
+  	extends Store[(Any, Any), V] 
+    with WithPutTtl[(Any, Any), V, CassandraDynamicCompositeStore[V]] 
+    with CassandraPartiallyIterableStore[Any, Any, Unit, Unit, V, DynamicComposite] {
   keyspace.getKeyspace.setConsistencyLevelPolicy(policy)
   
   val valueSerializer = implicitly[CassandraSerializable[V]]
@@ -102,7 +77,6 @@ class CassandraDynamicCompositeStore[V: CassandraSerializable] (
   override def withPutTtl(ttl: Duration): CassandraDynamicCompositeStore[V] = new CassandraDynamicCompositeStore[V](keyspace,
     columnFamily, policy, poolSize, Option(ttl), serializerList)
 
-  // override def put(kv: ((Any, Any), Option[V])): Future[Unit] = {
   override def multiPut[K1 <: Any](kvs: Map[K1, Option[V]]): Map[K1, Future[Unit]] = {
     if(kvs.size > 0) {
       val result = futurePool {
@@ -114,7 +88,7 @@ class CassandraDynamicCompositeStore[V: CassandraSerializable] (
     	  val colKey = createDynamicKey(ck)
     	  valueOpt match {
     	    case Some(value) => {
-    	      val column = HFactory.createColumn(colKey, value)
+    	      val column = new HColumnImpl(colKey, value, HFactory.createClock, DynamicCompositeSerializer.get, valueSerializer.getSerializer)
     	      ttl match { 
     	        case Some(duration) => column.setTtl(duration.inSeconds)
     	        case _ =>
@@ -137,8 +111,14 @@ class CassandraDynamicCompositeStore[V: CassandraSerializable] (
     orgKey match {
       // most collections fit into the first case
       case _: Traversable[_] => orgKey.asInstanceOf[Traversable[Any]]
-        .foreach(key => { result.addComponent(key, ScalaSerializables.getSerializerForEntity(key, serializerList).get.getSerializer.asInstanceOf[Serializer[Any]])})
-      case _ => result.addComponent(orgKey, ScalaSerializables.getSerializerForEntity(orgKey, serializerList).get.getSerializer.asInstanceOf[Serializer[Any]])
+        .foreach(key => { 
+          val dserializer = ScalaSerializables.getSerializerForEntity(key, serializerList).get
+          result.addComponent(key, dserializer.getSerializer.asInstanceOf[Serializer[Any]], dserializer.getSerializer.getComparatorType.getTypeName, AbstractComposite.ComponentEquality.fromByte(0))
+          })
+      case _ => {
+        val dserializer = ScalaSerializables.getSerializerForEntity(orgKey, serializerList).get
+        result.addComponent(orgKey, dserializer.getSerializer.asInstanceOf[Serializer[Any]], dserializer.getSerializer.getComparatorType.getTypeName, AbstractComposite.ComponentEquality.fromByte(0))
+      }
     }
     result
   }
@@ -158,16 +138,25 @@ class CassandraDynamicCompositeStore[V: CassandraSerializable] (
     }
   }
   
-//  override def multiGet[K1 <: (Any, Any)](ks: Set[K1]): Map[K1, Future[Option[V]]] = {
-//    import ArrayOps._
-//    val future = futurePool {
-//      ArrayOps.toArray(ks). .toBuffer[(Any,Any)].a.sortBy(_._1)
-//    }
-//    
-//    FutureOps.liftValues(ks,
-//      future
-//      ,
-//      { (k: K1) => Future.None })
-//  }
+  // implementation of methods used by CassandraPartiallyIterableStore 
+  override def createColKey(key: Any): DynamicComposite = createDynamicKey(key)
+  override def createRowKey(key: Any): DynamicComposite = createDynamicKey(key)
+  override def getCompositeSerializer: Serializer[DynamicComposite] = DynamicCompositeSerializer.get
+  override def getValueSerializer: Serializer[V] = valueSerializer.getSerializer
+  override def getRowResult(list: List[AbstractComposite#Component[_]]): Any = decideOutput(list) 
+  override def getColResult(list: List[AbstractComposite#Component[_]]): Any = decideOutput(list)
+  override def getFuturePool: ExecutorServiceFuturePool = futurePool
+  override def getKeyspace: Keyspace = keyspace.getKeyspace
+  override def getColumnFamilyName: String = columnFamily.name
+ 
+  private def decideOutput(input: List[AbstractComposite#Component[_]]): Any = {
+    def walkList(list: List[AbstractComposite#Component[_]]): List[Any] = {
+      if(list.nonEmpty)
+    	list.head.getValue :: walkList(list.tail) 
+      else
+        Nil
+    }
+    if (input.size == 1) input.last else input 
+  }
 }
 

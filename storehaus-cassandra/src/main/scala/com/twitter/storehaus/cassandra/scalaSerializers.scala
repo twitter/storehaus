@@ -15,22 +15,21 @@
  */
 package com.twitter.storehaus.cassandra
 
-import com.twitter.bijection.{AbstractInjection, Injection}
+import com.twitter.bijection.{ AbstractInjection, Injection }
 import java.math.{BigInteger, BigDecimal}
 import java.nio.ByteBuffer
-import java.util.{Date, UUID}
-import me.prettyprint.cassandra.serializers.{AbstractSerializer, DoubleSerializer, FloatSerializer, 
+import java.util.{ Date, UUID }
+import me.prettyprint.cassandra.serializers.{ AbstractSerializer, DoubleSerializer, FloatSerializer, 
   IntegerSerializer, LongSerializer, StringSerializer, ShortSerializer, BigDecimalSerializer, BigIntegerSerializer,
   BooleanSerializer, CharSerializer, DateSerializer, ObjectSerializer, UUIDSerializer, TimeUUIDSerializer,
-  ByteBufferSerializer, BytesArraySerializer}
+  ByteBufferSerializer, BytesArraySerializer }
 import me.prettyprint.hector.api.Serializer
 import me.prettyprint.hector.api.ddl.ComparatorType
-import scala.collection.mutable.{Buffer, ArrayBuffer, ArraySeq}
+import scala.collection.mutable.{ Buffer, ArrayBuffer, ArraySeq }
 import scala.util.Try
 
-
 /**
- * type class for types to serialize
+ * type class for types to serialize with Cassandra's serializers
  */
 trait CassandraSerializable[C] {
   def getSerializer() : Serializer[C]
@@ -38,8 +37,16 @@ trait CassandraSerializable[C] {
 
 /**
  * an object with a bunch of implicit Cassandra serializers
+ * @author Andreas Petter
  */
 object ScalaSerializables {
+  /**
+   * Implicit serializers not working as row-keys:
+   *   * Long, UUID, com.eaio.uuid.UUID, Array[Byte]
+   * Implicit serializers not working as values:
+   *   * BigDecimal, Object/Serializable, com.eaio.uuid.UUID, ByteBuffer, Array[Byte]
+   * Reasons are not clear to me. If s.o. has an idea please contact me. 
+   */
   implicit val cassScalaLongSerializer = new ScalaLongSerializer
   implicit val cassScalaDoubleSerializer = new ScalaDoubleSerializer
   implicit val cassScalaIntSerializer = new ScalaIntSerializer
@@ -51,11 +58,11 @@ object ScalaSerializables {
   implicit val cassScalaBooleanSerializer = new ScalaBooleanSerializer
   implicit val cassScalaCharSerializer = new ScalaCharSerializer
   implicit val cassScalaDateSerializer = new ScalaDateSerializer
-  implicit val cassScalaObjectSerializer = new ScalaSerializableSerializer
   implicit val cassScalaUUIDSerializer = new ScalaUUIDSerializer
   implicit val cassScalaTimeUUIDSerializer = new ScalaTimeUUIDSerializer
   implicit val cassScalaByteBufferSerializer = new ScalaByteBufferSerializer
   implicit val cassScalaBytesArraysSerializer = new ScalaBytesArraySerializer
+  implicit val cassScalaObjectSerializer = new ScalaSerializableSerializer
   val serializerList : Seq[Any => Option[CassandraSerializable[_]]] = ArraySeq(
             buildSerializerChecker2[Long,java.lang.Long](cassScalaLongSerializer),
             buildSerializerChecker2[Double,java.lang.Double](cassScalaDoubleSerializer),
@@ -69,6 +76,7 @@ object ScalaSerializables {
             buildSerializerChecker2[Character,java.lang.Character](cassScalaCharSerializer),
             buildSerializerChecker1[Date](cassScalaDateSerializer),
             buildSerializerChecker1[UUID](cassScalaUUIDSerializer),
+            buildSerializerChecker1[com.eaio.uuid.UUID](cassScalaTimeUUIDSerializer),
             buildSerializerChecker1[ByteBuffer](cassScalaByteBufferSerializer),
             buildSerializerChecker1[Array[Byte]](cassScalaBytesArraysSerializer),
             buildSerializerChecker1[Object](cassScalaObjectSerializer))
@@ -84,7 +92,7 @@ object ScalaSerializables {
    def getSerializerForEntity(entity: Any, 
        serializers: Seq[Any => Option[CassandraSerializable[_]]]) :
        Option[CassandraSerializable[_]] = {
-     if(serializers.length > 0) { 
+     if(serializers.length > 0) {       
        serializers.head(entity) match {
     	 case Some(value) => Some(value)
     	 case None => getSerializerForEntity(entity, serializers.tail)
@@ -138,7 +146,7 @@ class InjectiveSerializer[T, U](original: Serializer[U])(implicit injection: Inj
   override def fromBytesList(list: java.util.List[ByteBuffer]) = 
     original.fromBytesList(list).map(injection.invert(_).get)
   override def getComparatorType = original.getComparatorType
-  override def getSerializer = new InjectiveSerializer[T, U](original)
+  override def getSerializer = this
 }
 
 object ScalaLongSerializer {
@@ -251,7 +259,7 @@ class ScalaSerializer[T](original: Serializer[T])
   override def toBytesList(list: java.util.List[T]) = original.toBytesList(list)
   override def fromBytesList(list: java.util.List[ByteBuffer]) = original.fromBytesList(list)
   override def getComparatorType = original.getComparatorType
-  override def getSerializer = new ScalaSerializer[T](original)
+  override def getSerializer = this
 }
 
 class ScalaStringSerializer(val original: Serializer[String] = StringSerializer.get) 
@@ -294,6 +302,5 @@ class ScalaKeyComposite(
   def column[CK : CassandraSerializable](keyComponent : CK) : ScalaKeyComposite = {
     val ser = implicitly[CassandraSerializable[CK]]
     new ScalaKeyComposite(rowKeys, rowKeySerializers, colKeys :+ keyComponent, colKeySerializers :+ ser.getSerializer)
-  }
-  
+  }  
 }
