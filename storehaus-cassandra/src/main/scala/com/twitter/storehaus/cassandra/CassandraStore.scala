@@ -94,10 +94,10 @@ class CassandraStore[K : CassandraSerializable, V : CassandraSerializable] (
   
   override def multiPut[K1 <: K](kvs: Map[K1, Option[V]]): Map[K1, Future[Unit]] = {
     if(kvs.size > 0) {
-      val result = futurePool {
+      val result = futurePool[Unit] {
     	val mutator = HFactory.createMutator(keyspace.getKeyspace, keySerializer.getSerializer)
     	kvs.foreach{
-    	  case (key, Some(value)) => {
+    	  case (key, Some(value)) => { 
     	    val column = HFactory.createColumn(valueColumnName, value)
     	    ttl match { 
     	      case Some(duration) => column.setTtl(duration.inSeconds)
@@ -107,7 +107,7 @@ class CassandraStore[K : CassandraSerializable, V : CassandraSerializable] (
     	  }
     	  case (key, None) => mutator.addDeletion(key, columnFamily.name, valueColumnName, StringSerializer.get)
     	}
-    	val res = mutator.execute()
+    	mutator.execute()
       }
       kvs.map{(kv : (K1, Option[V])) => (kv._1, result)}
     } else {

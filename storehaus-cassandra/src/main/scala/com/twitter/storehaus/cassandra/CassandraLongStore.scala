@@ -91,13 +91,9 @@ class CassandraLongStore[K: CassandraSerializable](
    */
   override def merge(kv: (K, Long)) = {
     val (key, value) = kv
-    val lockId = "lock/" +
-      underlying.keyspace.getKeyspace.getKeyspaceName + "/" +
-      underlying.columnFamily.name + "/" +
-      key.toString
     val counterColumn: HCounterColumn[String] = HFactory.createCounterColumn(underlying.valueColumnName, value, StringSerializer.get);
     underlying.futurePool {
-      sync.merge.lock(lockId, Future {
+      sync.merge.lock(getLockId(key), Future {
         val counters = HFactory.createCounterColumnQuery(underlying.keyspace.getKeyspace, underlying.keySerializer.getSerializer, StringSerializer.get)
         counters.setKey(key)
         counters.setColumnFamily(underlying.columnFamily.name)
@@ -120,13 +116,9 @@ class CassandraLongStore[K: CassandraSerializable](
    */
   override def put(kv: (K, Option[Long])): Future[Unit] = {
     val (key, optvalue) = kv
-    val lockId = "lock/" +
-      underlying.keyspace.getKeyspace.getKeyspaceName + "/" +
-      underlying.columnFamily.name + "/" +
-      key.toString
     optvalue match {
       case Some(value) => underlying.futurePool {
-        sync.put.lock(lockId, Future {
+        sync.put.lock(getLockId(key), Future {
           // read value, if existing
           val counters = HFactory.createCounterColumnQuery(underlying.keyspace.getKeyspace, underlying.keySerializer.getSerializer, StringSerializer.get);
           counters.setKey(key);
@@ -144,7 +136,7 @@ class CassandraLongStore[K: CassandraSerializable](
       }
 
       case None => underlying.futurePool {
-        sync.put.lock(lockId, Future {
+        sync.put.lock(getLockId(key), Future {
           // delete the entry
           val mutator = HFactory.createMutator(underlying.keyspace.getKeyspace, underlying.keySerializer.getSerializer)
           mutator.deleteCounter(key, underlying.columnFamily.name, underlying.valueColumnName, StringSerializer.get)
@@ -165,6 +157,12 @@ class CassandraLongStore[K: CassandraSerializable](
     }
   }
 
+  private def getLockId(key: K): String = {
+      "lock/" +
+      underlying.keyspace.getKeyspace.getKeyspaceName + "/" +
+      underlying.columnFamily.name + "/" +
+      key.toString
+  }
 }
 
 
