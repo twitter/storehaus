@@ -68,6 +68,12 @@ object StorehausBuild extends Build {
     ),
     parallelExecution in Test := true,
     scalacOptions ++= Seq(Opts.compile.unchecked, Opts.compile.deprecation),
+    scalacOptions <++= scalaVersion map { version =>
+	val Some((major, minor)) = CrossVersion.partialVersion(version)
+	if (major < 2 || (major == 2 && minor < 10)) 
+	    Seq("-Ydependent-method-types")
+	else Nil
+    },
 
     // Publishing options:
     publishMavenStyle := true,

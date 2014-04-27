@@ -52,7 +52,7 @@ object CassandraCompositeStore {
    * Optionally this method can be used to setup storage on the Cassandra cluster.
    * (shouldn't work on on existing keyspaces and column-families)
    */
-  def setupStore[RS <: HList: *->*[CassandraSerializable]#λ, CS <: HList: *->*[CassandraSerializable]#λ, V: CassandraSerializable, MRKResult <: HList, MCKResult <: HList](
+  def setupStore[RS <: HList, CS <: HList, V, MRKResult <: HList, MCKResult <: HList](
     cluster: CassandraConfiguration.StoreCluster,
     keyspaceName: String,
     columnFamily: CassandraConfiguration.StoreColumnFamily,
@@ -62,7 +62,10 @@ object CassandraCompositeStore {
     (implicit mrk: MapperAux[compositeStringMapping.type, RS, MRKResult],
       mck: MapperAux[compositeStringMapping.type, CS, MCKResult],
       tork: ToList[MRKResult, String],
-      tock: ToList[MCKResult, String]) = {
+      tock: ToList[MCKResult, String],
+      rsUTC: *->*[CassandraSerializable]#λ[RS],
+      csUTC: *->*[CassandraSerializable]#λ[CS],
+      cassSerValue: CassandraSerializable[V]) = {
     val cfDef = HFactory.createColumnFamilyDefinition(keyspaceName, columnFamily.name, ComparatorType.COMPOSITETYPE)
     cfDef.setComparatorTypeAlias("(" + colSerializers.map(compositeStringMapping).toList.mkString(",") + ")")
     cfDef.setKeyValidationClass(ComparatorType.COMPOSITETYPE.getTypeName())
@@ -139,8 +142,11 @@ object CassandraCompositeStore {
  * Hint: all implicits can be usually be provided by just static-importing 
  * the companion object and the appropriate package objects of shapeless. They are 
  * used to provide evidence for type-level (compiler-level) safety of types.
+ * 
+ * V must be contained in type class CassandraSerializable (see implicits because
+ * context bounds and implicits do not work together in 2.9.3)
  */
-class CassandraCompositeStore[RK <: HList, CK <: HList, V: CassandraSerializable, RS <: HList: *->*[CassandraSerializable]#λ, CS <: HList: *->*[CassandraSerializable]#λ](
+class CassandraCompositeStore[RK <: HList, CK <: HList, V, RS <: HList, CS <: HList](
   val keyspace: CassandraConfiguration.StoreKeyspace,
   val columnFamily: CassandraConfiguration.StoreColumnFamily,
   val keySerializer: RS,
@@ -156,7 +162,10 @@ class CassandraCompositeStore[RK <: HList, CK <: HList, V: CassandraSerializable
     flRow: FromTraversable[RK],
     flCol: FromTraversable[CK],
     toLRow: ToList[RS, CassandraSerializable[_]],
-    toLCol: ToList[CS, CassandraSerializable[_]])
+    toLCol: ToList[CS, CassandraSerializable[_]],
+    rsUTC:  *->*[CassandraSerializable]#λ[RS],
+    csUTC:  *->*[CassandraSerializable]#λ[CS],
+    cassSerValue: CassandraSerializable[V])
   extends Store[(RK, CK), V] with WithPutTtl[(RK, CK), V, CassandraCompositeStore[RK, CK, V, RS, CS]] 
   with CassandraPartiallyIterableStore[RK, CK, RS, CS, V, Composite] {
   keyspace.getKeyspace.setConsistencyLevelPolicy(policy)
@@ -200,8 +209,9 @@ class CassandraCompositeStore[RK <: HList, CK <: HList, V: CassandraSerializable
   /**
    * creates composite key using a recursion on the implicits of type Append2Composite 
    */
-  private def createKey[K <: HList, S <: HList : *->*[CassandraSerializable]#λ](keys: K, keySerializers: S)
-  		(implicit a2c: Append2Composite[Composite, K, S]): Composite = {
+  private def createKey[K <: HList, S <: HList](keys: K, keySerializers: S)
+  		(implicit a2c: Append2Composite[Composite, K, S],
+  		    sUTC: *->*[CassandraSerializable]#λ[S]): Composite = {
     val result = new Composite
     append2Composite(result)(keys, keySerializers)
     result

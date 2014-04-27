@@ -30,6 +30,7 @@ import me.prettyprint.cassandra.serializers.{ LongSerializer, StringSerializer }
 import me.prettyprint.cassandra.service.ThriftKsDef
 import scala.collection.JavaConversions._
 import scala.util.Try
+import com.twitter.util.Await
 
 /**
  * CassandraLongStore is *planned* as a *MergeableStore* for Longs
@@ -93,7 +94,7 @@ class CassandraLongStore[K: CassandraSerializable](
     val (key, value) = kv
     val counterColumn: HCounterColumn[String] = HFactory.createCounterColumn(underlying.valueColumnName, value, StringSerializer.get);
     underlying.futurePool {
-      sync.merge.lock(getLockId(key), Future {
+      Await.result(sync.merge.lock(getLockId(key), Future {
         val counters = HFactory.createCounterColumnQuery(underlying.keyspace.getKeyspace, underlying.keySerializer.getSerializer, StringSerializer.get)
         counters.setKey(key)
         counters.setColumnFamily(underlying.columnFamily.name)
@@ -103,7 +104,7 @@ class CassandraLongStore[K: CassandraSerializable](
         mutator.insertCounter(key, underlying.columnFamily.name, counterColumn)
         mutator.execute()
         Option(result.get).map(_.getValue.longValue())
-      }).get
+      }))
     }
   }
 
