@@ -274,7 +274,7 @@ object StorehausBuild extends Build {
       "com.google.code.java-allocation-instrumenter" % "java-allocation-instrumenter" % "2.0",
       "com.google.code.gson" % "gson" % "1.7.1",
       "com.twitter" %% "bijection-core" % bijectionVersion,
-      "com.twitter" %% "algebird-core" % algebirdVersion,
+      "com.twitter" %% "algebird-core" % algebirdVersion),
       javaOptions in run <++= (fullClasspath in Runtime) map { cp => Seq("-cp", sbt.Build.data(cp).mkString(":")) }
   ).dependsOn(storehausCore, storehausAlgebra, storehausCache)
 
