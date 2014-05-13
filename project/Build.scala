@@ -139,7 +139,7 @@ object StorehausBuild extends Build {
     storehausHBase,
     storehausDynamoDB,
     storehausKafka,
-    storehausKafka08
+    storehausKafka08,
     storehausMongoDB,
     storehausElastic,
     storehausTesting
