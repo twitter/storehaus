@@ -13,12 +13,12 @@ import com.twitter.util.{Await, Future}
 
 class DelayedStore[K, V](val self: Store[K, V])(implicit timer: com.twitter.util.Timer) extends StoreProxy[K, V] {
   override def put(kv: (K, Option[V])): Future[Unit] = {
-    Thread.sleep(5)
+    Thread.sleep(10)
     self.put(kv)
   }
 
   override def get(kv: K): Future[Option[V]] = {
-    Thread.sleep(5)
+    Thread.sleep(10)
     self.get(kv)
   }
 
@@ -40,10 +40,10 @@ class WriteThroughCacheBenchmark extends SimpleBenchmark {
   implicit val hllMonoid = new HyperLogLogMonoid(14)
 
   @Param(Array("100", "1000", "10000"))
-  val numInputKeys: Int = 0
+  var numInputKeys: Int = 0
 
   @Param(Array("10000", "100000"))
-  val numElements: Int = 0
+  var numElements: Int = 0
 
   var inputData: Seq[Map[Long, HLL]] = _
 
@@ -59,30 +59,26 @@ class WriteThroughCacheBenchmark extends SimpleBenchmark {
     val inputIntermediate = (0L until numElements).map {_ =>
       val setElements = (0 until setSize).map{_ => rng.nextInt(1000).toLong}.toSet
       (pow(numInputKeys, rng.nextFloat).toLong, hll(setElements))
-    }.grouped(500)
+    }.grouped(20)
 
     inputData = inputIntermediate.map(s => MapAlgebra.sumByKey(s)).toSeq
 
     val delayedStore = new DelayedStore(new ConcurrentHashMapStore[Long, HLL])
-    store = (new WriteThroughStore(delayedStore, new ConcurrentHashMapStore[Long, HLL], true)).toMergeable
+    store = (new WriteThroughStore(delayedStore, new HHFilteredStore(new ConcurrentHashMapStore[Long, HLL]), true)).toMergeable
     noCacheStore = delayedStore.toMergeable
   }
 
   def timeDoUpdates(reps: Int): Int = {
-    var dummy = 0
-    while (dummy < reps) {
-      inputData.foreach(d => Await.result(FutureOps.mapCollect(store.multiMerge(d))))
-      dummy += 1
-    }
-    dummy
+    Await.result(Future.collect((0 until reps).flatMap { indx =>
+      inputData.map(d => FutureOps.mapCollect(store.multiMerge(d)).unit)
+    }.toSeq))
+    12
   }
 
   def timeDoUpdatesWithoutCache(reps: Int): Int = {
-    var dummy = 0
-    while (dummy < reps) {
-      inputData.foreach(d => Await.result(FutureOps.mapCollect(noCacheStore.multiMerge(d))))
-      dummy += 1
-    }
-    dummy
+    Await.result(Future.collect((0 until reps).flatMap { indx =>
+      inputData.map(d => FutureOps.mapCollect(noCacheStore.multiMerge(d)).unit)
+    }.toSeq))
+    12
   }
 }

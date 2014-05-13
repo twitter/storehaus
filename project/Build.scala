@@ -21,6 +21,9 @@ import Keys._
 import spray.boilerplate.BoilerplatePlugin.Boilerplate
 import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
 import com.typesafe.tools.mima.plugin.MimaKeys.previousArtifact
+import sbtassembly.Plugin._
+import AssemblyKeys._
+
 
 object StorehausBuild extends Build {
   def withCross(dep: ModuleID) =
@@ -35,7 +38,7 @@ object StorehausBuild extends Build {
       case version if version startsWith "2.10" => "org.specs2" %% "specs2" % "1.13" % "test"
   }
   val extraSettings =
-    Project.defaultSettings ++ Boilerplate.settings ++ mimaDefaultSettings
+    Project.defaultSettings ++ Boilerplate.settings ++ assemblySettings ++ mimaDefaultSettings
 
   def ciSettings: Seq[Project.Setting[_]] =
     if (sys.env.getOrElse("TRAVIS", "false").toBoolean) Seq(
@@ -271,9 +274,8 @@ object StorehausBuild extends Build {
       "com.google.code.java-allocation-instrumenter" % "java-allocation-instrumenter" % "2.0",
       "com.google.code.gson" % "gson" % "1.7.1",
       "com.twitter" %% "bijection-core" % bijectionVersion,
-      "com.twitter" %% "algebird-core" % algebirdVersion),
-      javaOptions in run <++= (fullClasspath in Runtime) map { cp => Seq("-cp", sbt.Build.data(cp).mkString(":")) },
-      fork in run := true
+      "com.twitter" %% "algebird-core" % algebirdVersion,
+      javaOptions in run <++= (fullClasspath in Runtime) map { cp => Seq("-cp", sbt.Build.data(cp).mkString(":")) }
   ).dependsOn(storehausCore, storehausAlgebra, storehausCache)
 
 }
