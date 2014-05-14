@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Twitter inc.
+ * Copyright 2014 Twitter inc.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import com.twitter.bijection._
 /**
  * KafkaSink capable of sending Avro messages to a Kafka Topic
  */
+@deprecated("use com.twitter.storehaus.kafka.KafkaStore with com.twitter.summingbird.storm.WritableStoreSink")
 object KafkaAvroSink {
 
   import com.twitter.bijection.StringCodec.utf8
