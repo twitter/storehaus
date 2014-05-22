@@ -17,11 +17,9 @@
 package com.twitter.storehaus.kafka
 
 import com.twitter.storehaus.WritableStore
-import com.twitter.util.{Time, FuturePool, Future}
+import com.twitter.util.{Time, Future}
 import java.util.Properties
 import kafka.producer.{KeyedMessage, Producer, ProducerConfig}
-import java.util.concurrent.ExecutorService
-import com.twitter.concurrent.AsyncMutex
 import kafka.serializer.Encoder
 
 
@@ -30,38 +28,29 @@ import kafka.serializer.Encoder
  * @author Mansur Ashraf
  * @since 11/22/13
  */
-class KafkaStore[K, V](topic: String, props: Properties)(executor: => ExecutorService) extends WritableStore[K, V] with Serializable {
+class KafkaStore[K, V](topic: String, props: Properties) extends WritableStore[K, V] with Serializable {
   private lazy val producerConfig = new ProducerConfig(props)
   private lazy val producer = new Producer[K, V](producerConfig)
-  private lazy val futurePool = FuturePool(executor)
-  private[this] lazy val mutex = new AsyncMutex
+
 
   /**
    * Puts a key/value pair on a Kafka Topic using kafka.producer.AyncProducer and does not block thread
    * @param kv (key,value)
    * @return Future.unit
    */
-  override def put(kv: (K, V)): Future[Unit] = mutex.acquire().flatMap {
-    p =>
-      futurePool {
-        val (key, value) = kv
-        producer.send(new KeyedMessage[K, V](topic, key, value))
-      } ensure {
-        p.release()
-      }
-  }
+  override def put(kv: (K, V)): Future[Unit] =
+    Future {
+      val (key, value) = kv
+      producer.send(new KeyedMessage[K, V](topic, key, value))
+    }
+
 
   override def multiPut[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Unit]] = {
-    val future = mutex.acquire().flatMap {
-      p => futurePool {
-        val batch = kvs.map {
-          case (k, v) => new KeyedMessage[K, V](topic, k, v)
-        }.toList
-        producer.send(batch: _*)
-
-      } ensure {
-        p.release()
-      }
+    val future = Future {
+      val batch = kvs.map {
+        case (k, v) => new KeyedMessage[K, V](topic, k, v)
+      }.toList
+      producer.send(batch: _*)
     }
     kvs.mapValues(v => future)
   }
@@ -69,7 +58,7 @@ class KafkaStore[K, V](topic: String, props: Properties)(executor: => ExecutorSe
   /** Close this store and release any resources.
     * It is undefined what happens on get/multiGet after close
     */
-  override def close(time: Time): Future[Unit] = futurePool {
+  override def close(time: Time): Future[Unit] = Future {
     producer.close()
   }
 }
@@ -84,24 +73,24 @@ object KafkaStore {
    * @tparam V Value
    * @return Kafka Store
    */
-  def apply[K, V](topic: String, props: Properties)(executor: => ExecutorService) = new KafkaStore[K, V](topic, props)(executor)
+  def apply[K, V](topic: String, props: Properties) = new KafkaStore[K, V](topic, props)
 
   /**
    * Creates a Kafka store.
-   * @param zkQuorum zookeeper quorum.
+   * @param brokers zookeeper quorum.
    * @param topic  Kafka topic.
    * @tparam K  Key
    * @tparam V Value
    * @return Kafka Store
    */
-  def apply[K, V, E <: Encoder[V] : Manifest](zkQuorum: Seq[String],
-                                              topic: String)(executor: => ExecutorService) = new KafkaStore[K, V](topic, createProp[V, E](zkQuorum))(executor)
+  def apply[K, V, E <: Encoder[V] : Manifest](brokers: Seq[String],
+                                              topic: String)= new KafkaStore[K, V](topic, createProp[V, E](brokers))
 
 
-  private def createProp[V, E <: Encoder[V] : Manifest](zkQuorum: Seq[String]): Properties = {
+  private def createProp[V, E <: Encoder[V] : Manifest](brokers: Seq[String]): Properties = {
     val prop = new Properties()
     prop.put("serializer.class", implicitly[Manifest[E]].erasure.getName)
-    prop.put("zk.connect", zkQuorum.mkString(","))
+    prop.put("metadata.broker.list", brokers.mkString(","))
     prop
   }
 }

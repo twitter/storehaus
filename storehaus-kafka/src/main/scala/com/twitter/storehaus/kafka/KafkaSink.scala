@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Twitter inc.
+ * Copyright 2014 Twitter inc.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import com.twitter.storehaus.kafka.KafkaInjections.ByteArrayEncoder
  * @author Mansur Ashraf
  * @since 11/22/13
  */
+@deprecated("use com.twitter.storehaus.kafka.KafkaStore with com.twitter.summingbird.storm.WritableStoreSink")
 class KafkaSink[K, V](dispatcher: Dispatcher[K, V]) extends Serializable {
   /**
    * Function that satisfies Storm#Sink {@see SummingBird-Storm}
