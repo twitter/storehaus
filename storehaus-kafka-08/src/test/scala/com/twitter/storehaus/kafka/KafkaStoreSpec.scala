@@ -42,7 +42,7 @@ class KafkaStoreSpec extends Specification {
       catch {
         case e: ConsumerTimeoutException => failure("test failed as consumer timed out without getting any msges")
       }
-    } //.pendingUntilFixed
+    } .pendingUntilFixed
 
     "put multiple values on a topic" in new KafkaContext {
       val multiput_topic = "multiput-test-topic-" + random
