@@ -31,9 +31,10 @@ import java.util.Properties
  * @author Mansur Ashraf
  * @since 11/22/13
  */
+@deprecated("use com.twitter.storehaus.kafka.KafkaStore with com.twitter.summingbird.storm.WritableStoreSink","0.9.0")
 class KafkaSink[K, V](dispatcher: Dispatcher[K, V]) extends Serializable {
   /**
-   * Function that satisfies Storm#Sink {@see SummingBird-Storm}
+   * Function that satisfies Storm#Sink
    * @return  () => (K,V) => Future[Unit]
    */
   def write: () => Dispatcher[K, V] = () => dispatcher
@@ -84,7 +85,7 @@ object KafkaSink {
    * @return KafkaSink
    */
   def apply[K, V](store: KafkaStore[K, V]): KafkaSink[K, V] = {
-    lazy val sink = new KafkaSink[K, V](store.put)
+    val sink = new KafkaSink[K, V](store.put)
     sink
   }
 
@@ -97,7 +98,7 @@ object KafkaSink {
    * @return KafkaSink[K,V]
    */
   def apply[K, V, E <: Encoder[V] : Manifest](brokers: Seq[String], topic: String): KafkaSink[K, V] = {
-    lazy val store = KafkaStore[K, V, E](brokers, topic)
+    val store = KafkaStore[K, V, E](brokers, topic)
     lazy val sink = apply[K, V](store)
     sink
   }

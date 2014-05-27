@@ -41,7 +41,7 @@ object KafkaAvroSink {
    * @tparam V  Avro Record
    * @return KafkaSink[String,SpecificRecordBase]
    */
-  def apply[V <: SpecificRecordBase : Manifest](brokers: Seq[String], topic: String, executor: => ExecutorService) = {
+  def apply[V <: SpecificRecordBase : Manifest](brokers: Seq[String], topic: String, executor: => ExecutorService): KafkaSink[String, V] = {
     implicit val inj = SpecificAvroCodecs[V]
     lazy val sink = KafkaSink[Array[Byte], Array[Byte], DefaultEncoder](brokers: Seq[String], topic: String)
       .convert[String, V](utf8.toFunction)
@@ -56,7 +56,7 @@ object KafkaAvroSink {
    * @tparam K key
    * @return KafkaSink[T,SpecificRecordBase]
    */
-  def apply[K: Codec, V <: SpecificRecordBase : Manifest](brokers: Seq[String], topic: String) = {
+  def apply[K: Codec, V <: SpecificRecordBase : Manifest](brokers: Seq[String], topic: String): KafkaSink[K, V] = {
     implicit val inj = SpecificAvroCodecs[V]
     lazy val sink = KafkaSink[Array[Byte], Array[Byte], DefaultEncoder](brokers: Seq[String], topic: String)
       .convert[K, V](implicitly[Codec[K]].toFunction)
@@ -71,7 +71,7 @@ object KafkaAvroSink {
    * @tparam K key
    * @return KafkaSink[T,SpecificRecordBase]
    */
-  def apply[K: Codec, V <: SpecificRecordBase](props: Properties, topic: String) = {
+  def apply[K: Codec, V <: SpecificRecordBase : Manifest](props: Properties, topic: String): KafkaSink[K, V] = {
     implicit val inj = SpecificAvroCodecs[V]
     lazy val sink = KafkaSink[Array[Byte], Array[Byte]](props, topic: String)
       .convert[K, V](implicitly[Codec[K]].toFunction)

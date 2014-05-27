@@ -48,8 +48,8 @@ object KafkaInjections {
     (result, result)
   }
 
-  implicit def injectionEncoder[T: Codec] = fromInjection[T]._1
+  implicit def injectionEncoder[T: Codec] : Encoder[T] = fromInjection[T]._1
 
-  implicit def injectionDecoder[T: Codec] = fromInjection[T]._2
+  implicit def injectionDecoder[T: Codec] : Decoder[T] = fromInjection[T]._2
 
 }

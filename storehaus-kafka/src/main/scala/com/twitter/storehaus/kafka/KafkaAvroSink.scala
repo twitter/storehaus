@@ -27,7 +27,7 @@ import com.twitter.bijection._
 /**
  * KafkaSink capable of sending Avro messages to a Kafka Topic
  */
-@deprecated("use com.twitter.storehaus.kafka.KafkaStore with com.twitter.summingbird.storm.WritableStoreSink")
+@deprecated("use com.twitter.storehaus.kafka.KafkaStore with com.twitter.summingbird.storm.WritableStoreSink","0.9.0")
 object KafkaAvroSink {
 
   import com.twitter.bijection.StringCodec.utf8

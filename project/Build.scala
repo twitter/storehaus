@@ -240,7 +240,7 @@ object StorehausBuild extends Build {
     libraryDependencies ++= Seq (
       "com.twitter" %% "bijection-core" % bijectionVersion,
       "com.twitter" %% "bijection-avro" % bijectionVersion,
-      "org.apache.kafka" % "kafka_2.9.2" % "0.8.0" excludeAll(
+      "org.apache.kafka" % "kafka_2.9.2" % "0.8.0" % "provided" excludeAll(
         ExclusionRule(organization = "com.sun.jdmk"),
         ExclusionRule(organization = "com.sun.jmx"),
         ExclusionRule(organization = "javax.jms"))
