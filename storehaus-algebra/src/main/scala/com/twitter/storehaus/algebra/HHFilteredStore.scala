@@ -20,34 +20,40 @@ import com.twitter.algebird.{ Semigroup, Monoid, Group, CMSHash  }
 import com.twitter.storehaus.{StoreProxy, Store}
 import com.twitter.util.Future
 
-import scala.collection.mutable.ListBuffer
-
-
 
 // The update frequency is how often we should update the mutable CMS
-// other steps will just query the pre-established HH's
-// This will only kick in after the first 1000 tuples since a Roll Over
-case class UpdateFrequency(toInt: Int)
+case class WriteOperationUpdateFrequency(toInt: Int)
+object WriteOperationUpdateFrequency {
+  def default = WriteOperationUpdateFrequency(100) // update 1% of the time
+}
 
-// This is after how many entries we will reset the CMS
-// This is to account for temporal changes in the HH's
-case class RollOverFrequency(toLong: Long)
+// This is how often in MS to roll over the CMS
+case class RollOverFrequencyMS(toLong: Long)
+
+object RollOverFrequencyMS {
+  def default = RollOverFrequencyMS(3600 * 1000L) // 1 Hour
+}
 
 // The heavy hitters percent is used to control above what % of items we should send to the backing
 // aggregator
 case class HeavyHittersPercent(toFloat: Float)
+object HeavyHittersPercent {
+  def default = HeavyHittersPercent(0.001f) // 0.1% of the time
+}
 
 
-class ApproxHHTracker[K](hhPct: HeavyHittersPercent, updateFreq: UpdateFrequency, roFreq: RollOverFrequency) {
+class ApproxHHTracker[K](hhPct: HeavyHittersPercent, updateFreq: WriteOperationUpdateFrequency, roFreq: RollOverFrequencyMS) {
   private[this] final val WIDTH = 1000
   private[this] final val DEPTH = 4
   private[this] final val hh = new java.util.HashMap[K, Long]()
   private[this] final var totalCount = 0L
   private[this] final var hhMinReq = 0L
   private[this] final val hhPercent = hhPct.toFloat
-  private[this] final val updateFrequency = updateFreq.toInt
+  private[this] final val updateOpsFrequency = updateFreq.toInt
   private[this] final val rollOverFrequency = roFreq.toLong
   private[this] final var countsTable = Array.fill(WIDTH * DEPTH)(0L)
+  private[this] var nextRollOver: Long = System.currentTimeMillis + roFreq.toLong
+  private[this] final val updateOps = new java.util.concurrent.atomic.AtomicInteger(0)
 
   private[this] final val hashes: IndexedSeq[CMSHash] = {
     val r = new scala.util.Random(5)
@@ -110,7 +116,6 @@ class ApproxHHTracker[K](hhPct: HeavyHittersPercent, updateFreq: UpdateFrequency
       val newItemCount = frequencyEst(itemHashCode) + 1L
       if (newItemCount >= hhMinReq) {
         hh.put(item, totalCount)
-        pruneHH
       }
     }
   }
@@ -122,52 +127,59 @@ class ApproxHHTracker[K](hhPct: HeavyHittersPercent, updateFreq: UpdateFrequency
     totalCount = 0L
     hhMinReq = 0L
     countsTable = Array.fill(WIDTH * DEPTH)(0L)
+    updateOps.set(1)
+    nextRollOver = System.currentTimeMillis + roFreq.toLong
   }
   // End of thread-unsafe update steps
 
-  private[this] final val updateStep = new java.util.concurrent.atomic.AtomicLong(0L)
 
-  final def hhFilter(t: K): Boolean = {
-    // This is the entry point from the iterator into our CMS implementation
-    // We only update on certain steps < a threshold and on every nTh step.
+  final def getFilterFunc: K => Boolean = {
+      val opsCntr = updateOps.incrementAndGet
 
-    // We only acquire locks/synchronize when hitting the update/write path.
-    // most passes into this function will just hit the final line(containsKey).
-    // which is our thread safe read path.
-    val newCounter = updateStep.incrementAndGet
-    if (newCounter > rollOverFrequency) {
+    if(opsCntr < 100 || opsCntr % updateOpsFrequency == 0) {
       hh.synchronized {
-        updateStep.set(1L)
-        resetCMS
+        if(System.currentTimeMillis > nextRollOver) {
+          resetCMS
+        }
+        {k: K =>
+          updateItem(k)
+          hh.containsKey(k)
+        }
+      }
+    } else {
+      {k: K =>
+        hh.containsKey(k)
       }
     }
-    if(newCounter < 1000L || newCounter % updateFrequency == 0L) {
-      hh.synchronized {
-        updateItem(t)
-      }
-    }
-    hh.containsKey(t)
   }
 
   final def query(t: K): Boolean = hh.containsKey(t)
-
 }
 
 
-class HHFilteredStore[K, V](val self: Store[K, V]) extends StoreProxy[K, V] {
-  private[this] val approxTracker = new ApproxHHTracker[K](HeavyHittersPercent(0.01f), UpdateFrequency(2), RollOverFrequency(10000000L))
+class HHFilteredStore[K, V](val self: Store[K, V],
+                            hhPercent: HeavyHittersPercent = HeavyHittersPercent.default,
+                            writeUpdateFreq: WriteOperationUpdateFrequency = WriteOperationUpdateFrequency.default,
+                            rolloverFreq: RollOverFrequencyMS = RollOverFrequencyMS.default) extends StoreProxy[K, V] {
+  private[this] val approxTracker = new ApproxHHTracker[K](hhPercent, writeUpdateFreq, rolloverFreq)
 
   override def put(kv: (K, Option[V])): Future[Unit] = if(approxTracker.hhFilter(kv._1) || !kv._2.isDefined) self.put(kv) else Future.Unit
 
   override def get(k: K): Future[Option[V]] = if(approxTracker.query(k)) self.get(k) else Future.None
 
+  /*
+   * In the multi get we purely do a lookup to see if its in the heavy hitters to see if we should query the backing cache
+   */
   override def multiGet[K1 <: K](ks: Set[K1]): Map[K1, Future[Option[V]]] = {
     val backed = self.multiGet(ks.filter(k => approxTracker.query(k)))
     ks.map { k: K1 => (k, backed.getOrElse(k, Future.None)) }(collection.breakOut)
   }
 
+  /*
+   * In the Multi-put we test to see which keys we should store
+   */
   override def multiPut[K1 <: K](kvs: Map[K1, Option[V]]): Map[K1, Future[Unit]] = {
-    val backed = self.multiPut(kvs.filter(kv => (!kv._2.isDefined || approxTracker.hhFilter(kv._1))))
+    val backed = self.multiPut(approxTracker.bulkFilter(kvs))
     kvs.map { kv => (kv._1, backed.getOrElse(kv._1, Future.Unit)) }(collection.breakOut)
   }
 }
