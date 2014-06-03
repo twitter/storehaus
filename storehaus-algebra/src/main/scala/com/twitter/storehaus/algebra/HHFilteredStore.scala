@@ -163,7 +163,7 @@ class HHFilteredStore[K, V](val self: Store[K, V],
                             rolloverFreq: RollOverFrequencyMS = RollOverFrequencyMS.default) extends StoreProxy[K, V] {
   private[this] val approxTracker = new ApproxHHTracker[K](hhPercent, writeUpdateFreq, rolloverFreq)
 
-  override def put(kv: (K, Option[V])): Future[Unit] = if(approxTracker.hhFilter(kv._1) || !kv._2.isDefined) self.put(kv) else Future.Unit
+  override def put(kv: (K, Option[V])): Future[Unit] = if(approxTracker.getFilterFunc(kv._1) || !kv._2.isDefined) self.put(kv) else Future.Unit
 
   override def get(k: K): Future[Option[V]] = if(approxTracker.query(k)) self.get(k) else Future.None
 
@@ -179,7 +179,8 @@ class HHFilteredStore[K, V](val self: Store[K, V],
    * In the Multi-put we test to see which keys we should store
    */
   override def multiPut[K1 <: K](kvs: Map[K1, Option[V]]): Map[K1, Future[Unit]] = {
-    val backed = self.multiPut(approxTracker.bulkFilter(kvs))
+    val filterFunc = approxTracker.getFilterFunc
+    val backed = self.multiPut(kvs.filterKeys(t => filterFunc(t)))
     kvs.map { kv => (kv._1, backed.getOrElse(kv._1, Future.Unit)) }(collection.breakOut)
   }
 }
