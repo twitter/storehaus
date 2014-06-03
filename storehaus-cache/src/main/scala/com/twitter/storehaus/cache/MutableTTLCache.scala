@@ -31,10 +31,18 @@ object MutableTTLCache {
 }
 
 class MutableTTLCache[K, V](val ttl: Duration, protected val backingCache: MutableCache[K, (Long, V)])(val clock: () => Long) extends MutableCache[K, V] {
-  def get(k: K) = backingCache.get(k).filter(_._1 > clock()).map(_._2)
+  private[this] val putsSincePrune = new java.util.concurrent.atomic.AtomicInteger(1)
+
+  def get(k: K) = {
+    val clockVal = clock()
+    backingCache.get(k).filter(_._1 > clockVal).map(_._2)
+  }
 
   def +=(kv: (K, V)): this.type = {
-    removeExpired
+    if(putsSincePrune.getAndIncrement % 1000 == 0) {
+      removeExpired
+      putsSincePrune.set(1)
+    }
     backingCache += (kv._1, (clock() + ttl.inMilliseconds, kv._2))
     this
   }
