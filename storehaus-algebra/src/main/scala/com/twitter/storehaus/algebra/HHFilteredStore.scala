@@ -51,7 +51,7 @@ class ApproxHHTracker[K](hhPct: HeavyHittersPercent, updateFreq: WriteOperationU
   private[this] final val hhPercent = hhPct.toFloat
   private[this] final val updateOpsFrequency = updateFreq.toInt
   private[this] final val rollOverFrequency = roFreq.toLong
-  private[this] final var countsTable = Array.fill(WIDTH * DEPTH)(0L)
+  private[this] var countsTable = Array.fill(WIDTH * DEPTH)(0L)
   private[this] var nextRollOver: Long = System.currentTimeMillis + roFreq.toLong
   private[this] final val updateOps = new java.util.concurrent.atomic.AtomicInteger(0)
 
@@ -157,6 +157,9 @@ class ApproxHHTracker[K](hhPct: HeavyHittersPercent, updateFreq: WriteOperationU
 }
 
 
+/*
+  This is a store for using the CMS code above to only store/read values which are heavy hitters in the CMS
+*/
 class HHFilteredStore[K, V](val self: Store[K, V],
                             hhPercent: HeavyHittersPercent = HeavyHittersPercent.default,
                             writeUpdateFreq: WriteOperationUpdateFrequency = WriteOperationUpdateFrequency.default,
