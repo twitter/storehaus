@@ -13,13 +13,11 @@ import com.twitter.util.{Await, Future}
 
 class DelayedStore[K, V](val self: Store[K, V])(implicit timer: com.twitter.util.Timer) extends StoreProxy[K, V] {
   override def put(kv: (K, Option[V])): Future[Unit] = {
-    Thread.sleep(10)
-    self.put(kv)
+    self.put(kv).delayed(10.milliseconds)
   }
 
   override def get(kv: K): Future[Option[V]] = {
-    Thread.sleep(10)
-    self.get(kv)
+    self.get(kv).delayed(10.milliseconds)
   }
 
   override def multiGet[K1 <: K](ks: Set[K1]): Map[K1, Future[Option[V]]] =
