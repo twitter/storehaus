@@ -40,6 +40,12 @@ trait MutableCache[K, V] {
     */
   def get(k: K): Option[V]
   def +=(kv: (K, V)): this.type
+
+  def multiInsert(kvs: Map[K, V]): this.type = {
+    kvs.foreach { kv => this.+=(kv) }
+    this
+  }
+
   def hit(k: K): Option[V]
 
   /* Returns an option of the (potentially) evicted value. */
@@ -64,6 +70,11 @@ trait MutableCache[K, V] {
 
   /* Returns the cache with the supplied key evicted. */
   def -=(k: K): this.type = { evict(k); this }
+
+  def multiRemove(ks: Set[K]): this.type = {
+    ks.foreach { k => this.-=(k) }
+    this
+  }
 
   def getOrElseUpdate(k: K, v: => V): V =
     hit(k).getOrElse {
