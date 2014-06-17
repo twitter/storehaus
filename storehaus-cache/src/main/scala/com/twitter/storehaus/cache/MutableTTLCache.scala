@@ -34,14 +34,17 @@ class MutableTTLCache[K, V](val ttl: Duration, protected val backingCache: Mutab
   private[this] val putsSincePrune = new java.util.concurrent.atomic.AtomicInteger(1)
 
   def get(k: K) = {
-    val clockVal = clock()
-    backingCache.get(k).filter(_._1 > clockVal).map(_._2)
+    // Only query the clock if the backing cache returns
+    // something
+    backingCache.get(k).filter {kv =>
+      val clockVal = clock()
+      kv._1 > clockVal
+    }.map(_._2)
   }
 
   def +=(kv: (K, V)): this.type = {
     if(putsSincePrune.getAndIncrement % 1000 == 0) {
       removeExpired
-      putsSincePrune.set(1)
     }
     backingCache += (kv._1, (clock() + ttl.inMilliseconds, kv._2))
     this
