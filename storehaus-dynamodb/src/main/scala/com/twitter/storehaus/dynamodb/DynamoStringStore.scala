@@ -19,13 +19,16 @@ import java.util.{ Map => JMap }
 
 import com.twitter.storehaus.ConvertedStore
 
+import com.amazonaws.regions.{ Region, Regions }
 import com.amazonaws.services.dynamodbv2.model._
 
 import AwsBijections._
 
 object DynamoStringStore {
-  def apply(awsAccessKey: String, awsSecretKey: String, tableName: String, primaryKeyColumn: String, valueColumn: String) =
-    new DynamoStringStore(DynamoStore(awsAccessKey, awsSecretKey, tableName, primaryKeyColumn, valueColumn))
+  def apply(awsAccessKey: String, awsSecretKey: String, endpoint: Regions, tableName: String,
+    primaryKeyColumn: String, valueColumn: String) =
+
+    new DynamoStringStore(DynamoStore(awsAccessKey, awsSecretKey, endpoint, tableName, primaryKeyColumn, valueColumn))
 }
 
 class DynamoStringStore(underlying: DynamoStore)
