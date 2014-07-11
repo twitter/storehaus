@@ -1,5 +1,11 @@
 # Storehaus #
 
+### Version 0.9.1 ###
+* Feature/write through cache perf: https://github.com/twitter/storehaus/pull/234
+* Share the Retrying Read Write store in storehaus repo: https://github.com/twitter/storehaus/pull/230
+* initial Kafka 0.8 support: https://github.com/twitter/storehaus/pull/232
+* Exceptions on the cache-store should be ignored for Read/WriteThroughStore: https://github.com/twitter/storehaus/pull/225
+
 ### Version 0.9.0 ###
 * Reporting store algebra: https://github.com/twitter/storehaus/pull/176
 * Bumping finagle to a more recent version, changes that were required: https://github.com/twitter/storehaus/pull/223
