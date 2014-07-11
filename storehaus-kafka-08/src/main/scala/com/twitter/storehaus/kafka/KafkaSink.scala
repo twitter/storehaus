@@ -24,16 +24,17 @@ import java.util.concurrent.{Executors, ExecutorService}
 import com.twitter.concurrent.NamedPoolThreadFactory
 import kafka.serializer.Encoder
 import com.twitter.storehaus.kafka.KafkaInjections.ByteArrayEncoder
+import java.util.Properties
 
 /**
  * Kafka Sink that can be used with SummingBird to sink messages to a Kafka Queue
  * @author Mansur Ashraf
  * @since 11/22/13
  */
-@deprecated("use com.twitter.storehaus.kafka.KafkaStore with com.twitter.summingbird.storm.WritableStoreSink")
+@deprecated("use com.twitter.storehaus.kafka.KafkaStore with com.twitter.summingbird.storm.WritableStoreSink","0.9.0")
 class KafkaSink[K, V](dispatcher: Dispatcher[K, V]) extends Serializable {
   /**
-   * Function that satisfies Storm#Sink {@see SummingBird-Storm}
+   * Function that satisfies Storm#Sink
    * @return  () => (K,V) => Future[Unit]
    */
   def write: () => Dispatcher[K, V] = () => dispatcher
@@ -74,8 +75,6 @@ class KafkaSink[K, V](dispatcher: Dispatcher[K, V]) extends Serializable {
 
 object KafkaSink {
 
-  private lazy val defaultExecutor = Executors.newCachedThreadPool(new NamedPoolThreadFactory("KafkaSinkUnboundedFuturePool"))
-
   type Dispatcher[K, V] = ((K, V)) => Future[Unit]
 
   /**
@@ -86,34 +85,36 @@ object KafkaSink {
    * @return KafkaSink
    */
   def apply[K, V](store: KafkaStore[K, V]): KafkaSink[K, V] = {
-    lazy val sink = new KafkaSink[K, V](store.put)
+    val sink = new KafkaSink[K, V](store.put)
     sink
   }
 
   /**
    * Returns KafkaSink[K,V]
-   * @param zkQuorum  zookeeper quorum
+   * @param brokers  kafka brokers
    * @param topic kafka topic.
    * @tparam K key
    * @tparam V value
    * @return KafkaSink[K,V]
    */
-  def apply[K, V, E <: Encoder[V] : Manifest](zkQuorum: Seq[String], topic: String, executor: => ExecutorService): KafkaSink[K, V] = {
-    lazy val store = KafkaStore[K, V, E](zkQuorum, topic)(executor)
+  def apply[K, V, E <: Encoder[V] : Manifest](brokers: Seq[String], topic: String): KafkaSink[K, V] = {
+    val store = KafkaStore[K, V, E](brokers, topic)
     lazy val sink = apply[K, V](store)
     sink
   }
 
   /**
-   * Returns KafkaSink[Array[Byte], Array[Byte]]. This should be your default implementation
-   * in most scenarios
-   * @param zkQuorum zookeeper quorum
-   * @param topic kafka encoder
-   * @return KafkaSink[Array[Byte], Array[Byte]]
+   * Returns KafkaSink[K,V]
+   * @param props  kafka props
+   * @param topic kafka topic.
+   * @tparam K key
+   * @tparam V value
+   * @return KafkaSink[K,V]
    */
-  def apply(zkQuorum: Seq[String],
-            topic: String): KafkaSink[Array[Byte], Array[Byte]] = {
-    apply[Array[Byte], Array[Byte], ByteArrayEncoder](zkQuorum, topic, defaultExecutor)
+  def apply[K, V](props: Properties, topic: String): KafkaSink[K, V] = {
+    lazy val store = KafkaStore[K, V](topic, props)
+    lazy val sink = apply[K, V](store)
+    sink
   }
 }
 

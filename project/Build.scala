@@ -21,6 +21,9 @@ import Keys._
 import spray.boilerplate.BoilerplatePlugin.Boilerplate
 import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
 import com.typesafe.tools.mima.plugin.MimaKeys.previousArtifact
+import sbtassembly.Plugin._
+import AssemblyKeys._
+
 
 object StorehausBuild extends Build {
   def withCross(dep: ModuleID) =
@@ -35,7 +38,7 @@ object StorehausBuild extends Build {
       case version if version startsWith "2.10" => "org.specs2" %% "specs2" % "1.13" % "test"
   }
   val extraSettings =
-    Project.defaultSettings ++ Boilerplate.settings ++ mimaDefaultSettings
+    Project.defaultSettings ++ Boilerplate.settings ++ assemblySettings ++ mimaDefaultSettings
 
   def ciSettings: Seq[Project.Setting[_]] =
     if (sys.env.getOrElse("TRAVIS", "false").toBoolean) Seq(
@@ -55,8 +58,8 @@ object StorehausBuild extends Build {
   val sharedSettings = extraSettings ++ ciSettings ++ Seq(
     organization := "com.twitter",
     scalaVersion := "2.9.3",
-    version := "0.9.0",
-    crossScalaVersions := Seq("2.9.3", "2.10.0"),
+    version := "0.9.1",
+    crossScalaVersions := Seq("2.9.3", "2.10.4"),
     javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
     javacOptions in doc := Seq("-source", "1.6"),
     libraryDependencies <+= scalaVersion(specs2Import(_)),
@@ -116,10 +119,10 @@ object StorehausBuild extends Build {
       .filterNot(unreleasedModules.contains(_))
       .map { s => "com.twitter" % ("storehaus-" + s + "_2.9.3") % "0.9.0" }
 
-  val algebirdVersion = "0.5.0"
-  val bijectionVersion = "0.6.2"
+  val algebirdVersion = "0.7.0"
+  val bijectionVersion = "0.6.3"
   val utilVersion = "6.11.0"
-  val scaldingVersion = "0.9.0rc15"
+  val scaldingVersion = "0.11.1"
 
   lazy val storehaus = Project(
     id = "storehaus",
@@ -139,6 +142,7 @@ object StorehausBuild extends Build {
     storehausHBase,
     storehausDynamoDB,
     storehausKafka,
+    storehausKafka08,
     storehausMongoDB,
     storehausElastic,
     storehausTesting
@@ -225,7 +229,7 @@ object StorehausBuild extends Build {
     libraryDependencies ++= Seq (
       "com.twitter" %% "bijection-core" % bijectionVersion,
       "com.twitter" %% "bijection-avro" % bijectionVersion,
-      "com.twitter"%"kafka_2.9.2"%"0.7.0" excludeAll(
+      "com.twitter"%"kafka_2.9.2"%"0.7.0" % "provided" excludeAll(
         ExclusionRule("com.sun.jdmk","jmxtools"),
         ExclusionRule( "com.sun.jmx","jmxri"),
         ExclusionRule( "javax.jms","jms")
@@ -234,6 +238,19 @@ object StorehausBuild extends Build {
     // we don't want various tests clobbering each others keys
     parallelExecution in Test := false
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
+
+  lazy val storehausKafka08 = module("kafka-08").settings(
+    libraryDependencies ++= Seq (
+      "com.twitter" %% "bijection-core" % bijectionVersion,
+      "com.twitter" %% "bijection-avro" % bijectionVersion,
+      "org.apache.kafka" % "kafka_2.9.2" % "0.8.0" % "provided" excludeAll(
+        ExclusionRule(organization = "com.sun.jdmk"),
+        ExclusionRule(organization = "com.sun.jmx"),
+        ExclusionRule(organization = "javax.jms"))
+    ),
+    // we don't want various tests clobbering each others keys
+    parallelExecution in Test := false
+  ).dependsOn(storehausCore,storehausAlgebra % "test->test;compile->compile")
 
   lazy val storehausMongoDB= module("mongodb").settings(
     libraryDependencies ++= Seq(
@@ -265,4 +282,14 @@ object StorehausBuild extends Build {
         withCross("com.twitter" %% "util-core" % utilVersion))
     )
   )
+
+  lazy val storehausCaliper = module("caliper").settings(
+    libraryDependencies ++= Seq("com.google.caliper" % "caliper" % "0.5-rc1",
+      "com.google.code.java-allocation-instrumenter" % "java-allocation-instrumenter" % "2.0",
+      "com.google.code.gson" % "gson" % "1.7.1",
+      "com.twitter" %% "bijection-core" % bijectionVersion,
+      "com.twitter" %% "algebird-core" % algebirdVersion),
+      javaOptions in run <++= (fullClasspath in Runtime) map { cp => Seq("-cp", sbt.Build.data(cp).mkString(":")) }
+  ).dependsOn(storehausCore, storehausAlgebra, storehausCache)
+
 }
