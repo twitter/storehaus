@@ -30,10 +30,12 @@ import com.amazonaws.services.dynamodbv2.model._
 import AwsBijections._
 
 object DynamoLongStore {
-  def apply(awsAccessKey: String, awsSecretKey: String, endpoint: Regions, tableName: String,
-    primaryKeyColumn: String, valueColumn: String) =
+  def apply(awsAccessKey: String, awsSecretKey: String, tableName: String,
+    primaryKeyColumn: String, valueColumn: String,
+    endpoint: Regions = Regions.US_EAST_1) =
 
-    new DynamoLongStore(DynamoStore(awsAccessKey, awsSecretKey, endpoint, tableName, primaryKeyColumn, valueColumn))
+    new DynamoLongStore(DynamoStore(awsAccessKey, awsSecretKey, tableName,
+      primaryKeyColumn, valueColumn, endpoint))
 }
 
 class DynamoLongStore(underlying: DynamoStore)

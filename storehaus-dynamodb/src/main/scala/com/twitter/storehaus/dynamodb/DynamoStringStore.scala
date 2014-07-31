@@ -25,10 +25,12 @@ import com.amazonaws.services.dynamodbv2.model._
 import AwsBijections._
 
 object DynamoStringStore {
-  def apply(awsAccessKey: String, awsSecretKey: String, endpoint: Regions, tableName: String,
-    primaryKeyColumn: String, valueColumn: String) =
+  def apply(awsAccessKey: String, awsSecretKey: String, tableName: String,
+    primaryKeyColumn: String, valueColumn: String,
+    endpoint: Regions = Regions.US_EAST_1) =
 
-    new DynamoStringStore(DynamoStore(awsAccessKey, awsSecretKey, endpoint, tableName, primaryKeyColumn, valueColumn))
+    new DynamoStringStore(DynamoStore(awsAccessKey, awsSecretKey, tableName,
+      primaryKeyColumn, valueColumn, endpoint))
 }
 
 class DynamoStringStore(underlying: DynamoStore)

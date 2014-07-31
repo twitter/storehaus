@@ -35,20 +35,24 @@ import AwsBijections._
 
 object DynamoStore {
 
-  def apply(awsAccessKey: String, awsSecretKey: String, endpoint: Regions, tableName: String,
-    primaryKeyColumn: String, valueColumn: String): DynamoStore = {
+  def apply(awsAccessKey: String, awsSecretKey: String, tableName: String,
+    primaryKeyColumn: String, valueColumn: String,
+    endpoint: Regions = Regions.US_EAST_1): DynamoStore = {
 
     val processors = Runtime.getRuntime.availableProcessors
-    this(awsAccessKey, awsSecretKey, endpoint, tableName, primaryKeyColumn, valueColumn, processors)
+    this(awsAccessKey, awsSecretKey, tableName, primaryKeyColumn, valueColumn,
+      processors, endpoint)
   }
 
-  def apply(awsAccessKey: String, awsSecretKey: String, endpoint: Regions, tableName: String,
-    primaryKeyColumn: String, valueColumn: String, numberWorkerThreads: Int): DynamoStore = {
+  def apply(awsAccessKey: String, awsSecretKey: String, tableName: String,
+    primaryKeyColumn: String, valueColumn: String, numberWorkerThreads: Int,
+    endpoint: Regions): DynamoStore = {
 
     val auth = new BasicAWSCredentials(awsAccessKey, awsSecretKey)
     var client = new AmazonDynamoDBClient(auth)
     client.setRegion(Region.getRegion(endpoint));
-    new DynamoStore(client, tableName, primaryKeyColumn, valueColumn, numberWorkerThreads)
+    new DynamoStore(client, tableName, primaryKeyColumn, valueColumn,
+      numberWorkerThreads)
   }
 }
 
