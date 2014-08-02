@@ -1,5 +1,34 @@
 # Storehaus #
 
+### Version 0.9.1 ###
+* Feature/write through cache perf: https://github.com/twitter/storehaus/pull/234
+* Share the Retrying Read Write store in storehaus repo: https://github.com/twitter/storehaus/pull/230
+* initial Kafka 0.8 support: https://github.com/twitter/storehaus/pull/232
+* Exceptions on the cache-store should be ignored for Read/WriteThroughStore: https://github.com/twitter/storehaus/pull/225
+
+### Version 0.9.0 ###
+* Reporting store algebra: https://github.com/twitter/storehaus/pull/176
+* Bumping finagle to a more recent version, changes that were required: https://github.com/twitter/storehaus/pull/223
+* Bump Algebird to version 0.5.0: https://github.com/twitter/storehaus/pull/221
+* Add stores for read-through and write-through caching: https://github.com/twitter/storehaus/pull/220
+* fix bug in onFailure enriched mergeable store: https://github.com/twitter/storehaus/pull/218
+* Fixes an issue that Future.collect is N^2 on scala Lists: https://github.com/twitter/storehaus/pull/219
+* Adds GetBatchingReadableStore: https://github.com/twitter/storehaus/pull/215
+* Elastic Search Store: https://github.com/twitter/storehaus/pull/205
+* Issue #72: Added mongodb store.: https://github.com/twitter/storehaus/pull/199
+* Add out of retries exception to retrying store: https://github.com/twitter/storehaus/pull/210
+* IterableStore: https://github.com/twitter/storehaus/pull/191
+* add onFailure to EnrichedMergeableStore: https://github.com/twitter/storehaus/pull/200
+* clean up htable after finishing get and put operations.: https://github.com/twitter/storehaus/pull/207
+* Adds a mutable TTL cache: https://github.com/twitter/storehaus/pull/196
+* add MergeableStore.fromStoreNoMulti that does single get then put: https://github.com/twitter/storehaus/pull/201
+* my little proxy: https://github.com/twitter/storehaus/pull/202
+* Add immutable LIRS Cache implementation: https://github.com/twitter/storehaus/pull/155
+* Adds the CalendarTimeStrategy: https://github.com/twitter/storehaus/pull/195
+* Adds the ability to add an Optional component onto any strategy: https://github.com/twitter/storehaus/pull/198
+* Just adds some whitespace: https://github.com/twitter/storehaus/pull/197
+* Kafka Sink for SummingBird: https://github.com/twitter/storehaus/pull/192
+
 ### Version 0.8.0 ###
 * add BatchedStore for writes: https://github.com/twitter/storehaus/pull/175
 * MySQL batched multiPut: https://github.com/twitter/storehaus/pull/173
