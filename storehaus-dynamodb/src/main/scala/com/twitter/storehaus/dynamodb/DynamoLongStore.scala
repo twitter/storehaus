@@ -24,14 +24,18 @@ import com.twitter.storehaus.ConvertedStore
 import com.twitter.storehaus.algebra.MergeableStore
 
 import scala.util.Try
-
+import com.amazonaws.regions.{ Region, Regions }
 import com.amazonaws.services.dynamodbv2.model._
 
 import AwsBijections._
 
 object DynamoLongStore {
-  def apply(awsAccessKey: String, awsSecretKey: String, tableName: String, primaryKeyColumn: String, valueColumn: String) =
-    new DynamoLongStore(DynamoStore(awsAccessKey, awsSecretKey, tableName, primaryKeyColumn, valueColumn))
+  def apply(awsAccessKey: String, awsSecretKey: String, tableName: String,
+    primaryKeyColumn: String, valueColumn: String,
+    endpoint: Regions = Regions.US_EAST_1) =
+
+    new DynamoLongStore(DynamoStore(awsAccessKey, awsSecretKey, tableName,
+      primaryKeyColumn, valueColumn, endpoint))
 }
 
 class DynamoLongStore(underlying: DynamoStore)
