@@ -26,13 +26,21 @@ object ReadableStoreProperties extends Properties("ReadableStore") {
     /**
     * multiGet returns Some(Future(None)) for missing keys.
     */
+  def willBeTrue(fbools: Seq[Future[Boolean]]): Boolean =
+    Await.result(Future.collect(fbools).map(_.forall(identity)))
+
   def multiGetLaw[K: Arbitrary, V: Arbitrary](fn: Map[K, V] => ReadableStore[K, V]) =
     forAll { (m: Map[K, V], others: Set[K]) =>
       val keys = m.keySet
       val expanded: Set[K] = keys ++ others
       val store = fn(m)
       val multiGetReturn = store.multiGet(expanded)
-      expanded.forall { k: K => Await.result(store.get(k)) == Await.result(multiGetReturn(k)) }
+      willBeTrue { expanded.toSeq.map { k: K =>
+        for {
+          v1 <- store.get(k)
+          v2 <- multiGetReturn(k)
+        } yield (v1 == v2)
+      }}
     }
 
   /**
@@ -44,7 +52,7 @@ object ReadableStoreProperties extends Properties("ReadableStore") {
       val retM = store.multiGet(m.keySet)
       retM.forall { case (k, v) =>
           (Await.result(store.get(k)) == Await.result(v)) && (m.get(k) == Await.result(v))
-      } && m.keySet.forall { k => (Await.result(store.get(k)) == m.get(k)) }
+      } && willBeTrue(m.keySet.toSeq.map { k => store.get(k).map(_ == m.get(k)) })
     }
 
   /**
