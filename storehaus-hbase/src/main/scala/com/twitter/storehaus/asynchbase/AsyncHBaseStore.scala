@@ -16,8 +16,8 @@
 
 package com.twitter.storehaus.asynchbase
 
-import com.twitter.util.{Future, FuturePool}
-import java.util.concurrent.Executors
+import com.twitter.util.Future
+import com.stumbleupon.async.Deferred
 import org.hbase.async.{DeleteRequest, PutRequest, GetRequest, HBaseClient}
 import com.twitter.bijection.{Injection, Codec, Conversion}
 import scala.Some
@@ -34,9 +34,9 @@ trait AsyncHBaseStore {
   protected val table: String
   protected val columnFamily: String
   protected val column: String
-  protected val threads: Int
   protected val client: HBaseClient
-  protected val futurePool = FuturePool(Executors.newFixedThreadPool(threads))
+
+  implicit protected def toRichDeferred[T](d: Deferred[T]) = RichDeferred.toRichDeferred(d)
 
   def validateConfiguration() {
     import org.apache.commons.lang.StringUtils.isNotEmpty
@@ -48,34 +48,28 @@ trait AsyncHBaseStore {
     client.ensureTableExists(table.as[Array[Byte]])
   }
 
-  def getValue[K: Codec, V: Codec](key: K): Future[Option[V]] = futurePool {
+  def getValue[K: Codec, V: Codec](key: K): Future[Option[V]] = {
     val request = new GetRequest(table.as[Array[Byte]], key.as[Array[Byte]])
       .family(columnFamily.as[Array[Byte]])
       .qualifier(column.as[Array[Byte]])
-
-    val kv = client.get(request).join().asScala
-    kv.headOption
-      .map(kv => Injection.invert[V, Array[Byte]](kv.value()).get)
+    client.get(request).fut.map(_.asScala.headOption.map(kv => Injection.invert[V, Array[Byte]](kv.value()).get))
   }
-
 
   def putValue[K: Codec, V: Codec](kv: (K, Option[V])): Future[Unit] = {
     kv match {
-      case (k, Some(v)) => futurePool {
+      case (k, Some(v)) =>
         val put = new PutRequest(table.as[Array[Byte]],
           k.as[Array[Byte]],
           columnFamily.as[Array[Byte]],
           column.as[Array[Byte]],
           v.as[Array[Byte]])
-        client.put(put).join()
-      }
-      case (k, None) => futurePool {
+        client.put(put).fut.map{ _ => () }
+      case (k, None) => 
         val delete = new DeleteRequest(table.as[Array[Byte]],
           k.as[Array[Byte]],
           columnFamily.as[Array[Byte]],
           column.as[Array[Byte]])
-        client.delete(delete).join()
-      }
+        client.delete(delete).fut.map(_ => ())
     }
   }
 }

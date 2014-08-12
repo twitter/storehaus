@@ -28,9 +28,8 @@ object AsyncHBaseByteArrayStore {
   def apply(quorumNames: Seq[String],
             table: String,
             columnFamily: String,
-            column: String,
-            threads: Int = 4): AsyncHBaseByteArrayStore = {
-    val store = new AsyncHBaseByteArrayStore(quorumNames, table, columnFamily, column, new HBaseClient(quorumNames.mkString(",")), threads)
+            column: String): AsyncHBaseByteArrayStore = {
+    val store = new AsyncHBaseByteArrayStore(quorumNames, table, columnFamily, column, new HBaseClient(quorumNames.mkString(",")))
     store.validateConfiguration()
     store
   }
@@ -41,8 +40,7 @@ class AsyncHBaseByteArrayStore(protected val quorumNames: Seq[String],
                                protected val table: String,
                                protected val columnFamily: String,
                                protected val column: String,
-                               protected val client: HBaseClient,
-                               protected val threads: Int) extends Store[Array[Byte], Array[Byte]] with AsyncHBaseStore {
+                               protected val client: HBaseClient) extends Store[Array[Byte], Array[Byte]] with AsyncHBaseStore {
 
   /** get a single key from the store.
     * Prefer multiGet if you are getting more than one key at a time
@@ -62,7 +60,5 @@ class AsyncHBaseByteArrayStore(protected val quorumNames: Seq[String],
   /** Close this store and release any resources.
     * It is undefined what happens on get/multiGet after close
     */
-  override def close(t: Time) = futurePool {
-    client.shutdown().join()
-  }
+  override def close(t: Time) = client.shutdown().fut.map(_ => ())
 }
