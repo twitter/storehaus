@@ -70,7 +70,7 @@ object StorehausBuild extends Build {
       "Conjars Repository" at "http://conjars.org/repo"
     ),
     parallelExecution in Test := true,
-    scalacOptions ++= Seq(Opts.compile.unchecked, Opts.compile.deprecation),
+    scalacOptions ++= Seq(Opts.compile.unchecked, Opts.compile.deprecation, "-feature"),
     scalacOptions <++= scalaVersion map { version =>
 	val Some((major, minor)) = CrossVersion.partialVersion(version)
 	if (major < 2 || (major == 2 && minor < 10)) 
@@ -147,12 +147,12 @@ object StorehausBuild extends Build {
     storehausRedis,
     storehausHBase,
     storehausDynamoDB,
-    storehausCassandra,
     storehausKafka,
     storehausKafka08,
     storehausMongoDB,
     storehausElastic,
-    storehausTesting
+    storehausTesting,
+    storehausCassandra
   )
 
   def module(name: String) = {
@@ -238,6 +238,8 @@ object StorehausBuild extends Build {
       "com.twitter" %% "bijection-core" % bijectionVersion,
       "org.hectorclient" % "hector-core" % "1.1-4",
       "com.eaio.uuid" % "uuid" % "3.2",
+      "com.datastax.cassandra" % "cassandra-driver-core" % "2.1.0-rc1",
+      "com.websudos" % "phantom-dsl_2.10" % "1.0.0",
       withCross("com.twitter" %% "util-zk" % utilVersion),
       withCross("com.chuusai" %% "shapeless" % "1.2.4", true)
     ),
