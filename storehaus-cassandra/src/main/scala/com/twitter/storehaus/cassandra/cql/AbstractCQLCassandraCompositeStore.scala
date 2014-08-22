@@ -146,14 +146,14 @@ abstract class AbstractCQLCassandraCompositeStore[RK <: HList, CK <: HList, V, R
    	      addKey(ck, colkeyColumnNames, eqList)
     	  val builder: BuiltStatement = valueOpt match {
     	    case Some(value) => {
-    	      val update = putValue(value, QueryBuilder.update(columnFamily.getName)).where(_)
+    	      val update = putValue(value, QueryBuilder.update(columnFamily.getPreparedNamed)).where(_)
     	      val where = eqList.join(update)((clause, where) => where.and(clause))
     	      ttl match {
     	        case Some(duration) => where.using(QueryBuilder.ttl(duration.inSeconds))
     	        case None => where
     	      }
     	    }
-    	    case None => eqList.join(QueryBuilder.delete(valueColumnName).from(columnFamily.getName).where(_))((clause, where) => where.and(clause))
+    	    case None => eqList.join(QueryBuilder.delete(valueColumnName).from(columnFamily.getPreparedNamed).where(_))((clause, where) => where.and(clause))
     	  }
     	  mutator.add(builder)
     	}
@@ -182,7 +182,7 @@ abstract class AbstractCQLCassandraCompositeStore[RK <: HList, CK <: HList, V, R
     futurePool {
       val builder = QueryBuilder
         .select()
-        .from(columnFamily.getName)
+        .from(columnFamily.getPreparedNamed)
         .where()
    	  val eqList = new ArrayBuffer[Clause]
       addKey(rk, rowkeyColumnNames, eqList)

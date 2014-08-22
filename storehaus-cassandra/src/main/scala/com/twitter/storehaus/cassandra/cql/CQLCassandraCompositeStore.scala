@@ -65,7 +65,7 @@ object CQLCassandraCompositeStore {
     columnFamily.session.createKeyspace
     val rowKeyStrings = rowkeySerializers.map(keyStringMapping).toList
     val colKeyStrings = colkeySerializers.map(keyStringMapping).toList
-    val stmt = s"""CREATE TABLE IF NOT EXISTS \"${columnFamily.getName}\" (""" +
+    val stmt = s"""CREATE TABLE IF NOT EXISTS ${columnFamily.getPreparedNamed} (""" +
     		createColumnListing(rowkeyColumnNames, rowKeyStrings) +
 	        createColumnListing(colkeyColumnNames, colKeyStrings) +
 	        createColumnListing(List(valueColumnName), List(valueSerializer.cassandraType)) +

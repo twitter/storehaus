@@ -58,6 +58,13 @@ object CQLCassandraConfiguration {
 		
   case class StoreColumnFamily(name: String, val session: StoreSession) {
     lazy val getName = name.filterNot(_ == '"')
+    lazy val getPreparedNamed = {
+      val lowerName = getName.toLowerCase
+      if (getName != lowerName)
+        "\"" + getName + "\""
+      else
+        getName
+    } 
   }
   
   case class StoreSession(val keyspacename: String, val cluster: StoreCluster, val replicationOptions: String = "{'class' : 'SimpleStrategy', 'replication_factor' : 3}") {

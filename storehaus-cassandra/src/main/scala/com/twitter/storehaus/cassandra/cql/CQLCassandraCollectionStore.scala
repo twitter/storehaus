@@ -70,7 +70,7 @@ object CQLCassandraCollectionStore {
     columnFamily.session.createKeyspace
     val rowKeyStrings = rowkeySerializers.map(keyStringMapping).toList
     val colKeyStrings = colkeySerializers.map(keyStringMapping).toList
-    val stmt = s"""CREATE TABLE IF NOT EXISTS \"${columnFamily.getName}\" (""" +
+    val stmt = s"""CREATE TABLE IF NOT EXISTS ${columnFamily.getPreparedNamed} (""" +
     		createColumnListing(rowkeyColumnNames, rowKeyStrings) +
 	        createColumnListing(colkeyColumnNames, colKeyStrings) +
 	        (traversableType match {
@@ -149,7 +149,7 @@ class CQLCassandraCollectionStore[RK <: HList, CK <: HList, V, X, RS <: HList, C
    	  val eqList = new ArrayBuffer[Clause]
       addKey(rk, rowkeyColumnNames, eqList)
       addKey(ck, colkeyColumnNames, eqList)
-      val update = QueryBuilder.update(columnFamily.getName)
+      val update = QueryBuilder.update(columnFamily.getPreparedNamed)
       val initialsetfunc = (value match {
           case set: Set[X] => update.`with`(QueryBuilder.addAll(valueColumnName, set.map(v => ev2.toCType(v)).toSet.asJava))
           case list: List[X] => update.`with`(QueryBuilder.appendAll(valueColumnName, list.map(v => ev2.toCType(v)).toList.asJava))

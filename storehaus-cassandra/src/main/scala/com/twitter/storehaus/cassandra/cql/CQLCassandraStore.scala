@@ -34,8 +34,8 @@ object CQLCassandraStore {
     val keySerializer = implicitly[CassandraPrimitive[K]]
     val valueSerializer = implicitly[CassandraPrimitive[V]]
     columnFamily.session.createKeyspace
-    val stmt = "CREATE TABLE IF NOT EXISTS \"" + columnFamily.getName +
-	        "\" ( \"" + keyColumnName + "\" " + keySerializer.cassandraType + " PRIMARY KEY, \"" + 
+    val stmt = "CREATE TABLE IF NOT EXISTS " + columnFamily.getPreparedNamed +
+	        " ( \"" + keyColumnName + "\" " + keySerializer.cassandraType + " PRIMARY KEY, \"" + 
 	        valueColumnName + "\" " + valueSerializer.cassandraType + ");"
     columnFamily.session.getSession.execute(stmt)
   }
@@ -67,7 +67,7 @@ class CQLCassandraStore[K : CassandraPrimitive, V : CassandraPrimitive] (
     	val mutator = new BatchStatement(batchType)
     	kvs.foreach {
     	  case (key, Some(value)) => { 
-    	    val builder = QueryBuilder.insertInto(columnFamily.getName).value(keyColumnName, key).value(valueColumnName, value)
+    	    val builder = QueryBuilder.insertInto(columnFamily.getPreparedNamed).value(keyColumnName, key).value(valueColumnName, value)
     	    ttl match {
     	      case Some(duration) => builder.using(QueryBuilder.ttl(duration.inSeconds))
     	      case _ =>
@@ -93,7 +93,7 @@ class CQLCassandraStore[K : CassandraPrimitive, V : CassandraPrimitive] (
     futurePool {
       val stmt = QueryBuilder
         .select()
-        .from(columnFamily.getName)
+        .from(columnFamily.getPreparedNamed)
         .where(QueryBuilder.eq(keyColumnName, key))
         .limit(1)
         .setConsistencyLevel(consistency)
