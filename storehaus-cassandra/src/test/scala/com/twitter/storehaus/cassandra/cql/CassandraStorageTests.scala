@@ -208,23 +208,20 @@ object CassandraStoreProperties extends Properties("CassandraStore") {
   property("Various Cassandrastores put, get and merge") = {
     val host = new CQLCassandraConfiguration.StoreHost(hostname)
     val cluster = new CQLCassandraConfiguration.StoreCluster(clusterName, Set(host))
-    val session = new CQLCassandraConfiguration.StoreSession(keyspaceName, cluster)
+    val session = new CQLCassandraConfiguration.StoreSession(keyspaceName, cluster, 
+        "{'class' : 'SimpleStrategy', 'replication_factor' : 1}")
     
-    println("Creating Cassandra-Keyspace " + keyspaceName)
     session.createKeyspace
     try {
-    	println("Executing Cassandra-Tests")
         val r1 = putAndGetBasicKeyValeStore(session)
     	val r2 = putAndGetAndMergeCollectionComposite(session) 
     	val r3 = putAndGetCompositeStoreWithTTL(session) 
     	val r4 = mergeLongStore(session)
-    	println("Execution of Cassandra-Tests finished with success=" + (r1 && r2 && r3 && r4))
         
     	r1 && r2 && r3 && r4
     } finally {
     	session.dropAndDeleteKeyspaceAndContainedData
     	cluster.getCluster.close
-    	println("Deleted Cassandra-Keyspace " + keyspaceName)
     }
   }
 }

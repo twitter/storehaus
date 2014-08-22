@@ -94,14 +94,10 @@ object AbstractCQLCassandraCompositeStore {
     def join[R](initialFunction: T => R)(inbetweenFunction: (T, R) => R): R = {
       @tailrec def recJoin(acc: Option[R], traverse: Traversable[T]): R = {
         if (traverse.size == 0) return acc.get
-        println(" traverse.head:" + traverse.head)
-        println(" acc:" + acc)
-        // println(" initialFunction:" + initialFunction(traverse.head))
         val result = acc match {
           case Some(accResult) => Some(inbetweenFunction(traverse.head, accResult))
           case None => Some(initialFunction(traverse.head))
         }
-        println("result:" + result)
         recJoin(result, traverse.tail)
       }
       recJoin(None, traversable)  

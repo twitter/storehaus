@@ -165,7 +165,7 @@ class CQLCassandraCollectionStore[RK <: HList, CK <: HList, V, X, RS <: HList, C
    	    val origValue = Await.result(get((rk, ck)))
 	    // due to some unknown reason stmt does not execute in the same session object, except when executed multiple times, so we execute in a different one
    	    // TODO: this must be removed in the future as soon as the bug (?) is fixed in Datastax' driver 
-   	    val newSession = columnFamily.session.cluster.getCluster.connect(columnFamily.session.keyspacename) 
+   	    val newSession = columnFamily.session.cluster.getCluster.connect("\"" + columnFamily.session.keyspacename + "\"") 
    	    newSession.execute(stmt)
    	    newSession.close()
         origValue
