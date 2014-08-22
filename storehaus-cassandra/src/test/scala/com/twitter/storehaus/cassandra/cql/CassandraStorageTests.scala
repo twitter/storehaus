@@ -59,6 +59,7 @@ object CassandraStoreProperties extends Properties("CassandraStore") {
     Await.result(store.put(rowKey, None))
     val result2 = Await.result(store.get(rowKey)) == None
 
+    if(!(result && result2)) println("Cassandra-Results do not match in putAndGetBasicKeyValeStore")
     result && result2
   }
       
@@ -106,6 +107,8 @@ object CassandraStoreProperties extends Properties("CassandraStore") {
     // close store to shutdown futurePool correctly
     store.close(Duration(10, TimeUnit.SECONDS))
     
+    if(!(result == expected)) println("Cassandra-Results do not match in putAndGetAndMergeCollectionComposite, expected was: " + expected + " but result was " + result)
+    if(result2 == None || result2.get.size != 2) println("Cassandra-Results do not match in putAndGetAndMergeCollectionComposite, expected merge to return two elements in set, but set was:" + result2)
     (result == expected) && (result2 != None && result2.get.size == 2)
   }  
 
@@ -144,11 +147,15 @@ object CassandraStoreProperties extends Properties("CassandraStore") {
 	// put and get value
     Await.result(store.put(key, expected))
     var result = Await.result(store.get(key)) == expected
-    
+
+    if(!(result)) println("Cassandra-Results do not match in putAndGetCompositeStoreWithTTL")
+
     // wait until value is gone (i.e. ttl is exceeded)
     Try(Thread.sleep(ttl.get.inUnit(TimeUnit.MILLISECONDS))).onSuccess{
       _ => result = result && Await.result(store.get(key)) == None
     }
+	
+    if(!result) println("Cassandra did not delete value after TTL in putAndGetCompositeStoreWithTTL")
 	
     // close store to shutdown futurePool correctly
     store.close(Duration(10, TimeUnit.SECONDS))
@@ -203,17 +210,21 @@ object CassandraStoreProperties extends Properties("CassandraStore") {
     val cluster = new CQLCassandraConfiguration.StoreCluster(clusterName, Set(host))
     val session = new CQLCassandraConfiguration.StoreSession(keyspaceName, cluster)
     
+    println("Creating Cassandra-Keyspace " + keyspaceName)
     session.createKeyspace
     try {
-    	val r1 = putAndGetBasicKeyValeStore(session)
+    	println("Executing Cassandra-Tests")
+        val r1 = putAndGetBasicKeyValeStore(session)
     	val r2 = putAndGetAndMergeCollectionComposite(session) 
     	val r3 = putAndGetCompositeStoreWithTTL(session) 
     	val r4 = mergeLongStore(session)
-    	
+    	println("Execution of Cassandra-Tests finished with success=" + (r1 && r2 && r3 && r4))
+        
     	r1 && r2 && r3 && r4
     } finally {
-    	session.getSession.closeAsync()
     	session.dropAndDeleteKeyspaceAndContainedData
+    	cluster.getCluster.close
+    	println("Deleted Cassandra-Keyspace " + keyspaceName)
     }
   }
 }
