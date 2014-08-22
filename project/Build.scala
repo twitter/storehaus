@@ -74,15 +74,16 @@ object StorehausBuild extends Build {
       Opts.resolver.sonatypeReleases,
       "Twitter Maven" at "http://maven.twttr.com",
       "Conjars Repository" at "http://conjars.org/repo",
-      "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"
+      "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/",
+      "Websudos Repository" at "http://maven.websudos.co.uk/ext-release-local"
     ),
     parallelExecution in Test := true,
     scalacOptions ++= Seq(Opts.compile.unchecked, Opts.compile.deprecation),
     scalacOptions <++= scalaVersion map { version =>
-	val Some((major, minor)) = CrossVersion.partialVersion(version)
-	if (major < 2 || (major == 2 && minor < 10)) 
-	    Seq("-Ydependent-method-types")
-	else Nil
+      val Some((major, minor)) = CrossVersion.partialVersion(version)
+      if (major < 2 || (major == 2 && minor < 10))
+        Seq("-Ydependent-method-types")
+      else Nil
     },
 
     // Publishing options:
@@ -312,10 +313,8 @@ object StorehausBuild extends Build {
   def cassandraDeps(scalaVersion: String) = if (!isScala210x(scalaVersion)) Seq() else Seq(
     "com.twitter" %% "algebird-core" % algebirdVersion,
     "com.twitter" %% "bijection-core" % bijectionVersion,
-    "org.hectorclient" % "hector-core" % "1.1-4",
-    "com.eaio.uuid" % "uuid" % "3.2",
     "com.datastax.cassandra" % "cassandra-driver-core" % cassandraVersion,
-    "com.websudos" % "phantom-dsl_2.10" % "1.0.0",
+    "com.websudos" % "phantom-dsl_2.10" % "1.0.6",
     withCross("com.twitter" %% "util-zk" % utilVersion),
     withCross("com.chuusai" %% "shapeless" % "1.2.4", true)
   )
