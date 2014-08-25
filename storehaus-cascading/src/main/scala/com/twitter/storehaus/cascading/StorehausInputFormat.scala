@@ -49,9 +49,9 @@ class StorehausInputFormat[K, V]
   /**
    * RecordReader delegating real work to the provided SplittingMechanism
    */
-  class StorehausRecordReader(split: InputSplit, splittingMechanism: StorehausSplittingMechanism[K, V])
+  class StorehausRecordReader(split: InputSplit, splittingMechanism: StorehausSplittingMechanism[K, V], reporter: Reporter)
     extends RecordReader[Instance[K], Instance[V]] {
-
+    splittingMechanism.initializeSplitInCluster(split, reporter)
     private [this] var pos : Long = 1L
 
     override def next(key: Instance[K], value: Instance[V]) : Boolean = {
@@ -77,7 +77,7 @@ class StorehausInputFormat[K, V]
    * returns RecordReader by providing a StorehausSplittingMechanism from JobConf
    */
   override def getRecordReader(inputSplit: InputSplit, conf: JobConf, reporter: Reporter) = {
-    new StorehausRecordReader(inputSplit, getSplittingMechanism(conf))
+    new StorehausRecordReader(inputSplit, getSplittingMechanism(conf), reporter)
   }
 }
 

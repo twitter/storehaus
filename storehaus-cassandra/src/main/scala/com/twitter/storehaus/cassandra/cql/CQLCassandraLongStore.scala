@@ -18,7 +18,7 @@ package com.twitter.storehaus.cassandra.cql
 import com.websudos.phantom.CassandraPrimitive
 import com.twitter.storehaus.algebra.MergeableStore
 import com.twitter.util.{Await, Future, Duration, FuturePool}
-import com.datastax.driver.core.{Statement, ConsistencyLevel, BatchStatement, ResultSet}
+import com.datastax.driver.core.{Statement, ConsistencyLevel, BatchStatement, ResultSet, Row}
 import com.datastax.driver.core.policies.{LoadBalancingPolicy, Policies, RoundRobinPolicy, ReconnectionPolicy, RetryPolicy, TokenAwarePolicy}
 import com.datastax.driver.core.querybuilder.{QueryBuilder, BuiltStatement, Update, Delete, Select}
 import com.datastax.driver.core.DataType.Name
@@ -93,7 +93,9 @@ class CQLCassandraLongStore[RK <: HList, CK <: HList, RS <: HList, CS <: HList] 
     (readbeforeWrite: Boolean = true,
      sync: CassandraExternalSync = CQLCassandraConfiguration.DEFAULT_SYNC)
   	(implicit evrow: MappedAux[RK, CassandraPrimitive, RS],
-  			evcol: MappedAux[CK, CassandraPrimitive, CS], 
+  			evcol: MappedAux[CK, CassandraPrimitive, CS],
+		    rowmap: AbstractCQLCassandraCompositeStore.Row2Result[RK, RS],
+		    colmap: AbstractCQLCassandraCompositeStore.Row2Result[CK, CS],
   			a2cRow: AbstractCQLCassandraCompositeStore.Append2Composite[ArrayBuffer[Clause], RK], 
   			a2cCol: AbstractCQLCassandraCompositeStore.Append2Composite[ArrayBuffer[Clause], CK],
   			rsUTC: *->*[CassandraPrimitive]#λ[RS],
@@ -161,5 +163,7 @@ class CQLCassandraLongStore[RK <: HList, CK <: HList, RS <: HList, CS <: HList] 
       }))
     }
   }
+  
+  override def getRowValue(row: Row): Long = implicitly[CassandraPrimitive[Long]].fromRow(row, valueColumnName).get
 }  
 

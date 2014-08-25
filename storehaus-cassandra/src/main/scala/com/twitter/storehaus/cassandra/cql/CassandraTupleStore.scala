@@ -20,10 +20,7 @@ class CassandraTupleStore[RKT <: Product, CKT <: Product, V, RK <: HList, CK <: 
   override def get(k: (RKT, CKT)): Future[Option[V]] = store.get((k._1.hlisted, k._2.hlisted))
   
   override def multiPut[K1 <: (RKT, CKT)](kvs: Map[K1, Option[V]]): Map[K1, Future[Unit]] = {
-    val internalMapFunction = (k: (RKT, CKT), v : Option[V]) => {
-      ((k._1.hlisted, k._2.hlisted), v)
-    }
-    val resultMap = store.multiPut(kvs.map(kv =>  internalMapFunction(kv._1, kv._2)))
+    val resultMap = store.multiPut(kvs.map(kv => ((kv._1._1.hlisted, kv._1._2.hlisted), kv._2)))
     resultMap.map(kv => ((kv._1._1.tupled, kv._1._2.tupled).asInstanceOf[K1], kv._2))
   }
 }

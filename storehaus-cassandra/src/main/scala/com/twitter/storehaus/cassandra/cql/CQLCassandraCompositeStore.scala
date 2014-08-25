@@ -16,7 +16,7 @@
 package com.twitter.storehaus.cassandra.cql
 
 import com.twitter.util.{Future, Duration, FuturePool}
-import com.datastax.driver.core.{Statement, ConsistencyLevel, BatchStatement, ResultSet}
+import com.datastax.driver.core.{Statement, ConsistencyLevel, BatchStatement, ResultSet, Row}
 import com.datastax.driver.core.policies.{LoadBalancingPolicy, Policies, RoundRobinPolicy, ReconnectionPolicy, RetryPolicy, TokenAwarePolicy}
 import com.datastax.driver.core.querybuilder.{QueryBuilder, BuiltStatement, Insert, Delete, Select, Update, Clause}
 import com.twitter.storehaus.Store
@@ -88,7 +88,9 @@ class CQLCassandraCompositeStore[RK <: HList, CK <: HList, V, RS <: HList, CS <:
   ttl: Option[Duration] = CQLCassandraConfiguration.DEFAULT_TTL_DURATION)
   (cassSerValue: CassandraPrimitive[V])(
     implicit evrow: MappedAux[RK, CassandraPrimitive, RS],
-    evcol: MappedAux[CK, CassandraPrimitive, CS], 
+    evcol: MappedAux[CK, CassandraPrimitive, CS],
+    rowmap: AbstractCQLCassandraCompositeStore.Row2Result[RK, RS],
+    colmap: AbstractCQLCassandraCompositeStore.Row2Result[CK, CS],
     a2cRow: AbstractCQLCassandraCompositeStore.Append2Composite[ArrayBuffer[Clause], RK], 
     a2cCol: AbstractCQLCassandraCompositeStore.Append2Composite[ArrayBuffer[Clause], CK],
     rsUTC: *->*[CassandraPrimitive]#λ[RS],
@@ -107,4 +109,5 @@ class CQLCassandraCompositeStore[RK <: HList, CK <: HList, V, RS <: HList, CS <:
 
   override protected def getValue(result: ResultSet): Option[V] = cassSerValue.fromRow(result.one(), valueColumnName)
 
+  override def getRowValue(row: Row): V = cassSerValue.fromRow(row, valueColumnName).get
 }

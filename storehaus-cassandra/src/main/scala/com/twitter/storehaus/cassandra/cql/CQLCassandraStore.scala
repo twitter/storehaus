@@ -16,11 +16,12 @@
 package com.twitter.storehaus.cassandra.cql
 
 import com.twitter.util.{Await, Future, Duration, FuturePool}
-import com.datastax.driver.core.{Statement, ConsistencyLevel, BatchStatement}
+import com.datastax.driver.core.{Statement, ConsistencyLevel, BatchStatement, Row}
 import com.datastax.driver.core.policies.{ Policies, RoundRobinPolicy, ReconnectionPolicy, RetryPolicy, TokenAwarePolicy}
 import com.datastax.driver.core.querybuilder.QueryBuilder
 import com.twitter.storehaus.Store
 import com.twitter.storehaus.WithPutTtl
+import com.twitter.storehaus.cassandra.cql.cascading.CassandraCascadingRowMatcher
 import java.util.concurrent.Executors
 import com.websudos.phantom.CassandraPrimitive
 
@@ -52,7 +53,9 @@ class CQLCassandraStore[K : CassandraPrimitive, V : CassandraPrimitive] (
 		val poolSize: Int = CQLCassandraConfiguration.DEFAULT_FUTURE_POOL_SIZE,
 		val batchType: BatchStatement.Type = CQLCassandraConfiguration.DEFAULT_BATCH_STATEMENT_TYPE,
 		val ttl: Option[Duration] = CQLCassandraConfiguration.DEFAULT_TTL_DURATION)
-	extends Store[K, V] with WithPutTtl[K, V, CQLCassandraStore[K, V]] {
+	extends Store[K, V] 
+    with WithPutTtl[K, V, CQLCassandraStore[K, V]] 
+    with CassandraCascadingRowMatcher[K, V] {
   val keySerializer = implicitly[CassandraPrimitive[K]]
   val valueSerializer = implicitly[CassandraPrimitive[V]]
   
@@ -106,4 +109,7 @@ class CQLCassandraStore[K : CassandraPrimitive, V : CassandraPrimitive] (
       }
     }
   }
+  
+  override def getKeyValueFromRow(row: Row): (K, V) = (keySerializer.fromRow(row, keyColumnName).get, valueSerializer.fromRow(row, valueColumnName).get)
+  
 }

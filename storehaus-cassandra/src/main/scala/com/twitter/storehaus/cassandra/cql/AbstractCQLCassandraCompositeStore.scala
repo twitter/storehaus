@@ -16,11 +16,12 @@
 package com.twitter.storehaus.cassandra.cql
 
 import com.twitter.util.{Duration, Future, FuturePool, Time}
-import com.datastax.driver.core.{BatchStatement, ConsistencyLevel, ResultSet, Statement}
+import com.datastax.driver.core.{BatchStatement, ConsistencyLevel, ResultSet, Row, Statement}
 import com.datastax.driver.core.policies.{LoadBalancingPolicy, Policies, ReconnectionPolicy, RetryPolicy, RoundRobinPolicy, TokenAwarePolicy}
 import com.datastax.driver.core.querybuilder.{BuiltStatement, Clause, QueryBuilder, Update}
 import com.twitter.storehaus.Store
 import com.websudos.phantom.CassandraPrimitive
+import com.twitter.storehaus.cassandra.cql.cascading.CassandraCascadingRowMatcher
 import java.util.concurrent.{Executors, TimeUnit}
 import scala.annotation.tailrec
 import scala.collection.JavaConversions._
@@ -77,7 +78,7 @@ object AbstractCQLCassandraCompositeStore {
    	      r.add(QueryBuilder.eq(s"""\"${s.head}\"""", k.head))
     	  a2c(r, k.tail, s.tail) 
     	}
-    }
+      }
   }
 
   /**
@@ -85,7 +86,39 @@ object AbstractCQLCassandraCompositeStore {
    */
   implicit def append2Composite[R <: ArrayBuffer[Clause], K <: HList, S <: List[String]](r: R)(k: K, s: List[String])
   	(implicit a2c: Append2Composite[R, K]) = a2c(r, k, s) 
-  
+    
+  /**
+   * helper trait for declaring the HList recursive function 
+   * to create a key from a row
+   * R = 
+   */
+  trait Row2Result[K <: HList, S <: HList] {
+    def apply(row: Row, serializers: S, names: List[String]): K
+  }
+
+  /**
+   * helper implicits for the recursion itself
+   */
+  object Row2Result {
+    implicit def hnilRow2Result = new Row2Result[HNil, HNil] {
+      override def apply(row: Row, serializers: HNil, names: List[String]): HNil = HNil
+    }
+    implicit def hlistRow2Result[M, K <: HList, N, S <: HList](
+      implicit r2r: Row2Result[K, S]) = new Row2Result[M :: K, N :: S] {
+    	override def apply(row: Row, serializers: N :: S, names: List[String]): M :: K = {
+    	  val ser = serializers.head.asInstanceOf[CassandraPrimitive[M]]
+    	  val res = ser.fromRow(row, names.head).get
+    	  res :: r2r(row, serializers.tail, names.tail) 
+    	}
+      }
+  }
+
+  /**
+   * recursive function callee implicit
+   */
+  implicit def row2result[K <: HList, S <: HList](row: Row, serializers: S, names: List[String])
+  	(implicit r2r: Row2Result[K, S]) = r2r(row, serializers, names) 
+
   /** 
    *  provides a join method for Traversables,
    *  this is actually a fold with an initial function
@@ -118,12 +151,15 @@ abstract class AbstractCQLCassandraCompositeStore[RK <: HList, CK <: HList, V, R
   batchType: BatchStatement.Type = CQLCassandraConfiguration.DEFAULT_BATCH_STATEMENT_TYPE,
   ttl: Option[Duration] = CQLCassandraConfiguration.DEFAULT_TTL_DURATION)(
     implicit evrow: MappedAux[RK, CassandraPrimitive, RS],
-    evcol: MappedAux[CK, CassandraPrimitive, CS], 
+    evcol: MappedAux[CK, CassandraPrimitive, CS],
+    rowmap: AbstractCQLCassandraCompositeStore.Row2Result[RK, RS],
+    colmap: AbstractCQLCassandraCompositeStore.Row2Result[CK, CS],
     a2cRow: AbstractCQLCassandraCompositeStore.Append2Composite[ArrayBuffer[Clause], RK], 
     a2cCol: AbstractCQLCassandraCompositeStore.Append2Composite[ArrayBuffer[Clause], CK],
     rsUTC:  *->*[CassandraPrimitive]#λ[RS],
     csUTC:  *->*[CassandraPrimitive]#λ[CS])
-  extends Store[(RK, CK), V] {
+  extends Store[(RK, CK), V] 
+  with CassandraCascadingRowMatcher[(RK, CK), V] {
   import AbstractCQLCassandraCompositeStore._
 
   val futurePool = FuturePool(Executors.newFixedThreadPool(poolSize))
@@ -199,6 +235,30 @@ abstract class AbstractCQLCassandraCompositeStore[RK <: HList, CK <: HList, V, R
     Future[Unit] {
       futurePool.executor.awaitTermination(deadline.sinceNow.inUnit(TimeUnit.SECONDS), TimeUnit.SECONDS)
     }
+  }
+
+  override def getKeyValueFromRow(row: Row): ((RK, CK), V) = {
+	val colDefs = row.getColumnDefinitions().asList().toList
+	// find value
+	val value = getRowValue(row)
+	// row key
+	val rk = addKey[RK, RS](row, rowkeySerializer, rowkeyColumnNames)
+	// column key
+	val ck = addKey[CK, CS](row, colkeySerializer, colkeyColumnNames)
+	((rk, ck), value)
+  }
+
+  /**
+   * implementing stores return the value
+   */
+  def getRowValue(row: Row): V
+    
+  /**
+   * the keys are returned using a recursion on the implicits of type Row2Result 
+   */
+  protected def addKey[K <: HList, S <: HList](row: Row, serializers: S, names: List[String])
+  		(implicit r2r: Row2Result[K, S]): K = {
+    row2result(row, serializers, names)
   }
 
 }

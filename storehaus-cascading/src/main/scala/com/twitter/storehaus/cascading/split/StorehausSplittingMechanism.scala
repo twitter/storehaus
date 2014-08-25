@@ -16,7 +16,7 @@
 package com.twitter.storehaus.cascading.split
 
 import com.twitter.storehaus.cascading.Instance
-import org.apache.hadoop.mapred.{ InputSplit, JobConf }
+import org.apache.hadoop.mapred.{ InputSplit, JobConf, Reporter }
 
 /**
  * Mechanisms to split Storehaus read operations and distributes 
@@ -26,6 +26,13 @@ import org.apache.hadoop.mapred.{ InputSplit, JobConf }
  */
 abstract class StorehausSplittingMechanism[K, V](val conf: JobConf) {
   def getSplits(job: JobConf, hint: Int) : Array[InputSplit]
+  
+  /**
+   * before we read from the split this method will be called to initialize resources.
+   * For a single Cluster machine it is guarenteed that the split is the same 
+   * as in fillRecord.
+   */
+  def initializeSplitInCluster(split: InputSplit, reporter: Reporter): Unit = {}
   
   /**
    * similar to InputSplit.next

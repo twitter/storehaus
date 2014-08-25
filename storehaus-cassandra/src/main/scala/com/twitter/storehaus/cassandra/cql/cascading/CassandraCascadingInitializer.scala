@@ -26,5 +26,10 @@ trait CassandraCascadingInitializer[K, V] {
    * See package org.apache.cassandra.dht.*Partitioner for options
    */
   def getPartitionerName: String = "org.apache.cassandra.dht.Murmur3Partitioner"
+    
+  /**
+   * return a store that is an implementation of CassandraCascadingRowMatcher
+   */
+  def getCascadingRowMatcher: CassandraCascadingRowMatcher[K, V]
 
 }

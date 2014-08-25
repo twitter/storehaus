@@ -18,7 +18,7 @@ package com.twitter.storehaus.cassandra.cql
 import com.websudos.phantom.CassandraPrimitive
 import com.twitter.storehaus.algebra.MergeableStore
 import com.twitter.util.{Await, Future, Duration, FuturePool}
-import com.datastax.driver.core.{Statement, ConsistencyLevel, BatchStatement, ResultSet, SimpleStatement}
+import com.datastax.driver.core.{Statement, ConsistencyLevel, BatchStatement, ResultSet, Row, SimpleStatement}
 import com.datastax.driver.core.policies.{LoadBalancingPolicy, Policies, RoundRobinPolicy, ReconnectionPolicy, RetryPolicy, TokenAwarePolicy}
 import com.datastax.driver.core.querybuilder.{QueryBuilder, BuiltStatement, Update, Delete, Select}
 import com.datastax.driver.core.DataType.Name
@@ -101,7 +101,9 @@ class CQLCassandraCollectionStore[RK <: HList, CK <: HList, V, X, RS <: HList, C
     (mergeSemigroup: Semigroup[V],
      sync: CassandraExternalSync = CQLCassandraConfiguration.DEFAULT_SYNC)
   	(implicit evrow: MappedAux[RK, CassandraPrimitive, RS],
-  			evcol: MappedAux[CK, CassandraPrimitive, CS], 
+  			evcol: MappedAux[CK, CassandraPrimitive, CS],
+		    rowmap: AbstractCQLCassandraCompositeStore.Row2Result[RK, RS],
+		    colmap: AbstractCQLCassandraCompositeStore.Row2Result[CK, CS],
   			a2cRow: AbstractCQLCassandraCompositeStore.Append2Composite[ArrayBuffer[Clause], RK], 
   			a2cCol: AbstractCQLCassandraCompositeStore.Append2Composite[ArrayBuffer[Clause], CK],
   			rsUTC: *->*[CassandraPrimitive]#λ[RS],
@@ -171,6 +173,18 @@ class CQLCassandraCollectionStore[RK <: HList, CK <: HList, V, X, RS <: HList, C
         origValue
       }))
     }
+  }
+  
+  override def getRowValue(row: Row): V = {
+    val mainDataType = row.getColumnDefinitions().getType(valueColumnName)
+    val optResult = mainDataType.getName() match {
+      case Name.SET => Some(row.getSet(valueColumnName, ev2.cls).asScala.
+            map(e => ev2.fromCType(e.asInstanceOf[AnyRef])).toSet.asInstanceOf[V])
+      case Name.LIST => Some(row.getList(valueColumnName, ev2.cls).asScala.
+            map(e => ev2.fromCType(e.asInstanceOf[AnyRef])).toList.asInstanceOf[V])
+      case _ => None
+    }
+    optResult.get
   }
 }
 
