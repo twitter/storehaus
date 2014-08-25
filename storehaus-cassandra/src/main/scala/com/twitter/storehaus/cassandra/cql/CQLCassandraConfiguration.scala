@@ -68,7 +68,7 @@ object CQLCassandraConfiguration {
   }
   
   case class StoreSession(val keyspacename: String, val cluster: StoreCluster, val replicationOptions: String = "{'class' : 'SimpleStrategy', 'replication_factor' : 3}") {
-	lazy val session = cluster.getCluster.connect(getKeyspacename)
+	lazy val session = cluster.getCluster.connect("\"" + getKeyspacename + "\"")
 	def getSession: Session = session
 	def getCluster: Cluster = getSession.getCluster
 	def getKeyspacename : String = keyspacename.filterNot(_ == '"')
