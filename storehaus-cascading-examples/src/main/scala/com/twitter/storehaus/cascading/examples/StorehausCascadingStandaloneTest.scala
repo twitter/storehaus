@@ -14,7 +14,7 @@ import org.apache.hadoop.mapred.JobConf
 
 import com.twitter.algebird.Semigroup
 import com.twitter.storehaus.cassandra.cql.{ AbstractCQLCassandraCompositeStore, CQLCassandraCollectionStore, CQLCassandraStore }
-import com.twitter.storehaus.cassandra.cql.cascading.CassandraCascadingInitializer
+import com.twitter.storehaus.cassandra.cql.cascading.{ CassandraCascadingInitializer, CassandraCascadingRowMatcher }
 import com.twitter.storehaus.{ReadableStore, WritableStore}
 import com.twitter.storehaus.cascading.{ StorehausCascadingInitializer, StorehausTap }
 
@@ -45,8 +45,8 @@ object StoreInitializer
   // for storehaus-cassandra type parameters are HLists
   
   
-// setup basic store parameters (special to storehaus-cassandra, setup is different for other stores)
-import com.twitter.storehaus.cassandra.cql.CQLCassandraConfiguration._
+  // setup basic store parameters (special to storehaus-cassandra, setup is different for other stores)
+  import com.twitter.storehaus.cassandra.cql.CQLCassandraConfiguration._
   
   override def getColumnFamilyName = "ColumnFamilyNameForTesting"
   override def getKeyspaceName = "mytestkeyspace"
@@ -88,10 +88,13 @@ import com.twitter.storehaus.cassandra.cql.CQLCassandraConfiguration._
   /**
    * used to intialize the store, do this similar for other storehaus-stores
    */
-  override def getWritableStore(jobconf: JobConf): Option[WritableStore[(String :: Long :: HNil, Long :: Date :: HNil), String]] = {    
+  override def getWritableStore(jobconf: JobConf): Option[WritableStore[(String :: Long :: HNil, Long :: Date :: HNil), Option[String]]] = {    
     // automatic type conversion doesn't seem to work here
-    Some(store.asInstanceOf[WritableStore[(String :: Long :: HNil, Long :: Date :: HNil), String]])
+    Some(store.asInstanceOf[WritableStore[(String :: Long :: HNil, Long :: Date :: HNil), Option[String]]])
   }
+  
+  // Cassandra specific method used to transform rows from the cassandra hadoop input format into keys and values
+  override def getCascadingRowMatcher = store.asInstanceOf[CassandraCascadingRowMatcher[(String :: Long :: HNil, Long :: Date :: HNil), String]]
 }
 
 object StorehausCascadingStandaloneTest {

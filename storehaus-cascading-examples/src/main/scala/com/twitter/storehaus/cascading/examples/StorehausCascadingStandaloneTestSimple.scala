@@ -54,8 +54,8 @@ import com.twitter.storehaus.cassandra.cql.CQLCassandraConfiguration._
     Some(store.asInstanceOf[ReadableStore[String, String]])
   }
   
-  override def getWritableStore(jobconf: JobConf): Option[WritableStore[String, String]] = {    
-    Some(store.asInstanceOf[WritableStore[String, String]])
+  override def getWritableStore(jobconf: JobConf): Option[WritableStore[String, Option[String]]] = {    
+    Some(store.asInstanceOf[WritableStore[String, Option[String]]])
   }  
 }
 

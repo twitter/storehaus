@@ -42,7 +42,7 @@ abstract class StorehausSplittingMechanism[K, V](val conf: JobConf) {
   /**
    * free resources after splitting is done
    */
-  def close = {}
+  def close: Unit = {}
 }
 
 

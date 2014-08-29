@@ -28,7 +28,7 @@ trait StorehausCascadingInitializer[K, V] {
   /** 
    * returns an initialized writableStore, executed on cluster machines
    */
-  def getWritableStore(jobConf: JobConf): Option[WritableStore[K, V]]
+  def getWritableStore(jobConf: JobConf): Option[WritableStore[K, Option[V]]]
   
   
 }

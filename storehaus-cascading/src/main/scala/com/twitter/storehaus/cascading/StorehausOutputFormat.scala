@@ -18,19 +18,27 @@ package com.twitter.storehaus.cascading
 import org.apache.hadoop.mapred.{ OutputFormat, JobConf, RecordWriter, Reporter }
 import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.util.Progressable
+import org.slf4j.{ Logger, LoggerFactory }
 import com.twitter.storehaus.WritableStore
+import com.twitter.util.Await
 
 /**
  * StorehausOuputFormat using a WriteableStore
  */
 class StorehausOutputFormat[K, V] extends OutputFormat[K, V] {  
+  @transient private val log = LoggerFactory.getLogger(classOf[StorehausOutputFormat[K, V]])
 
   /**
    * Simple StorehausRecordWriter delegating method-calls to store 
    */
   class StorehausRecordWriter(val conf: JobConf, val store: WritableStore[K, Option[V]]) extends RecordWriter[K, V] {  
-    def write(key: K, value: V) = store.put((key, Some(value)))
+    def write(key: K, value: V) = {
+      log.debug(s"RecordWriter writing value=$value for key=$key into $store.")
+      // TODO: make forcing of Future a switch (forcing serializes the batch run, which might be more safe)
+      Await.result(store.put((key, Some(value))))
+    }
     def close(reporter: Reporter) = {
+      log.debug(s"RecordWriter finished. Closing.")
       store.close()
       reporter.setStatus("Completed Writing. Closed Store.")
     }
@@ -42,7 +50,8 @@ class StorehausOutputFormat[K, V] extends OutputFormat[K, V] {
    */
   override def getRecordWriter(fs: FileSystem, conf: JobConf, name: String, progress: Progressable): RecordWriter[K, V] = {
     val tapid = InitializableStoreObjectSerializer.getTapId(conf)
-    val store = InitializableStoreObjectSerializer.getWritableStore[K, Option[V]](conf, tapid).get  
+    val store = InitializableStoreObjectSerializer.getWritableStore[K, Option[V]](conf, tapid).get
+    log.debug(s"Returning RecordWriter, retrieved store from StoreInitializer ${InitializableStoreObjectSerializer.getWritableStoreIntializer(conf, tapid).get.getClass.getName} by reflection: ${store.toString()}")
     new StorehausRecordWriter(conf, store)
   }
   

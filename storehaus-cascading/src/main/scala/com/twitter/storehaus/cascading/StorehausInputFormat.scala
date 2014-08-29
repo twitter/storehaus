@@ -29,7 +29,7 @@ import org.apache.hadoop.mapred.{
 import java.io.{ DataInput, DataOutput }
 import com.twitter.concurrent.Spool
 import com.twitter.util.Try
-
+import scala.reflect.runtime._
 
 /**
  * Hadoop-InputFormat for Storehaus.
@@ -82,21 +82,26 @@ class StorehausInputFormat[K, V]
 }
 
 /**
- * convenience methods to setup input format with JobConf
+ * convenience methods to setup input format with JobConf, which allows to configure 
+ * different mechanisms for splitting in the storehaus-stores
  */
 object StorehausInputFormat {
   val SPLITTINGCLASSNAMECONFID = "com.twitter.storehaus.cascading.splitting.mechanism.class"
-  def setSplittingClass[K, V](conf: JobConf, mechanism: StorehausSplittingMechanism[K, V]) = {
-    conf.set(SPLITTINGCLASSNAMECONFID, mechanism.getClass().getName())
+  def setSplittingClass[K, V, T <: StorehausSplittingMechanism[K, V]](conf: JobConf, mechanism: Class[T]) = {
+    conf.set(SPLITTINGCLASSNAMECONFID, mechanism.getName)
   } 
   def getSplittingClass[K, V](conf: JobConf): Try[StorehausSplittingMechanism[K, V]] = {
     // use reflection to initialize the splitting class, which reads it's params from the JobConf
     val optname = Option(conf.get(SPLITTINGCLASSNAMECONFID))
     optname match {
-      case Some(name) => Try { 
-        val clazz = Class.forName(name).asInstanceOf[Class[StorehausSplittingMechanism[K, V]]]
-        val constructor = clazz.getConstructor(classOf[JobConf])
-        constructor.newInstance(Array[Object](conf))
+      case Some(name) => Try {
+        val rm = universe.runtimeMirror(getClass.getClassLoader)
+        val clazz = Class.forName(name)
+        val clazzSymbol = rm.classSymbol(clazz)
+        val refClass = rm.reflectClass(clazzSymbol)
+        val constrSymbol = clazzSymbol.typeSignature.member(universe.nme.CONSTRUCTOR).asMethod
+        val refConstr = refClass.reflectConstructor(constrSymbol)
+        refConstr(conf).asInstanceOf[StorehausSplittingMechanism[K, V]]
       }
       case None => Try(new JobConfKeyArraySplittingMechanism(conf))
     }

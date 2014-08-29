@@ -112,4 +112,14 @@ class CQLCassandraStore[K : CassandraPrimitive, V : CassandraPrimitive] (
   
   override def getKeyValueFromRow(row: Row): (K, V) = (keySerializer.fromRow(row, keyColumnName).get, valueSerializer.fromRow(row, valueColumnName).get)
   
+  /**
+   * return comma separated list of key and value column name
+   */
+  override def getColumnNamesString: String = {
+    val sb = new StringBuilder
+    AbstractCQLCassandraCompositeStore.quote(sb, keyColumnName, true)
+    AbstractCQLCassandraCompositeStore.quote(sb, valueColumnName)
+    sb.toString
+  }
 }
+

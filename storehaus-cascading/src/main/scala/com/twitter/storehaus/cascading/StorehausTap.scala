@@ -40,25 +40,25 @@ import org.apache.hadoop.mapred.{ JobConf, RecordReader, OutputCollector }
  */
 class StorehausTap[K, V](@transient store: StorehausCascadingInitializer[K, V])
   extends Tap[JobConf, RecordReader[Instance[K], Instance[V]], OutputCollector[K, V]](new StorehausScheme(store)) {
-  println("Creating tap instance: sink..." + getScheme.isSink() + " source..." + getScheme().isSource()	+ " id..." + getScheme.getNumSinkParts() + " store..." + store.getClass().getName())
   
   override def openForRead(process: FlowProcess[JobConf], 
-      input: RecordReader[Instance[K], Instance[V]]): TupleEntryIterator = 
+      input: RecordReader[Instance[K], Instance[V]]): TupleEntryIterator = { 
     new HadoopTupleEntrySchemeIterator(process, this, input)
-
+  }
 
   // used to satisfy the Scala compiler and circumvent Scala<->Java compatibility issues
   private type StorehausTapTypeInJava = Tap[JobConf, RecordReader[_, _], OutputCollector[_, _]]  
 
   override def openForWrite(process: FlowProcess[JobConf], 
-      output: OutputCollector[K, V]): TupleEntryCollector = 
+      output: OutputCollector[K, V]): TupleEntryCollector = { 
     new HadoopTupleEntrySchemeCollector(process, this.asInstanceOf[StorehausTapTypeInJava])
+  }
   
   private val id: String = getScheme.asInstanceOf[StorehausScheme[K, V]].getId
-    
+  
   override def getIdentifier: String = this.id
   override def getModifiedTime(conf: JobConf) : Long = System.currentTimeMillis
-  override def createResource(conf: JobConf): Boolean = { println("Initializeg StorehausTap"); store.prepareStore }
+  override def createResource(conf: JobConf): Boolean = true
   override def deleteResource(conf: JobConf): Boolean = true
   override def resourceExists(conf: JobConf): Boolean = true
   override def equals(o: Any): Boolean =

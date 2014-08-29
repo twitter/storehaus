@@ -119,6 +119,14 @@ object AbstractCQLCassandraCompositeStore {
   implicit def row2result[K <: HList, S <: HList](row: Row, serializers: S, names: List[String])
   	(implicit r2r: Row2Result[K, S]) = r2r(row, serializers, names) 
 
+  /**
+   * quote a column and append it to a StringBuilder
+   */
+  def quote(sb: StringBuilder, column: String, comma: Boolean = false): Unit = {
+    sb.append(column.filterNot(_ == '"'))
+    if(comma) sb.append(",")
+  }
+  	
   /** 
    *  provides a join method for Traversables,
    *  this is actually a fold with an initial function
@@ -261,4 +269,14 @@ abstract class AbstractCQLCassandraCompositeStore[RK <: HList, CK <: HList, V, R
     row2result(row, serializers, names)
   }
 
+  /**
+   * return comma separated list of column names
+   */
+  override def getColumnNamesString: String = {
+    val sb = new StringBuilder
+    rowkeyColumnNames.map(quote(sb, _, true))
+    colkeyColumnNames.map(quote(sb, _, true))
+    quote(sb, valueColumnName)
+    sb.toString
+  }
 }

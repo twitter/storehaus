@@ -30,7 +30,7 @@ import org.apache.hadoop.mapred.{ JobConf, OutputCollector, RecordReader }
  */
 class StorehausScheme[K, V]
   (@transient store: StorehausCascadingInitializer[K, V], id: String = UUID.randomUUID.toString)
-  extends Scheme[JobConf, RecordReader[Instance[K], Instance[V]], OutputCollector[K, V], Seq[Object], Seq[Object]](/*new Fields("key", "value")*/) {
+  extends Scheme[JobConf, RecordReader[Instance[K], Instance[V]], OutputCollector[K, V], Seq[Object], Seq[Object]](new Fields("key", "value")) {
 
   def getId = this.id
  

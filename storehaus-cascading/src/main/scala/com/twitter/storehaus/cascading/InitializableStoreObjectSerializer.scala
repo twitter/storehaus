@@ -38,6 +38,11 @@ object InitializableStoreObjectSerializer {
       getReflectiveObject(conf.get(STORE_CLASS_NAME_READ + tapid)).asInstanceOf[StorehausCascadingInitializer[K, V]]
     }
   }
+  def getWritableStoreIntializer[K, V](conf: JobConf, tapid: String): Try[StorehausCascadingInitializer[K, V]] = {
+    Try {
+      getReflectiveObject(conf.get(STORE_CLASS_NAME_WRITE + tapid)).asInstanceOf[StorehausCascadingInitializer[K, V]]
+    }
+  }
   def setTapId(conf: JobConf, tapid: String) = {
     conf.set(STORE_TAP_ID, tapid)
   }

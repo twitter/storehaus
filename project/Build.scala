@@ -139,7 +139,8 @@ object StorehausBuild extends Build {
   val scaldingVersion = "0.11.1"
   val cascadingVersion = "2.5.2"
   val hadoopVersion = "1.2.1"
-  val cassandraVersion = "2.1.0-rc1"
+  val cassandraDriverVersion = "2.1.0"
+  val cassandraVersion = "2.1.0-rc6"
 
   lazy val storehaus = Project(
     id = "storehaus",
@@ -315,12 +316,13 @@ object StorehausBuild extends Build {
   def cassandraDeps(scalaVersion: String) = if (!isScala210x(scalaVersion)) Seq() else Seq(
     "com.twitter" %% "algebird-core" % algebirdVersion,
     "com.twitter" %% "bijection-core" % bijectionVersion,
-    "com.datastax.cassandra" % "cassandra-driver-core" % cassandraVersion,
+    "com.datastax.cassandra" % "cassandra-driver-core" % cassandraDriverVersion,
     "org.apache.cassandra" % "cassandra-thrift" % cassandraVersion,
     "org.apache.cassandra" % "cassandra-all" % cassandraVersion,
-    "com.websudos" % "phantom-dsl_2.10" % "1.0.6",
+    "com.websudos" % "phantom-dsl_2.10" % "1.0.6" exclude ("com.datastax.cassandra", "cassandra-driver-core"),
     withCross("com.twitter" %% "util-zk" % utilVersion),
-    withCross("com.chuusai" %% "shapeless" % "1.2.4", true),
+    withCross("com.chuusai" %% "shapeless" % "1.2.4"),
+    "org.slf4j" % "slf4j-api" % "1.7.5",
     "org.apache.hadoop" % "hadoop-core" % hadoopVersion
   )
 
@@ -337,7 +339,6 @@ object StorehausBuild extends Build {
     "cascading" % "cascading-core" % cascadingVersion,
     "cascading" % "cascading-hadoop" % cascadingVersion,
     "org.slf4j" % "slf4j-api" % "1.7.5",
-    withCross("com.chuusai" %% "shapeless" % "1.2.4", true),
     "org.scala-lang" % "scala-reflect" % scalaVersion,
     "org.apache.hadoop" % "hadoop-core" % hadoopVersion
   )
@@ -355,7 +356,7 @@ object StorehausBuild extends Build {
     "cascading" % "cascading-core" % cascadingVersion,
     "cascading" % "cascading-hadoop" % cascadingVersion,
     "org.slf4j" % "slf4j-api" % "1.7.5",
-    withCross("com.chuusai" %% "shapeless" % "1.2.4", true),
+    withCross("com.chuusai" %% "shapeless" % "1.2.4"),
     "org.apache.hadoop" % "hadoop-core" % hadoopVersion
   )
 
@@ -363,7 +364,7 @@ object StorehausBuild extends Build {
     skip in test := !isScala210x(scalaVersion.value),
     skip in compile := !isScala210x(scalaVersion.value),
     skip in doc := !isScala210x(scalaVersion.value),
-    mainClass in assembly := Some("com.twitter.storehaus.cascading.StorehausCascadingStandaloneTest"),
+    mainClass in assembly := Some("com.twitter.storehaus.cascading.examples.StorehausCascadingCassandraTuplesExample"),
     mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) => {
         case x if x startsWith "javax/servlet" => MergeStrategy.first
         case x if x startsWith "javax/xml/stream/" => MergeStrategy.last
