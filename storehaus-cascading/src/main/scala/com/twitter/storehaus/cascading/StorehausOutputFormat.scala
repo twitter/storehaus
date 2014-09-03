@@ -27,6 +27,7 @@ import com.twitter.util.Await
  */
 class StorehausOutputFormat[K, V] extends OutputFormat[K, V] {  
   @transient private val log = LoggerFactory.getLogger(classOf[StorehausOutputFormat[K, V]])
+  val FORCE_FUTURE_IN_OUTPUTFORMAT = "com.twitter.storehaus.cascading.outputformat.forcefuture"
 
   /**
    * Simple StorehausRecordWriter delegating method-calls to store 
@@ -34,8 +35,12 @@ class StorehausOutputFormat[K, V] extends OutputFormat[K, V] {
   class StorehausRecordWriter(val conf: JobConf, val store: WritableStore[K, Option[V]]) extends RecordWriter[K, V] {  
     def write(key: K, value: V) = {
       log.debug(s"RecordWriter writing value=$value for key=$key into $store.")
-      // TODO: make forcing of Future a switch (forcing serializes the batch run, which might be more safe)
-      Await.result(store.put((key, Some(value))))
+      // handle with care - make sure thread pools shut down TPEs on used stores correctly if asynchronous
+      // that includes awaitTermination and adding shutdown hooks, depending on mode of operation of Hadoop
+      if (conf.get(FORCE_FUTURE_IN_OUTPUTFORMAT) != null && conf.get(FORCE_FUTURE_IN_OUTPUTFORMAT).equalsIgnoreCase("true"))
+        store.put((key, Some(value)))
+      else
+        Await.result(store.put((key, Some(value))))
     }
     def close(reporter: Reporter) = {
       log.debug(s"RecordWriter finished. Closing.")
@@ -54,7 +59,7 @@ class StorehausOutputFormat[K, V] extends OutputFormat[K, V] {
     log.debug(s"Returning RecordWriter, retrieved store from StoreInitializer ${InitializableStoreObjectSerializer.getWritableStoreIntializer(conf, tapid).get.getClass.getName} by reflection: ${store.toString()}")
     new StorehausRecordWriter(conf, store)
   }
-  
+
   override def checkOutputSpecs(fs: FileSystem, conf: JobConf) = {}
 
 }

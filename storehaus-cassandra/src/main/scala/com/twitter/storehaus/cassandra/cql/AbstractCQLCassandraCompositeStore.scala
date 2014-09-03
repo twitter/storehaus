@@ -15,11 +15,12 @@
  */
 package com.twitter.storehaus.cassandra.cql
 
-import com.twitter.util.{Duration, Future, FuturePool, Time}
+import com.twitter.util.{Duration, Future, FuturePool, Return, Time, Throw}
+import com.twitter.concurrent.Spool
 import com.datastax.driver.core.{BatchStatement, ConsistencyLevel, ResultSet, Row, Statement}
 import com.datastax.driver.core.policies.{LoadBalancingPolicy, Policies, ReconnectionPolicy, RetryPolicy, RoundRobinPolicy, TokenAwarePolicy}
 import com.datastax.driver.core.querybuilder.{BuiltStatement, Clause, QueryBuilder, Update}
-import com.twitter.storehaus.Store
+import com.twitter.storehaus.{IterableStore, QueryableStore, ReadableStore, Store}
 import com.websudos.phantom.CassandraPrimitive
 import com.twitter.storehaus.cassandra.cql.cascading.CassandraCascadingRowMatcher
 import java.util.concurrent.{Executors, TimeUnit}
@@ -59,7 +60,7 @@ object AbstractCQLCassandraCompositeStore {
 
   /**
    * helper trait for declaring the HList recursive function 
-   * to append keys on a Composite in a type safe way
+   * to append keys on an ArrayBuffer in a type safe way
    */
   trait Append2Composite[R <: ArrayBuffer[Clause], K <: HList] {
     def apply(r: R, k: K, s: List[String]): Unit
@@ -90,7 +91,7 @@ object AbstractCQLCassandraCompositeStore {
   /**
    * helper trait for declaring the HList recursive function 
    * to create a key from a row
-   * R = 
+   * K is the type of HList to return the key, S are the serializers
    */
   trait Row2Result[K <: HList, S <: HList] {
     def apply(row: Row, serializers: S, names: List[String]): K
@@ -166,11 +167,12 @@ abstract class AbstractCQLCassandraCompositeStore[RK <: HList, CK <: HList, V, R
     a2cCol: AbstractCQLCassandraCompositeStore.Append2Composite[ArrayBuffer[Clause], CK],
     rsUTC:  *->*[CassandraPrimitive]#λ[RS],
     csUTC:  *->*[CassandraPrimitive]#λ[CS])
-  extends Store[(RK, CK), V] 
-  with CassandraCascadingRowMatcher[(RK, CK), V] {
+  extends AbstractCQLCassandraStore[(RK, CK), V](poolSize, columnFamily)
+  with Store[(RK, CK), V] 
+  with CassandraCascadingRowMatcher[(RK, CK), V] 
+  with QueryableStore[String, ((RK, CK), V)] 
+  with IterableStore[(RK, CK), V] {
   import AbstractCQLCassandraCompositeStore._
-
-  val futurePool = FuturePool(Executors.newFixedThreadPool(poolSize))
 
   protected def putValue(value: V, update: Update): Update.Assignments
     

@@ -15,12 +15,12 @@
  */
 package com.twitter.storehaus.cascading.split
 
-import com.twitter.storehaus.cascading.{ Instance, SplittableStore, StorehausCascadingInitializer, InitializableStoreObjectSerializer }
+import com.twitter.storehaus.cascading.{ Instance, StorehausCascadingInitializer, InitializableStoreObjectSerializer }
 import com.twitter.storehaus.ReadableStore
 import com.twitter.util.{ Try, Await }
 import java.io.{ DataOutput, DataInput, ByteArrayOutputStream, ByteArrayInputStream }
 import org.apache.hadoop.io.{ DefaultStringifier, WritableFactories, WritableFactory }
-import org.apache.hadoop.io.serializer.{ Serialization, SerializationFactory, Serializer} 
+import org.apache.hadoop.io.serializer.{ Serialization, SerializationFactory, Serializer}
 import org.apache.hadoop.mapred.{ InputSplit, JobConf }
 import scala.collection.mutable.ArrayBuffer
 

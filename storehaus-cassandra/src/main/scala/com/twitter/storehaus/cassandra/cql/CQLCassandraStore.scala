@@ -15,12 +15,12 @@
  */
 package com.twitter.storehaus.cassandra.cql
 
-import com.twitter.util.{Await, Future, Duration, FuturePool}
-import com.datastax.driver.core.{Statement, ConsistencyLevel, BatchStatement, Row}
-import com.datastax.driver.core.policies.{ Policies, RoundRobinPolicy, ReconnectionPolicy, RetryPolicy, TokenAwarePolicy}
+import com.twitter.util.{Await, Future, Duration, FuturePool, Promise, Try, Throw, Return}
+import com.twitter.concurrent.Spool
+import com.datastax.driver.core.{Statement, ConsistencyLevel, BatchStatement, ResultSet, Row}
+import com.datastax.driver.core.policies.{Policies, RoundRobinPolicy, ReconnectionPolicy, RetryPolicy, TokenAwarePolicy}
 import com.datastax.driver.core.querybuilder.QueryBuilder
-import com.twitter.storehaus.Store
-import com.twitter.storehaus.WithPutTtl
+import com.twitter.storehaus.{IterableStore, QueryableStore, ReadableStore, ReadableStoreProxy, Store, WithPutTtl}
 import com.twitter.storehaus.cassandra.cql.cascading.CassandraCascadingRowMatcher
 import java.util.concurrent.Executors
 import com.websudos.phantom.CassandraPrimitive
@@ -53,14 +53,15 @@ class CQLCassandraStore[K : CassandraPrimitive, V : CassandraPrimitive] (
 		val poolSize: Int = CQLCassandraConfiguration.DEFAULT_FUTURE_POOL_SIZE,
 		val batchType: BatchStatement.Type = CQLCassandraConfiguration.DEFAULT_BATCH_STATEMENT_TYPE,
 		val ttl: Option[Duration] = CQLCassandraConfiguration.DEFAULT_TTL_DURATION)
-	extends Store[K, V] 
+	extends AbstractCQLCassandraStore[K, V](poolSize, columnFamily)
+	with Store[K, V] 
     with WithPutTtl[K, V, CQLCassandraStore[K, V]] 
-    with CassandraCascadingRowMatcher[K, V] {
+    with CassandraCascadingRowMatcher[K, V]
+    with QueryableStore[String, (K, V)] 
+    with IterableStore[K, V] {
   val keySerializer = implicitly[CassandraPrimitive[K]]
   val valueSerializer = implicitly[CassandraPrimitive[V]]
   
-  val futurePool = FuturePool(Executors.newFixedThreadPool(poolSize))
-
   override def withPutTtl(ttl: Duration): CQLCassandraStore[K, V] = new CQLCassandraStore(columnFamily, 
       valueColumnName, keyColumnName, consistency, poolSize, batchType, Some(ttl))
   
@@ -122,4 +123,3 @@ class CQLCassandraStore[K : CassandraPrimitive, V : CassandraPrimitive] (
     sb.toString
   }
 }
-

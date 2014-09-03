@@ -1,9 +1,10 @@
 package com.twitter.storehaus.cassandra.cql
 
 import com.datastax.driver.core.Row
-import com.twitter.storehaus.Store
+import com.twitter.concurrent.Spool
+import com.twitter.storehaus.{IterableStore, ReadableStore, QueryableStore, Store}
 import com.twitter.storehaus.cassandra.cql.cascading.CassandraCascadingRowMatcher
-import com.twitter.util.Future
+import com.twitter.util.{Future, FutureTransformer, Return, Throw}
 import shapeless.Tuples._
 import shapeless._
 
@@ -18,7 +19,9 @@ class CassandraTupleStore[RKT <: Product, CKT <: Product, V, RK <: HList, CK <: 
 		    ev3: TuplerAux[RK, RKT],
 		    ev4: TuplerAux[CK, CKT])
 	extends Store[(RKT, CKT), V]  
-    with CassandraCascadingRowMatcher[(RKT, CKT), V] {
+    with CassandraCascadingRowMatcher[(RKT, CKT), V] 
+    with QueryableStore[String, ((RKT, CKT), V)]
+    with IterableStore[(RKT, CKT), V] {
 
   override def get(k: (RKT, CKT)): Future[Option[V]] = {
     store.get((k._1.hlisted, k._2.hlisted))
@@ -35,4 +38,26 @@ class CassandraTupleStore[RKT <: Product, CKT <: Product, V, RK <: HList, CK <: 
   }
   
   override def getColumnNamesString: String = store.getColumnNamesString
+  
+  override def queryable: ReadableStore[String, Seq[((RKT, CKT), V)]] = new Object with ReadableStore[String, Seq[((RKT, CKT), V)]] {
+    override def get(whereCondition: String): Future[Option[Seq[((RKT, CKT), V)]]] = store.queryable.get(whereCondition).transformedBy {
+      new FutureTransformer[Option[Seq[((RK, CK), V)]], Option[Seq[((RKT, CKT), V)]]] {
+        override def map(value: Option[Seq[((RK, CK), V)]]): Option[Seq[((RKT, CKT), V)]] = value match {
+          case Some(seq) => Some(seq.map(res => ((res._1._1.tupled, res._1._2.tupled).asInstanceOf[(RKT, CKT)], res._2)))
+          case _ => None
+        }
+      }
+    }
+  }
+  
+  /**
+   * allows iteration over all (K, V) using a query against queryable
+   */
+  override def getAll: Future[Spool[((RKT, CKT), V)]] = queryable.get("").transform {
+    case Throw(y) => Future.exception(y)
+    case Return(x) => store.futurePool {
+      val seq = x.getOrElse(Seq[((RKT, CKT), V)]())
+      seq.foldRight(Spool.empty[((RKT, CKT), V)])((kv, spool) => (kv) **:: spool)
+    }
+  }
 }
