@@ -142,7 +142,6 @@ object StorehausBuild extends Build {
     storehausRedis,
     storehausHBase,
     storehausDynamoDB,
-    storehausKafka,
     storehausKafka08,
     storehausMongoDB,
     storehausElastic,
@@ -226,25 +225,11 @@ object StorehausBuild extends Build {
     parallelExecution in Test := false
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
-  lazy val storehausKafka = module("kafka").settings(
-    libraryDependencies ++= Seq (
-      "com.twitter" %% "bijection-core" % bijectionVersion,
-      "com.twitter" %% "bijection-avro" % bijectionVersion,
-      "com.twitter" %% "kafka" % "0.7.0" % "provided" excludeAll(
-        ExclusionRule("com.sun.jdmk","jmxtools"),
-        ExclusionRule( "com.sun.jmx","jmxri"),
-        ExclusionRule( "javax.jms","jms")
-        )
-    ),
-    // we don't want various tests clobbering each others keys
-    parallelExecution in Test := false
-  ).dependsOn(storehausAlgebra % "test->test;compile->compile")
-
   lazy val storehausKafka08 = module("kafka-08").settings(
     libraryDependencies ++= Seq (
       "com.twitter" %% "bijection-core" % bijectionVersion,
       "com.twitter" %% "bijection-avro" % bijectionVersion,
-      "org.apache.kafka" %% "kafka" % "0.8.0" % "provided" excludeAll(
+      "org.apache.kafka" %% "kafka" % "0.8.1.1" % "provided" excludeAll(
         ExclusionRule(organization = "com.sun.jdmk"),
         ExclusionRule(organization = "com.sun.jmx"),
         ExclusionRule(organization = "javax.jms"))
