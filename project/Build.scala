@@ -26,17 +26,6 @@ import AssemblyKeys._
 
 
 object StorehausBuild extends Build {
-  def withCross(dep: ModuleID) =
-    dep cross CrossVersion.binaryMapped {
-      case "2.9.3" => "2.9.2" // TODO: hack because twitter hasn't built things against 2.9.3
-      case version if version startsWith "2.10" => "2.10" // TODO: hack because sbt is broken
-      case x => x
-    }
-
-  def specs2Import(scalaVersion: String) = scalaVersion match {
-      case version if version startsWith "2.9" => "org.specs2" %% "specs2" % "1.12.4.1" % "test"
-      case version if version startsWith "2.10" => "org.specs2" %% "specs2" % "1.13" % "test"
-  }
   val extraSettings =
     Project.defaultSettings ++ Boilerplate.settings ++ assemblySettings ++ mimaDefaultSettings
 
@@ -57,20 +46,32 @@ object StorehausBuild extends Build {
 
   val sharedSettings = extraSettings ++ ciSettings ++ Seq(
     organization := "com.twitter",
-    scalaVersion := "2.9.3",
+    scalaVersion := "2.10.4",
     version := "0.9.1",
-    crossScalaVersions := Seq("2.9.3", "2.10.4"),
+    crossScalaVersions := Seq("2.10.4"),
     javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
     javacOptions in doc := Seq("-source", "1.6"),
-    libraryDependencies <+= scalaVersion(specs2Import(_)),
+    libraryDependencies ++= Seq(
+      "org.scalacheck" %% "scalacheck" % "1.11.5",
+      "org.scalatest" %% "scalatest" % "2.2.2"
+    ),
     resolvers ++= Seq(
       Opts.resolver.sonatypeSnapshots,
       Opts.resolver.sonatypeReleases,
       "Twitter Maven" at "http://maven.twttr.com",
-      "Conjars Repository" at "http://conjars.org/repo"
+      "Conjars Repository" at "http://conjars.org/repo",
+      "Twitter Internal" at "http://artifactory.local.twitter.com/libs-releases-local/"
     ),
     parallelExecution in Test := true,
-    scalacOptions ++= Seq(Opts.compile.unchecked, Opts.compile.deprecation),
+
+    scalacOptions ++= Seq("-unchecked", "-deprecation", "-language:implicitConversions", "-language:higherKinds", "-language:existentials"),
+
+    scalacOptions <++= (scalaVersion) map { sv =>
+        if (sv startsWith "2.10")
+          Seq("-Xdivergence211")
+        else
+          Seq()
+    },
 
     // Publishing options:
     publishMavenStyle := true,
@@ -117,7 +118,7 @@ object StorehausBuild extends Build {
   def youngestForwardCompatible(subProj: String) =
     Some(subProj)
       .filterNot(unreleasedModules.contains(_))
-      .map { s => "com.twitter" % ("storehaus-" + s + "_2.9.3") % "0.9.0" }
+      .map { s => "com.twitter" % ("storehaus-" + s + "_2.10") % "0.9.0" }
 
   val algebirdVersion = "0.7.0"
   val bijectionVersion = "0.6.3"
@@ -158,12 +159,12 @@ object StorehausBuild extends Build {
 
   lazy val storehausCache = module("cache").settings(
     libraryDependencies += "com.twitter" %% "algebird-core" % algebirdVersion,
-    libraryDependencies += withCross("com.twitter" %% "util-core" % utilVersion)
+    libraryDependencies += "com.twitter" %% "util-core" % utilVersion
   )
 
   lazy val storehausCore = module("core").settings(
     libraryDependencies ++= Seq(
-      withCross("com.twitter" %% "util-core" % utilVersion % "provided"),
+      "com.twitter" %% "util-core" % utilVersion % "provided",
       "com.twitter" %% "bijection-core" % bijectionVersion,
       "com.twitter" %% "bijection-util" % bijectionVersion
     )
@@ -229,7 +230,7 @@ object StorehausBuild extends Build {
     libraryDependencies ++= Seq (
       "com.twitter" %% "bijection-core" % bijectionVersion,
       "com.twitter" %% "bijection-avro" % bijectionVersion,
-      "com.twitter"%"kafka_2.9.2"%"0.7.0" % "provided" excludeAll(
+      "com.twitter" %% "kafka" % "0.7.0" % "provided" excludeAll(
         ExclusionRule("com.sun.jdmk","jmxtools"),
         ExclusionRule( "com.sun.jmx","jmxri"),
         ExclusionRule( "javax.jms","jms")
@@ -243,7 +244,7 @@ object StorehausBuild extends Build {
     libraryDependencies ++= Seq (
       "com.twitter" %% "bijection-core" % bijectionVersion,
       "com.twitter" %% "bijection-avro" % bijectionVersion,
-      "org.apache.kafka" % "kafka_2.9.2" % "0.8.0" % "provided" excludeAll(
+      "org.apache.kafka" %% "kafka" % "0.8.0" % "provided" excludeAll(
         ExclusionRule(organization = "com.sun.jdmk"),
         ExclusionRule(organization = "com.sun.jmx"),
         ExclusionRule(organization = "javax.jms"))
@@ -278,8 +279,10 @@ object StorehausBuild extends Build {
     settings = sharedSettings ++ Seq(
       name := "storehaus-testing",
       previousArtifact := youngestForwardCompatible("testing"),
-      libraryDependencies ++= Seq("org.scalacheck" %% "scalacheck" % "1.10.0" withSources(),
-        withCross("com.twitter" %% "util-core" % utilVersion))
+      libraryDependencies ++= Seq(
+        "org.scalacheck" %% "scalacheck" % "1.10.0" withSources(),
+        "com.twitter" %% "util-core" % utilVersion
+      )
     )
   )
 

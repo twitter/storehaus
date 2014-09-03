@@ -16,22 +16,27 @@
 
 package com.twitter.storehaus.kafka
 
-import org.specs2.mutable.Specification
-import kafka.DataTuple
 import java.util.Date
-import com.twitter.util.{Future, Await}
+
+import kafka.DataTuple
 import kafka.consumer.{ConsumerTimeoutException, Whitelist}
-import KafkaInjections._
 import kafka.serializer.Decoder
+
+import org.scalatest.{Matchers, WordSpec}
+
+import com.twitter.util.{Await, Future}
 
 /**
  * Integration Test! Remove .pendingUntilFixed if testing against a Kafka Cluster
- * @author Mansur Ashraf
- * @since 12/8/13
  */
-class KafkaAvroSinkSpec extends Specification {
+class KafkaAvroSinkSpec extends WordSpec with Matchers {
+  import KafkaInjections._
+
   "KafkaAvroSink" should {
-    "put avro object on a topic" in new KafkaContext {
+    "put avro object on a topic" in pendingUntilFixed {
+      val context = new KafkaContext
+      import context._
+
       val topic = "avro-topic-" + random
       val sink = KafkaAvroSink[DataTuple](Seq(zK), topic)
         .filter {
@@ -47,14 +52,14 @@ class KafkaAvroSinkSpec extends Specification {
       try {
         val stream = consumer.createMessageStreamsByFilter(new Whitelist(topic), 1, implicitly[Decoder[DataTuple]])(0)
         val iterator = stream.iterator()
-        iterator.next().message.getValue % 2 === 0
-        iterator.next().message.getValue % 2 === 0
-        iterator.next().message.getValue % 2 === 0
-        iterator.next().message.getValue % 2 === 0
-        !iterator.hasNext()
+        iterator.next().message.getValue % 2 shouldBe 0
+        iterator.next().message.getValue % 2 shouldBe 0
+        iterator.next().message.getValue % 2 shouldBe 0
+        iterator.next().message.getValue % 2 shouldBe 0
+        iterator.hasNext() shouldBe false
       } catch {
-        case e: ConsumerTimeoutException => failure("test failed as consumer timed out without getting any msges")
+        case e: ConsumerTimeoutException => fail("test failed as consumer timed out without getting any msges")
       }
-    }.pendingUntilFixed
+    }
   }
 }

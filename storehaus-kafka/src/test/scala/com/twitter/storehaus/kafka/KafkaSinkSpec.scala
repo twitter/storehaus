@@ -16,35 +16,40 @@
 
 package com.twitter.storehaus.kafka
 
-import org.specs2.mutable.Specification
-import com.twitter.bijection.StringCodec.utf8
-import com.twitter.util.{Future, Await}
 import kafka.consumer.{ConsumerTimeoutException, Whitelist}
 import kafka.serializer.Decoder
-import KafkaInjections._
+
+import org.scalatest.{Matchers, WordSpec}
+
+import com.twitter.bijection.StringCodec.utf8
+import com.twitter.util.{Future, Await}
 
 /**
  * Integration Test! Remove .pendingUntilFixed if testing against a Kafka Cluster
- * @author Mansur Ashraf
- * @since 12/7/13
  */
-class KafkaSinkSpec extends Specification {
+class KafkaSinkSpec extends WordSpec with Matchers {
+  import KafkaInjections._
 
   "Kafka Sink" should {
+    "be able to convert and sink value" in pendingUntilFixed {
+      val context = new KafkaContext
+      import context._
 
-    "be able to convert and sink value" in new KafkaContext {
       val topic = "long_topic-" + random
       val longSink = sink(topic).convert[String, Long](utf8.toFunction)
       Await.result(longSink.write()("1", 1L))
       try {
         val stream = consumer.createMessageStreamsByFilter(new Whitelist(topic), 1,implicitly[Decoder[Long]])(0)
-        stream.iterator().next().message === 1L
+        stream.iterator().next().message shouldBe 1L
       } catch {
-        case e: ConsumerTimeoutException => failure("test failed as consumer timed out without getting any msges")
+        case e: ConsumerTimeoutException => fail("test failed as consumer timed out without getting any msges")
       }
-    }  .pendingUntilFixed
+    }
 
-    "be able to filter value" in new KafkaContext {
+    "be able to filter value" in pendingUntilFixed {
+      val context = new KafkaContext
+      import context._
+
       val topic = "filter_topic-" + random
       val filteredSink = sink(topic)
         .convert[String, Long](utf8.toFunction)
@@ -55,14 +60,14 @@ class KafkaSinkSpec extends Specification {
       try {
         val stream = consumer.createMessageStreamsByFilter(new Whitelist(topic), 1, implicitly[Decoder[Long]])(0)
         val iterator = stream.iterator()
-        iterator.next().message % 2 === 0
-        iterator.next().message % 2 === 0
-        iterator.next().message % 2 === 0
-        iterator.next().message % 2 === 0
-        !iterator.hasNext()
+        iterator.next().message % 2 shouldBe 0
+        iterator.next().message % 2 shouldBe 0
+        iterator.next().message % 2 shouldBe 0
+        iterator.next().message % 2 shouldBe 0
+        iterator.hasNext() shouldBe false
       } catch {
-        case e: ConsumerTimeoutException => failure("test failed as consumer timed out without getting any msges")
+        case e: ConsumerTimeoutException => fail("test failed as consumer timed out without getting any msges")
       }
-    } .pendingUntilFixed
+    }
   }
 }

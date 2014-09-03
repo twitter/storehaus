@@ -17,25 +17,22 @@
 
 package com.twitter.storehaus.kafka
 
-import org.specs2.specification.Scope
-import java.util.concurrent.Executors
-import com.twitter.concurrent.NamedPoolThreadFactory
+import java.nio.ByteBuffer
 import java.util.{Properties, Random}
-import kafka.serializer.{Decoder, StringEncoder}
+import java.util.concurrent.Executors
+
+import kafka.DataTuple
 import kafka.consumer.{Consumer, ConsumerConfig}
 import kafka.message.Message
-import com.twitter.bijection.Injection
-import java.nio.ByteBuffer
+import kafka.serializer.{Decoder, StringEncoder}
+
 import org.apache.avro.specific.SpecificRecordBase
+
+import com.twitter.bijection.Injection
 import com.twitter.bijection.avro.SpecificAvroCodecs
-import kafka.DataTuple
+import com.twitter.concurrent.NamedPoolThreadFactory
 
-/**
- * @author Mansur Ashraf
- * @since 12/7/13
- */
-trait KafkaContext extends Scope {
-
+class KafkaContext {
   val zK = "localhost:2181"
   lazy val executor = Executors.newCachedThreadPool(new NamedPoolThreadFactory("KafkaTestPool"))
   implicit val dataTupleInj= SpecificAvroCodecs[DataTuple]
@@ -59,4 +56,3 @@ trait KafkaContext extends Scope {
   val config = new ConsumerConfig(props)
   lazy val consumer = Consumer.create(config)
 }
-
