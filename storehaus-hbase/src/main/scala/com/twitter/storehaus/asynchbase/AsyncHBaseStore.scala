@@ -36,8 +36,6 @@ trait AsyncHBaseStore {
   protected val column: String
   protected val client: HBaseClient
 
-  implicit protected def toRichDeferred[T](d: Deferred[T]) = RichDeferred.toRichDeferred(d)
-
   def validateConfiguration() {
     import org.apache.commons.lang.StringUtils.isNotEmpty
 
@@ -52,7 +50,7 @@ trait AsyncHBaseStore {
     val request = new GetRequest(table.as[Array[Byte]], key.as[Array[Byte]])
       .family(columnFamily.as[Array[Byte]])
       .qualifier(column.as[Array[Byte]])
-    client.get(request).fut.map(_.asScala.headOption.map(kv => Injection.invert[V, Array[Byte]](kv.value()).get))
+    client.get(request).future.map(_.asScala.headOption.map(kv => Injection.invert[V, Array[Byte]](kv.value()).get))
   }
 
   def putValue[K: Codec, V: Codec](kv: (K, Option[V])): Future[Unit] = {
@@ -63,13 +61,13 @@ trait AsyncHBaseStore {
           columnFamily.as[Array[Byte]],
           column.as[Array[Byte]],
           v.as[Array[Byte]])
-        client.put(put).fut.map{ _ => () }
+        client.put(put).future.unit
       case (k, None) => 
         val delete = new DeleteRequest(table.as[Array[Byte]],
           k.as[Array[Byte]],
           columnFamily.as[Array[Byte]],
           column.as[Array[Byte]])
-        client.delete(delete).fut.map(_ => ())
+        client.delete(delete).future.unit
     }
   }
 }

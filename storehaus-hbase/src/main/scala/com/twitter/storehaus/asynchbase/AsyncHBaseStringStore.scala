@@ -63,6 +63,6 @@ class AsyncHBaseStringStore(protected val quorumNames: Seq[String],
   /** Close this store and release any resources.
     * It is undefined what happens on get/multiGet after close
     */
-  override def close(t: Time) = client.shutdown().fut.map(_ => ())
+  override def close(t: Time) = client.shutdown().future.unit
 }
 

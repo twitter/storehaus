@@ -19,20 +19,21 @@ package com.twitter.storehaus.asynchbase
 import com.twitter.util.{Future, Promise}
 import com.stumbleupon.async.{Callback, Deferred}
 
-object RichDeferred {
-  implicit def toRichDeferred[T](deferred: Deferred[T]): RichDeferred[T] = new RichDeferred[T](deferred)
-}
+object `package` {
+  private class PromiseCallback[T](promise: Promise[T]) extends Callback[Unit, T] {
+    override def call(arg: T): Unit = promise.setValue(arg)
+  }
 
-class RichDeferred[T](deferred: Deferred[T]) {
-  def fut: Future[T] = {
-    val p = Promise[T]()
-    deferred.addCallback(new Callback[Unit, T]{
-      def call(arg: T): Unit = p.setValue(arg)
-    })
-    deferred.addErrback(new Callback[Unit, Exception]{
-      def call(exc: Exception): Unit = p.setException(exc)
-    })
-    p
+  private class PromiseErrback(promise: Promise[_]) extends Callback[Unit, Exception] {
+    override def call(exc: Exception): Unit = promise.setException(exc)
+  }
+
+  implicit class RichDeferred[T](val deferred: Deferred[T]) extends AnyVal {
+    def future: Future[T] = {
+      val p = Promise[T]()
+      deferred.addCallback(new PromiseCallback(p))
+      deferred.addErrback(new PromiseErrback(p))
+      p
+    }
   }
 }
-
