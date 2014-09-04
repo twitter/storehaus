@@ -176,6 +176,8 @@ abstract class AbstractCQLCassandraCompositeStore[RK <: HList, CK <: HList, V, R
 
   protected def putValue(value: V, update: Update): Update.Assignments
   
+  protected def deleteColumns: String = valueColumnName
+  
   protected def createPutQuery[K1 <: (RK, CK)](kv: (K1, Option[V])): BuiltStatement = {
     val ((rk, ck), valueOpt) = kv
     val eqList = new ArrayBuffer[Clause]
@@ -190,7 +192,7 @@ abstract class AbstractCQLCassandraCompositeStore[RK <: HList, CK <: HList, V, R
           case None => where
         }
       }
-      case None => eqList.join(QueryBuilder.delete(valueColumnName).from(columnFamily.getPreparedNamed).where(_))((clause, where) => where.and(clause))
+      case None => eqList.join(QueryBuilder.delete(deleteColumns).from(columnFamily.getPreparedNamed).where(_))((clause, where) => where.and(clause))
     }
   }
   

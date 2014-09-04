@@ -115,7 +115,8 @@ class CQLCassandraCompositeStore[RK <: HList, CK <: HList, V, RS <: HList, CS <:
   override def getCASStore[T](tokenColumnName: String = CQLCassandraConfiguration.DEFAULT_TOKEN_COLUMN_NAME)(implicit equiv: Equiv[T], cassTokenSerializer: CassandraPrimitive[T], tokenFactory: TokenFactory[T]): CASStore[T, (RK, CK), V] with IterableStore[(RK, CK), V] = new CQLCassandraCompositeStore[RK, CK, V, RS, CS](
       columnFamily, rowkeySerializer, rowkeyColumnNames, colkeySerializer, colkeyColumnNames, valueColumnName, consistency, poolSize, 
       batchType, ttl)(cassSerValue) with CASStore[T, (RK, CK), V] {
-    override protected def putValue(value: V, update: Update): Update.Assignments = update.`with`(QueryBuilder.set(valueColumnName, value)).and(QueryBuilder.set(tokenColumnName, tokenFactory.createNewToken))
+    override protected def putValue(value: V, update: Update): Update.Assignments = super.putValue(value, update).and(QueryBuilder.set(tokenColumnName, tokenFactory.createNewToken))
+    override protected def deleteColumns: String = s"$valueColumnName , $tokenColumnName"
     override def cas(token: Option[T], kv: ((RK, CK), V))(implicit ev1: Equiv[T]): Future[(V, T)] = futurePool {
       val statement = createPutQuery[(RK, CK)]((kv._1, Some(kv._2))).setForceNoValues(false).getQueryString()
       val casCondition = token match {
