@@ -5,7 +5,7 @@ Store support matrix
 --------------------
 
 Store | ReadableStore | WritableStore | MergableStore | IterableStore | QueryableStore | CASStore | WithPutTtl
---------------------------------------------------------------------------------------------------------------
+------|---------------|---------------|---------------|---------------|----------------|----------|-----------
 CQLCassandraStore | x | x | | x | x | x | x
 CQLCassandraCompositeStore | x | x | | x | x | x | x
 CQLCassandraCollectionStore | x | x | x | x | x | x | x
