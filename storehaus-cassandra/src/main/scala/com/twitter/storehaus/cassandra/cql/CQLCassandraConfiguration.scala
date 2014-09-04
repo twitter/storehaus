@@ -22,6 +22,7 @@ object CQLCassandraConfiguration {
 
   val DEFAULT_VALUE_COLUMN_NAME = "value"
   val DEFAULT_KEY_COLUMN_NAME = "key"
+  val DEFAULT_TOKEN_COLUMN_NAME = "tokencol"
   val DEFAULT_FUTURE_POOL_SIZE = 10
   val DEFAULT_CONSISTENCY_LEVEL = ConsistencyLevel.QUORUM
   val DEFAULT_TTL_DURATION = None

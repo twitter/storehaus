@@ -16,10 +16,10 @@
 package com.twitter.storehaus.cassandra.cql
 
 import com.twitter.util.{Future, Duration, FuturePool}
-import com.datastax.driver.core.{Statement, ConsistencyLevel, BatchStatement, ResultSet, Row}
+import com.datastax.driver.core.{BatchStatement, ConsistencyLevel, ResultSet, Row, SimpleStatement, Statement}
 import com.datastax.driver.core.policies.{LoadBalancingPolicy, Policies, RoundRobinPolicy, ReconnectionPolicy, RetryPolicy, TokenAwarePolicy}
 import com.datastax.driver.core.querybuilder.{QueryBuilder, BuiltStatement, Insert, Delete, Select, Update, Clause}
-import com.twitter.storehaus.Store
+import com.twitter.storehaus.{IterableStore, Store}
 import com.twitter.storehaus.WithPutTtl
 import java.util.concurrent.Executors
 import com.websudos.phantom.CassandraPrimitive
@@ -97,7 +97,8 @@ class CQLCassandraCompositeStore[RK <: HList, CK <: HList, V, RS <: HList, CS <:
     csUTC: *->*[CassandraPrimitive]#λ[CS])
   extends AbstractCQLCassandraCompositeStore[RK, CK, V, RS, CS] (columnFamily, rowkeySerializer, rowkeyColumnNames,
     colkeySerializer, colkeyColumnNames, valueColumnName, consistency, poolSize, batchType, ttl)
-  with WithPutTtl[(RK, CK), V, CQLCassandraCompositeStore[RK, CK, V, RS, CS]] {
+  with WithPutTtl[(RK, CK), V, CQLCassandraCompositeStore[RK, CK, V, RS, CS]] 
+  with CassandraCASStore[(RK, CK), V] {
 
   import AbstractCQLCassandraCompositeStore._
 
@@ -110,4 +111,31 @@ class CQLCassandraCompositeStore[RK <: HList, CK <: HList, V, RS <: HList, CS <:
   override protected def getValue(result: ResultSet): Option[V] = cassSerValue.fromRow(result.one(), valueColumnName)
 
   override def getRowValue(row: Row): V = cassSerValue.fromRow(row, valueColumnName).get
+
+  override def getCASStore[T](tokenColumnName: String = CQLCassandraConfiguration.DEFAULT_TOKEN_COLUMN_NAME)(implicit equiv: Equiv[T], cassTokenSerializer: CassandraPrimitive[T], tokenFactory: TokenFactory[T]): CASStore[T, (RK, CK), V] with IterableStore[(RK, CK), V] = new CQLCassandraCompositeStore[RK, CK, V, RS, CS](
+      columnFamily, rowkeySerializer, rowkeyColumnNames, colkeySerializer, colkeyColumnNames, valueColumnName, consistency, poolSize, 
+      batchType, ttl)(cassSerValue) with CASStore[T, (RK, CK), V] {
+    override protected def putValue(value: V, update: Update): Update.Assignments = update.`with`(QueryBuilder.set(valueColumnName, value)).and(QueryBuilder.set(tokenColumnName, tokenFactory.createNewToken))
+    override def cas(token: Option[T], kv: ((RK, CK), V))(implicit ev1: Equiv[T]): Future[(V, T)] = futurePool {
+      val statement = createPutQuery[(RK, CK)]((kv._1, Some(kv._2))).setForceNoValues(false).getQueryString()
+      val casCondition = token match {
+        case Some(tok) => tokenFactory.createIfAndComparison(tokenColumnName, tok)
+        case None => " IF NOT EXISTS"
+      }
+      val simpleStatement = new SimpleStatement(s"$statement $casCondition").setConsistencyLevel(consistency)
+      val resultSet = columnFamily.session.getSession.execute(simpleStatement)
+      println(resultSet.one())
+      (kv._2, token.get)
+    }
+    override def get(key: (RK, CK))(implicit ev1: Equiv[T]): Future[Option[(V, T)]] = futurePool {
+      val result = columnFamily.session.getSession.execute(createGetQuery(key).limit(1).setConsistencyLevel(consistency))
+      result.isExhausted() match {
+        case false => {
+          val row = result.one()
+          Some((getRowValue(row), cassTokenSerializer.fromRow(row, tokenColumnName).get)) 
+        }
+        case true => None
+      }
+    }
+  }
 }

@@ -19,7 +19,7 @@ import com.twitter.util.{Duration, Future, FuturePool, Return, Time, Throw}
 import com.twitter.concurrent.Spool
 import com.datastax.driver.core.{BatchStatement, ConsistencyLevel, ResultSet, Row, Statement}
 import com.datastax.driver.core.policies.{LoadBalancingPolicy, Policies, ReconnectionPolicy, RetryPolicy, RoundRobinPolicy, TokenAwarePolicy}
-import com.datastax.driver.core.querybuilder.{BuiltStatement, Clause, QueryBuilder, Update}
+import com.datastax.driver.core.querybuilder.{BuiltStatement, Clause, QueryBuilder, Update, Select}
 import com.twitter.storehaus.{IterableStore, QueryableStore, ReadableStore, Store}
 import com.websudos.phantom.CassandraPrimitive
 import com.twitter.storehaus.cassandra.cql.cascading.CassandraCascadingRowMatcher
@@ -175,33 +175,32 @@ abstract class AbstractCQLCassandraCompositeStore[RK <: HList, CK <: HList, V, R
   import AbstractCQLCassandraCompositeStore._
 
   protected def putValue(value: V, update: Update): Update.Assignments
-    
+  
+  protected def createPutQuery[K1 <: (RK, CK)](kv: (K1, Option[V])): BuiltStatement = {
+    val ((rk, ck), valueOpt) = kv
+    val eqList = new ArrayBuffer[Clause]
+    addKey(rk, rowkeyColumnNames, eqList)
+    addKey(ck, colkeyColumnNames, eqList)
+    valueOpt match {
+      case Some(value) => {
+        val update = putValue(value, QueryBuilder.update(columnFamily.getPreparedNamed)).where(_)
+        val where = eqList.join(update)((clause, where) => where.and(clause))
+        ttl match {
+          case Some(duration) => where.using(QueryBuilder.ttl(duration.inSeconds))
+          case None => where
+        }
+      }
+      case None => eqList.join(QueryBuilder.delete(valueColumnName).from(columnFamily.getPreparedNamed).where(_))((clause, where) => where.and(clause))
+    }
+  }
+  
   override def multiPut[K1 <: (RK, CK)](kvs: Map[K1, Option[V]]): Map[K1, Future[Unit]] = {
     if(kvs.size > 0) {
       val result = futurePool {
-    	
         val mutator = new BatchStatement(batchType)
-    	kvs.foreach{ kv =>
-    	  val ((rk, ck), valueOpt) = kv
-    	  val eqList = new ArrayBuffer[Clause]
-  	      addKey(rk, rowkeyColumnNames, eqList)
-   	      addKey(ck, colkeyColumnNames, eqList)
-    	  val builder: BuiltStatement = valueOpt match {
-    	    case Some(value) => {
-    	      val update = putValue(value, QueryBuilder.update(columnFamily.getPreparedNamed)).where(_)
-    	      val where = eqList.join(update)((clause, where) => where.and(clause))
-    	      ttl match {
-    	        case Some(duration) => where.using(QueryBuilder.ttl(duration.inSeconds))
-    	        case None => where
-    	      }
-    	    }
-    	    case None => eqList.join(QueryBuilder.delete(valueColumnName).from(columnFamily.getPreparedNamed).where(_))((clause, where) => where.and(clause))
-    	  }
-    	  mutator.add(builder)
-    	}
+    	kvs.foreach(kv => mutator.add(createPutQuery[K1](kv)))
     	mutator.setConsistencyLevel(consistency)
     	val res = columnFamily.session.getSession.execute(mutator)
-    	
       }
       kvs.map{(kv : (K1, Option[V])) => (kv._1, result)}
     } else {
@@ -219,23 +218,24 @@ abstract class AbstractCQLCassandraCompositeStore[RK <: HList, CK <: HList, V, R
 
   protected def getValue(result: ResultSet): Option[V]
   
-  override def get(key: (RK, CK)): Future[Option[V]] = {
+  protected def createGetQuery(key: (RK, CK)): Select.Where = {
     val (rk, ck) = key
+    val builder = QueryBuilder
+      .select()
+      .from(columnFamily.getPreparedNamed)
+      .where()
+   	val eqList = new ArrayBuffer[Clause]
+    addKey(rk, rowkeyColumnNames, eqList)
+    addKey(ck, colkeyColumnNames, eqList)
+    eqList.foreach(clause => builder.and(clause))
+    builder
+  }
+  
+  override def get(key: (RK, CK)): Future[Option[V]] = {
     futurePool {
-      val builder = QueryBuilder
-        .select()
-        .from(columnFamily.getPreparedNamed)
-        .where()
-   	  val eqList = new ArrayBuffer[Clause]
-      addKey(rk, rowkeyColumnNames, eqList)
-      addKey(ck, colkeyColumnNames, eqList)
-      eqList.foreach(clause => builder.and(clause))
-      builder.limit(1).setConsistencyLevel(consistency)
-      val result = columnFamily.session.getSession.execute(builder)
+      val result = columnFamily.session.getSession.execute(createGetQuery(key).limit(1).setConsistencyLevel(consistency))
       result.isExhausted() match {
-        case false => {
-          getValue(result: ResultSet)
-        }
+        case false => getValue(result: ResultSet)
         case true => None
       }
     }

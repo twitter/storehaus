@@ -1,12 +1,12 @@
 Storehaus-Cascading
 ===================
-According to the Cascading-website "Cascading is the proven application development platform for building data applications on Hadoop." [Cascading-Website](http://www.cascading.org). In Cascading so called "Taps" are used to define data sources and sinks. Using class StorehausTap Storehaus can be used in conjunction with Cascading (MapReduce/Hadoop). It is not designed to be used from JAVA (although it might be working depending on the store-initializer (must probably be written in Scala), serialization of data and the job - untested!).
+According to the Cascading-website "Cascading is the proven application development platform for building data applications on Hadoop." [Cascading-Website](http://www.cascading.org). In Cascading so called "Taps" are used to define data sources and sinks. Using class StorehausTap Storehaus can be used in conjunction with Cascading (MapReduce/Hadoop).
 
 Sinks
 -----
-Any Storehaus-WritableStore can be used as Cascading-sink (SinkTap). A major concern is how to handle store initialization in a distributed environment. For this problem to be solved we store initialization is required to be static. In terms of Scala this means that instantiation must be wrapped in an "object" which implements StorehausCascadingInitializer. This object must be provided in the jar of the job which Hadoop distributes across the cluster. Jobs can provide several of those and pass these objects to various StorehausTaps within the same job.
+Any Storehaus-WritableStore can be used as a Cascading-sink (SinkTap). Cascading will be able to sink data conforming to the stores contract into the store. To achieve that static store intializers can be passed to the constructor of StorehausTap to circumvent serialization of store objects in Hadoop. In terms of Scala this means that instantiation is wrapped in an "object" which implements StorehausCascadingInitializer. Every job using StorehausTap will provide such objects in its jar which Hadoop distributes across the cluster. Jobs can provide several of those within the same job.
 
-Storing allows two modes of operation:
+Storing allows two modes of operation, which can be set globally for all StorehausTaps:
   * Synchronous: The system will wait for every write to complete, which is the safest mode of operation (default). 
   * Asynchronous: Writes will be executed asynchronously, striving for higher parallelism (and may be faster, but may lose a few updates if the store is not correctly shut down). Set com.twitter.storehaus.cascading.outputformat.forcefuture in JobConf to "true" to use this.
 
