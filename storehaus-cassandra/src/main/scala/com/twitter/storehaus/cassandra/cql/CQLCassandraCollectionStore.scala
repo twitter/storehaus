@@ -43,7 +43,7 @@ import com.datastax.driver.core.SimpleStatement
 
 object CQLCassandraCollectionStore {
   import AbstractCQLCassandraCompositeStore._
-  
+
   /**
    * Optionally this method can be used to setup the column family on the Cassandra cluster.
    * Implicits are from shapeless. Types in the set/list must be CassandraPrimitive types.
@@ -56,6 +56,28 @@ object CQLCassandraCollectionStore {
 	colkeyColumnNames: List[String],
 	valueSerializer: CassandraPrimitive[X],
 	traversableType: V,
+	valueColumnName: String = CQLCassandraConfiguration.DEFAULT_VALUE_COLUMN_NAME)
+	(implicit mrk: MapperAux[keyStringMapping.type, RS, MRKResult],
+       mck: MapperAux[keyStringMapping.type, CS, MCKResult],
+       tork: ToList[MRKResult, String],
+       tock: ToList[MCKResult, String],
+       ev0: ¬¬[V] <:< (Set[X] ∨ List[X]),
+	   ev1: CassandraPrimitive[X])= {
+    createColumnFamily[RS, CS, V, X, MRKResult, MCKResult, String] (columnFamily, rowkeySerializers, 
+        rowkeyColumnNames, colkeySerializers, colkeyColumnNames, valueSerializer, traversableType, 
+        None, "", valueColumnName)
+  }
+
+  def createColumnFamily[RS <: HList, CS <: HList, V, X, MRKResult <: HList, MCKResult <: HList, T] (
+	columnFamily: CQLCassandraConfiguration.StoreColumnFamily,
+	rowkeySerializers: RS,
+	rowkeyColumnNames: List[String],
+	colkeySerializers: CS,
+	colkeyColumnNames: List[String],
+	valueSerializer: CassandraPrimitive[X],
+	traversableType: V,
+	tokenSerializer: Option[CassandraPrimitive[T]] = None,
+	tokenColumnName: String = CQLCassandraConfiguration.DEFAULT_TOKEN_COLUMN_NAME,
 	valueColumnName: String = CQLCassandraConfiguration.DEFAULT_VALUE_COLUMN_NAME)
 	(implicit mrk: MapperAux[keyStringMapping.type, RS, MRKResult],
        mck: MapperAux[keyStringMapping.type, CS, MCKResult],
@@ -76,6 +98,10 @@ object CQLCassandraCollectionStore {
 	        (traversableType match {
 	        	case set: Set[_] => createColumnListing(List(valueColumnName), List("set<" + valueSerializer.cassandraType + ">")) 
 	        	case list: List[_] => createColumnListing(List(valueColumnName), List("list<" + valueSerializer.cassandraType + ">")) 
+	        	case _ => ""
+    		}) +
+	        (tokenSerializer match {
+	        	case Some(tokSer) => ", \"" + tokenColumnName + "\" " + tokSer.cassandraType + ", "
 	        	case _ => ""
     		}) +
 	        "PRIMARY KEY ((\"" + rowkeyColumnNames.mkString("\", \"") + "\"), \"" +

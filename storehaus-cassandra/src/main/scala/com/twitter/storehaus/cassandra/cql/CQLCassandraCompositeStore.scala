@@ -15,14 +15,13 @@
  */
 package com.twitter.storehaus.cassandra.cql
 
-import com.twitter.util.{Future, Duration, FuturePool}
 import com.datastax.driver.core.{BatchStatement, ConsistencyLevel, ResultSet, Row, SimpleStatement, Statement}
 import com.datastax.driver.core.policies.{LoadBalancingPolicy, Policies, RoundRobinPolicy, ReconnectionPolicy, RetryPolicy, TokenAwarePolicy}
-import com.datastax.driver.core.querybuilder.{QueryBuilder, BuiltStatement, Insert, Delete, Select, Update, Clause}
-import com.twitter.storehaus.{IterableStore, Store}
-import com.twitter.storehaus.WithPutTtl
-import java.util.concurrent.Executors
+import com.datastax.driver.core.querybuilder.{BuiltStatement, Clause, Delete, Insert, QueryBuilder, Select, Update}
+import com.twitter.util.{Duration, Future, FuturePool}
+import com.twitter.storehaus.{IterableStore, Store, WithPutTtl}
 import com.websudos.phantom.CassandraPrimitive
+import java.util.concurrent.Executors
 import scala.collection.immutable.Nil
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.JavaConversions._
@@ -58,6 +57,24 @@ object CQLCassandraCompositeStore {
        mck: MapperAux[keyStringMapping.type, CS, MCKResult],
        tork: ToList[MRKResult, String],
        tock: ToList[MCKResult, String])= {
+    createColumnFamily[RS, CS, V, MRKResult, MCKResult, String](columnFamily, rowkeySerializers, rowkeyColumnNames,
+        colkeySerializers, colkeyColumnNames, valueSerializer, None, "", valueColumnName)
+  }
+  
+  def createColumnFamily[RS <: HList, CS <: HList, V, MRKResult <: HList, MCKResult <: HList, T] (
+	columnFamily: CQLCassandraConfiguration.StoreColumnFamily,
+	rowkeySerializers: RS,
+	rowkeyColumnNames: List[String],
+	colkeySerializers: CS,
+	colkeyColumnNames: List[String],
+	valueSerializer: CassandraPrimitive[V],
+	tokenSerializer: Option[CassandraPrimitive[T]] = None,
+	tokenColumnName: String = CQLCassandraConfiguration.DEFAULT_TOKEN_COLUMN_NAME,
+	valueColumnName: String = CQLCassandraConfiguration.DEFAULT_VALUE_COLUMN_NAME)
+	(implicit mrk: MapperAux[keyStringMapping.type, RS, MRKResult],
+       mck: MapperAux[keyStringMapping.type, CS, MCKResult],
+       tork: ToList[MRKResult, String],
+       tock: ToList[MCKResult, String])= {
       def createColumnListing(names: List[String], types: List[String]): String = names.size match {
           case 0 => ""
           case _ => "\"" + names.head.filterNot(_ == '"') + "\" " + types.head.filterNot(_ == '"') + ", " + createColumnListing(names.tail, types.tail)
@@ -69,6 +86,10 @@ object CQLCassandraCompositeStore {
     		createColumnListing(rowkeyColumnNames, rowKeyStrings) +
 	        createColumnListing(colkeyColumnNames, colKeyStrings) +
 	        createColumnListing(List(valueColumnName), List(valueSerializer.cassandraType)) +
+	        (tokenSerializer match {
+	        	case Some(tokSer) => ", \"" + tokenColumnName + "\" " + tokSer.cassandraType + ", "
+	        	case _ => ""
+    		})
 	        "PRIMARY KEY ((\"" + rowkeyColumnNames.mkString("\", \"") + "\"), \"" +
 	        colkeyColumnNames.mkString("\", \"") + "\"));"
     columnFamily.session.getSession.execute(stmt)

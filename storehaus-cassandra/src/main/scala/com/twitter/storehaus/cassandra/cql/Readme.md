@@ -14,7 +14,7 @@ CQLCassandraStore | x | x | | x | x | x | x
 CQLCassandraCompositeStore | x | x | | x | x | x | x
 CQLCassandraCollectionStore | x | x | x | x | x | x | x
 CQLCassandraLongStore | x | (x) | x | x | x | | 
-CassandraTupleStore | x | (x) | | x | x | (x) |
+CassandraTupleStore | x | (x) | | x | | |
 
 Some Notes
 ----------

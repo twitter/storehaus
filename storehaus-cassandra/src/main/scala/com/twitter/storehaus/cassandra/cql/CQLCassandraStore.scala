@@ -15,15 +15,15 @@
  */
 package com.twitter.storehaus.cassandra.cql
 
-import com.twitter.util.{Await, Future, Duration, FuturePool, Promise, Try, Throw, Return}
-import com.twitter.concurrent.Spool
 import com.datastax.driver.core.{BatchStatement, ConsistencyLevel, ResultSet, Row, SimpleStatement, Statement}
 import com.datastax.driver.core.policies.{Policies, RoundRobinPolicy, ReconnectionPolicy, RetryPolicy, TokenAwarePolicy}
 import com.datastax.driver.core.querybuilder.QueryBuilder
+import com.twitter.concurrent.Spool
 import com.twitter.storehaus.{IterableStore, QueryableStore, ReadableStore, ReadableStoreProxy, Store, WithPutTtl}
 import com.twitter.storehaus.cassandra.cql.cascading.CassandraCascadingRowMatcher
-import java.util.concurrent.Executors
+import com.twitter.util.{Await, Future, Duration, FuturePool, Promise, Try, Throw, Return}
 import com.websudos.phantom.CassandraPrimitive
+import java.util.concurrent.Executors
 
 object CQLCassandraStore {
   
@@ -32,14 +32,29 @@ object CQLCassandraStore {
 		valueColumnName: String = CQLCassandraConfiguration.DEFAULT_VALUE_COLUMN_NAME,
 		keyColumnName: String = CQLCassandraConfiguration.DEFAULT_KEY_COLUMN_NAME
       ) = {
+    createColumnFamily[K, V, String](columnFamily, None, valueColumnName, keyColumnName)
+  }
+
+  def createColumnFamily[K : CassandraPrimitive, V : CassandraPrimitive, T : CassandraPrimitive] (
+		columnFamily: CQLCassandraConfiguration.StoreColumnFamily,
+		tokenColumnName: Option[String] = Some(CQLCassandraConfiguration.DEFAULT_TOKEN_COLUMN_NAME),
+		valueColumnName: String = CQLCassandraConfiguration.DEFAULT_VALUE_COLUMN_NAME,
+		keyColumnName: String = CQLCassandraConfiguration.DEFAULT_KEY_COLUMN_NAME
+      ) = {
     val keySerializer = implicitly[CassandraPrimitive[K]]
     val valueSerializer = implicitly[CassandraPrimitive[V]]
+    val tokenSerializer = implicitly[CassandraPrimitive[T]]
     columnFamily.session.createKeyspace
     val stmt = "CREATE TABLE IF NOT EXISTS " + columnFamily.getPreparedNamed +
 	        " ( \"" + keyColumnName + "\" " + keySerializer.cassandraType + " PRIMARY KEY, \"" + 
-	        valueColumnName + "\" " + valueSerializer.cassandraType + ");"
+	        valueColumnName + "\" " + valueSerializer.cassandraType + 
+	        (tokenColumnName match {
+	        	case Some(tokenColumn) => ", \"" + tokenColumn + "\" " + tokenSerializer.cassandraType
+	        	case _ => ""
+    		}) + ");"
     columnFamily.session.getSession.execute(stmt)
   }
+
 }
 
 /**
