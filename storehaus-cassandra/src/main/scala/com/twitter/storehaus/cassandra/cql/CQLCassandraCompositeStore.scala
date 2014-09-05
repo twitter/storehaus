@@ -57,11 +57,11 @@ object CQLCassandraCompositeStore {
        mck: MapperAux[keyStringMapping.type, CS, MCKResult],
        tork: ToList[MRKResult, String],
        tock: ToList[MCKResult, String])= {
-    createColumnFamily[RS, CS, V, MRKResult, MCKResult, String](columnFamily, rowkeySerializers, rowkeyColumnNames,
+    createColumnFamilyWithToken[RS, CS, V, MRKResult, MCKResult, String](columnFamily, rowkeySerializers, rowkeyColumnNames,
         colkeySerializers, colkeyColumnNames, valueSerializer, None, "", valueColumnName)
   }
   
-  def createColumnFamily[RS <: HList, CS <: HList, V, MRKResult <: HList, MCKResult <: HList, T] (
+  def createColumnFamilyWithToken[RS <: HList, CS <: HList, V, MRKResult <: HList, MCKResult <: HList, T] (
 	columnFamily: CQLCassandraConfiguration.StoreColumnFamily,
 	rowkeySerializers: RS,
 	rowkeyColumnNames: List[String],

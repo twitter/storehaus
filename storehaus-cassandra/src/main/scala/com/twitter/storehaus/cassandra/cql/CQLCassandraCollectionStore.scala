@@ -63,12 +63,12 @@ object CQLCassandraCollectionStore {
        tock: ToList[MCKResult, String],
        ev0: ¬¬[V] <:< (Set[X] ∨ List[X]),
 	   ev1: CassandraPrimitive[X])= {
-    createColumnFamily[RS, CS, V, X, MRKResult, MCKResult, String] (columnFamily, rowkeySerializers, 
+    createColumnFamilyWithToken[RS, CS, V, X, MRKResult, MCKResult, String] (columnFamily, rowkeySerializers, 
         rowkeyColumnNames, colkeySerializers, colkeyColumnNames, valueSerializer, traversableType, 
         None, "", valueColumnName)
   }
 
-  def createColumnFamily[RS <: HList, CS <: HList, V, X, MRKResult <: HList, MCKResult <: HList, T] (
+  def createColumnFamilyWithToken[RS <: HList, CS <: HList, V, X, MRKResult <: HList, MCKResult <: HList, T] (
 	columnFamily: CQLCassandraConfiguration.StoreColumnFamily,
 	rowkeySerializers: RS,
 	rowkeyColumnNames: List[String],

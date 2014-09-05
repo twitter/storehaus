@@ -32,10 +32,10 @@ object CQLCassandraStore {
 		valueColumnName: String = CQLCassandraConfiguration.DEFAULT_VALUE_COLUMN_NAME,
 		keyColumnName: String = CQLCassandraConfiguration.DEFAULT_KEY_COLUMN_NAME
       ) = {
-    createColumnFamily[K, V, String](columnFamily, None, valueColumnName, keyColumnName)
+    createColumnFamilyWithToken[K, V, String](columnFamily, None, valueColumnName, keyColumnName)
   }
 
-  def createColumnFamily[K : CassandraPrimitive, V : CassandraPrimitive, T] (
+  def createColumnFamilyWithToken[K : CassandraPrimitive, V : CassandraPrimitive, T] (
 		columnFamily: CQLCassandraConfiguration.StoreColumnFamily,
 		tokenSerializer: Option[CassandraPrimitive[T]],
 		tokenColumnName: String = CQLCassandraConfiguration.DEFAULT_TOKEN_COLUMN_NAME,
