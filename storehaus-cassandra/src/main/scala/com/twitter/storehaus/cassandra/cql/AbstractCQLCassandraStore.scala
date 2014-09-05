@@ -21,7 +21,7 @@ abstract class AbstractCQLCassandraStore[K, V] (poolSize: Int, columnFamily: CQL
   override def queryable: ReadableStore[String, Seq[(K, V)]] = new Object with ReadableStore[String, Seq[(K, V)]] {
     import scala.collection.JavaConverters._
     override def get(whereCondition: String): Future[Option[Seq[(K, V)]]] = futurePool {
-      val qStart = QueryBuilder.select(getColumnNamesString).from(columnFamily.getPreparedNamed).getQueryString()
+      val qStart = QueryBuilder.select(getColumnNamesString.split(","): _*).from(columnFamily.getPreparedNamed).getQueryString()
       val query = if((whereCondition eq null) || ("" == whereCondition)) qStart else s"$qStart WHERE $whereCondition"  
   	  val rSet = columnFamily.session.getSession.execute(query)
   	  if(rSet.isExhausted) None else {
