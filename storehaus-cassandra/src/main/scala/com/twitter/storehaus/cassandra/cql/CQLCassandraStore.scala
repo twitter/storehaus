@@ -35,21 +35,21 @@ object CQLCassandraStore {
     createColumnFamily[K, V, String](columnFamily, None, valueColumnName, keyColumnName)
   }
 
-  def createColumnFamily[K : CassandraPrimitive, V : CassandraPrimitive, T : CassandraPrimitive] (
+  def createColumnFamily[K : CassandraPrimitive, V : CassandraPrimitive, T] (
 		columnFamily: CQLCassandraConfiguration.StoreColumnFamily,
-		tokenColumnName: Option[String] = Some(CQLCassandraConfiguration.DEFAULT_TOKEN_COLUMN_NAME),
+		tokenSerializer: Option[CassandraPrimitive[T]],
+		tokenColumnName: String = CQLCassandraConfiguration.DEFAULT_TOKEN_COLUMN_NAME,
 		valueColumnName: String = CQLCassandraConfiguration.DEFAULT_VALUE_COLUMN_NAME,
 		keyColumnName: String = CQLCassandraConfiguration.DEFAULT_KEY_COLUMN_NAME
       ) = {
     val keySerializer = implicitly[CassandraPrimitive[K]]
     val valueSerializer = implicitly[CassandraPrimitive[V]]
-    val tokenSerializer = implicitly[CassandraPrimitive[T]]
     columnFamily.session.createKeyspace
     val stmt = "CREATE TABLE IF NOT EXISTS " + columnFamily.getPreparedNamed +
 	        " ( \"" + keyColumnName + "\" " + keySerializer.cassandraType + " PRIMARY KEY, \"" + 
 	        valueColumnName + "\" " + valueSerializer.cassandraType + 
-	        (tokenColumnName match {
-	        	case Some(tokenColumn) => ", \"" + tokenColumn + "\" " + tokenSerializer.cassandraType
+	        (tokenSerializer match {
+	        	case Some(tokenSer) => ", \"" + tokenColumnName + "\" " + tokenSer.cassandraType
 	        	case _ => ""
     		}) + ");"
     columnFamily.session.getSession.execute(stmt)
