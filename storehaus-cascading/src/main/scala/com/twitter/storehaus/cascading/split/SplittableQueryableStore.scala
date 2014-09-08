@@ -4,11 +4,12 @@ import com.twitter.concurrent.Spool
 import com.twitter.storehaus.{ QueryableStore, ReadableStore, ReadableStoreProxy }
 import com.twitter.util.{ Await, Future }
 import com.twitter.concurrent.Spool.{*::}
+import org.apache.hadoop.io.Writable
 
-class SplittableQueryableStore[K, V, Q, T <: SplittableQueryableStore[K, V, Q, T, U], U <: QueryableStore[Q, K] with ReadableStore[K, V]]
-		(store: U, splittingFunction: (Q, Int) => Seq[Q], query: Q) 
+class SplittableQueryableStore[K, V, Q <: Writable, T <: SplittableQueryableStore[K, V, Q, T, U], U <: QueryableStore[Q, (K, V)] with ReadableStore[K, V]]
+		(store: U, splittingFunction: (Q, Int) => Seq[Q], val query: Q) 
     extends SplittableStore[K, V, Q, T] 
-    with QueryableStore[Q, K] 
+    with QueryableStore[Q, (K, V)] 
     with ReadableStoreProxy[K, V] {
 
   override def self = store
@@ -23,10 +24,13 @@ class SplittableQueryableStore[K, V, Q, T <: SplittableQueryableStore[K, V, Q, T
   }
 
   override def getAll: Spool[(K, V)] = {
-    val seq = Await.result(queryable.get(query)).getOrElse(Seq[K]())
-    // this Spool must be eager anyways...
-    seq.foldRight(Spool.empty[(K, V)])((key, spool) => (key, Await.result(store.get(key)).get) **:: spool)
+    val seq = Await.result(queryable.get(query)).getOrElse(Seq[(K, V)]())
+    // TODO: make this lazy spooling
+    seq.foldRight(Spool.empty[(K, V)])((kv, spool) => ((kv)) **:: spool)
   }
 
-  override def queryable: ReadableStore[Q, Seq[K]] = store.queryable
+  override def queryable: ReadableStore[Q, Seq[(K, V)]] = store.queryable
+  
+  override def getInputSplits(stores: Seq[T], tapid: String): Array[SplittableStoreInputSplit[K, V, Q]] =
+    stores.map(sto => new SplittableStoreInputSplit[K, V, Q](tapid, sto.query)).toArray
 }

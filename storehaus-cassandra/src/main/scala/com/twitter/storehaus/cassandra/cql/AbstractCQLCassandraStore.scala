@@ -19,7 +19,7 @@ abstract class AbstractCQLCassandraStore[K, V] (poolSize: Int, columnFamily: CQL
 
   // make sure stores are shut down, even when the JVM is going down
   Runtime.getRuntime.addShutdownHook(new Thread {
-    def run: Unit = {
+    override def run: Unit = {
       def forceShutdown: Unit = {
         val droppedTasks = futurePool.executor.shutdownNow()
         log.warn(s"""Forcing shutdown of futurePool because Timeout 
@@ -65,5 +65,4 @@ abstract class AbstractCQLCassandraStore[K, V] (poolSize: Int, columnFamily: CQL
       seq.foldRight(Spool.empty[(K, V)])((kv, spool) => (kv) **:: spool)
     }
   }
-  
 }

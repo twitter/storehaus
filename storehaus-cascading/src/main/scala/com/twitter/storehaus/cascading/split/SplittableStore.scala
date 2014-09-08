@@ -17,13 +17,15 @@ package com.twitter.storehaus.cascading.split
 
 import com.twitter.storehaus.ReadableStore
 import com.twitter.concurrent.Spool
+import org.apache.hadoop.io.Writable
+import org.apache.hadoop.mapred.InputSplit
 
 /**
  * Idea: split store into multiple sub-stores which are essentially splits on the store.
  * 
  * i.e. simplification of c.f. https://github.com/twitter/storehaus/pull/191
  */
-trait SplittableStore[K, V, Q, T <: SplittableStore[K, V, Q, T]] extends ReadableStore[K, V] {
+trait SplittableStore[K, V, Q <: Writable, T <: SplittableStore[K, V, Q, T]] {
 
   /**
    * return a set of splits from this SplittableStore
@@ -32,7 +34,7 @@ trait SplittableStore[K, V, Q, T <: SplittableStore[K, V, Q, T]] extends Readabl
   def getSplits(numberOfSplitsHint: Int): Seq[T]
 
   /**
-   * get a single SplitStore from this representation of a set of keys
+   * get a single split (Store) from this representation of a set of keys
    */
   def getSplit(predicate: Q): T
   
@@ -40,4 +42,9 @@ trait SplittableStore[K, V, Q, T <: SplittableStore[K, V, Q, T]] extends Readabl
    * enumerates keys in this SplittableStore
    */
   def getAll: Spool[(K, V)]
+  
+  /**
+   * converts SplittableStores into their InputSplit counterparts
+   */
+  def getInputSplits(stores: Seq[T], tapid: String): Array[SplittableStoreInputSplit[K, V, Q]]
 }
