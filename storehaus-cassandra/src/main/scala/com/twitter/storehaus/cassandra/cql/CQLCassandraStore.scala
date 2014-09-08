@@ -17,7 +17,7 @@ package com.twitter.storehaus.cassandra.cql
 
 import com.datastax.driver.core.{BatchStatement, ConsistencyLevel, ResultSet, Row, SimpleStatement, Statement}
 import com.datastax.driver.core.policies.{Policies, RoundRobinPolicy, ReconnectionPolicy, RetryPolicy, TokenAwarePolicy}
-import com.datastax.driver.core.querybuilder.QueryBuilder
+import com.datastax.driver.core.querybuilder.{BuiltStatement, QueryBuilder}
 import com.twitter.concurrent.Spool
 import com.twitter.storehaus.{IterableStore, QueryableStore, ReadableStore, ReadableStoreProxy, Store, WithPutTtl}
 import com.twitter.storehaus.cassandra.cql.cascading.CassandraCascadingRowMatcher
@@ -152,29 +152,16 @@ class CQLCassandraStore[K : CassandraPrimitive, V : CassandraPrimitive] (
   
   override def getCASStore[T](tokenColumnName: String = CQLCassandraConfiguration.DEFAULT_TOKEN_COLUMN_NAME)(
       implicit equiv: Equiv[T], cassTokenSerializer: CassandraPrimitive[T], tokenFactory: TokenFactory[T]): CASStore[T, K, V] with IterableStore[K, V] = new CQLCassandraStore[K, V](
-      columnFamily, valueColumnName, keyColumnName, consistency, poolSize, batchType, ttl) with CASStore[T, K, V] {
+      columnFamily, valueColumnName, keyColumnName, consistency, poolSize, batchType, ttl) with CassandraCASStoreSimple[T, K, V] {
     override protected def deleteColumns: String = s"$valueColumnName , $tokenColumnName"
-    override protected def createPutQuery[K1 <: K](kv: (K1, V)) = super.createPutQuery(kv).value(tokenColumnName, tokenFactory.createNewToken)
-    override def cas(token: Option[T], kv: (K, V))(implicit ev1: Equiv[T]): Future[(V, T)] = futurePool {
-      val statement = createPutQuery[K]((kv._1, kv._2)).setForceNoValues(false).getQueryString()
-      val casCondition = token match {
-        case Some(tok) => tokenFactory.createIfAndComparison(tokenColumnName, tok)
-        case None => " IF NOT EXISTS"
-      }
-      val simpleStatement = new SimpleStatement(s"$statement $casCondition").setConsistencyLevel(consistency)
-      val resultSet = columnFamily.session.getSession.execute(simpleStatement)
-      println(resultSet.one())
-      (kv._2, token.get)
+    override protected def createPutQuery[K1 <: K](kv: (K1, V)) = super.createPutQuery(kv).value(tokenColumnName, tokenFactory.createNewToken)    
+    override def cas(token: Option[T], kv: (K, V))(implicit ev1: Equiv[T]): Future[Boolean] = { 
+      def putQueryConversion(kv: (K, Option[V])): BuiltStatement = createPutQuery[K](kv._1, kv._2.get)  
+      casImpl(token, kv, putQueryConversion(_), tokenFactory, tokenColumnName, columnFamily, consistency)(ev1)
     }
-    override def get(key: K)(implicit ev1: Equiv[T]): Future[Option[(V, T)]] = futurePool {
-      val result = columnFamily.session.getSession.execute(createGetQuery(key).limit(1).setConsistencyLevel(consistency))
-      result.isExhausted() match {
-        case false => {
-          val row = result.one()
-          Some((valueSerializer.fromRow(result.one(), valueColumnName).get, cassTokenSerializer.fromRow(row, tokenColumnName).get)) 
-        }
-        case true => None
-      }
+    override def get(key: K)(implicit ev1: Equiv[T]): Future[Option[(V, T)]] = {
+	  def rowExtractor(r: Row): V = valueSerializer.fromRow(r, valueColumnName).get
+      getImpl(key, createGetQuery(_), cassTokenSerializer, rowExtractor(_), tokenColumnName, columnFamily, consistency)(ev1)
     }
   }
 }

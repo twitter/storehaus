@@ -17,6 +17,8 @@ package com.twitter.storehaus.cassandra.cql
 
 import com.datastax.driver.core.{BatchStatement, ConsistencyLevel, Cluster, Session}
 import com.datastax.driver.core.policies.{LoadBalancingPolicy, Policies, ReconnectionPolicy, RetryPolicy, RoundRobinPolicy, TokenAwarePolicy}
+import com.twitter.util.Duration
+import java.util.concurrent.TimeUnit
 
 object CQLCassandraConfiguration {
 
@@ -28,6 +30,7 @@ object CQLCassandraConfiguration {
   val DEFAULT_TTL_DURATION = None
   val DEFAULT_BATCH_STATEMENT_TYPE = BatchStatement.Type.UNLOGGED
   val DEFAULT_SYNC = CassandraExternalSync(NoSync(), NoSync())
+  val DEFAULT_SHUTDOWN_TIMEOUT = Duration(60, TimeUnit.SECONDS)
   
   case class StoreHost(val name: String)
 
@@ -37,7 +40,8 @@ object CQLCassandraConfiguration {
 	val credentials: Option[StoreCredentials] = None,
 	val loadBalancing: LoadBalancingPolicy = Policies.defaultLoadBalancingPolicy,
 	val reconnectPolicy: ReconnectionPolicy = Policies.defaultReconnectionPolicy,
-	val retryPolicy: RetryPolicy = Policies.defaultRetryPolicy) {
+	val retryPolicy: RetryPolicy = Policies.defaultRetryPolicy,
+	val shutdownTimeout: Duration = DEFAULT_SHUTDOWN_TIMEOUT) {
 	def getCluster: Cluster = {
 	  val clusterBuilder = Cluster.builder()
 	  hosts.foreach(host => {

@@ -217,29 +217,12 @@ class CQLCassandraCollectionStore[RK <: HList, CK <: HList, V, X, RS <: HList, C
   
   override def getCASStore[T](tokenColumnName: String = CQLCassandraConfiguration.DEFAULT_TOKEN_COLUMN_NAME)(implicit equiv: Equiv[T], cassTokenSerializer: CassandraPrimitive[T], tokenFactory: TokenFactory[T]): CASStore[T, (RK, CK), V] with IterableStore[(RK, CK), V] = new CQLCassandraCollectionStore[RK, CK, V, X, RS, CS](
       columnFamily, rowkeySerializer, rowkeyColumnNames, colkeySerializer, colkeyColumnNames, valueColumnName, consistency, poolSize, batchType,
-      ttl)(mergeSemigroup, sync) with CASStore[T, (RK, CK), V] {
+      ttl)(mergeSemigroup, sync) with CassandraCASStoreSimple[T, (RK, CK), V] {
     override protected def putValue(value: V, update: Update): Update.Assignments = super.putValue(value, update).and(QueryBuilder.set(tokenColumnName, tokenFactory.createNewToken))
     override protected def deleteColumns: String = s"$valueColumnName , $tokenColumnName"
-    override def cas(token: Option[T], kv: ((RK, CK), V))(implicit ev1: Equiv[T]): Future[(V, T)] = futurePool {
-      val statement = createPutQuery[(RK, CK)]((kv._1, Some(kv._2))).setForceNoValues(false).getQueryString()
-      val casCondition = token match {
-        case Some(tok) => tokenFactory.createIfAndComparison(tokenColumnName, tok)
-        case None => " IF NOT EXISTS"
-      }
-      val simpleStatement = new SimpleStatement(s"$statement $casCondition").setConsistencyLevel(consistency)
-      val resultSet = columnFamily.session.getSession.execute(simpleStatement)
-      println(resultSet.one())
-      (kv._2, token.get)
-    }
-    override def get(key: (RK, CK))(implicit ev1: Equiv[T]): Future[Option[(V, T)]] = futurePool {
-      val result = columnFamily.session.getSession.execute(createGetQuery(key).limit(1).setConsistencyLevel(consistency))
-      result.isExhausted() match {
-        case false => {
-          val row = result.one()
-          Some((getRowValue(row), cassTokenSerializer.fromRow(row, tokenColumnName).get)) 
-        }
-        case true => None
-      }
-    }
+    override def cas(token: Option[T], kv: ((RK, CK), V))(implicit ev1: Equiv[T]): Future[Boolean] =
+      casImpl(token, kv, createPutQuery[(RK, CK)](_), tokenFactory, tokenColumnName, columnFamily, consistency)(ev1)
+    override def get(key: (RK, CK))(implicit ev1: Equiv[T]): Future[Option[(V, T)]] = 
+      getImpl(key, createGetQuery(_), cassTokenSerializer, getRowValue(_), tokenColumnName, columnFamily, consistency)(ev1)
   }
 }
