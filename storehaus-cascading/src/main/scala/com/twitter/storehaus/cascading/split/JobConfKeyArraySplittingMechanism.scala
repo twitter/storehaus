@@ -29,6 +29,8 @@ import org.apache.hadoop.mapred.{ InputSplit, JobConf }
  * will be serialized, stored and transmitted over the wire using JobConf. 
  * The base class StorehausSplittingMechanism is intended to be extended for cases which
  * require e.g. a lookup in a store. 
+ * 
+ * Because keys must be provided this splitting mechanism is not for versioning stores.
  */
 class JobConfKeyArraySplittingMechanism[K, V](override val conf: JobConf) 
     extends StorehausSplittingMechanism[K, V](conf) {

@@ -28,6 +28,7 @@ class CassandraSplittingMechanism[K, V](override val conf: JobConf)
   
   val tapid = InitializableStoreObjectSerializer.getTapId(conf)
   val storeinit = InitializableStoreObjectSerializer.getReadableStoreIntializer(conf, tapid).get.asInstanceOf[CassandraCascadingInitializer[K, V]]
+  val readVersion = InitializableStoreObjectSerializer.getReadVerion(conf, tapid)
   
   override def getSplits(job: JobConf, hint: Int) : Array[InputSplit] = {
     // ask for contact information -> call get_splits_ex via ColumnFamilyInputFormat
@@ -35,7 +36,7 @@ class CassandraSplittingMechanism[K, V](override val conf: JobConf)
     val connectionOptions = storeinit.getThriftConnections.trim.split(":").map(s => s.trim)
     ConfigHelper.setInputInitialAddress(conf, connectionOptions.head)
     ConfigHelper.setInputRpcPort(conf, if (connectionOptions.size == 1) "9160" else connectionOptions.last)
-    ConfigHelper.setInputColumnFamily(conf, storeinit.getKeyspaceName, storeinit.getColumnFamilyName)
+    ConfigHelper.setInputColumnFamily(conf, storeinit.getKeyspaceName, storeinit.getColumnFamilyName(readVersion))
     ConfigHelper.setInputPartitioner(conf, storeinit.getPartitionerName)
     CqlConfigHelper.setInputColumns(conf, storeinit.getCascadingRowMatcher.getColumnNamesString)
     CqlConfigHelper.setInputNativePort(conf, storeinit.getNativePort.toString)
@@ -47,13 +48,14 @@ class CassandraSplittingMechanism[K, V](override val conf: JobConf)
   override def initializeSplitInCluster(split: InputSplit, reporter: Reporter): Unit = {
     val storesplit = getStorehausSplit(split)
     // do this again on the mapper, so we can have multiple taps
-    ConfigHelper.setInputColumnFamily(conf, storeinit.getKeyspaceName, storeinit.getColumnFamilyName)
+    ConfigHelper.setInputColumnFamily(conf, storeinit.getKeyspaceName, storeinit.getColumnFamilyName(readVersion))
     ConfigHelper.setInputPartitioner(conf, storeinit.getPartitionerName)
     CqlConfigHelper.setInputColumns(conf, storeinit.getCascadingRowMatcher.getColumnNamesString)
     CqlConfigHelper.setInputNativePort(conf, storeinit.getNativePort.toString)
     // for some reason the java driver loses this information, so we re-set the default as a hack
     CqlConfigHelper.setInputMinSimultReqPerConnections(conf, "5")
     CqlConfigHelper.setInputMaxSimultReqPerConnections(conf, "128")
+    // CqlConfigHelper.setInputCql(conf, storeinit.getUserDefinedWhereClauses(readVersion))
     storesplit.recordReader = new CqlRecordReader
     val tac = new TaskAttemptContext(conf, TaskAttemptID.forName(conf.get(AbstractColumnFamilyInputFormat.MAPRED_TASK_ID))) {
       override def progress() = reporter.progress()        

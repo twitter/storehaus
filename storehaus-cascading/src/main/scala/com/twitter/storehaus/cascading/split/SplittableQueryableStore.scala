@@ -7,7 +7,7 @@ import com.twitter.concurrent.Spool.{*::}
 import org.apache.hadoop.io.Writable
 
 class SplittableQueryableStore[K, V, Q <: Writable, T <: SplittableQueryableStore[K, V, Q, T, U], U <: QueryableStore[Q, (K, V)] with ReadableStore[K, V]]
-		(store: U, splittingFunction: (Q, Int) => Seq[Q], val query: Q) 
+		(store: U, splittingFunction: (Q, Int, Option[Long]) => Seq[Q], val query: Q, val version: Option[Long] = None) 
     extends SplittableStore[K, V, Q, T] 
     with QueryableStore[Q, (K, V)] 
     with ReadableStoreProxy[K, V] {
@@ -15,12 +15,12 @@ class SplittableQueryableStore[K, V, Q <: Writable, T <: SplittableQueryableStor
   override def self = store
 
   override def getSplits(numberOfSplitsHint: Int): Seq[T] = {
-    val queries = splittingFunction(query, numberOfSplitsHint)
-    queries.map(qu => getSplit(qu))
+    val queries = splittingFunction(query, numberOfSplitsHint, version)
+    queries.map(qu => getSplit(qu, version))
   }
 
-  override def getSplit(predicate: Q): T = {
-    new SplittableQueryableStore[K, V, Q, T, U](store, splittingFunction, predicate).asInstanceOf[T]
+  override def getSplit(predicate: Q, version: Option[Long]): T = {
+    new SplittableQueryableStore[K, V, Q, T, U](store, splittingFunction, predicate, version).asInstanceOf[T]
   }
 
   override def getAll: Spool[(K, V)] = {
@@ -31,6 +31,6 @@ class SplittableQueryableStore[K, V, Q <: Writable, T <: SplittableQueryableStor
 
   override def queryable: ReadableStore[Q, Seq[(K, V)]] = store.queryable
   
-  override def getInputSplits(stores: Seq[T], tapid: String): Array[SplittableStoreInputSplit[K, V, Q]] =
-    stores.map(sto => new SplittableStoreInputSplit[K, V, Q](tapid, sto.query)).toArray
+  override def getInputSplits(stores: Seq[T], tapid: String, version: Option[Long]): Array[SplittableStoreInputSplit[K, V, Q]] =
+    stores.map(sto => new SplittableStoreInputSplit[K, V, Q](tapid, sto.query, version)).toArray
 }

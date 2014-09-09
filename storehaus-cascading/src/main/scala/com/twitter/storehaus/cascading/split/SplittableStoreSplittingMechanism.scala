@@ -12,6 +12,11 @@ trait SplittableStoreCascadingInitializer[K, V, Q <: Writable, T <: SplittableSt
   def getSplittableStore(jobConf: JobConf): Option[SplittableStore[K, V, Q, T]] 
 }
 
+trait VersionedSplittableStoreCascadingInitializer[K, V, Q <: Writable, T <: SplittableStore[K, V, Q, T]] {
+  def getSplittableStore(jobConf: JobConf, version: Long): Option[SplittableStore[K, V, Q, T]] 
+}
+
+
 /**
  * SplittableStore based implementation of a SplittingMechanism
  */
@@ -20,25 +25,35 @@ class SplittableStoreSplittingMechanism[K, V, Q <: Writable, T <: SplittableStor
   @transient private val log = LoggerFactory.getLogger(classOf[SplittableStoreSplittingMechanism[K, V, Q, T]])
   
   val tapid = InitializableStoreObjectSerializer.getTapId(conf)
-  val storeinit = InitializableStoreObjectSerializer.getReadableStoreIntializer(conf, tapid).get.asInstanceOf[SplittableStoreCascadingInitializer[K, V, Q, T]]
+  val version = InitializableStoreObjectSerializer.getReadVerion(conf, tapid)
+  val storeinit = version match {
+    case None => Left(InitializableStoreObjectSerializer.getReadableStoreIntializer(conf, tapid).get.asInstanceOf[SplittableStoreCascadingInitializer[K, V, Q, T]])
+    case Some(version) => Right(InitializableStoreObjectSerializer.getReadableVersionedStoreIntializer(conf, tapid, version).get.asInstanceOf[VersionedSplittableStoreCascadingInitializer[K, V, Q, T]])
+  }
   
   override def getSplits(job: JobConf, hint: Int) : Array[InputSplit] = {
     log.debug(s"Getting splits for StorehausTap with id $tapid from SplittableStore")
-    val splittableStore = storeinit.getSplittableStore(job).get
+    val splittableStore = storeinit match {
+      case Left(initsimple) => initsimple.getSplittableStore(job).get
+      case Right(initversioned) => initversioned.getSplittableStore(job, version.get).get
+    }
     val splittableStores = splittableStore.getSplits(hint)
-    splittableStore.getInputSplits(splittableStores, tapid).asInstanceOf[Array[InputSplit]]
+    splittableStore.getInputSplits(splittableStores, tapid, version).asInstanceOf[Array[InputSplit]]
   }
   
   override def initializeSplitInCluster(split: InputSplit, reporter: Reporter): Unit = {
     log.debug(s"Initializing Spool for StorehausTap with id $tapid")
-    getStorehausSplit(split).spool = Some(storeinit.getSplittableStore(conf).get.
-      getSplit(getStorehausSplit(split).getPredicate).getAll)
+    val versionFromSplit = getStorehausSplit(split).version
+    getStorehausSplit(split).spool = Some((storeinit match {
+      case Left(initsimple) => initsimple.getSplittableStore(conf).get
+      case Right(initversioned) => initversioned.getSplittableStore(conf, versionFromSplit.get).get
+    }).getSplit(getStorehausSplit(split).getPredicate, versionFromSplit).getAll)
   }
   
   override def fillRecord(split: InputSplit, key: Instance[K], value: Instance[V]): Boolean = {
     val storesplit = getStorehausSplit(split)
     if(!storesplit.spool.isEmpty) {
-      val (keyObj, valueObj) = storesplit.spool.get.head 
+      val (keyObj, valueObj) = storesplit.spool.get.head
       log.debug(s"Filling record for StorehausTap with id $tapid with value=$valueObj and key=$keyObj into store " + storeinit) 
       key.set(keyObj)
       value.set(valueObj)

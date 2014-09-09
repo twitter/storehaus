@@ -13,9 +13,10 @@ trait CassandraCascadingInitializer[K, V] {
   def getThriftConnections: String
   
   /**
-   * name of the ColumnFamily
+   * name of the ColumnFamily.
+   * If the StorehausTap was intitialized with versioning a version is provided 
    */
-  def getColumnFamilyName: String
+  def getColumnFamilyName(version: Option[Long] = None): String
   
   /**
    * Name of the keyspace in which the ColumnFamily resides in
@@ -28,9 +29,10 @@ trait CassandraCascadingInitializer[K, V] {
   def getCascadingRowMatcher: CassandraCascadingRowMatcher[K, V]
   
   /**
-   * fill if any where clauses should prevent fetching all rows
+   * if any where clauses should prevent fetching all rows.
+   * If the StorehausTap was intitialized with versioning a version is provided 
    */
-  def getUserDefinedWhereClauses: String = ""
+  def getUserDefinedWhereClauses(version: Option[Long] = None): String = ""
 
   /**
    * Set of Strings host:port to native protocol port
@@ -42,5 +44,4 @@ trait CassandraCascadingInitializer[K, V] {
    * See package org.apache.cassandra.dht.*Partitioner for options
    */
   def getPartitionerName: String = "org.apache.cassandra.dht.Murmur3Partitioner"
-  
 }

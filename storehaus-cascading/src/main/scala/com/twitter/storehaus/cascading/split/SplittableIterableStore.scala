@@ -12,7 +12,7 @@ import scala.collection.mutable.ArrayBuffer
  * 
  * Wastes some resources, because default implementation needs to eagerly walk to position of store  
  */
-class SplittableIterableStore[K, V, T <: SplittableIterableStore[K, V, T, U], U <: IterableStore[K, V] with ReadableStore[K, V]] (store: U, val position: Long = 0l, count: Long = 16384l) 
+class SplittableIterableStore[K, V, T <: SplittableIterableStore[K, V, T, U], U <: IterableStore[K, V] with ReadableStore[K, V]] (store: U, val position: Long = 0l, count: Long = 16384l, val version: Option[Long] = None) 
     extends SplittableStore[K, V, LongWritable, T]
     with ReadableStoreProxy[K, V] {
 
@@ -21,7 +21,7 @@ class SplittableIterableStore[K, V, T <: SplittableIterableStore[K, V, T, U], U 
   override def getSplits(numberOfSplitsHint: Int): Seq[T] = {
     val buffer = new ArrayBuffer[T]
     @tailrec def getSplits(number: Int, pos: Long): Unit = {
-      buffer += getSplit(new LongWritable(pos))
+      buffer += getSplit(new LongWritable(pos), version)
       if (number > 0) getSplits(number - 1, pos + count)
     }
     // we just assume there is enough data available to do this, 
@@ -30,8 +30,8 @@ class SplittableIterableStore[K, V, T <: SplittableIterableStore[K, V, T, U], U 
     buffer
   }
 
-  override def getSplit(pos: LongWritable): T = {
-    new SplittableIterableStore[K, V, T, U](store, pos.get(), count).asInstanceOf[T]
+  override def getSplit(pos: LongWritable, version: Option[Long]): T = {
+    new SplittableIterableStore[K, V, T, U](store, pos.get(), count, version).asInstanceOf[T]
   }
    
   /**
@@ -50,6 +50,6 @@ class SplittableIterableStore[K, V, T <: SplittableIterableStore[K, V, T, U], U 
     spool
   }
   
-  override def getInputSplits(stores: Seq[T], tapid: String): Array[SplittableStoreInputSplit[K, V, LongWritable]] =
-    stores.map(sto => new SplittableStoreInputSplit[K, V, LongWritable](tapid, new LongWritable(sto.position))).toArray
+  override def getInputSplits(stores: Seq[T], tapid: String, version: Option[Long]): Array[SplittableStoreInputSplit[K, V, LongWritable]] =
+    stores.map(sto => new SplittableStoreInputSplit[K, V, LongWritable](tapid, new LongWritable(sto.position), version)).toArray
 }

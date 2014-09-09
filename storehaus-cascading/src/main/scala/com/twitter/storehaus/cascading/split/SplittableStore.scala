@@ -36,7 +36,7 @@ trait SplittableStore[K, V, Q <: Writable, T <: SplittableStore[K, V, Q, T]] {
   /**
    * get a single split (Store) from this representation of a set of keys
    */
-  def getSplit(predicate: Q): T
+  def getSplit(predicate: Q, version: Option[Long]): T
   
   /**
    * enumerates keys in this SplittableStore
@@ -46,5 +46,5 @@ trait SplittableStore[K, V, Q <: Writable, T <: SplittableStore[K, V, Q, T]] {
   /**
    * converts SplittableStores into their InputSplit counterparts
    */
-  def getInputSplits(stores: Seq[T], tapid: String): Array[SplittableStoreInputSplit[K, V, Q]]
+  def getInputSplits(stores: Seq[T], tapid: String, version: Option[Long]): Array[SplittableStoreInputSplit[K, V, Q]]
 }
