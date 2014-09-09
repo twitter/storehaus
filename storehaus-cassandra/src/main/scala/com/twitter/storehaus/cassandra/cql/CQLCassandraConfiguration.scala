@@ -69,7 +69,11 @@ object CQLCassandraConfiguration {
         "\"" + getName + "\""
       else
         getName
-    } 
+    }
+    def dropAndDeleteColumnFamilyAndContainedData = {
+      val stmt = "DROP TABLE \"" + getName + "\";"
+      session.getSession.execute(stmt)
+    }
   }
   
   case class StoreSession(val keyspacename: String, val cluster: StoreCluster, val replicationOptions: String = "{'class' : 'SimpleStrategy', 'replication_factor' : 3}") {
