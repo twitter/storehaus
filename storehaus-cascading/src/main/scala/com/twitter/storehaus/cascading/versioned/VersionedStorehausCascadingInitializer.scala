@@ -1,4 +1,4 @@
-package com.twitter.storehaus.cascading
+package com.twitter.storehaus.cascading.versioned
 
 import org.apache.hadoop.mapred.JobConf
 import com.twitter.util.Closable
@@ -13,7 +13,7 @@ import com.twitter.storehaus.{ReadableStore, WritableStore}
  * Implemenetors may not depend on any state information
  * other than JobConf.
  */
-trait StorehausVersionedCascadingInitializer[K, V, Long] {
+trait VersionedStorehausCascadingInitializer[K, V] {
 
   /**
    *  is executed once and only on client side
@@ -29,6 +29,5 @@ trait StorehausVersionedCascadingInitializer[K, V, Long] {
    * returns an initialized writableStore, executed on cluster machines
    */
   def getWritableStore(jobConf: JobConf, version: Long): Option[WritableStore[K, Option[V]]]
-  
   
 }

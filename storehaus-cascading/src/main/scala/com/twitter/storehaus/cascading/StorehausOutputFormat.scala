@@ -55,7 +55,10 @@ class StorehausOutputFormat[K, V] extends OutputFormat[K, V] {
    */
   override def getRecordWriter(fs: FileSystem, conf: JobConf, name: String, progress: Progressable): RecordWriter[K, V] = {
     val tapid = InitializableStoreObjectSerializer.getTapId(conf)
-    val store = InitializableStoreObjectSerializer.getWritableStore[K, Option[V]](conf, tapid).get
+    val store = InitializableStoreObjectSerializer.getWriteVerion(conf, tapid) match {
+      case None => InitializableStoreObjectSerializer.getWritableStore[K, Option[V]](conf, tapid).get
+      case Some(version) => InitializableStoreObjectSerializer.getWritableVersionedStore[K, Option[V]](conf, tapid, version).get
+    }
     log.debug(s"Returning RecordWriter, retrieved store from StoreInitializer ${InitializableStoreObjectSerializer.getWritableStoreIntializer(conf, tapid).get.getClass.getName} by reflection: ${store.toString()}")
     new StorehausRecordWriter(conf, store)
   }

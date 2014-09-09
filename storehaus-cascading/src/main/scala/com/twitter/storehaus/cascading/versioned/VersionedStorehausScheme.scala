@@ -13,33 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.twitter.storehaus.cascading
+package com.twitter.storehaus.cascading.versioned
 
-import com.twitter.storehaus.{ ReadableStore, WritableStore }
-import java.util.UUID
 import cascading.flow.FlowProcess
 import cascading.scheme.{ Scheme, SinkCall, SourceCall }
 import cascading.tuple.Fields
+import com.twitter.storehaus.cascading.{Instance, InitializableStoreObjectSerializer, StorehausSchemeBasics}
+import java.util.UUID
 import org.apache.hadoop.mapred.{ JobConf, OutputCollector, RecordReader }
 
 /**
  * Scheme can be instantiated on stores conforming to Readable- or WritableStore or both
  */
-class StorehausScheme[K, V]
-  (@transient store: StorehausCascadingInitializer[K, V], id: String = UUID.randomUUID.toString)
+class VersionedStorehausScheme[K, V]
+  (@transient store: VersionedStorehausCascadingInitializer[K, V], version: Long, id: String = UUID.randomUUID.toString)
   extends Scheme[JobConf, RecordReader[Instance[K], Instance[V]], OutputCollector[K, V], Seq[Object], Seq[Object]](new Fields("key", "value")) 
   with StorehausSchemeBasics[K, V] {
 
-  def getId = this.id
+  override def getId = this.id
  
   override def setReadStore(conf: JobConf) = {
-    InitializableStoreObjectSerializer.setReadableStoreClass(conf, getId, store)
-    InitializableStoreObjectSerializer.setReadVerion(conf, getId, None)
+    InitializableStoreObjectSerializer.setReadableVersionedStoreClass(conf, getId, store)
+    InitializableStoreObjectSerializer.setReadVerion(conf, getId, Some(version))    
   }
 
   override def setWriteStore(conf: JobConf) = {
-    InitializableStoreObjectSerializer.setWritableStoreClass(conf, getId, store)
-    InitializableStoreObjectSerializer.setWriteVerion(conf, getId, None)
+    InitializableStoreObjectSerializer.setWritableVersionedStoreClass(conf, getId, store)
+    InitializableStoreObjectSerializer.setWriteVerion(conf, getId, Some(version))
   }
 
   override def sourceCleanup(process: FlowProcess[JobConf], sourceCall: SourceCall[Seq[Object], 
@@ -49,5 +49,5 @@ class StorehausScheme[K, V]
     RecordReader[Instance[K], Instance[V]]]) : Unit = super[StorehausSchemeBasics].sourcePrepare(process, sourceCall)
     
   override def equals(o : Any) : Boolean =
-    o.getClass.equals(this.getClass) && id.equals(o.asInstanceOf[StorehausScheme[K, V]].getId)
+    o.getClass.equals(this.getClass) && id.equals(o.asInstanceOf[VersionedStorehausScheme[K, V]].getId)
 }

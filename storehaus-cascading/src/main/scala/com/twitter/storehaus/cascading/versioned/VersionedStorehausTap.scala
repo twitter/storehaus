@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.twitter.storehaus.cascading
+package com.twitter.storehaus.cascading.versioned
 
 import com.twitter.storehaus.{ ReadableStore , WritableStore }
+import com.twitter.storehaus.cascading.{StorehausTapBasics, Instance}
 import com.twitter.util.Future
 import cascading.flow.FlowProcess
 import cascading.tap.hadoop.io.{ HadoopTupleEntrySchemeIterator, HadoopTupleEntrySchemeCollector }
@@ -38,8 +39,8 @@ import org.apache.hadoop.mapred.{ JobConf, RecordReader, OutputCollector }
  * @author Ruban Monu
  * @author Andreas Petter
  */
-class StorehausTap[K, V](@transient store: StorehausCascadingInitializer[K, V])
-  extends Tap[JobConf, RecordReader[Instance[K], Instance[V]], OutputCollector[K, V]](new StorehausScheme(store)) 
+class VersionedStorehausTap[K, V](@transient store: VersionedStorehausCascadingInitializer[K, V], version: Long)
+  extends Tap[JobConf, RecordReader[Instance[K], Instance[V]], OutputCollector[K, V]](new VersionedStorehausScheme(store, version)) 
   with StorehausTapBasics {
     
   override def openForRead(process: FlowProcess[JobConf], 
@@ -52,9 +53,9 @@ class StorehausTap[K, V](@transient store: StorehausCascadingInitializer[K, V])
     new HadoopTupleEntrySchemeCollector(process, this.asInstanceOf[StorehausTapTypeInJava])
   }
   
-  private val id: String = getScheme.asInstanceOf[StorehausScheme[K, V]].getId
+  private val id: String = getScheme.asInstanceOf[VersionedStorehausScheme[K, V]].getId
   
   override def getIdentifier: String = this.id
   override def equals(o: Any): Boolean =
-    o.getClass.equals(this.getClass) && id.equals(o.asInstanceOf[StorehausTap[K, V]].id)
+    o.getClass.equals(this.getClass) && id.equals(o.asInstanceOf[VersionedStorehausTap[K, V]].id)
 }

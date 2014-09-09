@@ -30,5 +30,4 @@ trait StorehausCascadingInitializer[K, V] {
    */
   def getWritableStore(jobConf: JobConf): Option[WritableStore[K, Option[V]]]
   
-  
 }
