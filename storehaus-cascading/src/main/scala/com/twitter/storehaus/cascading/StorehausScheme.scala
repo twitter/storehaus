@@ -29,7 +29,7 @@ import org.apache.hadoop.mapred.{ JobConf, OutputCollector, RecordReader }
  * Scheme can be instantiated on stores conforming to Readable- or WritableStore or both
  */
 class StorehausScheme[K, V]
-  (@transient store: StorehausCascadingInitializer[K, V], id: String = UUID.randomUUID.toString)
+  (@transient store: StorehausCascadingInitializer[K, V], version: Option[Long] = None, id: String = UUID.randomUUID.toString)
   extends Scheme[JobConf, RecordReader[Instance[K], Instance[V]], OutputCollector[K, V], Seq[Object], Seq[Object]](new Fields("key", "value")) {
 
   def getId = this.id
@@ -57,6 +57,7 @@ class StorehausScheme[K, V]
     conf : JobConf) : Unit = {
     InitializableStoreObjectSerializer.setTapId(conf, getId)
     InitializableStoreObjectSerializer.setReadableStoreClass(conf, getId, store)
+    InitializableStoreObjectSerializer.setReadVerion(conf, getId, version)
     conf.setInputFormat(classOf[StorehausInputFormat[K, V]])
   }
 
@@ -85,6 +86,7 @@ class StorehausScheme[K, V]
       conf : JobConf) : Unit = {
     InitializableStoreObjectSerializer.setTapId(conf, getId)
     InitializableStoreObjectSerializer.setWritableStoreClass(conf, getId, store)
+    InitializableStoreObjectSerializer.setWriteVerion(conf, getId, version)
     conf.setOutputFormat(classOf[StorehausOutputFormat[K, V]])
   }
 

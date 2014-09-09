@@ -38,8 +38,8 @@ import org.apache.hadoop.mapred.{ JobConf, RecordReader, OutputCollector }
  * @author Ruban Monu
  * @author Andreas Petter
  */
-class StorehausTap[K, V](@transient store: StorehausCascadingInitializer[K, V])
-  extends Tap[JobConf, RecordReader[Instance[K], Instance[V]], OutputCollector[K, V]](new StorehausScheme(store)) {
+class StorehausTap[K, V](@transient store: StorehausCascadingInitializer[K, V], @transient version: Option[Long] = None)
+  extends Tap[JobConf, RecordReader[Instance[K], Instance[V]], OutputCollector[K, V]](new StorehausScheme(store, version)) {
   
   override def openForRead(process: FlowProcess[JobConf], 
       input: RecordReader[Instance[K], Instance[V]]): TupleEntryIterator = { 

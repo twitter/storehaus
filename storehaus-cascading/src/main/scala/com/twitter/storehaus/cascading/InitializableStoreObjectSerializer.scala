@@ -16,6 +16,8 @@ object InitializableStoreObjectSerializer {
   val STORE_TAP_ID = "com.twitter.storehaus.cascading.currenttapid"
   val STORE_CLASS_NAME_READ = "com.twitter.storehaus.cascading.readstoreclass."
   val STORE_CLASS_NAME_WRITE = "com.twitter.storehaus.cascading.writestoreclass."
+  val STORE_VERSION_READ = "com.twitter.storehaus.cascading.readversion."
+  val STORE_VERSION_WRITE = "com.twitter.storehaus.cascading.writeversion."
   
   def setReadableStoreClass[K, V](conf: JobConf, tapid: String, storeSerializer: StorehausCascadingInitializer[K, V]) = {
     if (conf.get(STORE_CLASS_NAME_READ + tapid) == null) conf.set(STORE_CLASS_NAME_READ + tapid, storeSerializer.getClass.getName)
@@ -49,6 +51,10 @@ object InitializableStoreObjectSerializer {
   def getTapId(conf: JobConf): String = {
     conf.get(STORE_TAP_ID)
   }
+  def setReadVerion(conf: JobConf, tapid: String, version: Option[Long]) = setVersion(conf, tapid, version, STORE_VERSION_READ)
+  def getReadVerion(conf: JobConf, tapid: String): Option[Long] = getVerion(conf, tapid, STORE_VERSION_READ)
+  def setWriteVerion(conf: JobConf, tapid: String, version: Option[Long]) = setVersion(conf, tapid, version, STORE_VERSION_WRITE)
+  def getWriteVerion(conf: JobConf, tapid: String): Option[Long] = getVerion(conf, tapid, STORE_VERSION_WRITE)
   
   def getReflectiveObject(objectName: String) = {
     val loadermirror = runtimeMirror(getClass.getClassLoader)
@@ -62,5 +68,15 @@ object InitializableStoreObjectSerializer {
     val instancemirror = loadermirror.reflect(getReflectiveObject(objectName))
 	val method = instancemirror.symbol.typeSignature.member(newTermName(methodName)).asMethod
 	instancemirror.reflectMethod(method)(conf).asInstanceOf[Option[T]]
+  }
+
+  private def setVersion(conf: JobConf, tapid: String, version: Option[Long], cfid: String) =
+    version.map(v => conf.set(cfid + tapid, v.toString))
+  private def getVerion(conf: JobConf, tapid: String, cfid: String): Option[Long] = {
+    conf.get(cfid + tapid) match {
+      case null => None
+      case "" => None
+      case x => Some(x.toLong)  
+    }
   }
 }
