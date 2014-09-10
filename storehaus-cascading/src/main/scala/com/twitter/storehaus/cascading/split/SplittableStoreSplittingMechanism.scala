@@ -8,15 +8,6 @@ import scala.collection.JavaConversions._
 import java.net.InetAddress
 import org.slf4j.{ Logger, LoggerFactory }
 
-trait SplittableStoreCascadingInitializer[K, V, Q <: Writable, T <: SplittableStore[K, V, Q, T]] {
-  def getSplittableStore(jobConf: JobConf): Option[SplittableStore[K, V, Q, T]] 
-}
-
-trait VersionedSplittableStoreCascadingInitializer[K, V, Q <: Writable, T <: SplittableStore[K, V, Q, T]] {
-  def getSplittableStore(jobConf: JobConf, version: Long): Option[SplittableStore[K, V, Q, T]] 
-}
-
-
 /**
  * SplittableStore based implementation of a SplittingMechanism
  */
