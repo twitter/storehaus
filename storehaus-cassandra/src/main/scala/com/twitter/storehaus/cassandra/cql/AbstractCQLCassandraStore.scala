@@ -4,7 +4,7 @@ import com.datastax.driver.core.querybuilder.QueryBuilder
 import com.twitter.concurrent.Spool
 import com.twitter.storehaus.{IterableStore, QueryableStore, ReadableStore}
 import com.twitter.storehaus.cassandra.cql.cascading.CassandraCascadingRowMatcher
-import com.twitter.util.{Future, FuturePool, Throw, Return}
+import com.twitter.util.{Future, FuturePool, Promise, Throw, Return}
 import java.util.concurrent.{Executors, TimeUnit}
 import org.slf4j.{ Logger, LoggerFactory }
 
@@ -46,11 +46,12 @@ abstract class AbstractCQLCassandraStore[K, V] (poolSize: Int, columnFamily: CQL
   override def queryable: ReadableStore[String, Seq[(K, V)]] = new Object with ReadableStore[String, Seq[(K, V)]] {
     import scala.collection.JavaConverters._
     override def get(whereCondition: String): Future[Option[Seq[(K, V)]]] = futurePool {
-      val qStart = QueryBuilder.select(getColumnNamesString.split(","):_*).from(columnFamily.getPreparedNamed).getQueryString()
+      val qStartSemi = QueryBuilder.select(getColumnNamesString.split(","):_*).from(columnFamily.getPreparedNamed).getQueryString().trim()
+      val qStart = qStartSemi.substring(0, qStartSemi.length() - 1)
       val query = if((whereCondition eq null) || ("" == whereCondition)) qStart else s"$qStart WHERE $whereCondition"  
   	  val rSet = columnFamily.session.getSession.execute(query)
   	  if(rSet.isExhausted) None else {
-  		Some(rSet.all().asScala.map(row => getKeyValueFromRow(row)))
+  		Some(iterableAsScalaIterableConverter(rSet).asScala.view.toSeq.map(row => getKeyValueFromRow(row)))
   	  }
     }
   }
@@ -60,9 +61,8 @@ abstract class AbstractCQLCassandraStore[K, V] (poolSize: Int, columnFamily: CQL
    */
   override def getAll: Future[Spool[(K, V)]] = queryable.get("").transform {
     case Throw(y) => Future.exception(y)
-    case Return(x) => futurePool {
-      val seq = x.getOrElse(Seq[(K, V)]())
-      seq.foldRight(Spool.empty[(K, V)])((kv, spool) => (kv) **:: spool)
-    }
+    case Return(x) => 
+      // construct lazy spool
+      IterableStore.iteratorToSpool(x.getOrElse(Seq[(K, V)]()).view.iterator)   
   }
 }
