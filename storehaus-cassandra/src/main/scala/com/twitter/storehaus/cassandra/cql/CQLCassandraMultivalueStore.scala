@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Twitter Inc.
+ * Copyright 2014 SEEBURGER AG
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -41,11 +41,6 @@ import FromTraversable._
 object CQLCassandraMultivalueStore {
   import AbstractCQLCassandraCompositeStore._
   
-  /**
-   * Optionally this method can be used to setup the column family on the Cassandra cluster.
-   * Implicits are from shapeless. Types in the HList should conform to CassandraPrimitives from
-   * the phantom Library. 
-   */
   def createColumnFamily[RS <: HList, CS <: HList, VS <: HList, MRKResult <: HList, MCKResult <: HList, MVResult <: HList] (
 	columnFamily: CQLCassandraConfiguration.StoreColumnFamily,
 	rowkeySerializers: RS,
@@ -80,10 +75,6 @@ object CQLCassandraMultivalueStore {
        tork: ToList[MRKResult, String],
        tock: ToList[MCKResult, String],
        tov: ToList[MVResult, String])= {
-      def createColumnListing(names: List[String], types: List[String]): String = names.size match {
-          case 0 => ""
-          case _ => "\"" + names.head.filterNot(_ == '"') + "\" " + types.head.filterNot(_ == '"') + ", " + createColumnListing(names.tail, types.tail)
-        }
     columnFamily.session.createKeyspace
     val rowKeyStrings = rowkeySerializers.map(keyStringMapping).toList
     val colKeyStrings = colkeySerializers.map(keyStringMapping).toList
@@ -148,6 +139,14 @@ class CQLCassandraMultivalueStore[RK <: HList, CK <: HList, V <: HList, RS <: HL
 
   override def getRowValue(row: Row): V = {
     cassSerValue.toList.zip(valueColumnNameList).map(sercol => sercol._1.fromRow(row, sercol._2).get).toHList[V].get
+  }
+  
+  override def getColumnNamesString: String = {
+    val sb = new StringBuilder
+    rowkeyColumnNames.map(quote(sb, _, true))
+    colkeyColumnNames.map(quote(sb, _, true))
+    valueColumnNameList.map(name => quote(sb, name, name != valueColumnNameList.last))
+    sb.toString
   }
   
   override def getCASStore[T](tokenColumnName: String = CQLCassandraConfiguration.DEFAULT_TOKEN_COLUMN_NAME)(implicit equiv: Equiv[T], cassTokenSerializer: CassandraPrimitive[T], tokenFactory: TokenFactory[T]): CASStore[T, (RK, CK), V] with IterableStore[(RK, CK), V] = new CQLCassandraMultivalueStore[RK, CK, V, RS, CS, VS](

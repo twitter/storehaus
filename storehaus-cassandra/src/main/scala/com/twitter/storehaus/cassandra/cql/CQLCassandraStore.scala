@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Twitter Inc.
+ * Copyright 2014 SEEBURGER AG
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -68,14 +68,12 @@ class CQLCassandraStore[K : CassandraPrimitive, V : CassandraPrimitive] (
 		val poolSize: Int = CQLCassandraConfiguration.DEFAULT_FUTURE_POOL_SIZE,
 		val batchType: BatchStatement.Type = CQLCassandraConfiguration.DEFAULT_BATCH_STATEMENT_TYPE,
 		val ttl: Option[Duration] = CQLCassandraConfiguration.DEFAULT_TTL_DURATION)
-	extends AbstractCQLCassandraStore[K, V](poolSize, columnFamily)
+	extends AbstractCQLCassandraSimpleStore[K, V](poolSize, columnFamily, keyColumnName, consistency, batchType, ttl)
 	with Store[K, V] 
     with WithPutTtl[K, V, CQLCassandraStore[K, V]] 
-    with CassandraCascadingRowMatcher[K, V]
     with QueryableStore[String, (K, V)] 
     with IterableStore[K, V] 
     with CassandraCASStore[K, V] {
-  val keySerializer = implicitly[CassandraPrimitive[K]]
   val valueSerializer = implicitly[CassandraPrimitive[V]]
   
   override def withPutTtl(ttl: Duration): CQLCassandraStore[K, V] = new CQLCassandraStore(columnFamily, 
@@ -86,56 +84,6 @@ class CQLCassandraStore[K : CassandraPrimitive, V : CassandraPrimitive] (
   protected def createPutQuery[K1 <: K](kv: (K1, V)) = {
     val (key, value) = kv
     QueryBuilder.insertInto(columnFamily.getPreparedNamed).value(keyColumnName, key).value(valueColumnName, value)
-  }
-  
-  override def multiPut[K1 <: K](kvs: Map[K1, Option[V]]): Map[K1, Future[Unit]] = {
-    if(kvs.size > 0) {
-      val result = futurePool[Unit] {
-    	val mutator = new BatchStatement(batchType)
-    	kvs.foreach {
-    	  case (key, Some(value)) => { 
-    	    val builder = createPutQuery((key, value))
-    	    ttl match {
-    	      case Some(duration) => builder.using(QueryBuilder.ttl(duration.inSeconds))
-    	      case _ =>
-    	    }
-    	    mutator.add(builder)
-    	  }
-    	  case (key, None) => mutator.add(
-    	      QueryBuilder
-    	        .delete(deleteColumns)
-    	        .from(columnFamily.getName)
-    	        .where(QueryBuilder.eq(keyColumnName, key)))
-    	}
-    	mutator.setConsistencyLevel(consistency)
-    	columnFamily.session.getSession.execute(mutator)
-      }
-      kvs.map{(kv : (K1, Option[V])) => (kv._1, result)}
-    } else {
-      Map()
-    }
-  }
-
-  protected def createGetQuery(key: K) = {
-    QueryBuilder
-        .select()
-        .from(columnFamily.getPreparedNamed)
-        .where(QueryBuilder.eq(keyColumnName, key))
-  }
-  
-  override def get(key: K): Future[Option[V]] = {
-    futurePool {
-      val stmt = createGetQuery(key)
-        .limit(1)
-        .setConsistencyLevel(consistency)
-      val result = columnFamily.session.getSession.execute(stmt)
-      result.isExhausted() match {
-        case false => {
-          valueSerializer.fromRow(result.one(), valueColumnName)
-        }
-        case true => None
-      }
-    }
   }
   
   override def getKeyValueFromRow(row: Row): (K, V) = (keySerializer.fromRow(row, keyColumnName).get, valueSerializer.fromRow(row, valueColumnName).get)
@@ -149,6 +97,8 @@ class CQLCassandraStore[K : CassandraPrimitive, V : CassandraPrimitive] (
     AbstractCQLCassandraCompositeStore.quote(sb, valueColumnName)
     sb.toString
   }
+  
+  override def getValue(result: ResultSet): Option[V] = valueSerializer.fromRow(result.one(), valueColumnName)
   
   override def getCASStore[T](tokenColumnName: String = CQLCassandraConfiguration.DEFAULT_TOKEN_COLUMN_NAME)(
       implicit equiv: Equiv[T], cassTokenSerializer: CassandraPrimitive[T], tokenFactory: TokenFactory[T]): CASStore[T, K, V] with IterableStore[K, V] = new CQLCassandraStore[K, V](

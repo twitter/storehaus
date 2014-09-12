@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Twitter Inc.
+ * Copyright 2014 SEEBURGER AG
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -145,7 +145,15 @@ object AbstractCQLCassandraCompositeStore {
       recJoin(None, traversable)  
     }
   }
-  implicit def convertToJoinable[T](traversable: Traversable[T]) = new Joinable[T](traversable) 
+  implicit def convertToJoinable[T](traversable: Traversable[T]) = new Joinable[T](traversable)
+  
+  /**
+   * create a String listing columns and their types; useful to create column families 
+   */
+  def createColumnListing(names: List[String], types: List[String]): String = names.size match {
+    case 0 => ""
+    case _ => "\"" + names.head.filterNot(_ == '"') + "\" " + types.head.filterNot(_ == '"') + ", " + createColumnListing(names.tail, types.tail)
+  }
 }
 
 abstract class AbstractCQLCassandraCompositeStore[RK <: HList, CK <: HList, V, RS <: HList, CS <: HList] (
@@ -217,8 +225,6 @@ abstract class AbstractCQLCassandraCompositeStore[RK <: HList, CK <: HList, V, R
   		(implicit a2c: Append2Composite[ArrayBuffer[Clause], K]) = {
     append2Composite(clauses)(keys, colNames)
   }
-
-  protected def getValue(result: ResultSet): Option[V]
   
   protected def createGetQuery(key: (RK, CK)): Select.Where = {
     val (rk, ck) = key
@@ -243,12 +249,6 @@ abstract class AbstractCQLCassandraCompositeStore[RK <: HList, CK <: HList, V, R
     }
   }
   
-  override def close(deadline: Time) = {
-    Future[Unit] {
-      futurePool.executor.awaitTermination(deadline.sinceNow.inUnit(TimeUnit.SECONDS), TimeUnit.SECONDS)
-    }
-  }
-
   override def getKeyValueFromRow(row: Row): ((RK, CK), V) = {
 	val colDefs = row.getColumnDefinitions().asList().toList
 	// find value

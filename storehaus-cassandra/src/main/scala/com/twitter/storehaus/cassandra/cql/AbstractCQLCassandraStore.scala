@@ -1,17 +1,34 @@
+/*
+ * Copyright 2014 SEEBURGER AG
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.twitter.storehaus.cassandra.cql
 
 import com.datastax.driver.core.querybuilder.QueryBuilder
+import com.datastax.driver.core.ResultSet
 import com.twitter.concurrent.Spool
 import com.twitter.storehaus.{IterableStore, QueryableStore, ReadableStore}
 import com.twitter.storehaus.cassandra.cql.cascading.CassandraCascadingRowMatcher
-import com.twitter.util.{Future, FuturePool, Promise, Throw, Return}
+import com.twitter.util.{Closable, Future, FuturePool, Promise, Throw, Time, Return}
 import java.util.concurrent.{Executors, TimeUnit}
 import org.slf4j.{ Logger, LoggerFactory }
 
 abstract class AbstractCQLCassandraStore[K, V] (poolSize: Int, columnFamily: CQLCassandraConfiguration.StoreColumnFamily) 
   extends QueryableStore[String, (K, V)] 
   with CassandraCascadingRowMatcher[K, V]
-  with IterableStore[K, V] {
+  with IterableStore[K, V] 
+  with Closable {
 
   private val log = LoggerFactory.getLogger(classOf[AbstractCQLCassandraStore[K, V]])
   
@@ -65,4 +82,14 @@ abstract class AbstractCQLCassandraStore[K, V] (poolSize: Int, columnFamily: CQL
       // construct lazy spool
       IterableStore.iteratorToSpool(x.getOrElse(Seq[(K, V)]()).view.iterator)   
   }
+  
+  protected def getValue(result: ResultSet): Option[V]
+  
+  override def close(deadline: Time) = {
+    Future[Unit] {
+      futurePool.executor.shutdown()
+      futurePool.executor.awaitTermination(deadline.sinceNow.inUnit(TimeUnit.SECONDS), TimeUnit.SECONDS)
+    }
+  }
+
 }

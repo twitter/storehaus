@@ -5,8 +5,8 @@ Storehaus-Stores wrapping [Datastax' JAVA Driver](https://github.com/datastax/ja
 
 Besides a simple key-value store [CQLCassandraStore](CQLCassandraStore.scala) there are stores supporting composite partition- and clustering-keys [CQLCassandraCompositeStore](CQLCassandraCompositeStore.scala), [CQLCassandraCollectionStore](CQLCassandraCollectionStore.scala), [CQLCassandraMultivalueStore](CQLCassandraMultivalueStore.scala) and [CQLCassandraLongStore](CQLCassandraLongStore.scala). These keys are provided as a Tuple2 of a [HList](https://github.com/milessabin/shapeless) of partition-keys and a HList of clustering keys.
 
-Store support matrix
---------------------
+Supported Store Traits
+----------------------
 
 Store | ReadableStore | WritableStore | MergableStore | IterableStore | QueryableStore | CASStore | WithPutTtl
 ------|---------------|---------------|---------------|---------------|----------------|----------|-----------

@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Twitter Inc.
+ * Copyright 2014 SEEBURGER AG
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -98,4 +98,7 @@ object CQLCassandraConfiguration {
 	  tmpSession.close()      
     }
   }
+  
+  // can be used to create a set of column names easily
+  def defaultValueColumnNames(size: Int): List[String] = (1 to size).map(n => s"value_${n.toString}").toList
 }
