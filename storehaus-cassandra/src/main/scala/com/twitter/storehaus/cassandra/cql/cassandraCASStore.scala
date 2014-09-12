@@ -1,7 +1,7 @@
 package com.twitter.storehaus.cassandra.cql
 
 import com.twitter.storehaus.IterableStore
-import com.twitter.util.{Future}
+import com.twitter.util.Future
 import com.websudos.phantom.CassandraPrimitive
 import java.net.InetAddress
 import java.util.UUID
@@ -9,7 +9,6 @@ import scala.util.Random
 import scala.util.hashing.MurmurHash3
 import com.datastax.driver.core.{ConsistencyLevel, ResultSet, Row, SimpleStatement}
 import com.datastax.driver.core.querybuilder.{BuiltStatement, Select}
-import CQLCassandraConfiguration.StoreColumnFamily
 
 /**
  * factory to create token based Cassandra-stores
@@ -59,7 +58,7 @@ trait CassandraCASStoreSimple[T, K, V] extends CASStore[T, K, V] { self: Abstrac
       createQuery: ((K, Option[V])) => BuiltStatement, 
       tokenFactory: TokenFactory[T], 
       tokenColumnName: String,
-      columnFamily: StoreColumnFamily,
+      columnFamily: CQLCassandraConfiguration.StoreColumnFamily,
       consistency: ConsistencyLevel)(implicit ev1: Equiv[T]): Future[Boolean] = futurePool {
     val brokenStatement = createQuery((kv._1, Some(kv._2))).setForceNoValues(true).getQueryString()
     val statement = brokenStatement.substring(0, brokenStatement.length() - 1)
@@ -76,7 +75,7 @@ trait CassandraCASStoreSimple[T, K, V] extends CASStore[T, K, V] { self: Abstrac
       tokenSerializer: CassandraPrimitive[T],
       rowExtractor: (Row) => V,
       tokenColumnName: String,
-      columnFamily: StoreColumnFamily,
+      columnFamily: CQLCassandraConfiguration.StoreColumnFamily,
       consistency: ConsistencyLevel)(implicit ev1: Equiv[T]): Future[Option[(V, T)]] = futurePool {
     val result = columnFamily.session.getSession.execute(createQuery(key).limit(1).setConsistencyLevel(consistency))
     result.isExhausted() match {

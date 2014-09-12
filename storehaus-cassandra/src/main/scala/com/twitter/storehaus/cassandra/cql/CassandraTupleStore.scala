@@ -43,7 +43,7 @@ class CassandraTupleStore[RKT <: Product, CKT <: Product, V, RK <: HList, CK <: 
     override def get(whereCondition: String): Future[Option[Seq[((RKT, CKT), V)]]] = store.queryable.get(whereCondition).transformedBy {
       new FutureTransformer[Option[Seq[((RK, CK), V)]], Option[Seq[((RKT, CKT), V)]]] {
         override def map(value: Option[Seq[((RK, CK), V)]]): Option[Seq[((RKT, CKT), V)]] = value match {
-          case Some(seq) => Some(seq.map(res => ((res._1._1.tupled, res._1._2.tupled).asInstanceOf[(RKT, CKT)], res._2)))
+          case Some(seq) => Some(seq.view.map(res => ((res._1._1.tupled, res._1._2.tupled).asInstanceOf[(RKT, CKT)], res._2)))
           case _ => None
         }
       }
@@ -55,9 +55,6 @@ class CassandraTupleStore[RKT <: Product, CKT <: Product, V, RK <: HList, CK <: 
    */
   override def getAll: Future[Spool[((RKT, CKT), V)]] = queryable.get("").transform {
     case Throw(y) => Future.exception(y)
-    case Return(x) => store.futurePool {
-      val seq = x.getOrElse(Seq[((RKT, CKT), V)]())
-      seq.foldRight(Spool.empty[((RKT, CKT), V)])((kv, spool) => (kv) **:: spool)
-    }
+    case Return(x) => IterableStore.iteratorToSpool(x.getOrElse(Seq[((RKT, CKT), V)]()).view.iterator)   
   }
 }

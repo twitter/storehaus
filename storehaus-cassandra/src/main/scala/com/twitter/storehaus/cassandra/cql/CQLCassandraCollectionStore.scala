@@ -175,6 +175,7 @@ class CQLCassandraCollectionStore[RK <: HList, CK <: HList, V, X, RS <: HList, C
   override def merge(kv: ((RK, CK), V)): Future[Option[V]] = {
     import AbstractCQLCassandraCompositeStore._
     val ((rk, ck), value) = kv
+    val lockId = mapKeyToSyncId((rk, ck), columnFamily)
     futurePool {
    	  val eqList = new ArrayBuffer[Clause]
       addKey(rk, rowkeyColumnNames, eqList)
@@ -190,17 +191,16 @@ class CQLCassandraCollectionStore[RK <: HList, CK <: HList, V, X, RS <: HList, C
           case None => where
         })
       stmt.setConsistencyLevel(consistency)
-      val lockId = mapKeyToSyncId((rk, ck), columnFamily)
-      Await.result(sync.merge.lock(lockId, Future {
-   	    val origValue = Await.result(get((rk, ck)))
-	    // due to some unknown reason stmt does not execute in the same session object, except when executed multiple times, so we execute in a different one
-   	    // TODO: this must be removed in the future as soon as the bug (?) is fixed in Datastax' driver 
-   	    val newSession = columnFamily.session.cluster.getCluster.connect("\"" + columnFamily.session.keyspacename + "\"") 
-   	    newSession.execute(stmt)
-   	    newSession.close()
-        origValue
-      }))
-    }
+      }.flatMap(stmt => sync.merge.lock(lockId, Future {
+   	      val origValue = Await.result(get((rk, ck)))
+	      // due to some unknown reason stmt does not execute in the same session object, except when executed multiple times, so we execute in a different one
+   	      // TODO: this must be removed in the future as soon as the bug (?) is fixed in Datastax' driver 
+   	      val newSession = columnFamily.session.cluster.getCluster.connect("\"" + columnFamily.session.keyspacename + "\"") 
+   	      newSession.execute(stmt)
+   	      newSession.close()
+          origValue
+        })
+      )
   }
   
   override def getRowValue(row: Row): V = {

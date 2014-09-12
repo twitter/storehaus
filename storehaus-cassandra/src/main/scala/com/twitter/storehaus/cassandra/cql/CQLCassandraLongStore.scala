@@ -114,14 +114,15 @@ class CQLCassandraLongStore[RK <: HList, CK <: HList, RS <: HList, CS <: HList] 
   
   override def put(kv: ((RK, CK), Option[Long])): Future[Unit] = {
     import AbstractCQLCassandraCompositeStore._
+    val ((rk, ck), valueOpt) = kv
+    val lockId = mapKeyToSyncId((rk, ck), columnFamily)
     // syncs won't work well with batching so we provide put, not multiPut  
     futurePool {
-   	  val ((rk, ck), valueOpt) = kv
    	  val eqList = new ArrayBuffer[Clause]
       addKey(rk, rowkeyColumnNames, eqList)
       addKey(ck, colkeyColumnNames, eqList)
-      val lockId = mapKeyToSyncId((rk, ck), columnFamily)
-      Await.result(sync.put.lock(lockId, Future {
+      eqList
+    }.flatMap(eqList => sync.put.lock(lockId, Future {
         val origValue = if(readbeforeWrite) Await.result(get((rk, ck))).getOrElse(0l) else 0l
     	val value = valueOpt.getOrElse(0l)
     	val update = putValue(value - origValue, QueryBuilder.update(columnFamily.getPreparedNamed)).where(_)
@@ -132,8 +133,8 @@ class CQLCassandraLongStore[RK <: HList, CK <: HList, RS <: HList, CS <: HList] 
     	  val delete = eqList.join(QueryBuilder.delete(valueColumnName).from(columnFamily.getPreparedNamed).where(_))((clause, where) => where.and(clause)).setConsistencyLevel(consistency)
     	  columnFamily.session.getSession.execute(delete)
     	}
-      }))
-    } 
+      })
+    )
   }
   
   override protected def getValue(result: ResultSet): Option[Long] = Some(result.one().getLong(valueColumnName).asInstanceOf[Long])
@@ -146,22 +147,21 @@ class CQLCassandraLongStore[RK <: HList, CK <: HList, RS <: HList, CS <: HList] 
   override def merge(kv: ((RK, CK), Long)): Future[Option[Long]] = {
     import AbstractCQLCassandraCompositeStore._
     val ((rk, ck), value) = kv
+    val lockId = mapKeyToSyncId((rk, ck), columnFamily)
     futurePool {
    	  val eqList = new ArrayBuffer[Clause]
       addKey(rk, rowkeyColumnNames, eqList)
       addKey(ck, colkeyColumnNames, eqList)
       val update = QueryBuilder.update(columnFamily.getPreparedNamed)
-      val stmt = eqList.join{
+      eqList.join{
           (if(value < 0) update.`with`(QueryBuilder.decr(valueColumnName, implicitly[CassandraPrimitive[Long]].toCType(-1 * value).asInstanceOf[java.lang.Long]))
           else update.`with`(QueryBuilder.incr(valueColumnName, implicitly[CassandraPrimitive[Long]].toCType(value).asInstanceOf[java.lang.Long]))
         ).where(_)}((clause, where) => where.and(clause)).setConsistencyLevel(consistency)
-      val lockId = mapKeyToSyncId((rk, ck), columnFamily)
-      Await.result(sync.merge.lock(lockId, Future {
+    }.flatMap(stmt => sync.merge.lock(lockId, Future {
     	  val origValue = if(readbeforeWrite) Await.result(get((rk, ck))) else Some(0l)
           columnFamily.session.getSession.execute(stmt)
           origValue
-      }))
-    }
+    }))
   }
   
   override def getRowValue(row: Row): Long = implicitly[CassandraPrimitive[Long]].fromRow(row, valueColumnName).get

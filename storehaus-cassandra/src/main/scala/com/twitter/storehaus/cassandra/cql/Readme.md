@@ -3,7 +3,7 @@ Storehaus-Cassandra
 
 Storehaus-Stores wrapping [Datastax' JAVA Driver](https://github.com/datastax/java-driver) and [Phantoms](https://github.com/websudos/phantom/) serialization of primitive types.
 
-Besides a simple key-value store [CQLCassandraStore](CQLCassandraStore.scala) it supports composite partition- and clustering-keys [CQLCassandraCompositeStore](CQLCassandraCompositeStore.scala), [CQLCassandraCollectionStore](CQLCassandraCollectionStore.scala) and [CQLCassandraLongStore](CQLCassandraLongStore.scala). These keys are provided as a Tuple2 of a [HList](https://github.com/milessabin/shapeless) of partition-keys and a HList of clustering keys.
+Besides a simple key-value store [CQLCassandraStore](CQLCassandraStore.scala) there are stores supporting composite partition- and clustering-keys [CQLCassandraCompositeStore](CQLCassandraCompositeStore.scala), [CQLCassandraCollectionStore](CQLCassandraCollectionStore.scala), [CQLCassandraMultivalueStore](CQLCassandraMultivalueStore.scala) and [CQLCassandraLongStore](CQLCassandraLongStore.scala). These keys are provided as a Tuple2 of a [HList](https://github.com/milessabin/shapeless) of partition-keys and a HList of clustering keys.
 
 Store support matrix
 --------------------
@@ -14,6 +14,7 @@ CQLCassandraStore | x | x | | x | x | x | x
 CQLCassandraCompositeStore | x | x | | x | x | x | x
 CQLCassandraCollectionStore | x | x | x | x | x | x | x
 CQLCassandraLongStore | x | (x) | x | x | x | | 
+CQLCassandraMultivalueStore | x | x | | x | x | x | x
 CassandraTupleStore | x | (x) | | x | | |
 
 Some Notes

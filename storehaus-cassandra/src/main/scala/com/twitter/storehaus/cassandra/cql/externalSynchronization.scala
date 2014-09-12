@@ -17,11 +17,14 @@ package com.twitter.storehaus.cassandra.cql
 
 import scala.collection.mutable.HashMap
 
+import com.twitter.storehaus.WritableStore
 import com.twitter.concurrent.AsyncMutex
 import com.twitter.concurrent.Permit
-import com.twitter.util.Future
+import com.twitter.util.{Await, Duration, Future}
 import com.twitter.zk.ZkClient
 import com.twitter.zk.coordination.ZkAsyncSemaphore
+
+import java.util.concurrent.TimeUnit
 
 /**
  * setup two types of synchronization for the
@@ -80,12 +83,40 @@ object LocalSync {
     val mId = storeId + "->" + id
     lockMap.synchronized({
       lockMap.get.get(mId).getOrElse {
-        lockMap.get += mId -> new AsyncMutex(maxWaiters)
-        lockMap.get.get(mId).get
+        val mutex = new AsyncMutex(maxWaiters)
+        lockMap.get += mId -> mutex
+        mutex
       } 
     })
   }
 }
+
+/**
+ * sync based on Cassandra's compare-and-set
+ */
+//case class CassandraCASSync(val store: CASStore[Long, String, Boolean] with WritableStore[String, Option[Boolean]], val busyWaitLoopTime: Duration) extends ExternalSynchronization {
+//  override def lock[T](id: String, future: Future[T]): T = {
+//    // poll store until we know it's finished
+//    val token = TokenFactory.longTokenFactory.createNewToken
+//    def busyWaitForAquiredLock: Future[T] = {
+//      def busyWaitForReleasedLock: Unit = {
+//        val lockCol = Await.result(store.get(id))
+//        if(lockCol != None && lockCol.get._1) {
+//          Thread.sleep(busyWaitLoopTime.inUnit(TimeUnit.MILLISECONDS))
+//          busyWaitForReleasedLock
+//        }
+//      }
+//      if(Await.result(store.cas(Some(token), (id, true)))) {
+//        future.ensure { 
+//          store.put((id, None))
+//        }
+//      } else {
+//        busyWaitForAquiredLock
+//      }
+//    }
+//    busyWaitForAquiredLock
+//  }
+//}
 
 object mapKeyToSyncId {
   def apply(key: AnyRef, family: CQLCassandraConfiguration.StoreColumnFamily) = s"""\"${family.getName}\".""" + key.toString()  
