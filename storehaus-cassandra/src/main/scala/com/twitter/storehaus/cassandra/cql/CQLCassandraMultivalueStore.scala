@@ -42,7 +42,7 @@ object CQLCassandraMultivalueStore {
   import AbstractCQLCassandraCompositeStore._
   
   def createColumnFamily[RS <: HList, CS <: HList, VS <: HList, MRKResult <: HList, MCKResult <: HList, MVResult <: HList] (
-	columnFamily: CQLCassandraConfiguration.StoreColumnFamily,
+      columnFamily: CQLCassandraConfiguration.StoreColumnFamily,
 	rowkeySerializers: RS,
 	rowkeyColumnNames: List[String],
 	colkeySerializers: CS,
