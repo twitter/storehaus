@@ -44,11 +44,11 @@ object StoreInitializerTuples
   // setup basic store parameters (special to storehaus-cassandra, setup is different for other stores)
   import com.twitter.storehaus.cassandra.cql.CQLCassandraConfiguration._
  
-  override def getColumnFamilyName = "ColumnFamilyNameForTuples"
+  override def getColumnFamilyName(version: Option[Long]) = "ColumnFamilyNameForTuples"
   override def getKeyspaceName = "mytestkeyspace"
   override def getThriftConnections = "192.168.3.2:9160"
     
-  val columnFamily = StoreColumnFamily(getColumnFamilyName, 
+  val columnFamily = StoreColumnFamily(getColumnFamilyName(None), 
       StoreSession(getKeyspaceName, StoreCluster("Test Cluster", Set(StoreHost("192.168.3.2")))))
   
   
@@ -103,10 +103,10 @@ object StoreInitializerTuplesWriter
     with CassandraCascadingInitializer[((String, Int),Tuple1[Long]), String] {
   import com.twitter.storehaus.cassandra.cql.CQLCassandraConfiguration._
   import StoreInitializerTuples._
-  override def getColumnFamilyName = "ColumnFamilyNameForTuplesOutput"
+  override def getColumnFamilyName(version: Option[Long]) = "ColumnFamilyNameForTuplesOutput"
   override def getKeyspaceName = StoreInitializerTuples.getKeyspaceName
   override def getThriftConnections = StoreInitializerTuples.getThriftConnections
-  val columnFamily = StoreColumnFamily(getColumnFamilyName, 
+  val columnFamily = StoreColumnFamily(getColumnFamilyName(None), 
       StoreSession(getKeyspaceName, StoreCluster("Test Cluster", Set(StoreHost("192.168.3.2")))))  
   val cassandrastore = new CQLCassandraCompositeStore(columnFamily, StoreInitializerTuples.rs, StoreInitializerTuples.rowKeyNames, StoreInitializerTuples.cs, StoreInitializerTuples.colKeyNames)(StoreInitializerTuples.valueSerializer) 
   val store = new CassandraTupleStore(cassandrastore, (("", 0), Tuple1(2l))) 

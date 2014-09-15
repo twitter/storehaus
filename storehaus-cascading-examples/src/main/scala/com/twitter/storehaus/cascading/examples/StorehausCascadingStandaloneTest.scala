@@ -48,11 +48,11 @@ object StoreInitializer
   // setup basic store parameters (special to storehaus-cassandra, setup is different for other stores)
   import com.twitter.storehaus.cassandra.cql.CQLCassandraConfiguration._
   
-  override def getColumnFamilyName = "ColumnFamilyNameForTesting"
+  override def getColumnFamilyName(version: Option[Long]) = "ColumnFamilyNameForTesting"
   override def getKeyspaceName = "mytestkeyspace"
   override def getThriftConnections = "192.168.3.2:9160"
     
-  val columnFamily = StoreColumnFamily(getColumnFamilyName, 
+  val columnFamily = StoreColumnFamily(getColumnFamilyName(None), 
       StoreSession(getKeyspaceName, StoreCluster("Test Cluster", Set(StoreHost("192.168.3.2")))))
   
   
