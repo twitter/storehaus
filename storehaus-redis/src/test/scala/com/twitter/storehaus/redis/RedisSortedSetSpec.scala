@@ -45,7 +45,7 @@ class RedisSortedSetSpec extends WordSpec with Matchers
       Await.result(for {
         put     <- sets.put(("commits", Some(commits)))
         commits <- sets.get("commits")
-      } yield commits) should contain commits.sortWith(_._2 < _._2)
+      } yield commits) should contain (commits.sortWith(_._2 < _._2))
     }
 
     "support merge operations" in {
@@ -76,7 +76,7 @@ class RedisSortedSetSpec extends WordSpec with Matchers
       Await.result(for {
         _     <- members.merge((who, 1.0))
         score <- members.get(who)
-      } yield score) should contain 138.0
+      } yield score) should contain (138.0)
     }
     "support delete operation" in {
       val who = ("commits", "sritchie")
