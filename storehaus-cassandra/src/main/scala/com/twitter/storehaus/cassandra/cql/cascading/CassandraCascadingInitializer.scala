@@ -15,12 +15,14 @@
  */
 package com.twitter.storehaus.cassandra.cql.cascading
 
+import com.twitter.storehaus.cascading.AbstractStorehausCascadingInitializer
+
 /**
  * This needs to be provided only in case of 
  * using Cassandra as a ReadableStore with Cascading, i.e. 
  * required only for using CassandraSplittingMechanism
  */
-trait CassandraCascadingInitializer[K, V] {
+trait CassandraCascadingInitializer[K, V] extends AbstractStorehausCascadingInitializer {
 
   /**
    * thrift connection to Cassandra host:port

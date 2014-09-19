@@ -11,9 +11,9 @@ import org.slf4j.{ Logger, LoggerFactory }
 /**
  * SplittableStore based implementation of a SplittingMechanism
  */
-class SplittableStoreSplittingMechanism[K, V, Q <: Writable, T <: SplittableStore[K, V, Q, T]](override val conf: JobConf) 
-	extends StorehausSplittingMechanism[K, V](conf: JobConf) {
-  @transient private val log = LoggerFactory.getLogger(classOf[SplittableStoreSplittingMechanism[K, V, Q, T]])
+class SplittableStoreSplittingMechanism[K, V, Q <: Writable, T <: SplittableStore[K, V, Q, T], U <: AbstractSplittableStoreCascadingInitializer[K, V, Q, T]](override val conf: JobConf) 
+	extends StorehausSplittingMechanism[K, V, U](conf: JobConf) {
+  @transient private val log = LoggerFactory.getLogger(classOf[SplittableStoreSplittingMechanism[K, V, Q, T, U]])
   
   val tapid = InitializableStoreObjectSerializer.getTapId(conf)
   val version = InitializableStoreObjectSerializer.getReadVerion(conf, tapid)

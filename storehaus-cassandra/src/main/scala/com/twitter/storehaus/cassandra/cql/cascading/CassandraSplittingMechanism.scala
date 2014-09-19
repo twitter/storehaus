@@ -37,9 +37,9 @@ import org.slf4j.{ Logger, LoggerFactory }
  * Cassandra does not directly support Splitting, so we provide 
  * a special splitting mechanism which is able to split a Cassandra
  */
-class CassandraSplittingMechanism[K, V](override val conf: JobConf) 
-	extends StorehausSplittingMechanism[K, V](conf: JobConf) {
-  @transient private val log = LoggerFactory.getLogger(classOf[CassandraSplittingMechanism[K, V]])
+class CassandraSplittingMechanism[K, V, U <: CassandraCascadingInitializer[K, V]](override val conf: JobConf) 
+	extends StorehausSplittingMechanism[K, V, U](conf: JobConf) {
+  @transient private val log = LoggerFactory.getLogger(classOf[CassandraSplittingMechanism[K, V, U]])
   
   val tapid = InitializableStoreObjectSerializer.getTapId(conf)
   val storeinit = InitializableStoreObjectSerializer.getReadableStoreIntializer(conf, tapid).get.asInstanceOf[CassandraCascadingInitializer[K, V]]

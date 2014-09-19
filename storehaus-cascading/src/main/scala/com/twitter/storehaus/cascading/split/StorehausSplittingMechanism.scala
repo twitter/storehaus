@@ -15,7 +15,7 @@
  */
 package com.twitter.storehaus.cascading.split
 
-import com.twitter.storehaus.cascading.Instance
+import com.twitter.storehaus.cascading.{AbstractStorehausCascadingInitializer, Instance}
 import org.apache.hadoop.mapred.{ InputSplit, JobConf, Reporter }
 
 /**
@@ -24,7 +24,7 @@ import org.apache.hadoop.mapred.{ InputSplit, JobConf, Reporter }
  * 
  * @author AndreasPetter
  */
-abstract class StorehausSplittingMechanism[K, V](val conf: JobConf) {
+abstract class StorehausSplittingMechanism[K, V, U <: AbstractStorehausCascadingInitializer](val conf: JobConf) {
   def getSplits(job: JobConf, hint: Int) : Array[InputSplit]
   
   /**

@@ -41,7 +41,7 @@ trait StorehausSchemeBasics[K, V] {
     conf : JobConf) : Unit = {
     InitializableStoreObjectSerializer.setTapId(conf, getId)
     setReadStore(conf)
-    conf.setInputFormat(classOf[StorehausInputFormat[K, V]])
+    conf.setInputFormat(classOf[StorehausInputFormat[K, V, AbstractStorehausCascadingInitializer]])
   }
 
   /**

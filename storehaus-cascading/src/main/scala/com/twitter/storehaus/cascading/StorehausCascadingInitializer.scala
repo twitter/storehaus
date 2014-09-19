@@ -4,6 +4,8 @@ import org.apache.hadoop.mapred.JobConf
 import com.twitter.util.Closable
 import com.twitter.storehaus.{ReadableStore, WritableStore}
 
+trait AbstractStorehausCascadingInitializer
+
 /**
  * This initializer trait is implemented by cascading
  * map/reduce applications / workflows using an object.
@@ -13,7 +15,7 @@ import com.twitter.storehaus.{ReadableStore, WritableStore}
  * Implemenetors may not depend on any state information
  * other than JobConf.
  */
-trait StorehausCascadingInitializer[K, V] {
+trait StorehausCascadingInitializer[K, V] extends AbstractStorehausCascadingInitializer {
 
   /**
    *  is executed once and only on client side

@@ -32,8 +32,8 @@ import org.apache.hadoop.mapred.{ InputSplit, JobConf }
  * 
  * Because keys must be provided this splitting mechanism is not for versioning stores.
  */
-class JobConfKeyArraySplittingMechanism[K, V](override val conf: JobConf) 
-    extends StorehausSplittingMechanism[K, V](conf) {
+class JobConfKeyArraySplittingMechanism[K, V, U <: StorehausCascadingInitializer[K, V]](override val conf: JobConf) 
+    extends StorehausSplittingMechanism[K, V, U](conf) {
   val tapid = InitializableStoreObjectSerializer.getTapId(conf)
   val store = InitializableStoreObjectSerializer.getReadableStore(conf, tapid)
     

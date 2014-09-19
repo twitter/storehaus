@@ -3,6 +3,7 @@ package com.twitter.storehaus.cascading.versioned
 import org.apache.hadoop.mapred.JobConf
 import com.twitter.util.Closable
 import com.twitter.storehaus.{ReadableStore, WritableStore}
+import com.twitter.storehaus.cascading.AbstractStorehausCascadingInitializer
 
 /**
  * This initializer trait is implemented by cascading
@@ -13,7 +14,7 @@ import com.twitter.storehaus.{ReadableStore, WritableStore}
  * Implemenetors may not depend on any state information
  * other than JobConf.
  */
-trait VersionedStorehausCascadingInitializer[K, V] {
+trait VersionedStorehausCascadingInitializer[K, V] extends AbstractStorehausCascadingInitializer {
 
   /**
    *  is executed once and only on client side

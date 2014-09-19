@@ -36,20 +36,20 @@ import scala.reflect.runtime._
  * 
  * @author Ruban Monu, Andreas Petter
  */
-class StorehausInputFormat[K, V]
+class StorehausInputFormat[K, V, U <: AbstractStorehausCascadingInitializer]
   extends InputFormat[Instance[K], Instance[V]] {  
   
   /**
    * init input format by reading JobConf and provide a StorehausSplittingMechanism
    */  
-  private def getSplittingMechanism(conf: JobConf): StorehausSplittingMechanism[K, V] = {
-    StorehausInputFormat.getSplittingClass(conf).get.asInstanceOf[StorehausSplittingMechanism[K, V]]
+  private def getSplittingMechanism(conf: JobConf): StorehausSplittingMechanism[K, V, U] = {
+    StorehausInputFormat.getSplittingClass(conf).get.asInstanceOf[StorehausSplittingMechanism[K, V, U]]
   }
   
   /**
    * RecordReader delegating real work to the provided SplittingMechanism
    */
-  class StorehausRecordReader(split: InputSplit, splittingMechanism: StorehausSplittingMechanism[K, V], reporter: Reporter)
+  class StorehausRecordReader(split: InputSplit, splittingMechanism: StorehausSplittingMechanism[K, V, U], reporter: Reporter)
     extends RecordReader[Instance[K], Instance[V]] {
     splittingMechanism.initializeSplitInCluster(split, reporter)
     private [this] var pos : Long = 1L
@@ -87,10 +87,10 @@ class StorehausInputFormat[K, V]
  */
 object StorehausInputFormat {
   val SPLITTINGCLASSNAMECONFID = "com.twitter.storehaus.cascading.splitting.mechanism.class"
-  def setSplittingClass[K, V, T <: StorehausSplittingMechanism[K, V]](conf: JobConf, mechanism: Class[T]) = {
+  def setSplittingClass[K, V, U <: AbstractStorehausCascadingInitializer, T <: StorehausSplittingMechanism[K, V, U]](conf: JobConf, mechanism: Class[T]) = {
     conf.set(SPLITTINGCLASSNAMECONFID, mechanism.getName)
   } 
-  def getSplittingClass[K, V](conf: JobConf): Try[StorehausSplittingMechanism[K, V]] = {
+  def getSplittingClass[K, V, U <: AbstractStorehausCascadingInitializer](conf: JobConf): Try[StorehausSplittingMechanism[K, V, U]] = {
     // use reflection to initialize the splitting class, which reads it's params from the JobConf
     val optname = Option(conf.get(SPLITTINGCLASSNAMECONFID))
     optname match {
@@ -101,9 +101,9 @@ object StorehausInputFormat {
         val refClass = rm.reflectClass(clazzSymbol)
         val constrSymbol = clazzSymbol.typeSignature.member(universe.nme.CONSTRUCTOR).asMethod
         val refConstr = refClass.reflectConstructor(constrSymbol)
-        refConstr(conf).asInstanceOf[StorehausSplittingMechanism[K, V]]
+        refConstr(conf).asInstanceOf[StorehausSplittingMechanism[K, V, U]]
       }
-      case None => Try(new JobConfKeyArraySplittingMechanism(conf))
+      case None => Try(new JobConfKeyArraySplittingMechanism[K, V, U](conf))
     }
   }
 }
