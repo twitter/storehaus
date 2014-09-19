@@ -46,7 +46,7 @@ object AbstractCQLCassandraCompositeStore {
   /**
    * used to map over an example key to implicit serializers
    */
-  private object cassandraSerializerCreation extends Poly1 {
+  object cassandraSerializerCreation extends Poly1 {
     implicit def default[T : CassandraPrimitive] = at[T](_ => implicitly[CassandraPrimitive[T]])
   }
 
