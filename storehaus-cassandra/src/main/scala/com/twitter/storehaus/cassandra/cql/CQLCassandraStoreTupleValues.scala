@@ -68,8 +68,9 @@ object CQLCassandraStoreTupleValues {
 }
 
 /**
- * Simple key-value store, taking tuples as values. HLists must be provided to allow abstraction 
- * over arity of tuples.
+ * Simple key-value store, taking tuples as values. Entries must be of type Option (None represents, that the
+ * values have not been set, while Some represents a set value). This is needed as in Cassandra Columns may
+ * not be present. HLists must be provided to allow abstraction over arity of tuples.
  */
 class CQLCassandraStoreTupleValues[K : CassandraPrimitive, V <: Product, VL <: HList, VS <: HList] (
 		val columnFamily: CQLCassandraConfiguration.StoreColumnFamily,
@@ -100,17 +101,27 @@ class CQLCassandraStoreTupleValues[K : CassandraPrimitive, V <: Product, VL <: H
 
   protected def deleteColumns: String = valueColumnNames.mkString(" , ")
   
+  /**
+   * puts will not delete single columns if they are set to None. But it will delete all columns if the
+   * hole Option[TupleX] is None. 
+   */
   protected def createPutQuery[K1 <: K](kv: (K1, V)): Insert = {
     val sets = kv._2.hlisted.toList.zip(valueColumnNames)
-    sets.foldLeft(QueryBuilder.insertInto(columnFamily.getPreparedNamed))((insert, values) => insert.value(values._2, values._1))
+    sets.foldLeft(QueryBuilder.insertInto(columnFamily.getPreparedNamed))((insert, values) => values._1 match {
+      case Some(v) => insert.value(values._2, v)
+      case None => insert
+    })
   }
   
   override def getKeyValueFromRow(row: Row): (K, V) = (keySerializer.fromRow(row, keyColumnName).get, getRowValue(row).tupled)
   
+  /**
+   * get will return a tupleX with entries of type Option[T_x], each being None on unavailable or Some on stored 
+   */
   override protected def getValue(result: ResultSet): Option[V] = Some(getRowValue(result.one()).tupled)
   
   protected def getRowValue(row: Row): VL = {
-    valueSerializers.toList.zip(valueColumnNames).map(sercol => sercol._1.fromRow(row, sercol._2).get).toHList[VL].get
+    valueSerializers.toList.zip(valueColumnNames).map(sercol => sercol._1.fromRow(row, sercol._2)).toHList[VL].get
   }
       
   /**
