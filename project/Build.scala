@@ -26,10 +26,10 @@ import AssemblyKeys._
 
 
 object StorehausBuild extends Build {
-  def withCross(dep: ModuleID) =
+  def withCross(dep: ModuleID, useZeroEnding : Boolean = false) =
     dep cross CrossVersion.binaryMapped {
       case "2.9.3" => "2.9.2" // TODO: hack because twitter hasn't built things against 2.9.3
-      case version if version startsWith "2.10" => "2.10" // TODO: hack because sbt is broken
+      case version if version startsWith "2.10" => {if (useZeroEnding) "2.10.0" else "2.10"} // TODO: hack because sbt is broken
       case x => x
     }
 
@@ -37,6 +37,12 @@ object StorehausBuild extends Build {
       case version if version startsWith "2.9" => "org.specs2" %% "specs2" % "1.12.4.1" % "test"
       case version if version startsWith "2.10" => "org.specs2" %% "specs2" % "1.13" % "test"
   }
+
+  def isScala210x(scalaVersion: String) = scalaVersion match {
+    case version if version startsWith "2.9" => false
+    case version if version startsWith "2.10" => true
+  }
+
   val extraSettings =
     Project.defaultSettings ++ Boilerplate.settings ++ assemblySettings ++ mimaDefaultSettings
 
@@ -67,10 +73,18 @@ object StorehausBuild extends Build {
       Opts.resolver.sonatypeSnapshots,
       Opts.resolver.sonatypeReleases,
       "Twitter Maven" at "http://maven.twttr.com",
-      "Conjars Repository" at "http://conjars.org/repo"
+      "Conjars Repository" at "http://conjars.org/repo",
+      "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/",
+      "Websudos Repository" at "http://maven.websudos.co.uk/ext-release-local"
     ),
     parallelExecution in Test := true,
     scalacOptions ++= Seq(Opts.compile.unchecked, Opts.compile.deprecation),
+    scalacOptions <++= scalaVersion map { version =>
+      val Some((major, minor)) = CrossVersion.partialVersion(version)
+      if (major < 2 || (major == 2 && minor < 10))
+        Seq("-Ydependent-method-types")
+      else Nil
+    },
 
     // Publishing options:
     publishMavenStyle := true,
@@ -123,6 +137,9 @@ object StorehausBuild extends Build {
   val bijectionVersion = "0.6.3"
   val utilVersion = "6.11.0"
   val scaldingVersion = "0.11.1"
+  val cascadingVersion = "2.5.2"
+  val hadoopVersion = "1.2.1"
+  val cassandraVersion = "2.1.0-rc1"
 
   lazy val storehaus = Project(
     id = "storehaus",
@@ -145,7 +162,8 @@ object StorehausBuild extends Build {
     storehausKafka08,
     storehausMongoDB,
     storehausElastic,
-    storehausTesting
+    storehausTesting,
+    storehausCassandra
   )
 
   def module(name: String) = {
@@ -225,6 +243,7 @@ object StorehausBuild extends Build {
     parallelExecution in Test := false
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
+
   lazy val storehausKafka = module("kafka").settings(
     libraryDependencies ++= Seq (
       "com.twitter" %% "bijection-core" % bijectionVersion,
@@ -271,7 +290,6 @@ object StorehausBuild extends Build {
     parallelExecution in Test := false
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
-
   val storehausTesting = Project(
     id = "storehaus-testing",
     base = file("storehaus-testing"),
@@ -292,4 +310,21 @@ object StorehausBuild extends Build {
       javaOptions in run <++= (fullClasspath in Runtime) map { cp => Seq("-cp", sbt.Build.data(cp).mkString(":")) }
   ).dependsOn(storehausCore, storehausAlgebra, storehausCache)
 
+  def cassandraDeps(scalaVersion: String) = if (!isScala210x(scalaVersion)) Seq() else Seq(
+    "com.twitter" %% "algebird-core" % algebirdVersion,
+    "com.twitter" %% "bijection-core" % bijectionVersion,
+    "com.datastax.cassandra" % "cassandra-driver-core" % cassandraVersion,
+    "com.websudos" % "phantom-dsl_2.10" % "1.0.6",
+    withCross("com.twitter" %% "util-zk" % utilVersion),
+    withCross("com.chuusai" %% "shapeless" % "1.2.4", true)
+  )
+
+  lazy val storehausCassandra= module("cassandra").settings(
+    skip in test := !isScala210x(scalaVersion.value),
+    skip in compile := !isScala210x(scalaVersion.value),
+    skip in doc := !isScala210x(scalaVersion.value),
+    publishArtifact := isScala210x(scalaVersion.value),
+    libraryDependencies ++= cassandraDeps(scalaVersion.value),
+    parallelExecution in Test := false
+  ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 }
