@@ -86,7 +86,7 @@ object CQLCassandraMultivalueStore {
 	        (tokenSerializer match {
 	        	case Some(tokSer) => ", \"" + tokenColumnName + "\" " + tokSer.cassandraType + ", "
 	        	case _ => ""
-    		})
+    		}) +
 	        "PRIMARY KEY ((\"" + rowkeyColumnNames.mkString("\", \"") + "\"), \"" +
 	        colkeyColumnNames.mkString("\", \"") + "\"));"
     columnFamily.session.getSession.execute(stmt)

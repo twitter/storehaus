@@ -40,7 +40,8 @@ object SimpleStoreInitializer extends StorehausCascadingInitializer[String, Stri
 
 import com.twitter.storehaus.cassandra.cql.CQLCassandraConfiguration._
   val columnFamily = StoreColumnFamily("ColumnFamilyNameForTestingSimple", 
-      StoreSession("mytestkeyspace", StoreCluster("Test Cluster", Set(StoreHost("localhost")))))
+      StoreSession(ExampleConfigurationSettings.cassandraKeySpaceName, 
+          StoreCluster("Test Cluster", Set(StoreHost(ExampleConfigurationSettings.cassandraIpAddress)))))
   
   // create store
   val store = new CQLCassandraStore[String, String](columnFamily)
@@ -50,9 +51,7 @@ import com.twitter.storehaus.cassandra.cql.CQLCassandraConfiguration._
     true
   }
   
-  override def getReadableStore(jobconf: JobConf): Option[ReadableStore[String, String]] = {    
-    Some(store.asInstanceOf[ReadableStore[String, String]])
-  }
+  override def getReadableStore(jobconf: JobConf): Option[ReadableStore[String, String]] = None
   
   override def getWritableStore(jobconf: JobConf): Option[WritableStore[String, Option[String]]] = {    
     Some(store.asInstanceOf[WritableStore[String, Option[String]]])
@@ -62,7 +61,7 @@ import com.twitter.storehaus.cassandra.cql.CQLCassandraConfiguration._
 /**
  * demonstrates simple Cascading flow using a StorehausTap as a sink
  */
-object StorehausCascadingStandaloneTestSimple {
+object StorehausCascadingExample1WritableStore {
   
   /**
    * see http://docs.cascading.org/impatient/impatient1.html
@@ -72,7 +71,7 @@ object StorehausCascadingStandaloneTestSimple {
     SimpleStoreInitializer.prepareStore
     
     val properties = new Properties()
-    AppProps.setApplicationJarClass( properties, StorehausCascadingStandaloneTest.getClass )
+    AppProps.setApplicationJarClass( properties, StorehausCascadingExample1WritableStore.getClass )
     
     val flowConnector = new HadoopFlowConnector( properties )
     // create the source tap

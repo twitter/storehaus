@@ -45,11 +45,11 @@ object StoreInitializerTuples
   import com.twitter.storehaus.cassandra.cql.CQLCassandraConfiguration._
  
   override def getColumnFamilyName(version: Option[Long]) = "ColumnFamilyNameForTuples"
-  override def getKeyspaceName = "mytestkeyspace"
-  override def getThriftConnections = "192.168.3.2:9160"
+  override def getKeyspaceName = ExampleConfigurationSettings.cassandraKeySpaceName
+  override def getThriftConnections = ExampleConfigurationSettings.cassandraIpAddress + ":" + ExampleConfigurationSettings.cassandraThriftPort
     
   val columnFamily = StoreColumnFamily(getColumnFamilyName(None), 
-      StoreSession(getKeyspaceName, StoreCluster("Test Cluster", Set(StoreHost("192.168.3.2")))))
+      StoreSession(getKeyspaceName, StoreCluster("Test Cluster", Set(StoreHost(ExampleConfigurationSettings.cassandraIpAddress)))))
   
   
   // setup key serializers for HLists by example (special to storehaus-cassandra, setup is different for other stores)
@@ -107,7 +107,7 @@ object StoreInitializerTuplesWriter
   override def getKeyspaceName = StoreInitializerTuples.getKeyspaceName
   override def getThriftConnections = StoreInitializerTuples.getThriftConnections
   val columnFamily = StoreColumnFamily(getColumnFamilyName(None), 
-      StoreSession(getKeyspaceName, StoreCluster("Test Cluster", Set(StoreHost("192.168.3.2")))))  
+      StoreSession(getKeyspaceName, StoreCluster("Test Cluster", Set(StoreHost(ExampleConfigurationSettings.cassandraIpAddress)))))  
   val cassandrastore = new CQLCassandraCompositeStore(columnFamily, StoreInitializerTuples.rs, StoreInitializerTuples.rowKeyNames, StoreInitializerTuples.cs, StoreInitializerTuples.colKeyNames)(StoreInitializerTuples.valueSerializer) 
   val store = new CassandraTupleStore(cassandrastore, (("", 0), Tuple1(2l))) 
   override def prepareStore: Boolean = {
@@ -127,7 +127,7 @@ object StorehausCascadingCassandraTuplesExample {
   
   /**
    * used to add some data for testing; in a real setup data is probably 
-   * already existing, so this can be skipped
+   * already existing, so this will be skipped
    */
   def putSomeDataForFun() = {
     StoreInitializerTuplesWriter.prepareStore
@@ -137,6 +137,10 @@ object StorehausCascadingCassandraTuplesExample {
     	store.put(((((i * 5644).toString, i),Tuple1(i)), Some(i.toString)))
     }
   }
+
+  type KeyType = ((String, Int),Tuple1[Long])
+  type SourceInit = StorehausCascadingInitializer[KeyType, String] with CassandraCascadingInitializer[KeyType, String]
+  type SplitMech = CassandraSplittingMechanism[KeyType, String, SourceInit]
   
   /**
    * see http://docs.cascading.org/impatient/impatient1.html
@@ -147,12 +151,13 @@ object StorehausCascadingCassandraTuplesExample {
     
     val conf = new JobConf
     // use different splitting mechanism; optimized for Cassandra (but could also use a generic one like JobConfKeyArraySplittingMechanism)
-    StorehausInputFormat.setSplittingClass[((String, Int),Tuple1[Long]), String, CassandraSplittingMechanism[((String, Int),Tuple1[Long]), String]](conf, classOf[CassandraSplittingMechanism[((String, Int),Tuple1[Long]), String]])
+    StorehausInputFormat.setSplittingClass[KeyType, String, SourceInit, SplitMech](conf, classOf[SplitMech])
+    
     val properties = AppProps.appProps()
       .setName("StorehausCascadingCassandraTuplesExample")
       .setVersion("0.0.1-SNAPSHOT")
       .buildProperties(conf)
-    AppProps.setApplicationJarClass( properties, StorehausCascadingStandaloneTest.getClass )
+    AppProps.setApplicationJarClass( properties, StorehausCascadingCassandraTuplesExample.getClass )
     
     val flowConnector = new HadoopFlowConnector( properties )
     // create the source tap

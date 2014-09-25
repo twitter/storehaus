@@ -49,11 +49,11 @@ object StoreInitializer
   import com.twitter.storehaus.cassandra.cql.CQLCassandraConfiguration._
   
   override def getColumnFamilyName(version: Option[Long]) = "ColumnFamilyNameForTesting"
-  override def getKeyspaceName = "mytestkeyspace"
-  override def getThriftConnections = "192.168.3.2:9160"
+  override def getKeyspaceName = ExampleConfigurationSettings.cassandraKeySpaceName
+  override def getThriftConnections = ExampleConfigurationSettings.cassandraIpAddress + ":" + ExampleConfigurationSettings.cassandraThriftPort
     
   val columnFamily = StoreColumnFamily(getColumnFamilyName(None), 
-      StoreSession(getKeyspaceName, StoreCluster("Test Cluster", Set(StoreHost("192.168.3.2")))))
+      StoreSession(getKeyspaceName, StoreCluster("Test Cluster", Set(StoreHost(ExampleConfigurationSettings.cassandraIpAddress)))))
   
   
   // setup key serializers for HLists by example (special to storehaus-cassandra, setup is different for other stores)
@@ -97,7 +97,7 @@ object StoreInitializer
   override def getCascadingRowMatcher = store.asInstanceOf[CassandraCascadingRowMatcher[(String :: Long :: HNil, Long :: Date :: HNil), String]]
 }
 
-object StorehausCascadingStandaloneTest {
+object StorehausCascadingExample2Store {
   
   /**
    * used to add some data for testing; in a real setup data is probably 
@@ -116,7 +116,7 @@ object StorehausCascadingStandaloneTest {
     StoreInitializer.prepareStore
     
     val properties = new Properties()
-    AppProps.setApplicationJarClass( properties, StorehausCascadingStandaloneTest.getClass )
+    AppProps.setApplicationJarClass( properties, StorehausCascadingExample2Store.getClass )
     
     val flowConnector = new HadoopFlowConnector( properties )
     // create the source tap

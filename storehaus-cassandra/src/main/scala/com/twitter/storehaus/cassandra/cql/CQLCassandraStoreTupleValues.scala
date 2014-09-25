@@ -68,11 +68,12 @@ object CQLCassandraStoreTupleValues {
 }
 
 /**
- * Simple key-value store, taking tuples as values. Entries must be of type Option (None represents, that the
- * values have not been set, while Some represents a set value). This is needed as in Cassandra Columns may
- * not be present. HLists must be provided to allow abstraction over arity of tuples.
+ * Simple key-value store, taking tuples as values. Entries must be of type Option (None represents that the
+ * values should/have not be/been set, while Some represents a set value). This is needed as in Cassandra 
+ * Columns may not be present in the column family. HLists must be provided to allow abstraction over arity 
+ * of tuples.
  */
-class CQLCassandraStoreTupleValues[K : CassandraPrimitive, V <: Product, VL <: HList, VS <: HList] (
+class CQLCassandraStoreTupleValues[K: CassandraPrimitive, V <: Product, VL <: HList, VS <: HList] (
 		val columnFamily: CQLCassandraConfiguration.StoreColumnFamily,
 		val valueColumnNames: List[String],
 		val valueSerializers: VS,
@@ -84,10 +85,9 @@ class CQLCassandraStoreTupleValues[K : CassandraPrimitive, V <: Product, VL <: H
 		   implicit ev2: HListerAux[V, VL],
 		   ev3: TuplerAux[VL, V],
 		   vAsList: ToList[VL, Any], 
-		   vsAsList: ToList[VS, CassandraPrimitive[Any]],
-		   vsFromList: FromTraversable[VL],
-		   evcol: MappedAux[VL, CassandraPrimitive, VS],
-		   rsUTC: *->*[CassandraPrimitive]#λ[VS])
+		   vsAsList: ToList[VS, CassandraPrimitive[_]],
+		   vsFromList: FromTraversable[VL])
+		   // this implicit may crash the Scala compiler: rsUTC: *->*[CassandraPrimitive]#λ[VS])
 	extends AbstractCQLCassandraSimpleStore[K, V](poolSize, columnFamily, keyColumnName, consistency, batchType, ttl)
 	with Store[K, V] 
     with WithPutTtl[K, V, CQLCassandraStoreTupleValues[K, V, VL, VS]] 
