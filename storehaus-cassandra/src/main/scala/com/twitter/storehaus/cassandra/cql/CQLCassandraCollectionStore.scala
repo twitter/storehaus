@@ -130,8 +130,8 @@ class CQLCassandraCollectionStore[RK <: HList, CK <: HList, V, X, RS <: HList, C
   			evcol: MappedAux[CK, CassandraPrimitive, CS],
 		    rowmap: AbstractCQLCassandraCompositeStore.Row2Result[RK, RS],
 		    colmap: AbstractCQLCassandraCompositeStore.Row2Result[CK, CS],
-  			a2cRow: AbstractCQLCassandraCompositeStore.Append2Composite[ArrayBuffer[Clause], RK], 
-  			a2cCol: AbstractCQLCassandraCompositeStore.Append2Composite[ArrayBuffer[Clause], CK],
+  			a2cRow: AbstractCQLCassandraCompositeStore.Append2Composite[ArrayBuffer[Clause], RK, RS], 
+  			a2cCol: AbstractCQLCassandraCompositeStore.Append2Composite[ArrayBuffer[Clause], CK, CS],
   			rsUTC: *->*[CassandraPrimitive]#λ[RS],
   			csUTC: *->*[CassandraPrimitive]#λ[CS],
   			ev0: ¬¬[V] <:< (Set[X] ∨ List[X]),
@@ -178,8 +178,8 @@ class CQLCassandraCollectionStore[RK <: HList, CK <: HList, V, X, RS <: HList, C
     val lockId = mapKeyToSyncId((rk, ck), columnFamily)
     futurePool {
    	  val eqList = new ArrayBuffer[Clause]
-      addKey(rk, rowkeyColumnNames, eqList)
-      addKey(ck, colkeyColumnNames, eqList)
+      addKey(rk, rowkeyColumnNames, eqList, rowkeySerializer)
+      addKey(ck, colkeyColumnNames, eqList, colkeySerializer)
       val update = QueryBuilder.update(columnFamily.getPreparedNamed)
       val initialsetfunc = (value match {
           case set: Set[X] => update.`with`(QueryBuilder.addAll(valueColumnName, set.map(v => ev2.toCType(v)).toSet.asJava))

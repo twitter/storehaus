@@ -62,22 +62,22 @@ object AbstractCQLCassandraCompositeStore {
    * helper trait for declaring the HList recursive function 
    * to append keys on an ArrayBuffer in a type safe way
    */
-  trait Append2Composite[R <: ArrayBuffer[Clause], K <: HList] {
-    def apply(r: R, k: K, s: List[String]): Unit
+  trait Append2Composite[R <: ArrayBuffer[Clause], K <: HList, Q <: HList] {
+    def apply(r: R, k: K, s: List[String], ser: Q): Unit
   }
 
   /**
    * helper implicits for the recursion itself
    */
   object Append2Composite {
-    implicit def hnilAppend2Composite[R <: ArrayBuffer[Clause]] = new Append2Composite[R, HNil] {
-      override def apply(r: R, k: HNil, s: List[String]): Unit = {}
+    implicit def hnilAppend2Composite[R <: ArrayBuffer[Clause]] = new Append2Composite[R, HNil, HNil] {
+      override def apply(r: R, k: HNil, s: List[String], ser: HNil): Unit = {}
     }
-    implicit def hlistAppend2Composite[R <: ArrayBuffer[Clause], M, K <: HList](
-      implicit a2c: Append2Composite[R, K]) = new Append2Composite[R, M :: K] {
-    	override def apply(r: R, k: M :: K, s: List[String]): Unit = {
-   	      r.add(QueryBuilder.eq(s"""\"${s.head}\"""", k.head))
-    	  a2c(r, k.tail, s.tail) 
+    implicit def hlistAppend2Composite[R <: ArrayBuffer[Clause], M, K <: HList, P, Q <: HList](
+      implicit a2c: Append2Composite[R, K, Q]) = new Append2Composite[R, M :: K, P :: Q] {
+    	override def apply(r: R, k: M :: K, s: List[String], ser: P :: Q): Unit = {
+   	      r.add(QueryBuilder.eq(s"""\"${s.head}\"""", ser.head.asInstanceOf[CassandraPrimitive[Any]].toCType(k.head)))
+    	  a2c(r, k.tail, s.tail, ser.tail) 
     	}
       }
   }
@@ -85,8 +85,8 @@ object AbstractCQLCassandraCompositeStore {
   /**
    * recursive function callee implicit
    */
-  implicit def append2Composite[R <: ArrayBuffer[Clause], K <: HList, S <: List[String]](r: R)(k: K, s: List[String])
-  	(implicit a2c: Append2Composite[R, K]) = a2c(r, k, s) 
+  implicit def append2Composite[R <: ArrayBuffer[Clause], K <: HList, S <: List[String], Q <: HList](r: R)(k: K, s: List[String], ser: Q)
+  	(implicit a2c: Append2Composite[R, K, Q]) = a2c(r, k, s, ser) 
     
   /**
    * helper trait for declaring the HList recursive function 
@@ -171,8 +171,8 @@ abstract class AbstractCQLCassandraCompositeStore[RK <: HList, CK <: HList, V, R
     evcol: MappedAux[CK, CassandraPrimitive, CS],
     rowmap: AbstractCQLCassandraCompositeStore.Row2Result[RK, RS],
     colmap: AbstractCQLCassandraCompositeStore.Row2Result[CK, CS],
-    a2cRow: AbstractCQLCassandraCompositeStore.Append2Composite[ArrayBuffer[Clause], RK], 
-    a2cCol: AbstractCQLCassandraCompositeStore.Append2Composite[ArrayBuffer[Clause], CK],
+    a2cRow: AbstractCQLCassandraCompositeStore.Append2Composite[ArrayBuffer[Clause], RK, RS], 
+    a2cCol: AbstractCQLCassandraCompositeStore.Append2Composite[ArrayBuffer[Clause], CK, CS],
     rsUTC:  *->*[CassandraPrimitive]#λ[RS],
     csUTC:  *->*[CassandraPrimitive]#λ[CS])
   extends AbstractCQLCassandraStore[(RK, CK), V](poolSize, columnFamily)
@@ -189,8 +189,8 @@ abstract class AbstractCQLCassandraCompositeStore[RK <: HList, CK <: HList, V, R
   protected def createPutQuery[K1 <: (RK, CK)](kv: (K1, Option[V])): BuiltStatement = {
     val ((rk, ck), valueOpt) = kv
     val eqList = new ArrayBuffer[Clause]
-    addKey(rk, rowkeyColumnNames, eqList)
-    addKey(ck, colkeyColumnNames, eqList)
+    addKey(rk, rowkeyColumnNames, eqList, rowkeySerializer)
+    addKey(ck, colkeyColumnNames, eqList, colkeySerializer)
     valueOpt match {
       case Some(value) => {
         val update = putValue(value, QueryBuilder.update(columnFamily.getPreparedNamed)).where(_)
@@ -221,9 +221,9 @@ abstract class AbstractCQLCassandraCompositeStore[RK <: HList, CK <: HList, V, R
   /**
    * creates statement using a recursion on the implicits of type Append2Composite 
    */
-  protected def addKey[K <: HList, S <: List[String]](keys: K, colNames: S, clauses: ArrayBuffer[Clause])
-  		(implicit a2c: Append2Composite[ArrayBuffer[Clause], K]) = {
-    append2Composite(clauses)(keys, colNames)
+  protected def addKey[K <: HList, S <: List[String], KS <: HList](keys: K, colNames: S, clauses: ArrayBuffer[Clause], ser: KS)
+  		(implicit a2c: Append2Composite[ArrayBuffer[Clause], K, KS]) = {
+    append2Composite(clauses)(keys, colNames, ser)
   }
   
   protected def createGetQuery(key: (RK, CK)): Select.Where = {
@@ -233,8 +233,8 @@ abstract class AbstractCQLCassandraCompositeStore[RK <: HList, CK <: HList, V, R
       .from(columnFamily.getPreparedNamed)
       .where()
    	val eqList = new ArrayBuffer[Clause]
-    addKey(rk, rowkeyColumnNames, eqList)
-    addKey(ck, colkeyColumnNames, eqList)
+    addKey(rk, rowkeyColumnNames, eqList, rowkeySerializer)
+    addKey(ck, colkeyColumnNames, eqList, colkeySerializer)
     eqList.foreach(clause => builder.and(clause))
     builder
   }

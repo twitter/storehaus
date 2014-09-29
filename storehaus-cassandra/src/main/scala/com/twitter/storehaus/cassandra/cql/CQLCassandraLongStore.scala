@@ -96,8 +96,8 @@ class CQLCassandraLongStore[RK <: HList, CK <: HList, RS <: HList, CS <: HList] 
   			evcol: MappedAux[CK, CassandraPrimitive, CS],
 		    rowmap: AbstractCQLCassandraCompositeStore.Row2Result[RK, RS],
 		    colmap: AbstractCQLCassandraCompositeStore.Row2Result[CK, CS],
-  			a2cRow: AbstractCQLCassandraCompositeStore.Append2Composite[ArrayBuffer[Clause], RK], 
-  			a2cCol: AbstractCQLCassandraCompositeStore.Append2Composite[ArrayBuffer[Clause], CK],
+  			a2cRow: AbstractCQLCassandraCompositeStore.Append2Composite[ArrayBuffer[Clause], RK, RS], 
+  			a2cCol: AbstractCQLCassandraCompositeStore.Append2Composite[ArrayBuffer[Clause], CK, CS],
   			rsUTC: *->*[CassandraPrimitive]#λ[RS],
   			csUTC: *->*[CassandraPrimitive]#λ[CS],
 		    ev2: CassandraPrimitive[Long]) 
@@ -119,8 +119,8 @@ class CQLCassandraLongStore[RK <: HList, CK <: HList, RS <: HList, CS <: HList] 
     // syncs won't work well with batching so we provide put, not multiPut  
     futurePool {
    	  val eqList = new ArrayBuffer[Clause]
-      addKey(rk, rowkeyColumnNames, eqList)
-      addKey(ck, colkeyColumnNames, eqList)
+      addKey(rk, rowkeyColumnNames, eqList, rowkeySerializer)
+      addKey(ck, colkeyColumnNames, eqList, colkeySerializer)
       eqList
     }.flatMap(eqList => sync.put.lock(lockId, Future {
         val origValue = if(readbeforeWrite) Await.result(get((rk, ck))).getOrElse(0l) else 0l
@@ -150,8 +150,8 @@ class CQLCassandraLongStore[RK <: HList, CK <: HList, RS <: HList, CS <: HList] 
     val lockId = mapKeyToSyncId((rk, ck), columnFamily)
     futurePool {
    	  val eqList = new ArrayBuffer[Clause]
-      addKey(rk, rowkeyColumnNames, eqList)
-      addKey(ck, colkeyColumnNames, eqList)
+      addKey(rk, rowkeyColumnNames, eqList, rowkeySerializer)
+      addKey(ck, colkeyColumnNames, eqList, colkeySerializer)
       val update = QueryBuilder.update(columnFamily.getPreparedNamed)
       eqList.join{
           (if(value < 0) update.`with`(QueryBuilder.decr(valueColumnName, implicitly[CassandraPrimitive[Long]].toCType(-1 * value).asInstanceOf[java.lang.Long]))

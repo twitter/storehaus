@@ -112,8 +112,8 @@ class CQLCassandraCompositeStore[RK <: HList, CK <: HList, V, RS <: HList, CS <:
     evcol: MappedAux[CK, CassandraPrimitive, CS],
     rowmap: AbstractCQLCassandraCompositeStore.Row2Result[RK, RS],
     colmap: AbstractCQLCassandraCompositeStore.Row2Result[CK, CS],
-    a2cRow: AbstractCQLCassandraCompositeStore.Append2Composite[ArrayBuffer[Clause], RK], 
-    a2cCol: AbstractCQLCassandraCompositeStore.Append2Composite[ArrayBuffer[Clause], CK],
+    a2cRow: AbstractCQLCassandraCompositeStore.Append2Composite[ArrayBuffer[Clause], RK, RS], 
+    a2cCol: AbstractCQLCassandraCompositeStore.Append2Composite[ArrayBuffer[Clause], CK, CS],
     rsUTC: *->*[CassandraPrimitive]#λ[RS],
     csUTC: *->*[CassandraPrimitive]#λ[CS])
   extends AbstractCQLCassandraCompositeStore[RK, CK, V, RS, CS] (columnFamily, rowkeySerializer, rowkeyColumnNames,
