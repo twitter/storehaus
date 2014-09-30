@@ -33,23 +33,27 @@ class StorehausOutputFormat[K, V] extends OutputFormat[K, V] {
    * Simple StorehausRecordWriter delegating method-calls to store 
    */
   class StorehausRecordWriter(val conf: JobConf) extends RecordWriter[K, V] {  
-    def write(key: K, value: V) = {
-      val tapid = InitializableStoreObjectSerializer.getTapId(conf)
-      val store = InitializableStoreObjectSerializer.getWriteVerion(conf, tapid) match {
-        case None => InitializableStoreObjectSerializer.getWritableStore[K, Option[V]](conf, tapid).get
-        case Some(version) => InitializableStoreObjectSerializer.getWritableVersionedStore[K, Option[V]](conf, tapid, version).get
+    var store: Option[WritableStore[K, V]] = None
+    override def write(key: K, value: V) = {
+      val tapid = InitializableStoreObjectSerializer.getTapId(conf)      
+      store = if(store.empty) {
+        log.debug(s"RecordWriter will initialize the store.")
+        InitializableStoreObjectSerializer.getWriteVerion(conf, tapid) match {
+          case None => InitializableStoreObjectSerializer.getWritableStore[K, Option[V]](conf, tapid)
+          case Some(version) => InitializableStoreObjectSerializer.getWritableVersionedStore[K, Option[V]](conf, tapid, version)
+        }
       }
-      log.debug(s"RecordWriter writing value=$value for key=$key into $store.")
+      log.debug(s"RecordWriter writing value=$value for key=$key into ${store.get}.")
       // handle with care - make sure thread pools shut down TPEs on used stores correctly if asynchronous
       // that includes awaitTermination and adding shutdown hooks, depending on mode of operation of Hadoop
       if (conf.get(FORCE_FUTURE_IN_OUTPUTFORMAT) != null && conf.get(FORCE_FUTURE_IN_OUTPUTFORMAT).equalsIgnoreCase("true"))
-        store.put((key, Some(value)))
+        store.get.put((key, Some(value)))
       else
-        Await.result(store.put((key, Some(value))))
+        Await.result(store.get.put((key, Some(value))))
     }
-    def close(reporter: Reporter) = {
+    override def close(reporter: Reporter) = {
       log.debug(s"RecordWriter finished. Closing.")
-      // store.close()
+      store.map(_.close())
       reporter.setStatus("Completed Writing. Closed Store.")
     }
   }
