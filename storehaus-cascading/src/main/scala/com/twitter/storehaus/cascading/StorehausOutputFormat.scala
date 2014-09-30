@@ -42,7 +42,7 @@ class StorehausOutputFormat[K, V] extends OutputFormat[K, V] {
           case None => InitializableStoreObjectSerializer.getWritableStore[K, Option[V]](conf, tapid)
           case Some(version) => InitializableStoreObjectSerializer.getWritableVersionedStore[K, Option[V]](conf, tapid, version)
         }
-      }.toOption else None
+      }.toOption else store
       log.debug(s"RecordWriter writing value=$value for key=$key into ${store.get}.")
       // handle with care - make sure thread pools shut down TPEs on used stores correctly if asynchronous
       // that includes awaitTermination and adding shutdown hooks, depending on mode of operation of Hadoop
