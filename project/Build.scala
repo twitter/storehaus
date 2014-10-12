@@ -292,4 +292,11 @@ object StorehausBuild extends Build {
       javaOptions in run <++= (fullClasspath in Runtime) map { cp => Seq("-cp", sbt.Build.data(cp).mkString(":")) }
   ).dependsOn(storehausCore, storehausAlgebra, storehausCache)
 
+  lazy val storehausHttp = module("http").settings(
+    libraryDependencies ++= Seq(
+      Finagle.module("http")
+    )
+  ).dependsOn(storehausCore)
+
+
 }
