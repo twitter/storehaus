@@ -42,8 +42,12 @@ class CassandraSplittingMechanism[K, V, U <: CassandraCascadingInitializer[K, V]
   @transient private val log = LoggerFactory.getLogger(classOf[CassandraSplittingMechanism[K, V, U]])
   
   val tapid = InitializableStoreObjectSerializer.getTapId(conf)
-  val storeinit = InitializableStoreObjectSerializer.getReadableStoreIntializer(conf, tapid).get.asInstanceOf[CassandraCascadingInitializer[K, V]]
   val readVersion = InitializableStoreObjectSerializer.getReadVerion(conf, tapid)
+  val storeinit = readVersion match {
+    case None => InitializableStoreObjectSerializer.getReadableStoreIntializer(conf, tapid).get.asInstanceOf[CassandraCascadingInitializer[K, V]]
+    case Some(version) => InitializableStoreObjectSerializer.getReadableVersionedStoreIntializer(conf, tapid, version).get.asInstanceOf[CassandraCascadingInitializer[K, V]]
+  } 
+    
   
   override def getSplits(job: JobConf, hint: Int) : Array[InputSplit] = {
     // ask for contact information -> call get_splits_ex via ColumnFamilyInputFormat
@@ -56,8 +60,13 @@ class CassandraSplittingMechanism[K, V, U <: CassandraCascadingInitializer[K, V]
     CqlConfigHelper.setInputColumns(conf, storeinit.getCascadingRowMatcher.getColumnNamesString)
     CqlConfigHelper.setInputNativePort(conf, storeinit.getNativePort.toString)
     val columnFamilyFormat = new CqlInputFormat
-    columnFamilyFormat.getSplits(conf, hint).
-      map(split => CassandraStorehausSplit(tapid, split.asInstanceOf[ColumnFamilySplit]))
+    val splits = Try(columnFamilyFormat.getSplits(conf, hint).map(split => 
+      CassandraStorehausSplit(tapid, split.asInstanceOf[ColumnFamilySplit]))).
+      onFailure { e => 
+        log.error(s"Got Exception from Cassandra while getting splits on seeds ${ ConfigHelper.getInputInitialAddress(conf)}", e)
+        throw e
+    }
+    splits.get.toArray
   }
   
   override def initializeSplitInCluster(split: InputSplit, reporter: Reporter): Unit = {
@@ -70,6 +79,7 @@ class CassandraSplittingMechanism[K, V, U <: CassandraCascadingInitializer[K, V]
     // for some reason the java driver loses this information, so we re-set the default as a hack
     CqlConfigHelper.setInputMinSimultReqPerConnections(conf, "5")
     CqlConfigHelper.setInputMaxSimultReqPerConnections(conf, "128")
+    CqlConfigHelper.setInputCQLPageRowSize(conf, (2 * ConfigHelper.getInputSplitSize(conf)).toString)
     // CqlConfigHelper.setInputCql(conf, storeinit.getUserDefinedWhereClauses(readVersion))
     storesplit.recordReader = new CqlRecordReader
     val tac = new TaskAttemptContext(conf, TaskAttemptID.forName(conf.get(AbstractColumnFamilyInputFormat.MAPRED_TASK_ID))) {
