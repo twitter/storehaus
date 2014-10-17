@@ -28,7 +28,7 @@ object HttpException {
     new HttpException(response.getStatus.getCode, response.getStatus.getReasonPhrase, response.getContent.toString(Charset.forName("UTF-8")))
 }
 
-case class HttpException(code: Int, reasonPhrase: String, content: String) extends Exception(s"""${reasonPhrase}\n${content}""")
+case class HttpException(code: Int, reasonPhrase: String, content: String) extends Exception(reasonPhrase + Option(content).map("\n" + _ ).getOrElse(""))
 
 object HttpStore {
   def apply(dest: String): HttpStore = new HttpStore(Http.newService(dest))
