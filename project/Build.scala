@@ -294,7 +294,8 @@ object StorehausBuild extends Build {
 
   lazy val storehausHttp = module("http").settings(
     libraryDependencies ++= Seq(
-      Finagle.module("http")
+      Finagle.module("http"),
+      "com.twitter" %% "bijection-netty" % bijectionVersion
     )
   ).dependsOn(storehausCore)
 

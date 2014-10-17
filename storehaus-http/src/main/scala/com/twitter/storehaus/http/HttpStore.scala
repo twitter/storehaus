@@ -20,8 +20,10 @@ import java.nio.charset.Charset
 import org.jboss.netty.buffer.{ ChannelBuffer, ChannelBuffers }
 import org.jboss.netty.handler.codec.http.{ HttpRequest, HttpResponse, DefaultHttpRequest, HttpVersion, HttpMethod, HttpHeaders, HttpResponseStatus }
 import com.twitter.util.Future
+import com.twitter.bijection.StringCodec
+import com.twitter.bijection.netty.ChannelBufferBijection
 import com.twitter.finagle.{ Service, Http }
-import com.twitter.storehaus.Store
+import com.twitter.storehaus.{ Store, ConvertedStore }
 
 object HttpException {
   def apply(response: HttpResponse): HttpException = 
@@ -74,14 +76,6 @@ object HttpStringStore {
   def apply(dest: String): HttpStringStore = new HttpStringStore(Http.newService(dest))
 }
 
-class HttpStringStore(val client: Service[HttpRequest, HttpResponse]) extends Store[String, String] {
-  private val store = new HttpStore(client)
-  private val utf8 = Charset.forName("UTF-8")
-
-  override def get(k: String): Future[Option[String]] = store.get(k).map(_.map(_.toString(utf8)))
-
-  override def put(kv: (String, Option[String])): Future[Unit] = store.put((
-    kv._1,
-    kv._2.map(s => ChannelBuffers.wrappedBuffer(s.getBytes(utf8)))
-  ))
-}
+class HttpStringStore(val client: Service[HttpRequest, HttpResponse])
+    extends ConvertedStore[String, String, ChannelBuffer, String](new HttpStore(client))(identity)(
+      StringCodec.utf8 andThen ChannelBufferBijection.inverse)
