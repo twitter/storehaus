@@ -145,6 +145,7 @@ object StorehausBuild extends Build {
     storehausKafka08,
     storehausMongoDB,
     storehausElastic,
+    storehausHttp,
     storehausTesting
   )
 
