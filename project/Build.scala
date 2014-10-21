@@ -145,6 +145,7 @@ object StorehausBuild extends Build {
     storehausKafka08,
     storehausMongoDB,
     storehausElastic,
+    storehausHttp,
     storehausTesting
   )
 
@@ -291,5 +292,13 @@ object StorehausBuild extends Build {
       "com.twitter" %% "algebird-core" % algebirdVersion),
       javaOptions in run <++= (fullClasspath in Runtime) map { cp => Seq("-cp", sbt.Build.data(cp).mkString(":")) }
   ).dependsOn(storehausCore, storehausAlgebra, storehausCache)
+
+  lazy val storehausHttp = module("http").settings(
+    libraryDependencies ++= Seq(
+      Finagle.module("http"),
+      "com.twitter" %% "bijection-netty" % bijectionVersion
+    )
+  ).dependsOn(storehausCore)
+
 
 }
