@@ -116,7 +116,7 @@ object CQLCassandraCollectionStore {
 class CQLCassandraCollectionStore[RK <: HList, CK <: HList, V, X, RS <: HList, CS <: HList] (
   columnFamily: CQLCassandraConfiguration.StoreColumnFamily,
   rowkeySerializer: RS,
-  rowkeyColumnNames: List[String],
+  val rowkeyColumnNames: List[String],
   colkeySerializer: CS,
   colkeyColumnNames: List[String],
   valueColumnName: String = CQLCassandraConfiguration.DEFAULT_VALUE_COLUMN_NAME,

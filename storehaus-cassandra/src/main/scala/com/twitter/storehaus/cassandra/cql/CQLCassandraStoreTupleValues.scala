@@ -74,7 +74,7 @@ object CQLCassandraStoreTupleValues {
  * of tuples.
  */
 class CQLCassandraStoreTupleValues[K: CassandraPrimitive, V <: Product, VL <: HList, VS <: HList] (
-		val columnFamily: CQLCassandraConfiguration.StoreColumnFamily,
+		override val columnFamily: CQLCassandraConfiguration.StoreColumnFamily,
 		val valueColumnNames: List[String],
 		val valueSerializers: VS,
 		val keyColumnName: String = CQLCassandraConfiguration.DEFAULT_KEY_COLUMN_NAME,

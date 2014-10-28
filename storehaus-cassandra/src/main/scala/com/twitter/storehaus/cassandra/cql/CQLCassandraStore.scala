@@ -61,7 +61,7 @@ object CQLCassandraStore {
  * Simple key-value store
  */
 class CQLCassandraStore[K : CassandraPrimitive, V : CassandraPrimitive] (
-		val columnFamily: CQLCassandraConfiguration.StoreColumnFamily,
+		override val columnFamily: CQLCassandraConfiguration.StoreColumnFamily,
 		val valueColumnName: String = CQLCassandraConfiguration.DEFAULT_VALUE_COLUMN_NAME,
 		val keyColumnName: String = CQLCassandraConfiguration.DEFAULT_KEY_COLUMN_NAME,
 		val consistency: ConsistencyLevel = CQLCassandraConfiguration.DEFAULT_CONSISTENCY_LEVEL,
