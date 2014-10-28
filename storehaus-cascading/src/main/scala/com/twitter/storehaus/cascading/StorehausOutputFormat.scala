@@ -39,10 +39,12 @@ class StorehausOutputFormat[K, V] extends OutputFormat[K, V] {
       store = if(store.isEmpty) {
         log.debug(s"RecordWriter will initialize the store.")
         InitializableStoreObjectSerializer.getWriteVerion(conf, tapid) match {
-          case None => InitializableStoreObjectSerializer.getWritableStore[K, Option[V]](conf, tapid)
+          case None => {
+            InitializableStoreObjectSerializer.getWritableStore[K, Option[V]](conf, tapid)
+          }
           case Some(version) => InitializableStoreObjectSerializer.getWritableVersionedStore[K, Option[V]](conf, tapid, version)
         }
-      }.toOption else store
+      }.onFailure(e => log.error(s"RecordWriter was not able to initialize the store for tap $tapid.", e)).toOption else store
       log.debug(s"RecordWriter writing value=$value for key=$key into ${store.get}.")
       // handle with care - make sure thread pools shut down TPEs on used stores correctly if asynchronous
       // that includes awaitTermination and adding shutdown hooks, depending on mode of operation of Hadoop
