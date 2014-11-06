@@ -38,7 +38,8 @@ class FanoutStore[-K, +V: Monoid, S <: ReadableStore[K, V]](fanout: K => Set[K],
 
     Future.collect(values.toSeq)
       .map { seq =>
-      //If all values are None we want to Return Future[None] else we fold using the monoid
+      //If all values are None we want to Return Future[None] else we fold using the monoid.
+      // This is done to satisfy storehaus laws
       if (seq.forall(!_.isDefined)) {
         None
       } else {

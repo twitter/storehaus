@@ -1,3 +1,4 @@
+/*
 package com.twitter.storehaus.caliper
 
 import com.google.caliper.{Param, SimpleBenchmark}
@@ -80,3 +81,4 @@ class WriteThroughCacheBenchmark extends SimpleBenchmark {
     12
   }
 }
+*/
