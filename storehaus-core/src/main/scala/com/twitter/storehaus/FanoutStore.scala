@@ -61,6 +61,7 @@ class FanoutStore[-K, +V: Monoid, S <: ReadableStore[K, V]](fanout: K => Set[K],
 
 object FanoutStore {
 
-  def apply[K, V: Monoid, S <: ReadableStore[K, V]](fanout: K => Set[K], stores: Set[(K => Boolean, S)]) = new FanoutStore[K, V, S](fanout, stores)
+  def apply[K, V: Monoid, S <: ReadableStore[K, V]](fanout: K => Set[K], stores: Set[(K => Boolean, S)])
+   = new FanoutStore[K, V, S](fanout, stores)
 }
 
