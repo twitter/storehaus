@@ -17,9 +17,7 @@ package com.twitter.storehaus
 
 import com.twitter.algebird.Monoid
 import com.twitter.util.Future
-/**
 
- */
 /**
  * A store that fans out Key K to a Set of Keys, queries the appropriate underlying stores and sum the values using the Monoid V
  *
