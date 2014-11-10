@@ -24,7 +24,7 @@ import com.twitter.util.{Closable, Future, FuturePool, Promise, Throw, Time, Ret
 import java.util.concurrent.{Executors, TimeUnit}
 import org.slf4j.{ Logger, LoggerFactory }
 
-abstract class AbstractCQLCassandraStore[K, V] (poolSize: Int, val columnFamily: CQLCassandraConfiguration.StoreColumnFamily) 
+abstract class AbstractCQLCassandraStore[K, V] (val poolSize: Int, val columnFamily: CQLCassandraConfiguration.StoreColumnFamily) 
   extends QueryableStore[String, (K, V)] 
   with CassandraCascadingRowMatcher[K, V]
   with IterableStore[K, V] 

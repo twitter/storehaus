@@ -97,14 +97,14 @@ object CQLCassandraCompositeStore {
 }
 
 class CQLCassandraCompositeStore[RK <: HList, CK <: HList, V, RS <: HList, CS <: HList] (
-  columnFamily: CQLCassandraConfiguration.StoreColumnFamily,
+  override val columnFamily: CQLCassandraConfiguration.StoreColumnFamily,
   rowkeySerializer: RS,
   rowkeyColumnNames: List[String],
   colkeySerializer: CS,
   colkeyColumnNames: List[String],
   valueColumnName: String = CQLCassandraConfiguration.DEFAULT_VALUE_COLUMN_NAME,
   consistency: ConsistencyLevel = CQLCassandraConfiguration.DEFAULT_CONSISTENCY_LEVEL,
-  poolSize: Int = CQLCassandraConfiguration.DEFAULT_FUTURE_POOL_SIZE,
+  override val poolSize: Int = CQLCassandraConfiguration.DEFAULT_FUTURE_POOL_SIZE,
   batchType: BatchStatement.Type = CQLCassandraConfiguration.DEFAULT_BATCH_STATEMENT_TYPE,
   ttl: Option[Duration] = CQLCassandraConfiguration.DEFAULT_TTL_DURATION)
   (cassSerValue: CassandraPrimitive[V])(

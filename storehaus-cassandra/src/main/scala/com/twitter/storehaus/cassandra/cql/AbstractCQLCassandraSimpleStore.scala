@@ -26,8 +26,8 @@ import org.slf4j.{ Logger, LoggerFactory }
 import com.websudos.phantom.CassandraPrimitive
 
 abstract class AbstractCQLCassandraSimpleStore[K : CassandraPrimitive, V] (
-    poolSize: Int, 
-    columnFamily: CQLCassandraConfiguration.StoreColumnFamily,
+    override val poolSize: Int, 
+    override val columnFamily: CQLCassandraConfiguration.StoreColumnFamily,
     keyColumnName: String = CQLCassandraConfiguration.DEFAULT_KEY_COLUMN_NAME,
     consistency: ConsistencyLevel = CQLCassandraConfiguration.DEFAULT_CONSISTENCY_LEVEL,
     batchType: BatchStatement.Type = CQLCassandraConfiguration.DEFAULT_BATCH_STATEMENT_TYPE,
