@@ -15,7 +15,7 @@
  */
 package com.twitter.storehaus
 
-import com.twitter.algebird.Monoid
+import com.twitter.algebird.{Semigroup, Monoid}
 import com.twitter.util.Future
 
 /**
@@ -24,31 +24,27 @@ import com.twitter.util.Future
  *
  * @author Mansur Ashraf
  */
-class FanoutStore[-K, +V: Monoid, S <: ReadableStore[K, V]](fanout: K => Set[K], stores: Set[(K => Boolean, S)])
+class FanoutStore[-K, +V: Semigroup, S <: ReadableStore[K, V]](fanout: K => Set[K], stores: Set[(K => Boolean, S)])
   extends ReadableStore[K, V] {
 
   override def get(k: K): Future[Option[V]] = {
-    val m = implicitly[Monoid[V]]
+    val s = implicitly[Semigroup[V]]
     val values = fanout(k)
       .groupBy {
-      groupByStore
-    }.flatMap {
-      case (store, keys) => store.multiGet(keys).values
-    }
+        groupByStore
+      }.flatMap {
+        case (store, keys) => store.multiGet(keys).values
+      }
 
     Future.collect(values.toSeq)
       .map { seq =>
-      //If all values are None we want to Return Future[None] else we fold using the monoid.
-      // This is done to satisfy storehaus laws
-      if (seq.forall(!_.isDefined)) {
-        None
-      } else {
-        val v = seq.foldLeft(m.zero) {
-          case (result, value) => m.plus(result, value.getOrElse(m.zero))
-        }
-        Some(v)
+        seq.reduceOption {
+          case (Some(x),Some(y))=> Some(s.plus(x,y))
+          case (None,y@Some(_))=>  y
+          case (x@Some(_),None)=>  x
+          case _ => None
+        }.getOrElse(None)
       }
-    }
   }
 
   private def groupByStore(k: K): S = {
@@ -61,7 +57,6 @@ class FanoutStore[-K, +V: Monoid, S <: ReadableStore[K, V]](fanout: K => Set[K],
 
 object FanoutStore {
 
-  def apply[K, V: Monoid, S <: ReadableStore[K, V]](fanout: K => Set[K], stores: Set[(K => Boolean, S)])
-   = new FanoutStore[K, V, S](fanout, stores)
+  def apply[K, V: Monoid, S <: ReadableStore[K, V]](fanout: K => Set[K], stores: Set[(K => Boolean, S)]) = new FanoutStore[K, V, S](fanout, stores)
 }
 
