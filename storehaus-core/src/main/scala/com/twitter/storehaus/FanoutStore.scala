@@ -38,7 +38,7 @@ class FanoutStore[-K, +V: Semigroup, S <: ReadableStore[K, V]](fanout: K => Set[
 
     Future.collect(values.toSeq)
       .map { seq =>
-        seq.reduceOption {
+        seq.reduceOption[Option[V]] {
           case (Some(x),Some(y))=> Some(s.plus(x,y))
           case (None,y@Some(_))=>  y
           case (x@Some(_),None)=>  x
