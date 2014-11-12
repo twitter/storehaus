@@ -59,7 +59,7 @@ class StorehausInputFormat[K, V, U <: AbstractStorehausCascadingInitializer]
       splittingMechanism.fillRecord(split, key, value)
     }
 
-    override def close = splittingMechanism.close 
+    override def close = splittingMechanism.closeSplit(split)
     override def createKey: Instance[K] = new Instance[K]
     override def createValue: Instance[V] = new Instance[V]
     override def getPos: Long = pos

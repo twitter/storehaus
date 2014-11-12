@@ -47,7 +47,7 @@ class CassandraSplittingMechanism[K, V, U <: CassandraCascadingInitializer[K, V]
     case None => InitializableStoreObjectSerializer.getReadableStoreIntializer(conf, tapid).get.asInstanceOf[CassandraCascadingInitializer[K, V]]
     case Some(version) => InitializableStoreObjectSerializer.getReadableVersionedStoreIntializer(conf, tapid, version).get.asInstanceOf[CassandraCascadingInitializer[K, V]]
   } 
-    
+  lazy val rowMatcher = storeinit.getCascadingRowMatcher  
   
   override def getSplits(job: JobConf, hint: Int) : Array[InputSplit] = {
     // ask for contact information -> call get_splits_ex via ColumnFamilyInputFormat
@@ -96,8 +96,8 @@ class CassandraSplittingMechanism[K, V, U <: CassandraCascadingInitializer[K, V]
     val storesplit = getStorehausSplit(split)
     if(storesplit.recordReader.nextKeyValue) {
       val row = storesplit.recordReader.getCurrentValue
-      val (cassKey, cassValue) = storeinit.getCascadingRowMatcher.getKeyValueFromRow(row)
-      log.debug(s"Filling record for StorehausTap with id $tapid with value=$cassValue and key=$cassKey into store " + storeinit) 
+      val (cassKey, cassValue) = rowMatcher.getKeyValueFromRow(row)
+      log.debug(s"Filling record for StorehausTap with id $tapid with value=$cassValue and key=$cassKey") 
       key.set(cassKey)
       value.set(cassValue)
       true
@@ -110,4 +110,10 @@ class CassandraSplittingMechanism[K, V, U <: CassandraCascadingInitializer[K, V]
    * free resources after splitting is done
    */
   override def close = {}
+
+  /**
+   * free record reader
+   */
+  override def closeSplit(split: InputSplit) = getStorehausSplit(split).recordReader.close()
+
 }
