@@ -42,7 +42,9 @@ object CQLCassandraConfiguration {
 	val reconnectPolicy: ReconnectionPolicy = Policies.defaultReconnectionPolicy,
 	val retryPolicy: RetryPolicy = Policies.defaultRetryPolicy,
 	val shutdownTimeout: Duration = DEFAULT_SHUTDOWN_TIMEOUT) {
-	def getCluster: Cluster = {
+	lazy val cluster = createCluster
+	def getCluster: Cluster = cluster
+    def createCluster: Cluster = {
 	  val clusterBuilder = Cluster.builder()
 	  hosts.foreach(host => {
 	    val hostPort = host.name.split(":")
@@ -58,7 +60,8 @@ object CQLCassandraConfiguration {
 	  clusterBuilder.withReconnectionPolicy(reconnectPolicy)
 	  clusterBuilder.withRetryPolicy(retryPolicy)
 	  clusterBuilder.build()
-	} 
+	}
+	def close: Unit = cluster.close
   }
 		
   case class StoreColumnFamily(name: String, val session: StoreSession) {
