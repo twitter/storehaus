@@ -28,7 +28,7 @@ import shapeless._
  * easy to use this store with tuples, which can in turn be serialized easily.
  */
 class CassandraTupleStore[RKT <: Product, CKT <: Product, V, RK <: HList, CK <: HList, RS <: HList, CS <: HList]
-		(store: AbstractCQLCassandraCompositeStore[RK, CK, V, RS, CS], paramToPreventWritingDownTypes: (RKT, CKT))
+		(val store: AbstractCQLCassandraCompositeStore[RK, CK, V, RS, CS], paramToPreventWritingDownTypes: (RKT, CKT))
 		(implicit ev1: HListerAux[RKT, RK],
 		    ev2: HListerAux[CKT, CK],
 		    ev3: TuplerAux[RK, RKT],
@@ -75,7 +75,7 @@ class CassandraTupleStore[RKT <: Product, CKT <: Product, V, RK <: HList, CK <: 
  * Muti-valued version of CassandraTupleStore
  */
 class CassandraTupleMultiValueStore[RKT <: Product, CKT <: Product, V <: Product, RK <: HList, CK <: HList, VL <: HList, RS <: HList, CS <: HList, VS <: HList]
-		(store: CQLCassandraMultivalueStore[RK, CK, VL, RS, CS, VS], 
+		(val store: CQLCassandraMultivalueStore[RK, CK, VL, RS, CS, VS], 
 		    paramToPreventWritingDownTypes1: (RKT, CKT),
 		    paramToPreventWritingDownTypes2: V)
 		(implicit ev1: HListerAux[RKT, RK],
