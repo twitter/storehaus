@@ -46,8 +46,10 @@ class MutableTTLCacheTest extends Specification {
     val cache = MutableTTLCache[String, Int](ttl = ttl, capacity = 100)
     cache.getOrElseUpdate("a", 1) mustEqual 1
     cache.get("a") must beSome[Int](1)
-    Thread.sleep(ttl.inMilliseconds)
-    cache.getOrElseUpdate("a", 2) mustEqual 2
-    cache.get("a") must beSome[Int](2)
+    Thread.sleep(200)
+    cache.getOrElseUpdate("a", 2) mustEqual 1
+    Thread.sleep(300)
+    cache.getOrElseUpdate("a", 3) mustEqual 3
+    cache.get("a") must beSome[Int](3)
   }
 }

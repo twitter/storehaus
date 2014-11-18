@@ -50,12 +50,8 @@ class MutableTTLCache[K, V](val ttl: Duration, protected val backingCache: Mutab
     this
   }
 
-  def hit(k: K) = {
-    get(k) map { v =>
-      this += (k, v)
-      v
-    }
-  }
+  // hit(k) should not update the ttl for the underlying entry. simply wrap get(k)
+  def hit(k: K) = get(k)
 
   /* Returns an option of the (potentially) evicted value. */
   def evict(k: K) = {
