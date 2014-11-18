@@ -51,8 +51,8 @@ class MutableTTLCache[K, V](val ttl: Duration, protected val backingCache: Mutab
   }
 
   def hit(k: K) = {
-    backingCache.get(k).map{case (ts, v) =>
-      this += ((k, v))
+    get(k) map { v =>
+      this += (k, v)
       v
     }
   }
