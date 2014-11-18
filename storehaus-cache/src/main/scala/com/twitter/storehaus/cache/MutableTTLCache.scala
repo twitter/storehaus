@@ -50,7 +50,8 @@ class MutableTTLCache[K, V](val ttl: Duration, protected val backingCache: Mutab
     this
   }
 
-  // hit(k) should not update the ttl for the underlying entry. simply wrap get(k)
+  // hit(k) should not update the the underlying entry since we want to honor the ttl and
+  // when at capacity remove the entry that is closest to expiring.
   def hit(k: K) = get(k)
 
   /* Returns an option of the (potentially) evicted value. */
