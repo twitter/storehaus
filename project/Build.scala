@@ -163,10 +163,11 @@ object StorehausBuild extends Build {
     storehausKafka08,
     storehausMongoDB,
     storehausElastic,
-    storehausTesting,
     storehausCassandra,
     storehausCascading,
-    storehausCascadingExamples
+    storehausCascadingExamples,
+    storehausHttp,
+    storehausTesting
   )
 
   def module(name: String) = {
@@ -379,4 +380,11 @@ object StorehausBuild extends Build {
     publishArtifact := false,
     parallelExecution in Test := false
   ).dependsOn(storehausCore, storehausAlgebra % "test->test;compile->compile", storehausCascading, storehausCassandra)
+
+  lazy val storehausHttp = module("http").settings(
+    libraryDependencies ++= Seq(
+      Finagle.module("http"),
+      "com.twitter" %% "bijection-netty" % bijectionVersion
+    )
+  ).dependsOn(storehausCore)
 }
