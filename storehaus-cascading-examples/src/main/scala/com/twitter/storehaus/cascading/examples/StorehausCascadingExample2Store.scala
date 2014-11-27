@@ -21,9 +21,12 @@ import com.twitter.storehaus.cascading.{ StorehausCascadingInitializer, Storehau
 import scala.language.implicitConversions
 import shapeless._
 import HList._
-import Traversables._
+import ops.hlist.Mapper
+import ops.hlist.Mapped
+import ops.hlist.ToList
 import Nat._
 import UnaryTCConstraint._
+
 
 import java.util.Date
 
@@ -66,7 +69,9 @@ object StoreInitializer
   val valueSerializer = implicitly[CassandraPrimitive[String]]
   
   // create store
-  val store = new CQLCassandraCollectionStore(columnFamily, rs, rowKeyNames, cs, colKeyNames)(implicitly[Semigroup[Set[String]]]) 
+  val store = new CQLCassandraCollectionStore[String :: Long :: HNil, Long :: Date :: HNil, Set[String], String, 
+	  CassandraPrimitive[String] :: CassandraPrimitive[Long] :: HNil, CassandraPrimitive[Long] :: CassandraPrimitive[Date] :: HNil](
+	      columnFamily, rs, rowKeyNames, cs, colKeyNames)(implicitly[Semigroup[Set[String]]]) 
   
   /**
    * store prepare, do this similar for other storehaus-stores

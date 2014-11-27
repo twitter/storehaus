@@ -33,6 +33,11 @@ object StorehausBuild extends Build {
       case x => x
     }
 
+  def real210Version(dep: ModuleID) = dep cross CrossVersion.binaryMapped {
+    case version if version startsWith "2.10" => "2.10.3"
+    case x => x
+  }
+
   def specs2Import(scalaVersion: String) = scalaVersion match {
       case version if version startsWith "2.9" => "org.specs2" %% "specs2" % "1.12.4.1" % "test"
       case version if version startsWith "2.10" => "org.specs2" %% "specs2" % "1.13" % "test"
@@ -322,7 +327,7 @@ object StorehausBuild extends Build {
     "org.apache.cassandra" % "cassandra-all" % cassandraVersion,
     "com.websudos" % "phantom-dsl_2.10" % "1.0.6" exclude ("com.datastax.cassandra", "cassandra-driver-core"),
     withCross("com.twitter" %% "util-zk" % utilVersion),
-    withCross("com.chuusai" %% "shapeless" % "1.2.4"),
+    real210Version("com.chuusai" %% "shapeless" % "2.0.0"),
     "org.slf4j" % "slf4j-api" % "1.7.5",
     "org.apache.hadoop" % "hadoop-core" % hadoopVersion
   )
@@ -357,7 +362,7 @@ object StorehausBuild extends Build {
     "cascading" % "cascading-core" % cascadingVersion,
     "cascading" % "cascading-hadoop" % cascadingVersion,
     "org.slf4j" % "slf4j-api" % "1.7.5",
-    withCross("com.chuusai" %% "shapeless" % "1.2.4"),
+    real210Version("com.chuusai" %% "shapeless" % "2.0.0"),
     "org.apache.hadoop" % "hadoop-core" % hadoopVersion
   )
 

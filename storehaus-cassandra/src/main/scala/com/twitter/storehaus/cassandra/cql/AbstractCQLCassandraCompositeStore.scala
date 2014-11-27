@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 SEEBURGER AG
+ * Copyright 2014 Twitter, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -30,7 +30,9 @@ import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
 import shapeless._
 import HList._
-import Traversables._
+import ops.hlist.Mapper
+import ops.hlist.Mapped
+import poly._
 import Nat._
 import UnaryTCConstraint._
 
@@ -54,7 +56,7 @@ object AbstractCQLCassandraCompositeStore {
    * creates an HList of serializers (CasasandraPrimitives) given an example 
    * key HList and pulls serializers out of implicit scope.
    */
-  def getSerializerHListByExample[KL <: HList, SL <: HList](keys: KL)(implicit mapper: MapperAux[cassandraSerializerCreation.type, KL, SL]) : SL = {
+  def getSerializerHListByExample[KL <: HList, SL <: HList](keys: KL)(implicit mapper: Mapper.Aux[cassandraSerializerCreation.type, KL, SL]) : SL = {
     keys.map(cassandraSerializerCreation)
   } 
 
@@ -167,8 +169,8 @@ abstract class AbstractCQLCassandraCompositeStore[RK <: HList, CK <: HList, V, R
   override val poolSize: Int = CQLCassandraConfiguration.DEFAULT_FUTURE_POOL_SIZE,
   batchType: BatchStatement.Type = CQLCassandraConfiguration.DEFAULT_BATCH_STATEMENT_TYPE,
   ttl: Option[Duration] = CQLCassandraConfiguration.DEFAULT_TTL_DURATION)(
-    implicit evrow: MappedAux[RK, CassandraPrimitive, RS],
-    evcol: MappedAux[CK, CassandraPrimitive, CS],
+    implicit evrow: Mapped.Aux[RK, CassandraPrimitive, RS],
+    evcol: Mapped.Aux[CK, CassandraPrimitive, CS],
     rowmap: AbstractCQLCassandraCompositeStore.Row2Result[RK, RS],
     colmap: AbstractCQLCassandraCompositeStore.Row2Result[CK, CS],
     a2cRow: AbstractCQLCassandraCompositeStore.Append2Composite[ArrayBuffer[Clause], RK, RS], 

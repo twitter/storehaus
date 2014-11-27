@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 SEEBURGER AG
+ * Copyright 2014 Twitter, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -20,8 +20,11 @@ import com.twitter.concurrent.Spool
 import com.twitter.storehaus.{IterableStore, ReadableStore, QueryableStore, Store}
 import com.twitter.storehaus.cassandra.cql.cascading.CassandraCascadingRowMatcher
 import com.twitter.util.{Future, FutureTransformer, Return, Throw}
-import shapeless.Tuples._
+import shapeless.ops.hlist.Tupler
+import shapeless.syntax.std.tuple._
+import shapeless.HList
 import shapeless._
+import com.twitter.storehaus.cassandra.cql.macrobug._
 
 /**
  * AbstractCQLCassandraCompositeStore-wrapper for Tuples to HList. This makes it 
@@ -31,19 +34,19 @@ class CassandraTupleStore[RKT <: Product, CKT <: Product, V, RK <: HList, CK <: 
 		(val store: AbstractCQLCassandraCompositeStore[RK, CK, V, RS, CS], paramToPreventWritingDownTypes: (RKT, CKT))
 		(implicit ev1: HListerAux[RKT, RK],
 		    ev2: HListerAux[CKT, CK],
-		    ev3: TuplerAux[RK, RKT],
-		    ev4: TuplerAux[CK, CKT])
+		    ev3: Tupler.Aux[RK, RKT],
+		    ev4: Tupler.Aux[CK, CKT])
 	extends Store[(RKT, CKT), V]  
     with CassandraCascadingRowMatcher[(RKT, CKT), V] 
     with QueryableStore[String, ((RKT, CKT), V)]
     with IterableStore[(RKT, CKT), V] {
 
   override def get(k: (RKT, CKT)): Future[Option[V]] = {
-    store.get((k._1.hlisted, k._2.hlisted))
+    store.get((ev1(k._1), ev2(k._2)))
   }
   
   override def multiPut[K1 <: (RKT, CKT)](kvs: Map[K1, Option[V]]): Map[K1, Future[Unit]] = {
-    val resultMap = store.multiPut(kvs.map(kv => ((kv._1._1.hlisted, kv._1._2.hlisted), kv._2)))
+    val resultMap = store.multiPut(kvs.map(kv => ((ev1(kv._1._1), ev2(kv._1._2)), kv._2)))
     resultMap.map(kv => ((kv._1._1.tupled, kv._1._2.tupled).asInstanceOf[K1], kv._2))
   }
   
@@ -81,20 +84,20 @@ class CassandraTupleMultiValueStore[RKT <: Product, CKT <: Product, V <: Product
 		(implicit ev1: HListerAux[RKT, RK],
 		    ev2: HListerAux[CKT, CK],
 		    ev3: HListerAux[V, VL],
-		    ev4: TuplerAux[RK, RKT],
-		    ev5: TuplerAux[CK, CKT],
-		    ev6: TuplerAux[VL, V])
+		    ev4: Tupler.Aux[RK, RKT],
+		    ev5: Tupler.Aux[CK, CKT],
+		    ev6: Tupler.Aux[VL, V])
 	extends Store[(RKT, CKT), V]  
     with CassandraCascadingRowMatcher[(RKT, CKT), V] 
     with QueryableStore[String, ((RKT, CKT), V)]
     with IterableStore[(RKT, CKT), V] {
 
   override def get(k: (RKT, CKT)): Future[Option[V]] = {
-    store.get((k._1.hlisted, k._2.hlisted)).flatMap(opt => Future(opt.map(res => res.tupled)))
+    store.get((ev1(k._1), ev2(k._2))).flatMap(opt => Future(opt.map(res => res.tupled)))
   }
   
   override def multiPut[K1 <: (RKT, CKT)](kvs: Map[K1, Option[V]]): Map[K1, Future[Unit]] = {
-    val resultMap = store.multiPut(kvs.map(kv => ((kv._1._1.hlisted, kv._1._2.hlisted), kv._2.map(_.hlisted))))
+    val resultMap = store.multiPut(kvs.map(kv => ((ev1(kv._1._1), ev2(kv._1._2)), kv._2.map(v => ev3(v)))))
     resultMap.map(kv => ((kv._1._1.tupled, kv._1._2.tupled).asInstanceOf[K1], kv._2))
   }
   

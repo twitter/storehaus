@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 SEEBURGER AG
+ * Copyright 2014 Twitter, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -24,12 +24,13 @@ import com.twitter.storehaus.cassandra.cql.cascading.CassandraCascadingRowMatche
 import com.twitter.util.{Await, Future, Duration, FuturePool, Promise, Try, Throw, Return}
 import com.websudos.phantom.CassandraPrimitive
 import java.util.concurrent.Executors
-import shapeless.Tuples._
 import shapeless._
-import FromTraversable._
-import Traversables._
-import UnaryTCConstraint._
-
+import shapeless.ops.hlist.{Mapper, ToList, Tupler}
+import shapeless.ops.traversable.FromTraversable
+import shapeless.UnaryTCConstraint.*->*
+import shapeless.syntax.std.product._
+import syntax.std.traversable._
+import com.twitter.storehaus.cassandra.cql.macrobug._
 
 object CQLCassandraStoreTupleValues {
   import AbstractCQLCassandraCompositeStore._
@@ -39,7 +40,7 @@ object CQLCassandraStoreTupleValues {
 		valueColumnNames: List[String],
 		valueSerializers: VS,
 		keyColumnName: String = CQLCassandraConfiguration.DEFAULT_KEY_COLUMN_NAME
-      )(implicit vss: MapperAux[keyStringMapping.type, VS, MVResult],
+      )(implicit vss: Mapper.Aux[keyStringMapping.type, VS, MVResult],
        tov: ToList[MVResult, String]) = {
     createColumnFamilyWithToken[K, VS, MVResult, String](columnFamily, valueColumnNames, valueSerializers, None, "", keyColumnName)
   }
@@ -51,7 +52,7 @@ object CQLCassandraStoreTupleValues {
 		tokenSerializer: Option[CassandraPrimitive[T]],
 		tokenColumnName: String = CQLCassandraConfiguration.DEFAULT_TOKEN_COLUMN_NAME,
 		keyColumnName: String = CQLCassandraConfiguration.DEFAULT_KEY_COLUMN_NAME
-      )(implicit vss: MapperAux[keyStringMapping.type, VS, MVResult],
+      )(implicit vss: Mapper.Aux[keyStringMapping.type, VS, MVResult],
        tov: ToList[MVResult, String]) = {
     val valSerStrings = valueSerializers.map(keyStringMapping).toList	
     val keySerializer = implicitly[CassandraPrimitive[K]]
@@ -83,7 +84,7 @@ class CQLCassandraStoreTupleValues[K: CassandraPrimitive, V <: Product, VL <: HL
 		val batchType: BatchStatement.Type = CQLCassandraConfiguration.DEFAULT_BATCH_STATEMENT_TYPE,
 		val ttl: Option[Duration] = CQLCassandraConfiguration.DEFAULT_TTL_DURATION)(
 		   implicit ev2: HListerAux[V, VL],
-		   ev3: TuplerAux[VL, V],
+		   ev3: Tupler.Aux[VL, V],
 		   vAsList: ToList[VL, Any], 
 		   vsAsList: ToList[VS, CassandraPrimitive[_]],
 		   vsFromList: FromTraversable[VL])
@@ -106,11 +107,11 @@ class CQLCassandraStoreTupleValues[K: CassandraPrimitive, V <: Product, VL <: HL
    * hole Option[TupleX] is None. 
    */
   protected def createPutQuery[K1 <: K](kv: (K1, V)): Insert = {
-    val sets = kv._2.hlisted.toList.zip(valueColumnNames)
+    val sets = ev2(kv._2).toList.zip(valueColumnNames)
     sets.foldLeft(QueryBuilder.insertInto(columnFamily.getPreparedNamed))((insert, values) => values._1 match {
-      case Some(v) => insert.value(values._2, v)
+      case Some(v) => insert.value(s""""${values._2}"""", v)
       case None => insert
-    })
+    }).value(keyColumnName, kv._1)
   }
   
   override def getKeyValueFromRow(row: Row): (K, V) = (keySerializer.fromRow(row, keyColumnName).get, getRowValue(row).tupled)
@@ -121,7 +122,7 @@ class CQLCassandraStoreTupleValues[K: CassandraPrimitive, V <: Product, VL <: HL
   override protected def getValue(result: ResultSet): Option[V] = Some(getRowValue(result.one()).tupled)
   
   protected def getRowValue(row: Row): VL = {
-    valueSerializers.toList.zip(valueColumnNames).map(sercol => sercol._1.fromRow(row, sercol._2)).toHList[VL].get
+    valueSerializers.toList.zip(valueColumnNames).map(sercol => sercol._1.fromRow(row, s""""${sercol._2}"""")).toHList[VL].get
   }
       
   /**

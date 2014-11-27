@@ -18,11 +18,9 @@ import com.twitter.storehaus.cascading.{ StorehausCascadingInitializer, Storehau
 import com.twitter.storehaus.cascading.StorehausInputFormat
 import scala.language.implicitConversions
 import shapeless._
-import HList._
-import Traversables._
+import ops.hlist._
 import Nat._
 import UnaryTCConstraint._
-import shapeless.Tuples._
 import java.util.Date
 import com.websudos.phantom.CassandraPrimitive
 import scala.reflect.runtime.universe._
@@ -53,7 +51,7 @@ object StoreInitializerTuples
   
   
   // setup key serializers for HLists by example (special to storehaus-cassandra, setup is different for other stores)
-  val rs = AbstractCQLCassandraCompositeStore.getSerializerHListByExample("Bla und Blubb" :: 1234 :: HNil)
+  val rs = AbstractCQLCassandraCompositeStore.getSerializerHListByExample("Bla and Blubb" :: 1234 :: HNil)
   val cs = AbstractCQLCassandraCompositeStore.getSerializerHListByExample(12345l :: HNil)
   
   // setup column names (special to storehaus-cassandra, setup is different for other stores) and a type of values
@@ -61,10 +59,18 @@ object StoreInitializerTuples
   val colKeyNames = List("otherlongnumber")
   val valueSerializer = implicitly[CassandraPrimitive[String]]
   
+  type RK = String :: Int :: HNil
+  type CK = Long :: HNil
+  type RS = CassandraPrimitive[String] :: CassandraPrimitive[Int] :: HNil
+  type CS = CassandraPrimitive[Long] :: HNil
+  
   // create store
-  val cassandrastore = new CQLCassandraCompositeStore(columnFamily, rs, rowKeyNames, cs, colKeyNames)(valueSerializer) 
-  // last param avoid providing complex HList 
-  val store = new CassandraTupleStore(cassandrastore, (("", 0), Tuple1(2l))) 
+  val cassandrastore = new CQLCassandraCompositeStore[String :: Int :: HNil, Long :: HNil, String, 
+    CassandraPrimitive[String] :: CassandraPrimitive[Int] :: HNil, CassandraPrimitive[Long] :: HNil](columnFamily, rs, rowKeyNames, cs, colKeyNames)(valueSerializer) 
+  
+  // convert to a store that can use tuples instead of HLists
+  val store = new CassandraTupleStore[(String, Int), Tuple1[Long], String, String :: Int :: HNil, Long :: HNil,
+    CassandraPrimitive[String] :: CassandraPrimitive[Int] :: HNil, CassandraPrimitive[Long] :: HNil](cassandrastore, (("", 0), Tuple1(2l))) 
   
   /**
    * store prepare, do this similar for other storehaus-stores
@@ -108,8 +114,11 @@ object StoreInitializerTuplesWriter
   override def getThriftConnections = StoreInitializerTuples.getThriftConnections
   val columnFamily = StoreColumnFamily(getColumnFamilyName(None), 
       StoreSession(getKeyspaceName, StoreCluster("Test Cluster", Set(StoreHost(ExampleConfigurationSettings.cassandraIpAddress)))))  
-  val cassandrastore = new CQLCassandraCompositeStore(columnFamily, StoreInitializerTuples.rs, StoreInitializerTuples.rowKeyNames, StoreInitializerTuples.cs, StoreInitializerTuples.colKeyNames)(StoreInitializerTuples.valueSerializer) 
-  val store = new CassandraTupleStore(cassandrastore, (("", 0), Tuple1(2l))) 
+  val cassandrastore = new CQLCassandraCompositeStore[String :: Int :: HNil, Long :: HNil, String, 
+    CassandraPrimitive[String] :: CassandraPrimitive[Int] :: HNil, CassandraPrimitive[Long] :: HNil](
+        columnFamily, StoreInitializerTuples.rs, StoreInitializerTuples.rowKeyNames, StoreInitializerTuples.cs, StoreInitializerTuples.colKeyNames)(StoreInitializerTuples.valueSerializer) 
+  val store = new CassandraTupleStore[(String, Int), Tuple1[Long], String, String :: Int :: HNil, Long :: HNil,
+    CassandraPrimitive[String] :: CassandraPrimitive[Int] :: HNil, CassandraPrimitive[Long] :: HNil](cassandrastore, (("", 0), Tuple1(2l))) 
   override def prepareStore: Boolean = {
     CQLCassandraCompositeStore.createColumnFamily(columnFamily, rs, rowKeyNames, cs, colKeyNames, valueSerializer)
     true

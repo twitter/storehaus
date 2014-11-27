@@ -27,7 +27,9 @@ import scala.collection.mutable.ArrayBuffer
 import scala.collection.JavaConversions._
 import shapeless._
 import HList._
-import Traversables._
+import ops.hlist.Mapper
+import ops.hlist.Mapped
+import ops.hlist.ToList
 import Nat._
 import UnaryTCConstraint._
 
@@ -53,8 +55,8 @@ object CQLCassandraCompositeStore {
 	colkeyColumnNames: List[String],
 	valueSerializer: CassandraPrimitive[V],
 	valueColumnName: String = CQLCassandraConfiguration.DEFAULT_VALUE_COLUMN_NAME)
-	(implicit mrk: MapperAux[keyStringMapping.type, RS, MRKResult],
-       mck: MapperAux[keyStringMapping.type, CS, MCKResult],
+	(implicit mrk: Mapper.Aux[keyStringMapping.type, RS, MRKResult],
+       mck: Mapper.Aux[keyStringMapping.type, CS, MCKResult],
        tork: ToList[MRKResult, String],
        tock: ToList[MCKResult, String])= {
     createColumnFamilyWithToken[RS, CS, V, MRKResult, MCKResult, String](columnFamily, rowkeySerializers, rowkeyColumnNames,
@@ -71,8 +73,8 @@ object CQLCassandraCompositeStore {
 	tokenSerializer: Option[CassandraPrimitive[T]] = None,
 	tokenColumnName: String = CQLCassandraConfiguration.DEFAULT_TOKEN_COLUMN_NAME,
 	valueColumnName: String = CQLCassandraConfiguration.DEFAULT_VALUE_COLUMN_NAME)
-	(implicit mrk: MapperAux[keyStringMapping.type, RS, MRKResult],
-       mck: MapperAux[keyStringMapping.type, CS, MCKResult],
+	(implicit mrk: Mapper.Aux[keyStringMapping.type, RS, MRKResult],
+       mck: Mapper.Aux[keyStringMapping.type, CS, MCKResult],
        tork: ToList[MRKResult, String],
        tock: ToList[MCKResult, String])= {
       def createColumnListing(names: List[String], types: List[String]): String = names.size match {
@@ -108,8 +110,8 @@ class CQLCassandraCompositeStore[RK <: HList, CK <: HList, V, RS <: HList, CS <:
   batchType: BatchStatement.Type = CQLCassandraConfiguration.DEFAULT_BATCH_STATEMENT_TYPE,
   ttl: Option[Duration] = CQLCassandraConfiguration.DEFAULT_TTL_DURATION)
   (cassSerValue: CassandraPrimitive[V])(
-    implicit evrow: MappedAux[RK, CassandraPrimitive, RS],
-    evcol: MappedAux[CK, CassandraPrimitive, CS],
+    implicit evrow: Mapped.Aux[RK, CassandraPrimitive, RS],
+    evcol: Mapped.Aux[CK, CassandraPrimitive, CS],
     rowmap: AbstractCQLCassandraCompositeStore.Row2Result[RK, RS],
     colmap: AbstractCQLCassandraCompositeStore.Row2Result[CK, CS],
     a2cRow: AbstractCQLCassandraCompositeStore.Append2Composite[ArrayBuffer[Clause], RK, RS], 

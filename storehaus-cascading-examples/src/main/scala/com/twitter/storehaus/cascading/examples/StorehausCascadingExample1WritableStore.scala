@@ -22,7 +22,6 @@ import com.twitter.storehaus.cascading.{ StorehausCascadingInitializer, Storehau
 import scala.language.implicitConversions
 import shapeless._
 import HList._
-import Traversables._
 import Nat._
 import UnaryTCConstraint._
 

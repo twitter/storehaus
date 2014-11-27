@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 SEEBURGER AG
+ * Copyright 2014 Twitter, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -32,10 +32,11 @@ import java.util.ArrayList
 import scala.collection.immutable.Nil
 import scala.collection.JavaConverters._
 import scala.collection.JavaConversions._
-import shapeless.TypeOperators._
 import shapeless._
 import HList._
-import Traversables._
+import ops.hlist.Mapped
+import ops.hlist.Mapper
+import ops.hlist.ToList
 import Nat._
 import UnaryTCConstraint._
 import scala.collection.mutable.ArrayBuffer
@@ -55,8 +56,8 @@ object CQLCassandraLongStore {
 	colkeySerializers: CS,
 	colkeyColumnNames: List[String],
 	valueColumnName: String = CQLCassandraConfiguration.DEFAULT_VALUE_COLUMN_NAME)
-	(implicit mrk: MapperAux[keyStringMapping.type, RS, MRKResult],
-       mck: MapperAux[keyStringMapping.type, CS, MCKResult],
+	(implicit mrk: Mapper.Aux[keyStringMapping.type, RS, MRKResult],
+       mck: Mapper.Aux[keyStringMapping.type, CS, MCKResult],
        tork: ToList[MRKResult, String],
        tock: ToList[MCKResult, String])= {
       def createColumnListing(names: List[String], types: List[String]): String = names.size match {
@@ -92,8 +93,8 @@ class CQLCassandraLongStore[RK <: HList, CK <: HList, RS <: HList, CS <: HList] 
   batchType: BatchStatement.Type = CQLCassandraConfiguration.DEFAULT_BATCH_STATEMENT_TYPE)
     (readbeforeWrite: Boolean = true,
      sync: CassandraExternalSync = CQLCassandraConfiguration.DEFAULT_SYNC)
-  	(implicit evrow: MappedAux[RK, CassandraPrimitive, RS],
-  			evcol: MappedAux[CK, CassandraPrimitive, CS],
+  	(implicit evrow: Mapped.Aux[RK, CassandraPrimitive, RS],
+  			evcol: Mapped.Aux[CK, CassandraPrimitive, CS],
 		    rowmap: AbstractCQLCassandraCompositeStore.Row2Result[RK, RS],
 		    colmap: AbstractCQLCassandraCompositeStore.Row2Result[CK, CS],
   			a2cRow: AbstractCQLCassandraCompositeStore.Append2Composite[ArrayBuffer[Clause], RK, RS], 

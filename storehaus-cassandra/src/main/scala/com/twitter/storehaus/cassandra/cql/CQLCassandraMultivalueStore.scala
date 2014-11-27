@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 SEEBURGER AG
+ * Copyright 2014 Twitter, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -25,12 +25,11 @@ import java.util.concurrent.Executors
 import scala.collection.immutable.Nil
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.JavaConversions._
-import shapeless._
-import HList._
-import Traversables._
-import Nat._
-import UnaryTCConstraint._
-import FromTraversable._
+import shapeless.HList
+import shapeless.ops.hlist.{ Mapper, Mapped, ToList}
+import shapeless.UnaryTCConstraint.*->*
+import shapeless.ops.traversable._
+import shapeless.syntax.std.traversable._
 
 /**
  *  Cassandra store for multiple values which can be matched to columns in Cassandra.
@@ -49,9 +48,9 @@ object CQLCassandraMultivalueStore {
 	colkeyColumnNames: List[String],
 	valueSerializers: VS,
 	valueColumnNames: List[String])
-	(implicit mrk: MapperAux[keyStringMapping.type, RS, MRKResult],
-       mck: MapperAux[keyStringMapping.type, CS, MCKResult],
-       vss: MapperAux[keyStringMapping.type, VS, MVResult],
+	(implicit mrk: Mapper.Aux[keyStringMapping.type, RS, MRKResult],
+       mck: Mapper.Aux[keyStringMapping.type, CS, MCKResult],
+       vss: Mapper.Aux[keyStringMapping.type, VS, MVResult],
        tork: ToList[MRKResult, String],
        tock: ToList[MCKResult, String],
        tov: ToList[MVResult, String])= {
@@ -69,9 +68,9 @@ object CQLCassandraMultivalueStore {
 	valueColumnNames: List[String],
 	tokenSerializer: Option[CassandraPrimitive[T]] = None,
 	tokenColumnName: String = CQLCassandraConfiguration.DEFAULT_TOKEN_COLUMN_NAME)
-	(implicit mrk: MapperAux[keyStringMapping.type, RS, MRKResult],
-       mck: MapperAux[keyStringMapping.type, CS, MCKResult],
-       vss: MapperAux[keyStringMapping.type, VS, MVResult],
+	(implicit mrk: Mapper.Aux[keyStringMapping.type, RS, MRKResult],
+       mck: Mapper.Aux[keyStringMapping.type, CS, MCKResult],
+       vss: Mapper.Aux[keyStringMapping.type, VS, MVResult],
        tork: ToList[MRKResult, String],
        tock: ToList[MCKResult, String],
        tov: ToList[MVResult, String])= {
@@ -104,9 +103,9 @@ class CQLCassandraMultivalueStore[RK <: HList, CK <: HList, V <: HList, RS <: HL
   batchType: BatchStatement.Type = CQLCassandraConfiguration.DEFAULT_BATCH_STATEMENT_TYPE,
   ttl: Option[Duration] = CQLCassandraConfiguration.DEFAULT_TTL_DURATION)
   (cassSerValue: VS, valueColumnNameList: List[String])(
-    implicit evrow: MappedAux[RK, CassandraPrimitive, RS],
-    evcol: MappedAux[CK, CassandraPrimitive, CS],
-    evval: MappedAux[V, CassandraPrimitive, VS],
+    implicit evrow: Mapped.Aux[RK, CassandraPrimitive, RS],
+    evcol: Mapped.Aux[CK, CassandraPrimitive, CS],
+    evval: Mapped.Aux[V, CassandraPrimitive, VS],
     rowmap: AbstractCQLCassandraCompositeStore.Row2Result[RK, RS],
     colmap: AbstractCQLCassandraCompositeStore.Row2Result[CK, CS],
     a2cRow: AbstractCQLCassandraCompositeStore.Append2Composite[ArrayBuffer[Clause], RK, RS], 
@@ -115,7 +114,7 @@ class CQLCassandraMultivalueStore[RK <: HList, CK <: HList, V <: HList, RS <: HL
     csUTC: *->*[CassandraPrimitive]#λ[CS],
     vUTC: *->*[CassandraPrimitive]#λ[VS],
     vAsList: ToList[V, Any],
-    vsAsList: ToList[VS, CassandraPrimitive[Any]],
+    vsAsList: ToList[VS, Any],
     vsFromList: FromTraversable[V])
   extends AbstractCQLCassandraCompositeStore[RK, CK, V, RS, CS] (columnFamily, rowkeySerializer, rowkeyColumnNames,
     colkeySerializer, colkeyColumnNames, "", consistency, poolSize, batchType, ttl)
@@ -131,15 +130,14 @@ class CQLCassandraMultivalueStore[RK <: HList, CK <: HList, V <: HList, RS <: HL
   override protected def deleteColumns: String = valueColumnNameList.mkString(" , ")
   
   override protected def putValue(value: V, update: Update): Update.Assignments = { 
-    val sets = value.toList.zip(valueColumnNameList).map(colvalues => QueryBuilder.set(colvalues._2 , colvalues._1))
+    val sets = value.toList.zip(valueColumnNameList).map(colvalues => QueryBuilder.set(s""""${colvalues._2}"""", colvalues._1))
     sets.join(update.`with`(_))((clause, set) => set.and(clause))
   }
 
   override protected def getValue(result: ResultSet): Option[V] = Some(getRowValue(result.one()))
 
-  override def getRowValue(row: Row): V = {
-    cassSerValue.toList.zip(valueColumnNameList).map(sercol => sercol._1.fromRow(row, sercol._2).get).toHList[V].get
-  }
+  override def getRowValue(row: Row): V = cassSerValue.toList.zip(valueColumnNameList).
+    map(sercol => sercol._1.asInstanceOf[CassandraPrimitive[_]].fromRow(row, s""""${sercol._2}"""").get).toHList[V].get
   
   override def getColumnNamesString: String = {
     val sb = new StringBuilder
