@@ -1,6 +1,6 @@
 resolvers ++= Seq(
   "jgit-repo" at "http://download.eclipse.org/jgit/maven",
-  "sonatype-releases"  at "http://oss.sonatype.org/content/repositories/releases"
+  "sonatype-releases"  at "https://oss.sonatype.org/content/repositories/releases"
 )
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-ghpages" % "0.5.1")
