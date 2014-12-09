@@ -16,68 +16,78 @@
 
 package com.twitter.storehaus.elasticsearch
 
-import org.specs2.mutable.Specification
-import com.twitter.util.{Future, Await}
-import com.twitter.storehaus.FutureOps
 import org.elasticsearch.action.search.SearchRequestBuilder
 import org.elasticsearch.index.query.QueryBuilders._
 import org.elasticsearch.index.query.FilterBuilders._
 import org.json4s.{native, NoTypeHints}
+import org.scalatest.{Matchers, WordSpec}
 
-/**
- * @author Mansur Ashraf
- * @since 1/13/14
- */
-class ElasticSearchStoreSpecs extends Specification {
-  private implicit val formats = native.Serialization.formats(NoTypeHints)
+import com.twitter.util.{Future, Await}
+import com.twitter.storehaus.FutureOps
 
+class ElasticSearchStoreSpecs extends WordSpec with Matchers{
   private val person = Person("Joe", "Smith", 29)
 
   "ElasticSearch Store" should {
 
-    "Put a value" in new DefaultElasticContext {
-      private val key = "put_key"
+    "Put a value" in {
+      val context = new DefaultElasticContext
+      import context._
+
+      val key = "put_key"
       store.put((key, Some(person)))
 
       blockAndRefreshIndex
 
       val result = Await.result(store.get(key))
-      result === Some(person)
+      result shouldBe Some(person)
     }
 
-    "Retrieve a value that doesnt exist" in new DefaultElasticContext {
-      private val key = "put_key"
+    "Retrieve a value that doesnt exist" in  {
+      val context = new DefaultElasticContext
+      import context._
+
+      val key = "put_key"
       store.put((key, Some(person)))
 
       blockAndRefreshIndex
 
       val result = Await.result(store.get("missing_key"))
-      result === None
+      result shouldBe None
     }
 
-    "Update a value" in new DefaultElasticContext {
-      private val key = "update_key"
+    "Update a value" in {
+      val context = new DefaultElasticContext
+      import context._
+
+      val key = "update_key"
       store.put(key, Some(person))
       store.put(key, Some(person.copy(age = 30)))
 
       blockAndRefreshIndex
 
       val result = Await.result(store.get(key))
-      result === Some(person.copy(age = 30))
+      result shouldBe Some(person.copy(age = 30))
     }
 
-    "Delete a value" in new DefaultElasticContext {
-      private val key = "delete_key"
+    "Delete a value" in {
+      val context = new DefaultElasticContext
+      import context._
+
+      val key = "delete_key"
       store.put(key, Some(person))
       store.put(key, None)
 
       blockAndRefreshIndex
 
       val result = Await.result(store.get(key))
-      result === None
+      result shouldBe None
     }
 
-    "Put multiple values" in new DefaultElasticContext {
+    "Put multiple values" in {
+      val context = new DefaultElasticContext
+      import context._
+
       val key = "_put_key"
       val persons = (1 to 10).map(i => i + key -> Some(person.copy(age = i))).toMap
 
@@ -87,10 +97,13 @@ class ElasticSearchStoreSpecs extends Specification {
 
       val response = store.multiGet(persons.keySet)
       val result = Await.result(FutureOps.mapCollect(response))
-      result === persons
+      result shouldBe persons
     }
 
-    "Retrieve values that do not exist" in new DefaultElasticContext {
+    "Retrieve values that do not exist" in {
+      val context = new DefaultElasticContext
+      import context._
+
       val key = "_put_key"
       val persons = (1 to 10).map(i => i + key -> Some(person.copy(age = i))).toMap
 
@@ -100,10 +113,13 @@ class ElasticSearchStoreSpecs extends Specification {
 
       val response = store.multiGet(Set[String]())
       val result = Await.result(FutureOps.mapCollect(response))
-      result === Map[String,Future[Option[String]]]()
+      result shouldBe empty
     }
 
-    "Update multiple values" in new DefaultElasticContext {
+    "Update multiple values" in {
+      val context = new DefaultElasticContext
+      import context._
+
       val key = "_update_key"
 
       val persons = (1 to 10).map(i => i + key -> Some(person.copy(age = i))).toMap
@@ -115,10 +131,13 @@ class ElasticSearchStoreSpecs extends Specification {
 
       val response = store.multiGet(persons_updated.keySet)
       val result = Await.result(FutureOps.mapCollect(response))
-      result === persons_updated
+      result shouldBe persons_updated
     }
 
-    "Delete multiple values" in new DefaultElasticContext {
+    "Delete multiple values" in {
+      val context = new DefaultElasticContext
+      import context._
+
       val key = "_delete_key"
 
       val persons = (1 to 10).map(i => i + key -> Some(person.copy(age = i))).toMap
@@ -130,10 +149,12 @@ class ElasticSearchStoreSpecs extends Specification {
 
       val response = store.multiGet(deleted_persons.keySet)
       val result = Await.result(FutureOps.mapCollect(response))
-      result === deleted_persons
+      result shouldBe deleted_persons
     }
 
-    "Search for  values" in new DefaultElasticContext {
+    "Search for  values" in {
+      val context = new DefaultElasticContext
+      import context._
 
       val bookStore = ElasticSearchCaseClassStore[Book]("books", "programming", client)
       val books = Map(
@@ -150,9 +171,8 @@ class ElasticSearchStoreSpecs extends Specification {
       //search for a particular author
       val request1 = new SearchRequestBuilder(client).setQuery(termQuery("authors", "josh")).request()
       val response1 = Await.result(bookStore.queryable.get(request1))
-      response1 !== None
-      response1.get.head.name === "Effective Java"
-
+      response1 should not be empty
+      response1.get.head.name shouldBe "Effective Java"
 
       //find all the books published after 2001 where author is not Josh Bloch
 
@@ -165,9 +185,8 @@ class ElasticSearchStoreSpecs extends Specification {
         ).request()
 
       val response2 = Await.result(bookStore.queryable.get(request2))
-      response2 !== None
-      response2.get.size === 2
+      response2 should not be empty
+      response2.get should have size 2
     }
   }
-
 }

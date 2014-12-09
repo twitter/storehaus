@@ -16,20 +16,14 @@
 
 package com.twitter.storehaus.elasticsearch
 
-import org.elasticsearch.common.settings.ImmutableSettings
-import java.util.UUID
 import java.io.File
+import java.util.UUID
+
+import org.elasticsearch.common.settings.ImmutableSettings
 import org.elasticsearch.node.NodeBuilder._
-import org.specs2.specification.Scope
 import org.json4s.{native, NoTypeHints}
 
-
-/**
- * @author Mansur Ashraf
- * @since 1/13/14
- */
-trait DefaultElasticContext extends Scope {
-
+class DefaultElasticContext {
   val tempFile = File.createTempFile("elasticsearchtests", "tmp")
   val homeDir = new File(tempFile.getParent + "/" + UUID.randomUUID().toString)
   val test_index = "test_index"
@@ -53,7 +47,7 @@ trait DefaultElasticContext extends Scope {
       .setWaitForYellowStatus().execute().actionGet()
     node.client()
   }
-  private implicit val formats = native.Serialization.formats(NoTypeHints)
+  implicit val formats = native.Serialization.formats(NoTypeHints)
   lazy val store = ElasticSearchCaseClassStore[Person](test_index, test_type, client)
 
   def refreshIndex(): Unit = {

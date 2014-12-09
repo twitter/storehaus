@@ -16,27 +16,28 @@
 
 package com.twitter.storehaus.cache
 
-import org.specs2.mutable._
+import org.scalatest.{ WordSpec, Matchers }
 
-class LRUCacheTest extends Specification {
+class LRUCacheTest extends WordSpec with Matchers {
   def checkCache[K, V](pairs: Seq[(K, V)], m: Map[K, V])(implicit cache: Cache[K, V]) =
-    pairs.foldLeft(cache)(_ + _).toMap must be_==(m)
+    pairs.foldLeft(cache)(_ + _).toMap shouldBe m
 
-  "LRUCache works properly with threshold 2" in {
-    implicit val cache = Cache.lru[String, Int](2)
-    checkCache(
-      Seq("a" -> 1, "b" -> 2),
-      Map("a" -> 1, "b" -> 2)
-    )
-    checkCache(
-      Seq("a" -> 1, "b" -> 2, "c" -> 3),
-      Map("b" -> 2, "c" -> 3)
-    )
-    checkCache(
-      Seq("a" -> 1, "b" -> 2, "b" -> 3),
-      Map("a" -> 1, "b" -> 3)
-    )
-    ((cache + ("a" -> 1) + ("b" -> 2)).hit("a") + ("c" -> 3)).toMap
-      .must(be_==(Map("a" -> 1, "c" -> 3)))
+  "LRUCache" should {
+    "work properly with threshold 2" in {
+      implicit val cache = Cache.lru[String, Int](2)
+      checkCache(
+        Seq("a" -> 1, "b" -> 2),
+        Map("a" -> 1, "b" -> 2)
+      )
+      checkCache(
+        Seq("a" -> 1, "b" -> 2, "c" -> 3),
+        Map("b" -> 2, "c" -> 3)
+      )
+      checkCache(
+        Seq("a" -> 1, "b" -> 2, "b" -> 3),
+        Map("a" -> 1, "b" -> 3)
+      )
+      ((cache + ("a" -> 1) + ("b" -> 2)).hit("a") + ("c" -> 3)).toMap shouldBe Map("a" -> 1, "c" -> 3)
+    }
   }
 }
