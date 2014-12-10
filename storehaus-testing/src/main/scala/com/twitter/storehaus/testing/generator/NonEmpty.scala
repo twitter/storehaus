@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus.testing.generator
 
-import org.scalacheck.{ Choose, Gen }
+import org.scalacheck.Gen
 
 /** Generators for non-empty data */
 object NonEmpty {
@@ -38,12 +38,12 @@ object NonEmpty {
     } yield (str, opt)
 
     /** Generator for pairings of non-empty alpha strings to options of positive numerics */
-    def alphaStrPosNumericPair[T : Numeric : Choose]: Gen[(String, Option[T])] = for {
+    def alphaStrPosNumericPair[T : Numeric : Gen.Choose]: Gen[(String, Option[T])] = for {
       str <- NonEmpty.alphaStr
       opt <- Gen.posNum[T].flatMap(l => Gen.oneOf(Some(l), None))
     } yield (str, opt)
 
-    def numericPair[T : Numeric : Choose]: Gen[(T, Option[T])] = for {
+    def numericPair[T : Numeric : Gen.Choose]: Gen[(T, Option[T])] = for {
       num <- Gen.posNum[T]
       opt <- Gen.posNum[T].flatMap(l => Gen.oneOf(Some(l), None))
     } yield (num, opt)
@@ -53,11 +53,11 @@ object NonEmpty {
       Gen.listOfN(n, alphaStrPair)
 
     /** Generator for non-empty lists of (String, Option[T])'s */
-    def alphaStrNumerics[T : Numeric : Choose](n: Int = 10) =
+    def alphaStrNumerics[T : Numeric : Gen.Choose](n: Int = 10) =
       Gen.listOfN(n, alphaStrPosNumericPair[T])
 
     /** Genrator for non-empty lists of numerics (T, Option[T])'s */
-    def numerics[T : Numeric : Choose](n: Int = 10) =
+    def numerics[T : Numeric : Gen.Choose](n: Int = 10) =
       Gen.listOfN(n, numericPair[T])
   }
 }
