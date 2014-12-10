@@ -44,7 +44,7 @@ object StorehausBuild extends Build {
   val slf4jVersion = "1.6.6"
   val parquetVersion = "1.6.0rc4"
   val dfsDatastoresVersion = "1.3.4"
-  val scaldingVersion = "0.13.0"
+  val scaldingVersion = "0.12.0"
   val storehausVersion = "0.9.1"
   val utilVersion = "6.11.0"
   val finagleVersion = "6.12.2"
