@@ -26,17 +26,45 @@ import AssemblyKeys._
 
 
 object StorehausBuild extends Build {
-  def withCross(dep: ModuleID) =
-    dep cross CrossVersion.binaryMapped {
-      case "2.9.3" => "2.9.2" // TODO: hack because twitter hasn't built things against 2.9.3
-      case version if version startsWith "2.10" => "2.10" // TODO: hack because sbt is broken
-      case x => x
-    }
-
-  def specs2Import(scalaVersion: String) = scalaVersion match {
-      case version if version startsWith "2.9" => "org.specs2" %% "specs2" % "1.12.4.1" % "test"
-      case version if version startsWith "2.10" => "org.specs2" %% "specs2" % "1.13" % "test"
+  def scalaBinaryVersion(scalaVersion: String) = scalaVersion match {
+    case version if version startsWith "2.10" => "2.10"
+    case version if version startsWith "2.11" => "2.11"
+    case version if version startsWith "2.12" => "2.12"
+    case _ => sys.error("unknown error")
   }
+  def isScala210x(scalaVersion: String) = scalaBinaryVersion(scalaVersion) == "2.10"
+
+
+  val scalaTestVersion = "2.2.2"
+  val scalaCheckVersion = "1.11.5"
+  val hadoopVersion = "1.2.1"
+  val algebirdVersion = "0.8.2"
+  val bijectionVersion = "0.7.0"
+  val chillVersion = "0.5.1"
+  val slf4jVersion = "1.6.6"
+  val parquetVersion = "1.6.0rc4"
+  val dfsDatastoresVersion = "1.3.4"
+  val scaldingVersion = "0.12.0"
+  val storehausVersion = "0.9.1"
+  val utilVersion = "6.11.0"
+  val finagleVersion = "6.12.2"
+  val tormentaVersion = "0.7.0"
+  val hbaseVersion = "0.94.10"
+  val hravenVersion = "0.9.13"
+  val jacksonVersion = "2.4.2"
+  val hbaseAsynchBaseVersion = "1.4.1"
+  val stumbleuponAsyncVersion = "1.4.0"
+  val twitterKafkaVersion = "0.7.0"
+  val kafkaVersion = "0.8.0"
+  val mongodbCasbahVersion = "2.6.4"
+  val elasticsearchVersion = "0.90.9"
+  val json4sVersion = "3.2.6"
+  val googleFindbugsJsr305Version = "1.3.+"
+  val caliperVersion = "0.5-rc1"
+  val googleAllocationInstrumenterVersion = "2.0"
+  val googleGsonVersion = "1.7.1"
+  val specs2Version = "1.13"
+
   val extraSettings =
     Project.defaultSettings ++ Boilerplate.settings ++ assemblySettings ++ mimaDefaultSettings
 
@@ -57,12 +85,16 @@ object StorehausBuild extends Build {
 
   val sharedSettings = extraSettings ++ ciSettings ++ Seq(
     organization := "com.twitter",
-    scalaVersion := "2.9.3",
-    version := "0.9.1",
-    crossScalaVersions := Seq("2.9.3", "2.10.4"),
+    scalaVersion := "2.10.4",
+    version := "0.10.0-SNAPSHOT",
+    crossScalaVersions := Seq("2.10.4"),
     javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
     javacOptions in doc := Seq("-source", "1.6"),
-    libraryDependencies <+= scalaVersion(specs2Import(_)),
+    libraryDependencies ++= Seq(
+      "org.scalacheck" %% "scalacheck" % scalaCheckVersion % "test",
+      "org.scalatest" %% "scalatest" % scalaTestVersion % "test",
+      "org.specs2" %% "specs2" % specs2Version % "test"
+    ),
     resolvers ++= Seq(
       Opts.resolver.sonatypeSnapshots,
       Opts.resolver.sonatypeReleases,
@@ -117,12 +149,8 @@ object StorehausBuild extends Build {
   def youngestForwardCompatible(subProj: String) =
     Some(subProj)
       .filterNot(unreleasedModules.contains(_))
-      .map { s => "com.twitter" % ("storehaus-" + s + "_2.9.3") % "0.9.0" }
+      .map { s => "com.twitter" % ("storehaus-" + s + "_2.10") % "0.10.0" }
 
-  val algebirdVersion = "0.7.0"
-  val bijectionVersion = "0.6.3"
-  val utilVersion = "6.11.0"
-  val scaldingVersion = "0.11.1"
 
   lazy val storehaus = Project(
     id = "storehaus",
@@ -159,12 +187,12 @@ object StorehausBuild extends Build {
 
   lazy val storehausCache = module("cache").settings(
     libraryDependencies += "com.twitter" %% "algebird-core" % algebirdVersion,
-    libraryDependencies += withCross("com.twitter" %% "util-core" % utilVersion)
+    libraryDependencies += "com.twitter" %% "util-core" % utilVersion
   )
 
   lazy val storehausCore = module("core").settings(
     libraryDependencies ++= Seq(
-      withCross("com.twitter" %% "util-core" % utilVersion % "provided"),
+      "com.twitter" %% "util-core" % utilVersion % "provided",
       "com.twitter" %% "bijection-core" % bijectionVersion,
       "com.twitter" %% "bijection-util" % bijectionVersion
     )
@@ -182,19 +210,19 @@ object StorehausBuild extends Build {
       "com.twitter" %% "algebird-core" % algebirdVersion,
       "com.twitter" %% "bijection-core" % bijectionVersion,
       "com.twitter" %% "bijection-netty" % bijectionVersion,
-      Finagle.module("memcached")
+      "com.twitter" %% "finagle-memcached" % finagleVersion
     )
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
   lazy val storehausMySQL = module("mysql").settings(
-    libraryDependencies += Finagle.module("mysql")
+    libraryDependencies += "com.twitter" %% "finagle-mysql" % finagleVersion
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
   lazy val storehausRedis = module("redis").settings(
     libraryDependencies ++= Seq (
       "com.twitter" %% "bijection-core" % bijectionVersion,
       "com.twitter" %% "bijection-netty" % bijectionVersion,
-      Finagle.module("redis")
+      "com.twitter" %% "finagle-redis" % finagleVersion
     ),
     // we don't want various tests clobbering each others keys
     parallelExecution in Test := false
@@ -205,11 +233,11 @@ object StorehausBuild extends Build {
       "com.twitter" %% "algebird-core" % algebirdVersion,
       "com.twitter" %% "bijection-core" % bijectionVersion,
       "com.twitter" %% "bijection-hbase" % bijectionVersion ,
-      "org.hbase" % "asynchbase" % "1.4.1" % "provided->default" intransitive(),
-      "com.stumbleupon" % "async" % "1.4.0" % "provided->default" intransitive(),
-      "org.apache.hbase" % "hbase" % "0.94.6" % "provided->default" classifier "tests" classifier "",
-      "org.apache.hadoop" % "hadoop-core" % "1.2.0" % "provided->default",
-      "org.apache.hadoop" % "hadoop-test" % "1.2.0" % "test"
+      "org.hbase" % "asynchbase" %  hbaseAsynchBaseVersion % "provided->default" intransitive(),
+      "com.stumbleupon" % "async" % stumbleuponAsyncVersion % "provided->default" intransitive(),
+      "org.apache.hbase" % "hbase" % hbaseVersion % "provided->default" classifier "tests" classifier "",
+      "org.apache.hadoop" % "hadoop-core" % hadoopVersion % "provided->default",
+      "org.apache.hadoop" % "hadoop-test" % hadoopVersion % "test"
     ),
     parallelExecution in Test := false
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
@@ -230,7 +258,7 @@ object StorehausBuild extends Build {
     libraryDependencies ++= Seq (
       "com.twitter" %% "bijection-core" % bijectionVersion,
       "com.twitter" %% "bijection-avro" % bijectionVersion,
-      "com.twitter"%"kafka_2.9.2"%"0.7.0" % "provided" excludeAll(
+      "com.twitter" % "kafka_2.9.2" % twitterKafkaVersion % "provided" excludeAll(
         ExclusionRule("com.sun.jdmk","jmxtools"),
         ExclusionRule( "com.sun.jmx","jmxri"),
         ExclusionRule( "javax.jms","jms")
@@ -244,7 +272,7 @@ object StorehausBuild extends Build {
     libraryDependencies ++= Seq (
       "com.twitter" %% "bijection-core" % bijectionVersion,
       "com.twitter" %% "bijection-avro" % bijectionVersion,
-      "org.apache.kafka" % "kafka_2.9.2" % "0.8.0" % "provided" excludeAll(
+      "org.apache.kafka" % "kafka_2.9.2" % kafkaVersion % "provided" excludeAll(
         ExclusionRule(organization = "com.sun.jdmk"),
         ExclusionRule(organization = "com.sun.jmx"),
         ExclusionRule(organization = "javax.jms"))
@@ -256,16 +284,16 @@ object StorehausBuild extends Build {
   lazy val storehausMongoDB= module("mongodb").settings(
     libraryDependencies ++= Seq(
       "com.twitter" %% "bijection-core" % bijectionVersion,
-      "org.mongodb" %% "casbah" % "2.6.4"
+      "org.mongodb" %% "casbah" % mongodbCasbahVersion
     ),
     parallelExecution in Test := false
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
   lazy val storehausElastic = module("elasticsearch").settings(
     libraryDependencies ++= Seq (
-      "org.elasticsearch" % "elasticsearch" % "0.90.9",
-      "org.json4s" %% "json4s-native" % "3.2.6",
-      "com.google.code.findbugs" % "jsr305" % "1.3.+",
+      "org.elasticsearch" % "elasticsearch" % elasticsearchVersion,
+      "org.json4s" %% "json4s-native" % json4sVersion,
+      "com.google.code.findbugs" % "jsr305" % googleFindbugsJsr305Version,
       "com.twitter" %% "bijection-json4s" % bijectionVersion
     ),
     // we don't want various tests clobbering each others keys
@@ -279,15 +307,17 @@ object StorehausBuild extends Build {
     settings = sharedSettings ++ Seq(
       name := "storehaus-testing",
       previousArtifact := youngestForwardCompatible("testing"),
-      libraryDependencies ++= Seq("org.scalacheck" %% "scalacheck" % "1.10.0" withSources(),
-        withCross("com.twitter" %% "util-core" % utilVersion))
+      libraryDependencies ++= Seq(
+        "org.scalacheck" %% "scalacheck" % scalaCheckVersion withSources(),
+        "com.twitter" %% "util-core" % utilVersion
+      )
     )
   )
 
   lazy val storehausCaliper = module("caliper").settings(
-    libraryDependencies ++= Seq("com.google.caliper" % "caliper" % "0.5-rc1",
-      "com.google.code.java-allocation-instrumenter" % "java-allocation-instrumenter" % "2.0",
-      "com.google.code.gson" % "gson" % "1.7.1",
+    libraryDependencies ++= Seq("com.google.caliper" % "caliper" % caliperVersion,
+      "com.google.code.java-allocation-instrumenter" % "java-allocation-instrumenter" % googleAllocationInstrumenterVersion,
+      "com.google.code.gson" % "gson" % googleGsonVersion,
       "com.twitter" %% "bijection-core" % bijectionVersion,
       "com.twitter" %% "algebird-core" % algebirdVersion),
       javaOptions in run <++= (fullClasspath in Runtime) map { cp => Seq("-cp", sbt.Build.data(cp).mkString(":")) }
