@@ -57,9 +57,9 @@ object StorehausBuild extends Build {
 
   val sharedSettings = extraSettings ++ ciSettings ++ Seq(
     organization := "com.twitter",
-    scalaVersion := "2.9.3",
+    scalaVersion := "2.10.4",
     version := "0.9.1",
-    crossScalaVersions := Seq("2.9.3", "2.10.4"),
+    crossScalaVersions := Seq("2.10.4"),
     javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
     javacOptions in doc := Seq("-source", "1.6"),
     libraryDependencies <+= scalaVersion(specs2Import(_)),
@@ -117,14 +117,14 @@ object StorehausBuild extends Build {
   def youngestForwardCompatible(subProj: String) =
     Some(subProj)
       .filterNot(unreleasedModules.contains(_))
-      .map { s => "com.twitter" % ("storehaus-" + s + "_2.9.3") % "0.9.0" }
+      .map { s => "com.twitter" % ("storehaus-" + s + "_2.10") % "0.10.0" }
 
   val algebirdVersion = "0.7.0"
   val bijectionVersion = "0.6.3"
   val utilVersion = "6.11.0"
   val scaldingVersion = "0.11.1"
-
   lazy val storehaus = Project(
+
     id = "storehaus",
     base = file("."),
     settings = sharedSettings ++ DocGen.publishSettings
