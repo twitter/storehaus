@@ -100,6 +100,16 @@ object MemcacheStore {
     MergeableStore.fromStore(
       MemcacheStore.typed(client, keyPrefix, ttl, flag)
     )
+
+  /**
+   * Returns a Memcache-backed MergeableStore[K, V] that uses
+   * compare-and-swap with retries.
+   */
+  /*
+  def mergeableWithCas[K: Codec, V: Codec: Semigroup](client: Client,
+    ttl: Duration = DEFAULT_TTL, flag: Int = DEFAULT_FLAG)(implicit : MergeableStore[K, V] =
+    MergeableMemcacheStore[K, V](client, ttl, flag)
+  */
 }
 
 class MemcacheStore(val client: Client, ttl: Duration, flag: Int)
