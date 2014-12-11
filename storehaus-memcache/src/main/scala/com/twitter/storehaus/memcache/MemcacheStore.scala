@@ -16,6 +16,7 @@
 
 package com.twitter.storehaus.memcache
 
+import com.twitter.algebird.Monoid
 import com.twitter.algebird.Semigroup
 import com.twitter.bijection.{ Bijection, Codec, Injection }
 import com.twitter.bijection.netty.Implicits._
@@ -92,10 +93,10 @@ object MemcacheStore {
   /**
     * Returns a Memcache-backed MergeableStore[K, V] that uses
     * implicitly-supplied Injection instances from K and V ->
-    * Array[Byte] to manage type conversion. The Semigroup[V] is also
+    * Array[Byte] to manage type conversion. The Monoid[V] is also
     * pulled in implicitly.
     */
-  def mergeable[K: Codec, V: Codec: Semigroup](client: Client, keyPrefix: String,
+  def mergeable[K: Codec, V: Codec: Monoid](client: Client, keyPrefix: String,
     ttl: Duration = DEFAULT_TTL, flag: Int = DEFAULT_FLAG): MergeableStore[K, V] =
     MergeableStore.fromStore(
       MemcacheStore.typed(client, keyPrefix, ttl, flag)
@@ -105,11 +106,9 @@ object MemcacheStore {
    * Returns a Memcache-backed MergeableStore[K, V] that uses
    * compare-and-swap with retries.
    */
-  /*
-  def mergeableWithCas[K: Codec, V: Codec: Semigroup](client: Client,
-    ttl: Duration = DEFAULT_TTL, flag: Int = DEFAULT_FLAG)(implicit : MergeableStore[K, V] =
-    MergeableMemcacheStore[K, V](client, ttl, flag)
-  */
+  def mergeableWithCAS[K, V: Semigroup](client: Client,
+    ttl: Duration = DEFAULT_TTL, flag: Int = DEFAULT_FLAG)(kfn: K => String, inj: Injection[V, ChannelBuffer]): MergeableStore[K, V] =
+    MergeableMemcacheStore[K, V](client, ttl, flag)(kfn, inj, implicitly[Semigroup[V]])
 }
 
 class MemcacheStore(val client: Client, ttl: Duration, flag: Int)
