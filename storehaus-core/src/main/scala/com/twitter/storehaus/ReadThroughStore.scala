@@ -72,12 +72,17 @@ class ReadThroughStore[K, V](backingStore: ReadableStore[K, V], cache: Store[K, 
         val hits = responses.filter { !_._2.isEmpty }
         val missedKeys = responses.filter { _._2.isEmpty }.keySet
 
-        FutureOps.mapCollect(backingStore.multiGet(missedKeys ++ failedKeys)).flatMap { storeResult =>
-          // write fetched keys to cache, best effort
-          mutex.acquire.flatMap { p =>
-            FutureOps.mapCollect(cache.multiPut(storeResult))(FutureCollector.bestEffort[(K1, Unit)])
-              .map { u => hits ++ storeResult }
-              .ensure { p.release }
+        val remaining = missedKeys ++ failedKeys
+        if (remaining.isEmpty) {
+          Future.value(hits) // no cache misses
+        } else {
+          FutureOps.mapCollect(backingStore.multiGet(remaining)).flatMap { storeResult =>
+            // write fetched keys to cache, best effort
+            mutex.acquire.flatMap { p =>
+              FutureOps.mapCollect(cache.multiPut(storeResult))(FutureCollector.bestEffort[(K1, Unit)])
+                .map { u => hits ++ storeResult }
+                .ensure { p.release }
+            }
           }
         }
       }
