@@ -106,9 +106,10 @@ object MemcacheStore {
    * Returns a Memcache-backed MergeableStore[K, V] that uses
    * compare-and-swap with retries.
    */
-  def mergeableWithCAS[K, V: Semigroup](client: Client,
-    ttl: Duration = DEFAULT_TTL, flag: Int = DEFAULT_FLAG)(kfn: K => String, inj: Injection[V, ChannelBuffer]): MergeableStore[K, V] =
-    MergeableMemcacheStore[K, V](client, ttl, flag)(kfn, inj, implicitly[Semigroup[V]])
+  def mergeableWithCAS[K, V: Semigroup](client: Client, retries: Int,
+    ttl: Duration = DEFAULT_TTL, flag: Int = DEFAULT_FLAG)(kfn: K => String,
+      inj: Injection[V, ChannelBuffer]): MergeableStore[K, V] =
+    MergeableMemcacheStore[K, V](client, ttl, flag, retries)(kfn, inj, implicitly[Semigroup[V]])
 }
 
 class MemcacheStore(val client: Client, ttl: Duration, flag: Int)
