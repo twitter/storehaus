@@ -42,7 +42,7 @@ object MergeableMemcacheStore {
    */
   def apply[K, V](client: Client, ttl: Duration = MemcacheStore.DEFAULT_TTL, flag: Int = MemcacheStore.DEFAULT_FLAG,
       maxRetries: Int = MAX_RETRIES)
-      (kfn: K => String, inj: Injection[V, ChannelBuffer], semigroup: Semigroup[V]) =
+      (implicit kfn: K => String, inj: Injection[V, ChannelBuffer], semigroup: Semigroup[V]) =
     new MergeableMemcacheStore[K, V](MemcacheStore(client, ttl, flag), maxRetries)(kfn, inj, semigroup)
 }
 
