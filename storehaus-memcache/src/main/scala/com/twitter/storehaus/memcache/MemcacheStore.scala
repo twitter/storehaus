@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus.memcache
 
-import com.twitter.algebird.Monoid
+import com.twitter.algebird.Semigroup
 import com.twitter.bijection.{ Bijection, Codec, Injection }
 import com.twitter.bijection.netty.Implicits._
 import com.twitter.conversions.time._
@@ -92,10 +92,10 @@ object MemcacheStore {
   /**
     * Returns a Memcache-backed MergeableStore[K, V] that uses
     * implicitly-supplied Injection instances from K and V ->
-    * Array[Byte] to manage type conversion. The Monoid[V] is also
+    * Array[Byte] to manage type conversion. The Semigroup[V] is also
     * pulled in implicitly.
     */
-  def mergeable[K: Codec, V: Codec: Monoid](client: Client, keyPrefix: String,
+  def mergeable[K: Codec, V: Codec: Semigroup](client: Client, keyPrefix: String,
     ttl: Duration = DEFAULT_TTL, flag: Int = DEFAULT_FLAG): MergeableStore[K, V] =
     MergeableStore.fromStore(
       MemcacheStore.typed(client, keyPrefix, ttl, flag)
