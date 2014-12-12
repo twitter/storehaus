@@ -104,10 +104,12 @@ object MemcacheStore {
 
   /**
    * Returns a Memcache-backed MergeableStore[K, V] that uses
-   * compare-and-swap with retries.
+   * compare-and-swap with retries. It supports multiple concurrent
+   * writes to the same key and is useful when one thread/node does not
+   * own a key space.
    */
   def mergeableWithCAS[K, V: Semigroup](client: Client, retries: Int,
-    ttl: Duration = DEFAULT_TTL, flag: Int = DEFAULT_FLAG)(kfn: K => String,
+    ttl: Duration = DEFAULT_TTL, flag: Int = DEFAULT_FLAG)(implicit kfn: K => String,
       inj: Injection[V, ChannelBuffer]): MergeableStore[K, V] =
     MergeableMemcacheStore[K, V](client, ttl, flag, retries)(kfn, inj, implicitly[Semigroup[V]])
 }

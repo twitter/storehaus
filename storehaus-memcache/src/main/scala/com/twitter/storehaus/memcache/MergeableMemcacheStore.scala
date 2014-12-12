@@ -34,6 +34,12 @@ object MergeableMemcacheStore {
   // this is to support multiple concurrent writers
   val MAX_RETRIES = 10
 
+  /**
+   * Returns a Memcache-backed MergeableStore[K, V] that uses
+   * compare-and-swap with retries. It supports multiple concurrent
+   * writes to the same key and is useful when one thread/node does not
+   * own a key space.
+   */
   def apply[K, V](client: Client, ttl: Duration = MemcacheStore.DEFAULT_TTL, flag: Int = MemcacheStore.DEFAULT_FLAG,
       maxRetries: Int = MAX_RETRIES)
       (kfn: K => String, inj: Injection[V, ChannelBuffer], semigroup: Semigroup[V]) =
