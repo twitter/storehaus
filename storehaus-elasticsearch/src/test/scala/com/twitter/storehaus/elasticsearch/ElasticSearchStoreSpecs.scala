@@ -29,6 +29,8 @@ import org.json4s.{native, NoTypeHints}
  * @since 1/13/14
  */
 class ElasticSearchStoreSpecs extends Specification {
+  sequential
+
   private implicit val formats = native.Serialization.formats(NoTypeHints)
 
   private val person = Person("Joe", "Smith", 29)
