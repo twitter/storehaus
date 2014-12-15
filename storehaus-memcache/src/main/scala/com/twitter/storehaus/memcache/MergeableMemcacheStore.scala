@@ -42,8 +42,8 @@ object MergeableMemcacheStore {
    */
   def apply[K, V](client: Client, ttl: Duration = MemcacheStore.DEFAULT_TTL, flag: Int = MemcacheStore.DEFAULT_FLAG,
       maxRetries: Int = MAX_RETRIES)
-      (implicit kfn: K => String, inj: Injection[V, ChannelBuffer], semigroup: Semigroup[V]) =
-    new MergeableMemcacheStore[K, V](MemcacheStore(client, ttl, flag), maxRetries)(kfn, inj, semigroup)
+      (kfn: K => String)(implicit inj: Injection[V, ChannelBuffer], semigroup: Semigroup[V]) =
+    new MergeableMemcacheStore[K, V](MemcacheStore(client, ttl, flag), maxRetries)(kfn)(inj, semigroup)
 }
 
 /** Returned when merge fails after a certain number of retries */
@@ -57,8 +57,8 @@ class MergeFailedException(val key: String)
  * see a performance hit if there are too many concurrent writes to a hot key.
  * The solution is to group by a hot key, and use only a single (or few) writers to that key.
  */
-class MergeableMemcacheStore[K, V](underlying: MemcacheStore, maxRetries: Int)(implicit kfn: K => String,
-    inj: Injection[V, ChannelBuffer],
+class MergeableMemcacheStore[K, V](underlying: MemcacheStore, maxRetries: Int)(kfn: K => String)
+    (implicit inj: Injection[V, ChannelBuffer],
     override val semigroup: Semigroup[V])
   extends ConvertedStore[String, K, ChannelBuffer, V](underlying)(kfn)(inj)
   with MergeableStore[K, V] {

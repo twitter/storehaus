@@ -84,7 +84,7 @@ object MergeableMemcacheStoreProperties extends Properties("MergeableMemcacheSto
     val client = Client("localhost:11211")
     val injection = Injection.connect[Long, String, Array[Byte], ChannelBuffer]
     val semigroup = implicitly[Semigroup[Long]]
-    val store = MergeableMemcacheStore[String, Long](client)(identity, injection, semigroup)
+    val store = MergeableMemcacheStore[String, Long](client)(identity)(injection, semigroup)
 
     putAndGetStoreTest(store) && mergeStoreTest(store)
   }

@@ -108,9 +108,9 @@ object MemcacheStore {
    * own a key space.
    */
   def mergeableWithCAS[K, V: Semigroup](client: Client, retries: Int,
-    ttl: Duration = DEFAULT_TTL, flag: Int = DEFAULT_FLAG)(implicit kfn: K => String,
-      inj: Injection[V, ChannelBuffer]): MergeableStore[K, V] =
-    MergeableMemcacheStore[K, V](client, ttl, flag, retries)(kfn, inj, implicitly[Semigroup[V]])
+    ttl: Duration = DEFAULT_TTL, flag: Int = DEFAULT_FLAG)(kfn: K => String)
+      (implicit inj: Injection[V, ChannelBuffer]): MergeableStore[K, V] =
+    MergeableMemcacheStore[K, V](client, ttl, flag, retries)(kfn)(inj, implicitly[Semigroup[V]])
 }
 
 class MemcacheStore(val client: Client, ttl: Duration, flag: Int)
