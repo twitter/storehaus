@@ -79,6 +79,8 @@ class CassandraSplittingMechanism[K, V, U <: CassandraCascadingInitializer[K, V]
     // for some reason the java driver loses this information, so we re-set the default as a hack
     CqlConfigHelper.setInputMinSimultReqPerConnections(conf, "5")
     CqlConfigHelper.setInputMaxSimultReqPerConnections(conf, "128")
+    // CQL-Cassandra-Hadoop is buggy right now, so we double the input-size compared with the default one
+    // see https://github.com/AndreasPetter/cassandra-hadoop-vnodes for an alternative
     CqlConfigHelper.setInputCQLPageRowSize(conf, (2 * ConfigHelper.getInputSplitSize(conf)).toString)
     // CqlConfigHelper.setInputCql(conf, storeinit.getUserDefinedWhereClauses(readVersion))
     storesplit.recordReader = new CqlRecordReader

@@ -8,18 +8,20 @@ import org.apache.hadoop.io.Writable
 
 class SplittableQueryableStore[K, V, Q <: Writable, U <: QueryableStore[Q, (K, V)] with ReadableStore[K, V]]
 		(store: U, splittingFunction: (Q, Int, Option[Long]) => Seq[Q], val query: Q, val version: Option[Long] = None) 
-    extends SplittableStore[K, V, Q, SplittableQueryableStore[K, V, Q, U]] 
+    extends SplittableStore[K, V, Q] 
     with QueryableStore[Q, (K, V)] 
     with ReadableStoreProxy[K, V] {
 
   override def self = store
 
-  override def getSplits(numberOfSplitsHint: Int): Seq[SplittableQueryableStore[K, V, Q, U]] = {
+  def getWritable: Q = query
+  
+  override def getSplits(numberOfSplitsHint: Int): Seq[SplittableStore[K, V, Q]] = {
     val queries = splittingFunction(query, numberOfSplitsHint, version)
     queries.map(qu => getSplit(qu, version))
   }
 
-  override def getSplit(predicate: Q, version: Option[Long]): SplittableQueryableStore[K, V, Q, U] = {
+  override def getSplit(predicate: Q, version: Option[Long]): SplittableStore[K, V, Q] = {
     new SplittableQueryableStore[K, V, Q, U](store, splittingFunction, predicate, version).asInstanceOf[SplittableQueryableStore[K, V, Q, U]]
   }
 
@@ -31,6 +33,6 @@ class SplittableQueryableStore[K, V, Q <: Writable, U <: QueryableStore[Q, (K, V
 
   override def queryable: ReadableStore[Q, Seq[(K, V)]] = store.queryable
   
-  override def getInputSplits(stores: Seq[SplittableQueryableStore[K, V, Q, U]], tapid: String, version: Option[Long]): Array[SplittableStoreInputSplit[K, V, Q]] =
-    stores.map(sto => new SplittableStoreInputSplit[K, V, Q](tapid, sto.query, version)).toArray
+  override def getInputSplits(stores: Seq[SplittableStore[K, V, Q]], tapid: String, version: Option[Long]): Array[SplittableStoreInputSplit[K, V, Q]] =
+    stores.map(sto => new SplittableStoreInputSplit[K, V, Q](tapid, sto.getWritable, version)).toArray
 }

@@ -37,8 +37,9 @@ class SplittableStoreInputSplit[K, V, Q <: Writable](var tapid: String, var spli
     val classname = in.readUTF()
     val loadermirror = runtimeMirror(getClass.getClassLoader)
     val cm = getReflectiveClass(classname)
-	val method = cm.symbol.typeSignature.member(nme.CONSTRUCTOR).asMethod
-	val constr = cm.reflectConstructor(method)
+	val methods = cm.symbol.typeSignature.member(nme.CONSTRUCTOR).asTerm.alternatives
+	val method = methods.find(cstr => cstr.asMethod.paramss(0).size == 0)
+	val constr = cm.reflectConstructor(method.get.asMethod)
 	splitParams = constr().asInstanceOf[Q]
     splitParams.readFields(in)
   }

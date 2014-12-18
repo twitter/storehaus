@@ -11,7 +11,7 @@ import org.slf4j.{ Logger, LoggerFactory }
 /**
  * SplittableStore based implementation of a SplittingMechanism
  */
-class SplittableStoreSplittingMechanism[K, V, Q <: Writable, T <: SplittableStore[K, V, Q, T], U <: AbstractSplittableStoreCascadingInitializer[K, V, Q, T]](override val conf: JobConf) 
+class SplittableStoreSplittingMechanism[K, V, Q <: Writable, T <: SplittableStore[K, V, Q], U <: AbstractSplittableStoreCascadingInitializer[K, V, Q, T]](override val conf: JobConf) 
 	extends StorehausSplittingMechanism[K, V, U](conf: JobConf) {
   @transient private val log = LoggerFactory.getLogger(classOf[SplittableStoreSplittingMechanism[K, V, Q, T, U]])
   
@@ -43,7 +43,7 @@ class SplittableStoreSplittingMechanism[K, V, Q <: Writable, T <: SplittableStor
   
   override def fillRecord(split: InputSplit, key: Instance[K], value: Instance[V]): Boolean = {
     val storesplit = getStorehausSplit(split)
-    if(!storesplit.spool.isEmpty) {
+    if(!(storesplit.spool.isEmpty || storesplit.spool.get.isEmpty)) {
       val (keyObj, valueObj) = storesplit.spool.get.head
       log.debug(s"Filling record for StorehausTap with id $tapid with value=$valueObj and key=$keyObj into store " + storeinit) 
       key.set(keyObj)

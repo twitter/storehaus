@@ -100,7 +100,7 @@ class CQLCassandraStoreTupleValues[K: CassandraPrimitive, V <: Product, VL <: HL
   override def withPutTtl(ttl: Duration): CQLCassandraStoreTupleValues[K, V, VL, VS] = new CQLCassandraStoreTupleValues[K, V, VL, VS](columnFamily, 
       valueColumnNames, valueSerializers, keyColumnName, consistency, poolSize, batchType, Some(ttl))
 
-  protected def deleteColumns: String = valueColumnNames.mkString(" , ")
+  protected def deleteColumns: Option[String] = Some(valueColumnNames.mkString(" , "))
   
   /**
    * puts will not delete single columns if they are set to None. But it will delete all columns if the
@@ -138,7 +138,7 @@ class CQLCassandraStoreTupleValues[K: CassandraPrimitive, V <: Product, VL <: HL
   override def getCASStore[T](tokenColumnName: String = CQLCassandraConfiguration.DEFAULT_TOKEN_COLUMN_NAME)(
       implicit equiv: Equiv[T], cassTokenSerializer: CassandraPrimitive[T], tokenFactory: TokenFactory[T]): CASStore[T, K, V] with IterableStore[K, V] = new CQLCassandraStoreTupleValues[K, V, VL, VS](
       columnFamily, valueColumnNames, valueSerializers, keyColumnName, consistency, poolSize, batchType, ttl) with CassandraCASStoreSimple[T, K, V] {
-    override protected def deleteColumns: String = s"${super.deleteColumns} , $tokenColumnName"
+    override protected def deleteColumns: Option[String] = Some(s"${super.deleteColumns} , $tokenColumnName")
     override protected def createPutQuery[K1 <: K](kv: (K1, V)) = super.createPutQuery(kv).value(tokenColumnName, tokenFactory.createNewToken)    
     override def cas(token: Option[T], kv: (K, V))(implicit ev1: Equiv[T]): Future[Boolean] = { 
       def putQueryConversion(kv: (K, Option[V])): BuiltStatement = createPutQuery[K](kv._1, kv._2.get)  

@@ -23,20 +23,22 @@ import org.apache.hadoop.mapred.InputSplit
 /**
  * Idea: split store into multiple sub-stores which are essentially splits on the store.
  * 
- * i.e. simplification of c.f. https://github.com/twitter/storehaus/pull/191
+ * i.e. simplification of https://github.com/twitter/storehaus/pull/191
  */
-trait SplittableStore[K, V, Q <: Writable, T <: SplittableStore[K, V, Q, T]] {
+trait SplittableStore[K, V, Q <: Writable] {
 
+  def getWritable: Q
+  
   /**
    * return a set of splits from this SplittableStore
    * the Int param is just a hint similar to InputFormat from Hadoop
    */
-  def getSplits(numberOfSplitsHint: Int): Seq[T]
+  def getSplits(numberOfSplitsHint: Int): Seq[SplittableStore[K, V, Q]]
 
   /**
    * get a single split (Store) from this representation of a set of keys
    */
-  def getSplit(predicate: Q, version: Option[Long]): T
+  def getSplit(predicate: Q, version: Option[Long]): SplittableStore[K, V, Q]
   
   /**
    * enumerates keys in this SplittableStore
@@ -46,5 +48,5 @@ trait SplittableStore[K, V, Q <: Writable, T <: SplittableStore[K, V, Q, T]] {
   /**
    * converts SplittableStores into their InputSplit counterparts
    */
-  def getInputSplits(stores: Seq[T], tapid: String, version: Option[Long]): Array[SplittableStoreInputSplit[K, V, Q]]
+  def getInputSplits(stores: Seq[SplittableStore[K, V, Q]], tapid: String, version: Option[Long]): Array[SplittableStoreInputSplit[K, V, Q]]
 }

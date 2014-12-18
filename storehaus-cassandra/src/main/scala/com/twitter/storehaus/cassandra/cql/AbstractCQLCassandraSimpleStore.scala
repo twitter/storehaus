@@ -40,7 +40,7 @@ abstract class AbstractCQLCassandraSimpleStore[K : CassandraPrimitive, V] (
   
   val keySerializer = implicitly[CassandraPrimitive[K]]
   
-  protected def deleteColumns: String
+  protected def deleteColumns: Option[String]
   
   protected def createPutQuery[K1 <: K](kv: (K1, V)): Insert
 
@@ -59,11 +59,10 @@ abstract class AbstractCQLCassandraSimpleStore[K : CassandraPrimitive, V] (
     	    }
     	    mutator.add(builder)
     	  }
-    	  case (key, None) => mutator.add(
-    	      QueryBuilder
-    	        .delete(deleteColumns)
-    	        .from(columnFamily.getName)
-    	        .where(QueryBuilder.eq(keyColumnName, key)))
+    	  case (key, None) => mutator.add(deleteColumns match {
+    	    case None => QueryBuilder.delete().from(columnFamily.getName).where(QueryBuilder.eq(keyColumnName, key))
+    	    case Some(cols) => QueryBuilder.delete(cols).from(columnFamily.getName).where(QueryBuilder.eq(keyColumnName, key))
+    	  })
     	}
     	mutator.setConsistencyLevel(consistency)
     	columnFamily.session.getSession.execute(mutator)

@@ -363,20 +363,24 @@ object StorehausBuild extends Build {
     "cascading" % "cascading-hadoop" % cascadingVersion,
     "org.slf4j" % "slf4j-api" % "1.7.5",
     real210Version("com.chuusai" %% "shapeless" % "2.0.0"),
-    "org.apache.hadoop" % "hadoop-core" % hadoopVersion
+    "org.apache.hadoop" % "hadoop-core" % hadoopVersion,
+    "com.twitter" % "chill-hadoop" % "0.5.1"
   )
 
   lazy val storehausCascadingExamples = module("cascading-examples").settings(
     skip in test := !isScala210x(scalaVersion.value),
     skip in compile := !isScala210x(scalaVersion.value),
     skip in doc := !isScala210x(scalaVersion.value),
-    mainClass in assembly := Some("com.twitter.storehaus.cascading.examples.StorehausCascadingCassandraTuplesExample"),
     mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) => {
         case x if x startsWith "javax/servlet" => MergeStrategy.first
         case x if x startsWith "javax/xml/stream/" => MergeStrategy.last
         case x if x startsWith "org/apache/commons/beanutils/" => MergeStrategy.last
         case x if x startsWith "org/apache/commons/collections/" => MergeStrategy.last
         case x if x startsWith "org/apache/jasper/" => MergeStrategy.last
+        case x if x startsWith "com/twitter/common/args/apt/" => MergeStrategy.last
+        case x if x startsWith "org/slf4j/" => MergeStrategy.first
+        case x if x startsWith "com/esotericsoftware/minlog" => MergeStrategy.first
+        case x if x startsWith "org/objectweb/asm" => MergeStrategy.first
         case x => old(x)
       }
     },
@@ -384,7 +388,7 @@ object StorehausBuild extends Build {
     libraryDependencies ++= cascadingExampleDeps(scalaVersion.value),
     publishArtifact := false,
     parallelExecution in Test := false
-  ).dependsOn(storehausCore, storehausAlgebra % "test->test;compile->compile", storehausCascading, storehausCassandra)
+  ).dependsOn(storehausCore, storehausAlgebra % "test->test;compile->compile", storehausCascading, storehausCassandra, storehausMemcache)
 
   lazy val storehausHttp = module("http").settings(
     libraryDependencies ++= Seq(

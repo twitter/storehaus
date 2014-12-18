@@ -59,11 +59,6 @@ object StoreInitializerTuples
   val colKeyNames = List("otherlongnumber")
   val valueSerializer = implicitly[CassandraPrimitive[String]]
   
-  type RK = String :: Int :: HNil
-  type CK = Long :: HNil
-  type RS = CassandraPrimitive[String] :: CassandraPrimitive[Int] :: HNil
-  type CS = CassandraPrimitive[Long] :: HNil
-  
   // create store
   val cassandrastore = new CQLCassandraCompositeStore[String :: Int :: HNil, Long :: HNil, String, 
     CassandraPrimitive[String] :: CassandraPrimitive[Int] :: HNil, CassandraPrimitive[Long] :: HNil](columnFamily, rs, rowKeyNames, cs, colKeyNames)(valueSerializer) 

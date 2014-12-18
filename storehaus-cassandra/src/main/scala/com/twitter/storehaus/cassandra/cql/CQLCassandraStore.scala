@@ -79,7 +79,7 @@ class CQLCassandraStore[K : CassandraPrimitive, V : CassandraPrimitive] (
   override def withPutTtl(ttl: Duration): CQLCassandraStore[K, V] = new CQLCassandraStore(columnFamily, 
       valueColumnName, keyColumnName, consistency, poolSize, batchType, Some(ttl))
   
-  protected def deleteColumns: String = valueColumnName
+  protected def deleteColumns: Option[String] = Some(valueColumnName)
   
   protected def createPutQuery[K1 <: K](kv: (K1, V)) = {
     val (key, value) = kv
@@ -103,7 +103,7 @@ class CQLCassandraStore[K : CassandraPrimitive, V : CassandraPrimitive] (
   override def getCASStore[T](tokenColumnName: String = CQLCassandraConfiguration.DEFAULT_TOKEN_COLUMN_NAME)(
       implicit equiv: Equiv[T], cassTokenSerializer: CassandraPrimitive[T], tokenFactory: TokenFactory[T]): CASStore[T, K, V] with IterableStore[K, V] = new CQLCassandraStore[K, V](
       columnFamily, valueColumnName, keyColumnName, consistency, poolSize, batchType, ttl) with CassandraCASStoreSimple[T, K, V] {
-    override protected def deleteColumns: String = s"$valueColumnName , $tokenColumnName"
+    override protected def deleteColumns: Option[String] = Some(s"$valueColumnName , $tokenColumnName")
     override protected def createPutQuery[K1 <: K](kv: (K1, V)) = super.createPutQuery(kv).value(tokenColumnName, tokenFactory.createNewToken)    
     override def cas(token: Option[T], kv: (K, V))(implicit ev1: Equiv[T]): Future[Boolean] = { 
       def putQueryConversion(kv: (K, Option[V])): BuiltStatement = createPutQuery[K](kv._1, kv._2.get)  
