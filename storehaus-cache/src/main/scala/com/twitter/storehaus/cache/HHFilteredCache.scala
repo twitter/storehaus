@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus.cache
 
-import com.twitter.algebird.{ Semigroup, Monoid, Group, CMSHash  }
+import com.twitter.algebird.{ Semigroup, Monoid, Group, CMSHash, CMSHasherImplicits}
 import com.twitter.util.Future
 
 
@@ -41,6 +41,8 @@ object HeavyHittersPercent {
 }
 
 sealed class ApproxHHTracker[K](hhPct: HeavyHittersPercent, updateFreq: WriteOperationUpdateFrequency, roFreq: RollOverFrequencyMS) {
+  import CMSHasherImplicits._
+
   private[this] final val WIDTH = 1000
   private[this] final val DEPTH = 4
   private[this] final val hh = new java.util.HashMap[K, Long]()
@@ -53,9 +55,9 @@ sealed class ApproxHHTracker[K](hhPct: HeavyHittersPercent, updateFreq: WriteOpe
   private[this] var nextRollOver: Long = System.currentTimeMillis + roFreq.toLong
   private[this] final val updateOps = new java.util.concurrent.atomic.AtomicInteger(0)
 
-  private[this] final val hashes: IndexedSeq[CMSHash] = {
+  private[this] final val hashes: IndexedSeq[CMSHash[Long]] = {
     val r = new scala.util.Random(5)
-    (0 until DEPTH).map { _ => CMSHash(r.nextInt, 0, WIDTH) }
+    (0 until DEPTH).map { _ => CMSHash[Long](r.nextInt, 0, WIDTH) }
   }.toIndexedSeq
 
   @inline
