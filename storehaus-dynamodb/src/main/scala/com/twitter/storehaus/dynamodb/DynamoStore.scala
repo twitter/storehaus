@@ -23,6 +23,7 @@ import com.twitter.util.{ Future, FuturePool }
 import com.twitter.storehaus.Store
 
 import com.amazonaws.auth.BasicAWSCredentials
+import com.amazonaws.regions.{ Region, Regions }
 import com.amazonaws.services.dynamodbv2.{ AmazonDynamoDBClient, AmazonDynamoDB }
 import com.amazonaws.services.dynamodbv2.model._
 
@@ -34,19 +35,25 @@ import AwsBijections._
 
 object DynamoStore {
 
-  def apply(awsAccessKey: String, awsSecretKey: String, tableName: String, primaryKeyColumn: String, valueColumn: String): DynamoStore = {
+  def apply(awsAccessKey: String, awsSecretKey: String, tableName: String,
+    primaryKeyColumn: String, valueColumn: String,
+    endpoint: Regions = Regions.US_EAST_1): DynamoStore = {
+
     val processors = Runtime.getRuntime.availableProcessors
-    this(awsAccessKey, awsSecretKey, tableName, primaryKeyColumn, valueColumn, processors)
+    this(awsAccessKey, awsSecretKey, tableName, primaryKeyColumn, valueColumn,
+      processors, endpoint)
   }
 
   def apply(awsAccessKey: String, awsSecretKey: String, tableName: String,
-    primaryKeyColumn: String, valueColumn: String, numberWorkerThreads: Int): DynamoStore = {
+    primaryKeyColumn: String, valueColumn: String, numberWorkerThreads: Int,
+    endpoint: Regions): DynamoStore = {
 
     val auth = new BasicAWSCredentials(awsAccessKey, awsSecretKey)
-    val client = new AmazonDynamoDBClient(auth)
-    new DynamoStore(client, tableName, primaryKeyColumn, valueColumn, numberWorkerThreads)
+    var client = new AmazonDynamoDBClient(auth)
+    client.setRegion(Region.getRegion(endpoint));
+    new DynamoStore(client, tableName, primaryKeyColumn, valueColumn,
+      numberWorkerThreads)
   }
-
 }
 
 class DynamoStore(val client: AmazonDynamoDB, val tableName: String,
@@ -75,9 +82,7 @@ class DynamoStore(val client: AmazonDynamoDB, val tableName: String,
 
         apiRequestFuturePool(client.deleteItem(deleteRequest))
       }
-
     }
-
   }
 
   override def get(k: String): Future[Option[AttributeValue]] = {
@@ -88,6 +93,4 @@ class DynamoStore(val client: AmazonDynamoDB, val tableName: String,
       Option(client.getItem(getRequest).getItem).map(_.get(valueColumn))
     }
   }
-
 }
-

@@ -1,7 +1,7 @@
 language: scala
+sudo: false
 scala:
   - 2.10.4
-  - 2.9.3
 before_script:
   - mysql -u root -e "create database storehaus_test;"
   - mysql -u root -e "create user 'storehaususer'@'localhost' identified by 'test1234';"
