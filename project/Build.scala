@@ -58,7 +58,7 @@ object StorehausBuild extends Build {
   val sharedSettings = extraSettings ++ ciSettings ++ Seq(
     organization := "com.twitter",
     scalaVersion := "2.10.4",
-    version := "0.9.1",
+    version := "0.10.0",
     crossScalaVersions := Seq("2.10.4"),
     javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
     javacOptions in doc := Seq("-source", "1.6"),
@@ -122,7 +122,7 @@ object StorehausBuild extends Build {
   val algebirdVersion = "0.9.0"
   val bijectionVersion = "0.7.2"
   val utilVersion = "6.22.0"
-  val scaldingVersion = "0.13.0"
+  val scaldingVersion = "0.13.1"
   lazy val storehaus = Project(
 
     id = "storehaus",
