@@ -108,7 +108,7 @@ Discussion occurs primarily on the [Storehaus mailing list](https://groups.googl
 
 ## Maven
 
-Storehaus modules are available on maven central. The current groupid and version for all modules is, respectively, `"com.twitter"` and  `0.9.0`.
+Storehaus modules are available on maven central. The current groupid and version for all modules is, respectively, `"com.twitter"` and  `0.10.0`.
 
 Current published artifacts are
 
