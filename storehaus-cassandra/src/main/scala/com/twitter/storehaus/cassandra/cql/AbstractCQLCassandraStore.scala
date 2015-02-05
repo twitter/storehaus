@@ -65,7 +65,15 @@ abstract class AbstractCQLCassandraStore[K, V] (val poolSize: Int, val columnFam
     override def get(whereCondition: String): Future[Option[Seq[(K, V)]]] = futurePool {
       val qStartSemi = QueryBuilder.select(getColumnNamesString.split(",").map("\"" + _ + "\""):_*).from(columnFamily.getPreparedNamed).getQueryString().trim()
       val qStart = qStartSemi.substring(0, qStartSemi.length() - 1)
-      val query = if((whereCondition eq null) || ("" == whereCondition)) qStart else s"$qStart WHERE $whereCondition"  
+      val query = if((whereCondition eq null) || ("" == whereCondition)) {
+        qStart
+      } else {
+        if(whereCondition.trim().toLowerCase().startsWith("limit")) {
+          s"$qStart $whereCondition"
+        } else {
+          s"$qStart WHERE $whereCondition"
+        }
+      }  
   	  val rSet = columnFamily.session.getSession.execute(query)
   	  if(rSet.isExhausted) None else {
   		Some(iterableAsScalaIterableConverter(rSet).asScala.view.toSeq.map(row => getKeyValueFromRow(row)))
