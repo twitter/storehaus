@@ -38,7 +38,7 @@ import scala.reflect.runtime._
  */
 class StorehausInputFormat[K, V, U <: AbstractStorehausCascadingInitializer]
   extends InputFormat[Instance[K], Instance[V]] {  
-  
+
   /**
    * init input format by reading JobConf and provide a StorehausSplittingMechanism
    */  
@@ -77,6 +77,7 @@ class StorehausInputFormat[K, V, U <: AbstractStorehausCascadingInitializer]
    * returns RecordReader by providing a StorehausSplittingMechanism from JobConf
    */
   override def getRecordReader(inputSplit: InputSplit, conf: JobConf, reporter: Reporter) = {
+    StorehausInputFormat.getResourceConfClass(conf).get.configure(conf)
     new StorehausRecordReader(inputSplit, getSplittingMechanism(conf), reporter)
   }
 }
@@ -106,6 +107,33 @@ object StorehausInputFormat {
       case None => Try(new JobConfKeyArraySplittingMechanism[K, V, U](conf))
     }
   }
+  val RESOURCECONFCLASSNAMECONFID = "com.twitter.storehaus.cascading.splitting.resourceconf.class"
+  def setResourceConfClass[T <: ResourceConf](conf: JobConf, resourceConf: Class[T]) = {
+    conf.set(RESOURCECONFCLASSNAMECONFID, resourceConf.getName)
+  } 
+  def getResourceConfClass(conf: JobConf): Try[ResourceConf] = {
+    // use reflection to initialize the splitting class, which reads it's params from the JobConf
+    val optname = Option(conf.get(RESOURCECONFCLASSNAMECONFID))
+    optname match {
+      case Some(name) => Try {
+        val rm = universe.runtimeMirror(getClass.getClassLoader)
+        val clazz = Class.forName(name)
+        val clazzSymbol = rm.classSymbol(clazz)
+        val refClass = rm.reflectClass(clazzSymbol)
+        val constrSymbol = clazzSymbol.typeSignature.member(universe.nme.CONSTRUCTOR).asMethod
+        val refConstr = refClass.reflectConstructor(constrSymbol)
+        refConstr().asInstanceOf[ResourceConf]
+      }
+      case None => Try(NullResourceConf)
+    }
+  }
+  /**
+   * used to initialize map-side resources
+   */
+  trait ResourceConf {
+    def configure(conf: JobConf)
+  }
+  object NullResourceConf extends ResourceConf {
+    override def configure(conf: JobConf) = {}
+  }
 }
-
-

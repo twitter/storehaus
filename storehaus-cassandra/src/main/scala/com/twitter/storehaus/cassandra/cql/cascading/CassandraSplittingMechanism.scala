@@ -52,7 +52,7 @@ class CassandraSplittingMechanism[K, V, U <: CassandraCascadingInitializer[K, V]
   override def getSplits(job: JobConf, hint: Int) : Array[InputSplit] = {
     // ask for contact information -> call get_splits_ex via ColumnFamilyInputFormat
     log.debug(s"Getting splits for StorehausTap with id $tapid from Cassandra") 
-    val connectionOptions = storeinit.getThriftConnections.trim.split(":").map(s => s.trim)
+    val connectionOptions = storeinit.getThriftConnections.trim.split(",")(0).split(":").map(s => s.trim)
     ConfigHelper.setInputInitialAddress(conf, connectionOptions.head)
     ConfigHelper.setInputRpcPort(conf, if (connectionOptions.size == 1) "9160" else connectionOptions.last)
     ConfigHelper.setInputColumnFamily(conf, storeinit.getKeyspaceName, storeinit.getColumnFamilyName(readVersion))

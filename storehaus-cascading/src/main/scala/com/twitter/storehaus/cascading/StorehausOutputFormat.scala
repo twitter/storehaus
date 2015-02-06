@@ -66,6 +66,7 @@ class StorehausOutputFormat[K, V] extends OutputFormat[K, V] {
    */
   override def getRecordWriter(fs: FileSystem, conf: JobConf, name: String, progress: Progressable): RecordWriter[K, V] = {
     // log.debug(s"Returning RecordWriter, retrieved store from StoreInitializer ${InitializableStoreObjectSerializer.getWritableStoreIntializer(conf, tapid).get.getClass.getName} by reflection: ${store.toString()}")
+    StorehausInputFormat.getResourceConfClass(conf).get.configure(conf)
     new StorehausRecordWriter(conf)
   }
 
