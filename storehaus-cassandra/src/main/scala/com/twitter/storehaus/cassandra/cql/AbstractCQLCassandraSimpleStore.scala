@@ -24,6 +24,7 @@ import com.twitter.util.{Duration, Future, FuturePool, Promise, Throw, Return}
 import java.util.concurrent.{Executors, TimeUnit}
 import org.slf4j.{ Logger, LoggerFactory }
 import com.websudos.phantom.CassandraPrimitive
+import com.twitter.util.Time
 
 abstract class AbstractCQLCassandraSimpleStore[K : CassandraPrimitive, V] (
     override val poolSize: Int, 
@@ -92,4 +93,6 @@ abstract class AbstractCQLCassandraSimpleStore[K : CassandraPrimitive, V] (
       }
     }
   }
+  
+  override def close(deadline: Time) = super[AbstractCQLCassandraStore].close(deadline)
 }
