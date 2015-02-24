@@ -124,9 +124,15 @@ class MySqlValue(val v: Value) {
  * Returns string representation of the finagle-mysql Value wrapped by MySqlValue
  * Both null values and empty values map to empty string.
  */
+@deprecated("Use String2MySqlValueInjection", "0.10.0")
 object MySqlStringInjection extends Injection[MySqlValue, String] {
   def apply(a: MySqlValue): String = ValueMapper.toString(a.v).getOrElse("") // should this be null: String instead?
   override def invert(b: String) = Try(MySqlValue(RawValue(Type.String, Charset.Utf8_general_ci, false, b.getBytes)))
+}
+
+object String2MySqlValueInjection extends Injection[String, MySqlValue] {
+  def apply(s: String): MySqlValue = MySqlValue(s)
+  override def invert(m: MySqlValue): Try[String] = Try { ValueMapper.toString(m.v).get }
 }
 
 /**
@@ -134,9 +140,15 @@ object MySqlStringInjection extends Injection[MySqlValue, String] {
  * Returns a channel buffer containing the Value wrapped by MySqlValue.
  * Both null values and empty values map to empty channel buffer.
  */
+@deprecated("Use ChannelBuffer2MySqlValueInjection", "0.10.0")
 object MySqlCbInjection extends Injection[MySqlValue, ChannelBuffer] {
   def apply(a: MySqlValue): ChannelBuffer = ValueMapper.toChannelBuffer(a.v).getOrElse(ChannelBuffers.EMPTY_BUFFER)
   override def invert(b: ChannelBuffer) = Try(MySqlValue((Type.String, Charset.Utf8_general_ci, false, b.toString(UTF_8))))
+}
+
+object ChannelBuffer2MySqlValueInjection extends Injection[ChannelBuffer, MySqlValue] {
+  def apply(c: ChannelBuffer): MySqlValue = MySqlValue(c)
+  override def invert(m: MySqlValue): Try[ChannelBuffer] = Try { ValueMapper.toChannelBuffer(m.v).get }
 }
 
 object LongMySqlInjection extends Injection[Long, MySqlValue] {
