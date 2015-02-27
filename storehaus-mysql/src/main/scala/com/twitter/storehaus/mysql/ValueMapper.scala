@@ -95,7 +95,12 @@ object MySqlValue {
     case v: Int => new MySqlValue(IntValue(v))
     case v: Long => new MySqlValue(LongValue(v))
     case v: Short => new MySqlValue(ShortValue(v))
-    case v: ChannelBuffer => new MySqlValue(RawValue(Type.String, Charset.Utf8_general_ci, false, v.toString(UTF_8).getBytes))
+    case v: ChannelBuffer =>
+      val bytes = Array.ofDim[Byte](v.readableBytes)
+      v.markReaderIndex()
+      v.readBytes(bytes)
+      v.resetReaderIndex()
+      new MySqlValue(RawValue(Type.Blob, Charset.Binary, isBinary = true, bytes))
     case _ => throw new UnsupportedOperationException(v.getClass.getName + " is currently not supported.")
   }
 }
