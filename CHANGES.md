@@ -1,5 +1,21 @@
 # Storehaus #
 
+### Version 0.10.0 ###
+* Use latest scalding, algebird, and bijection versions: https://github.com/twitter/storehaus/pull/255
+* Use new Travis CI container infrastructure: https://github.com/twitter/storehaus/pull/254
+* Add hook for CAS based memcache mergeable: https://github.com/twitter/storehaus/pull/252
+* Bump bijection/algebird versions: https://github.com/twitter/storehaus/pull/253
+* Remove + operator: https://github.com/twitter/storehaus/pull/21
+* Memcache mergeable - use semigroup: https://github.com/twitter/storehaus/pull/251
+* add logic for replicating writes and reads to stores: https://github.com/twitter/storehaus/pull/20
+* bump finagle and util to 6.22.0: https://github.com/twitter/storehaus/pull/247
+* Minified kill 2.9.3: https://github.com/twitter/storehaus/pull/249
+* Read through store - do not query backing store when no cache miss: https://github.com/twitter/storehaus/pull/246
+* implementation of store that uses http protocol: https://github.com/twitter/storehaus/pull/241
+* Retry unittest: https://github.com/twitter/storehaus/pull/240
+* Added endpoint support to storehaus-dynamodb: https://github.com/twitter/storehaus/pull/236
+* Https sonatype: https://github.com/twitter/storehaus/pull/237
+
 ### Version 0.9.1 ###
 * Feature/write through cache perf: https://github.com/twitter/storehaus/pull/234
 * Share the Retrying Read Write store in storehaus repo: https://github.com/twitter/storehaus/pull/230
