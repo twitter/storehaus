@@ -68,6 +68,7 @@ object FanoutStoreProperties extends Properties("FanoutStoreProperties") {
         val store2 = ReadableStore.fromMap[Long, Long](s2.map(s => (s, s)).toMap)
         val store3 = ReadableStore.fromMap[Long, Long](s3.map(s => (s, s)).toMap)
         val store4 = ReadableStore.fromMap[Long, Long](s4.map(s => (s, s)).toMap)
+
         val storeLookupFn = (i: Long) => i match {
           case x if x < 25L => store1
           case x if x >= 25L && x < 50L => store2
@@ -76,12 +77,11 @@ object FanoutStoreProperties extends Properties("FanoutStoreProperties") {
         }
 
         val fanout = (k: Long) => 0L until k
-
         val fanoutStore = FanoutStore[Long, Long, Long, ReadableStore[Long, Long]](fanout)(storeLookupFn)
-
 
         val expected = (s1 ++ s2 ++ s3 ++ s4).sum
 
+        //Storehaus returns None when no values are found
         (if (expected == 0) None else Some(expected)) =? Await.result(fanoutStore.get(100))
     }
   }
