@@ -15,48 +15,41 @@
  */
 package com.twitter.storehaus
 
-import com.twitter.algebird.{Semigroup, Monoid}
+import com.twitter.algebird.Semigroup
 import com.twitter.util.Future
 
 /**
  * A store that fans out Key K to a Set of Keys, queries the appropriate underlying stores and sum
- * the values using the Monoid V
+ * the values using the semigroup V
  *
  * @author Mansur Ashraf
  */
-class FanoutStore[-K, +V: Semigroup, S <: ReadableStore[K, V]](fanout: K => Set[K], stores: Set[(K => Boolean, S)])
+class FanoutStore[-K, K1, +V: Semigroup, S <: ReadableStore[K1, V]](fanout: K => Iterable[K1])(storeLookupFn: K1 => S)
   extends ReadableStore[K, V] {
 
   override def get(k: K): Future[Option[V]] = {
     val s = implicitly[Semigroup[V]]
     val values = fanout(k)
       .groupBy {
-        groupByStore
+        storeLookupFn
       }.flatMap {
-        case (store, keys) => store.multiGet(keys).values
+        case (store, keys) => store.multiGet(keys.toSet).values
       }
 
     Future.collect(values.toSeq)
       .map { seq =>
         seq.reduceOption[Option[V]] {
-          case (Some(x),Some(y))=> Some(s.plus(x,y))
-          case (None,y@Some(_))=>  y
-          case (x@Some(_),None)=>  x
+          case (Some(x), Some(y)) => Some(s.plus(x, y))
+          case (None, y @ Some(_)) => y
+          case (x @ Some(_), None) => x
           case _ => None
         }.getOrElse(None)
       }
-  }
-
-  private def groupByStore(k: K): S = {
-    stores
-      .find { case (fn, _) => fn(k) }
-      .map { case (_, s) => s }
-      .getOrElse(throw new IllegalStateException("no store found for key %s".format(k)))
   }
 }
 
 object FanoutStore {
 
-  def apply[K, V: Monoid, S <: ReadableStore[K, V]](fanout: K => Set[K], stores: Set[(K => Boolean, S)]) = new FanoutStore[K, V, S](fanout, stores)
+  def apply[K, K1, V: Semigroup, S <: ReadableStore[K1, V]](fanout: K => Iterable[K1])(storeLookupFn: K1 => S) = new FanoutStore[K, K1, V, S](fanout)(storeLookupFn)
 }
 
