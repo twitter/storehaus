@@ -35,6 +35,7 @@ import ops.hlist.Mapped
 import poly._
 import Nat._
 import UnaryTCConstraint._
+import org.slf4j.LoggerFactory
 
 object AbstractCQLCassandraCompositeStore {
   
@@ -184,6 +185,11 @@ abstract class AbstractCQLCassandraCompositeStore[RK <: HList, CK <: HList, V, R
   with IterableStore[(RK, CK), V] {
   import AbstractCQLCassandraCompositeStore._
 
+  @transient private val log = LoggerFactory.getLogger(classOf[AbstractCQLCassandraCompositeStore[RK, CK, V, RS, CS]]) 
+  
+  log.debug(s"""Creating new AbstractCQLCassandraCompositeStore on ${columnFamily.session.cluster.hosts} with consistency=${consistency.name} and 
+    load-balancing=${columnFamily.session.getCluster.getConfiguration.getPolicies.getLoadBalancingPolicy}""")
+  
   protected def putValue(value: V, update: Update): Update.Assignments
   
   protected def deleteColumns: String = valueColumnName

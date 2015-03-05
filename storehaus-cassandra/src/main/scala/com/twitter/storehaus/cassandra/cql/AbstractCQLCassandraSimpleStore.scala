@@ -36,9 +36,12 @@ abstract class AbstractCQLCassandraSimpleStore[K : CassandraPrimitive, V] (
   extends AbstractCQLCassandraStore[K, V](poolSize, columnFamily)
   with Store[K, V]
   with CassandraCascadingRowMatcher[K, V] {
-
-  private val log = LoggerFactory.getLogger(classOf[AbstractCQLCassandraSimpleStore[K, V]])
   
+  @transient private val log = LoggerFactory.getLogger(classOf[AbstractCQLCassandraSimpleStore[K, V]])
+
+  log.debug(s"""Creating new AbstractCQLCassandraSimpleStore on ${columnFamily.session.cluster.hosts} with consistency=${consistency.name} and 
+    load-balancing=${columnFamily.session.getCluster.getConfiguration.getPolicies.getLoadBalancingPolicy}""")
+
   val keySerializer = implicitly[CassandraPrimitive[K]]
   
   protected def deleteColumns: Option[String]
