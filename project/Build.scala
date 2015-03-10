@@ -146,7 +146,8 @@ object StorehausBuild extends Build {
     storehausMongoDB,
     storehausElastic,
     storehausHttp,
-    storehausTesting
+    storehausTesting,
+    storehausLevelDB
   )
 
   def module(name: String) = {
@@ -214,7 +215,7 @@ object StorehausBuild extends Build {
     parallelExecution in Test := false
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
-  lazy val storehausDynamoDB= module("dynamodb").settings(
+  lazy val storehausDynamoDB = module("dynamodb").settings(
     libraryDependencies ++= Seq(
       "com.twitter" %% "algebird-core" % algebirdVersion,
       "com.twitter" %% "bijection-core" % bijectionVersion,
@@ -222,6 +223,13 @@ object StorehausBuild extends Build {
       "com.amazonaws" % "aws-java-sdk" % "1.5.7"
       ////use alternator for local testing
       //"com.michelboudreau" % "alternator" % "0.6.4" % "test"
+    ),
+    parallelExecution in Test := false
+  ).dependsOn(storehausAlgebra % "test->test;compile->compile")
+
+  lazy val storehausLevelDB = module("leveldb").settings(
+    libraryDependencies ++= Seq(
+      "org.fusesource.leveldbjni" % "leveldbjni-all" % "1.8"
     ),
     parallelExecution in Test := false
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
@@ -272,7 +280,6 @@ object StorehausBuild extends Build {
     parallelExecution in Test := false
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
-
   val storehausTesting = Project(
     id = "storehaus-testing",
     base = file("storehaus-testing"),
@@ -299,6 +306,4 @@ object StorehausBuild extends Build {
       "com.twitter" %% "bijection-netty" % bijectionVersion
     )
   ).dependsOn(storehausCore)
-
-
 }
