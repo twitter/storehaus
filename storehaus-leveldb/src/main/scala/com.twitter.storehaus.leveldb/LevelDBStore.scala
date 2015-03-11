@@ -17,9 +17,10 @@
 package com.twitter.storehaus.leveldb
 
 import java.io.File
+import java.util.concurrent.Executors
 
 import com.twitter.storehaus.Store
-import com.twitter.util.{Time, Future, Duration}
+import com.twitter.util.{FuturePool, Time, Future, Duration}
 import org.iq80.leveldb._
 import org.fusesource.leveldbjni.JniDBFactory._
 
@@ -28,10 +29,29 @@ import org.fusesource.leveldbjni.JniDBFactory._
  * @author Ben Fradet
  * @since 10/03/15
  */
-class LevelDBStore(val dir: File, val options: Options)
+class LevelDBStore(val dir: File, val options: Options, val numThreads: Int)
     extends Store[Array[Byte], Array[Byte]] {
 
   private lazy val db = factory.open(dir, options)
+  private val futurePool = FuturePool(Executors.newFixedThreadPool(numThreads))
+
+  /** get a single key from the store.
+    * Prefer multiGet if you are getting more than one key at a time
+    */
+  override def get(k: Array[Byte]): Future[Option[Array[Byte]]] = futurePool {
+    db.get(k) match {
+      case a: Array[Byte] => Some(a)
+      case _ => None
+    }
+  }
+
+  /** Get a set of keys from the store.
+    * Important: all keys in the input set are in the resulting map. If the
+    * store fails to return a value for a given key, that should be represented
+    * by a Future.exception.
+    */
+  override def multiGet[K1 <: Array[Byte]](ks: Set[K1])
+  : Map[K1, Future[Option[Array[Byte]]]] = super.multiGet(ks)
 
   /**
    * replace a value
@@ -43,19 +63,6 @@ class LevelDBStore(val dir: File, val options: Options)
   /** Replace a set of keys at one time */
   override def multiPut[K1 <: Array[Byte]](kvs: Map[K1, Option[Array[Byte]]])
     : Map[K1, Future[Unit]] = super.multiPut(kvs)
-
-  /** get a single key from the store.
-    * Prefer multiGet if you are getting more than one key at a time
-    */
-  override def get(k: Array[Byte]): Future[Option[Array[Byte]]] = super.get(k)
-
-  /** Get a set of keys from the store.
-    * Important: all keys in the input set are in the resulting map. If the
-    * store fails to return a value for a given key, that should be represented
-    * by a Future.exception.
-    */
-  override def multiGet[K1 <: Array[Byte]](ks: Set[K1])
-    : Map[K1, Future[Option[Array[Byte]]]] = super.multiGet(ks)
 
   /** Close this store and release any resources.
     * It is undefined what happens on get/multiGet after close
