@@ -17,15 +17,14 @@
 package com.twitter.storehaus.memcache
 
 import com.twitter.algebird.Semigroup
-import com.twitter.bijection.{ Injection, NumericInjections }
+import com.twitter.bijection.Injection
 import com.twitter.bijection.netty.ChannelBufferBijection
 import com.twitter.finagle.memcached.Client
 import com.twitter.storehaus.testing.SelfAggregatingCloseableCleanup
 import com.twitter.storehaus.testing.generator.NonEmpty
-import com.twitter.util.{Await, Future}
+import com.twitter.util.Await
 
 import org.jboss.netty.buffer.ChannelBuffer
-import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 import org.scalacheck.Properties
 import org.scalacheck.Prop.forAll
