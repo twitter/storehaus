@@ -58,7 +58,14 @@ class LevelDBStore(val dir: File, val options: Options, val numThreads: Int)
    * Delete is the same as put((k,None))
    */
   override def put(kv: (Array[Byte], Option[Array[Byte]])): Future[Unit] =
-    super.put(kv)
+    kv match {
+      case (k, Some(v)) => futurePool {
+        db.put(k, v)
+      }
+      case (k, None) => futurePool {
+        db.delete(k)
+      }
+    }
 
   /** Replace a set of keys at one time */
   override def multiPut[K1 <: Array[Byte]](kvs: Map[K1, Option[Array[Byte]]])
