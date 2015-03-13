@@ -1,6 +1,7 @@
 package com.twitter.storehaus.leveldb
 
 import java.io.File
+import java.util
 
 import com.twitter.storehaus.Store
 import com.twitter.storehaus.testing.generator.NonEmpty
@@ -16,14 +17,17 @@ import scala.util.Random
  */
 object LevelDBStoreProperties extends Properties("LevelDBStore") {
 
-  def putAndGetStoreTest[K, V](store: Store[K, V],
-                               pairs: Gen[List[(K, Option[V])]]) =
-    forAll(pairs) { examples: List[(K, Option[V])] =>
+  def putAndGetStoreTest(store: Store[Array[Byte], Array[Byte]],
+                         pairs: Gen[List[(Array[Byte], Option[Array[Byte]])]]) =
+    forAll(pairs) { examples: List[(Array[Byte], Option[Array[Byte]])] =>
       examples.forall {
         case (k, v) => {
-          Await.result(store.put((k, v)))
+          Await.result(store.put(k, v))
           val found = Await.result(store.get(k))
-          found == v
+          found match {
+            case Some(a) => util.Arrays.equals(a, v.get)
+            case None => found == v
+          }
         }
       }
     }
@@ -31,9 +35,8 @@ object LevelDBStoreProperties extends Properties("LevelDBStore") {
   property("LevelDB[Array[Byte], Array[Byte]]") = {
     val dir = new File(System.getProperty("java.io.tmpdir"),
       "leveldb-test-" + new Random().nextInt(Int.MaxValue))
-    true
-    //putAndGetStoreTest[Array[Byte], Array[Byte]](
-    //  new LevelDBStore(dir, new Options, 2),
-    //  NonEmpty.Pairing.alphaStrs())
+    dir.mkdirs()
+    val store = new LevelDBStore(dir, new Options().createIfMissing(true), 2)
+    putAndGetStoreTest(store, NonEmpty.Pairing.byteArrays())
   }
 }
