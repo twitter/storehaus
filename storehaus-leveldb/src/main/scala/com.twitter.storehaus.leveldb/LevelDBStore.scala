@@ -77,7 +77,7 @@ class LevelDBStore(val dir: File, val options: Options, val numThreads: Int)
   override def close(time: Time): Future[Unit] = super.close(time)
 
   override def close(after: Duration): Future[Unit] = {
-    db.close()
+    futurePool { db.close() }
     super.close(after)
   }
 }
