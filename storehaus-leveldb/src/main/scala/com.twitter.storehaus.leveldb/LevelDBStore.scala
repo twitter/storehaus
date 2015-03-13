@@ -39,6 +39,7 @@ class LevelDBStore(val dir: File, val options: Options, val numThreads: Int)
     * Prefer multiGet if you are getting more than one key at a time
     */
   override def get(k: Array[Byte]): Future[Option[Array[Byte]]] = futurePool {
+    require(k != null)
     db.get(k) match {
       case a: Array[Byte] => Some(a)
       case _ => None
@@ -57,7 +58,8 @@ class LevelDBStore(val dir: File, val options: Options, val numThreads: Int)
    * replace a value
    * Delete is the same as put((k,None))
    */
-  override def put(kv: (Array[Byte], Option[Array[Byte]])): Future[Unit] =
+  override def put(kv: (Array[Byte], Option[Array[Byte]])): Future[Unit] = {
+    require(kv._1 != null)
     kv match {
       case (k, Some(v)) => futurePool {
         db.put(k, v)
@@ -66,6 +68,7 @@ class LevelDBStore(val dir: File, val options: Options, val numThreads: Int)
         db.delete(k)
       }
     }
+  }
 
   /** Replace a set of keys at one time */
   override def multiPut[K1 <: Array[Byte]](kvs: Map[K1, Option[Array[Byte]]])
