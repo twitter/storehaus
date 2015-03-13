@@ -141,13 +141,13 @@ object StorehausBuild extends Build {
     storehausRedis,
     storehausHBase,
     storehausDynamoDB,
+    storehausLevelDB,
     storehausKafka,
     storehausKafka08,
     storehausMongoDB,
     storehausElastic,
     storehausHttp,
-    storehausTesting,
-    storehausLevelDB
+    storehausTesting
   )
 
   def module(name: String) = {
@@ -231,18 +231,21 @@ object StorehausBuild extends Build {
     libraryDependencies ++= Seq(
       "org.fusesource.leveldbjni" % "leveldbjni-all" % "1.8"
     ),
-    parallelExecution in Test := false
+    parallelExecution in Test := false,
+    // workaround because of how sbt handles native libraries
+    // http://stackoverflow.com/questions/19425613/unsatisfiedlinkerror-with-native-library-under-sbt
+    fork in Test := true
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
   lazy val storehausKafka = module("kafka").settings(
     libraryDependencies ++= Seq (
       "com.twitter" %% "bijection-core" % bijectionVersion,
       "com.twitter" %% "bijection-avro" % bijectionVersion,
-      "com.twitter"%"kafka_2.9.2"%"0.7.0" % "provided" excludeAll(
-        ExclusionRule("com.sun.jdmk","jmxtools"),
-        ExclusionRule( "com.sun.jmx","jmxri"),
-        ExclusionRule( "javax.jms","jms")
-        )
+      "com.twitter" % "kafka_2.9.2" % "0.7.0" % "provided" excludeAll(
+        ExclusionRule("com.sun.jdmk", "jmxtools"),
+        ExclusionRule("com.sun.jmx", "jmxri"),
+        ExclusionRule("javax.jms", "jms")
+      )
     ),
     // we don't want various tests clobbering each others keys
     parallelExecution in Test := false
