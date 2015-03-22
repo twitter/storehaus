@@ -35,8 +35,8 @@ class LevelDBStore(val dir: File, val options: Options, val numThreads: Int)
   private lazy val db = factory.open(dir, options)
   private val futurePool = FuturePool(Executors.newFixedThreadPool(numThreads))
 
-  /** get a single key from the store.
-    * Prefer multiGet if you are getting more than one key at a time
+  /** Get a single key from the store.
+    * Prefer multiGet if you are getting more than one key at a time.
     */
   override def get(k: Array[Byte]): Future[Option[Array[Byte]]] = futurePool {
     require(k != null)
@@ -52,7 +52,7 @@ class LevelDBStore(val dir: File, val options: Options, val numThreads: Int)
     * by a Future.exception.
     */
   override def multiGet[K1 <: Array[Byte]](ks: Set[K1])
-  : Map[K1, Future[Option[Array[Byte]]]] = super.multiGet(ks)
+      : Map[K1, Future[Option[Array[Byte]]]] = super.multiGet(ks)
 
   /**
    * replace a value
@@ -72,7 +72,18 @@ class LevelDBStore(val dir: File, val options: Options, val numThreads: Int)
 
   /** Replace a set of keys at one time */
   override def multiPut[K1 <: Array[Byte]](kvs: Map[K1, Option[Array[Byte]]])
-    : Map[K1, Future[Unit]] = super.multiPut(kvs)
+      : Map[K1, Future[Unit]] = {
+    val future = futurePool {
+      val batch = db.createWriteBatch()
+      kvs.foreach(kv => kv match {
+        case (k, Some(v)) => batch.put(k, v)
+        case (k, None) => batch.delete(k)
+      })
+      db.write(batch)
+      batch.close()
+    }
+    kvs.mapValues(_ => future)
+  }
 
   /** Close this store and release any resources.
     * It is undefined what happens on get/multiGet after close
