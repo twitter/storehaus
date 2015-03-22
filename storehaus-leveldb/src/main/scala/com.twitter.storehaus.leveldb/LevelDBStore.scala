@@ -46,16 +46,8 @@ class LevelDBStore(val dir: File, val options: Options, val numThreads: Int)
     }
   }
 
-  /** Get a set of keys from the store.
-    * Important: all keys in the input set are in the resulting map. If the
-    * store fails to return a value for a given key, that should be represented
-    * by a Future.exception.
-    */
-  override def multiGet[K1 <: Array[Byte]](ks: Set[K1])
-      : Map[K1, Future[Option[Array[Byte]]]] = super.multiGet(ks)
-
   /**
-   * replace a value
+   * Replace a value
    * Delete is the same as put((k,None))
    */
   override def put(kv: (Array[Byte], Option[Array[Byte]])): Future[Unit] = {
