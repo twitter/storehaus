@@ -88,10 +88,8 @@ class LevelDBStore(val dir: File, val options: Options, val numThreads: Int)
   /** Close this store and release any resources.
     * It is undefined what happens on get/multiGet after close
     */
-  override def close(time: Time): Future[Unit] = super.close(time)
-
-  override def close(after: Duration): Future[Unit] = {
+  override def close(time: Time): Future[Unit] = {
     futurePool { db.close() }
-    super.close(after)
+    super.close(time)
   }
 }
