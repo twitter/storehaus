@@ -145,7 +145,7 @@ object StorehausBuild extends Build {
   val cascadingVersion = "2.5.2"
   val hadoopVersion = "1.2.1"
   val cassandraDriverVersion = "2.1.0"
-  val cassandraVersion = "2.1.0-rc6"
+  val cassandraVersion = "2.1.3"
 
   lazy val storehaus = Project(
     id = "storehaus",

@@ -21,7 +21,7 @@ import com.twitter.concurrent.Spool
 import com.twitter.storehaus.{IterableStore, QueryableStore, ReadableStore}
 import com.twitter.storehaus.cassandra.cql.cascading.CassandraCascadingRowMatcher
 import com.twitter.util.{Closable, Future, FuturePool, Promise, Throw, Time, Return}
-import java.util.concurrent.{Executors, TimeUnit}
+import java.util.concurrent.{LinkedBlockingQueue, Executors, ThreadPoolExecutor, TimeUnit}
 import org.slf4j.{ Logger, LoggerFactory }
 
 abstract class AbstractCQLCassandraStore[K, V] (val poolSize: Int, val columnFamily: CQLCassandraConfiguration.StoreColumnFamily) 
@@ -31,8 +31,9 @@ abstract class AbstractCQLCassandraStore[K, V] (val poolSize: Int, val columnFam
   with Closable {
 
   private val log = LoggerFactory.getLogger(classOf[AbstractCQLCassandraStore[K, V]])
-  
-  val futurePool = FuturePool(Executors.newFixedThreadPool(poolSize))
+
+  val futurePool = FuturePool(new ThreadPoolExecutor(poolSize, poolSize, 0L, TimeUnit.SECONDS, 
+    new LinkedBlockingQueue[Runnable](10 * poolSize), new ThreadPoolExecutor.CallerRunsPolicy()))
 
   // make sure stores are shut down, even when the JVM is going down
   Runtime.getRuntime.addShutdownHook(new Thread {
