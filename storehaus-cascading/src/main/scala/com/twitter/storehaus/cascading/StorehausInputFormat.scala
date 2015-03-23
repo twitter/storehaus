@@ -87,13 +87,15 @@ class StorehausInputFormat[K, V, U <: AbstractStorehausCascadingInitializer]
  * different mechanisms for splitting in the storehaus-stores
  */
 object StorehausInputFormat {
-  val SPLITTINGCLASSNAMECONFID = "com.twitter.storehaus.cascading.splitting.mechanism.class"
+  val SPLITTING_CLASSNAME_CONFID = "com.twitter.storehaus.cascading.splitting.mechanism.class"
+  
   def setSplittingClass[K, V, U <: AbstractStorehausCascadingInitializer, T <: StorehausSplittingMechanism[K, V, U]](conf: JobConf, mechanism: Class[T]) = {
-    conf.set(SPLITTINGCLASSNAMECONFID, mechanism.getName)
+    conf.set(SPLITTING_CLASSNAME_CONFID, mechanism.getName)
   } 
+  
   def getSplittingClass[K, V, U <: AbstractStorehausCascadingInitializer](conf: JobConf): Try[StorehausSplittingMechanism[K, V, U]] = {
     // use reflection to initialize the splitting class, which reads it's params from the JobConf
-    val optname = Option(conf.get(SPLITTINGCLASSNAMECONFID))
+    val optname = Option(conf.get(SPLITTING_CLASSNAME_CONFID))
     optname match {
       case Some(name) => Try {
         val rm = universe.runtimeMirror(getClass.getClassLoader)
@@ -107,13 +109,16 @@ object StorehausInputFormat {
       case None => Try(new JobConfKeyArraySplittingMechanism[K, V, U](conf))
     }
   }
-  val RESOURCECONFCLASSNAMECONFID = "com.twitter.storehaus.cascading.splitting.resourceconf.class"
+  
+  val RESOURCECONF_CLASSNAME_CONFID = "com.twitter.storehaus.cascading.splitting.resourceconf.class"
+  
   def setResourceConfClass[T <: ResourceConf](conf: JobConf, resourceConf: Class[T]) = {
-    conf.set(RESOURCECONFCLASSNAMECONFID, resourceConf.getName)
+    conf.set(RESOURCECONF_CLASSNAME_CONFID, resourceConf.getName)
   } 
+  
   def getResourceConfClass(conf: JobConf): Try[ResourceConf] = {
-    // use reflection to initialize the splitting class, which reads it's params from the JobConf
-    val optname = Option(conf.get(RESOURCECONFCLASSNAMECONFID))
+    // use reflection to initialize ResourceConf, which reads it's params from the JobConf
+    val optname = Option(conf.get(RESOURCECONF_CLASSNAME_CONFID))
     optname match {
       case Some(name) => Try {
         val rm = universe.runtimeMirror(getClass.getClassLoader)
@@ -127,13 +132,16 @@ object StorehausInputFormat {
       case None => Try(NullResourceConf)
     }
   }
+  
   /**
    * used to initialize map-side resources
    */
   trait ResourceConf {
     def configure(conf: JobConf)
   }
+  
   object NullResourceConf extends ResourceConf {
     override def configure(conf: JobConf) = {}
   }
+
 }
