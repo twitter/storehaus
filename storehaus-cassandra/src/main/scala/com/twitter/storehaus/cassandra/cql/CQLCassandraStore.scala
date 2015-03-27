@@ -101,8 +101,9 @@ class CQLCassandraStore[K : CassandraPrimitive, V : CassandraPrimitive] (
   override def getValue(result: ResultSet): Option[V] = valueSerializer.fromRow(result.one(), valueColumnName)
   
   override def getCASStore[T](tokenColumnName: String = CQLCassandraConfiguration.DEFAULT_TOKEN_COLUMN_NAME)(
-      implicit equiv: Equiv[T], cassTokenSerializer: CassandraPrimitive[T], tokenFactory: TokenFactory[T]): CASStore[T, K, V] with IterableStore[K, V] = new CQLCassandraStore[K, V](
-      columnFamily, valueColumnName, keyColumnName, consistency, poolSize, batchType, ttl) with CassandraCASStoreSimple[T, K, V] {
+      implicit equiv: Equiv[T], cassTokenSerializer: CassandraPrimitive[T], tokenFactory: TokenFactory[T]): CASStore[T, K, V] with IterableStore[K, V] = 
+        new CQLCassandraStore[K, V](columnFamily, valueColumnName, keyColumnName, consistency, poolSize, batchType, ttl) 
+        with CassandraCASStoreSimple[T, K, V] with ReadableStore[K, V] {
     override protected def deleteColumns: Option[String] = Some(s"$valueColumnName , $tokenColumnName")
     override protected def createPutQuery[K1 <: K](kv: (K1, V)) = super.createPutQuery(kv).value(tokenColumnName, tokenFactory.createNewToken)    
     override def cas(token: Option[T], kv: (K, V))(implicit ev1: Equiv[T]): Future[Boolean] = { 
@@ -110,8 +111,9 @@ class CQLCassandraStore[K : CassandraPrimitive, V : CassandraPrimitive] (
       casImpl(token, kv, putQueryConversion(_), tokenFactory, tokenColumnName, columnFamily, consistency)(ev1)
     }
     override def get(key: K)(implicit ev1: Equiv[T]): Future[Option[(V, T)]] = {
-	  def rowExtractor(r: Row): V = valueSerializer.fromRow(r, valueColumnName).get
+	    def rowExtractor(r: Row): V = valueSerializer.fromRow(r, valueColumnName).get
       getImpl(key, createGetQuery(_), cassTokenSerializer, rowExtractor(_), tokenColumnName, columnFamily, consistency)(ev1)
     }
+    override def multiGet[K1 <: K](ks: Set[K1]): Map[K1, Future[Option[V]]] = super[ReadableStore].multiGet(ks)
   }
 }

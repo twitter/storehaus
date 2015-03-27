@@ -15,7 +15,7 @@
  */
 package com.twitter.storehaus.cassandra.cql
 
-import com.datastax.driver.core.{BatchStatement, ConsistencyLevel, ResultSet, Row, SimpleStatement, Statement}
+import com.datastax.driver.core.{BatchStatement, ConsistencyLevel, ResultSet, Row, SimpleStatement, Statement, Token}
 import com.datastax.driver.core.policies.{Policies, RoundRobinPolicy, ReconnectionPolicy, RetryPolicy, TokenAwarePolicy}
 import com.datastax.driver.core.querybuilder.{BuiltStatement, QueryBuilder, Insert}
 import com.twitter.concurrent.Spool
@@ -33,6 +33,7 @@ import java.math.{BigInteger => JBigInteger, BigDecimal => JBigDecimal}
 import java.net.InetAddress
 import com.datastax.driver.core.TupleValue
 import com.datastax.driver.core.UDTValue
+import com.google.common.reflect.TypeToken
 
 object CQLCassandraRowStore {
   
@@ -128,7 +129,8 @@ class CQLCassandraRowStore[K : CassandraPrimitive] (
    */
   override def getCASStore[T](tokenColumnName: String = CQLCassandraConfiguration.DEFAULT_TOKEN_COLUMN_NAME)(
       implicit equiv: Equiv[T], cassTokenSerializer: CassandraPrimitive[T], tokenFactory: TokenFactory[T]): CASStore[T, K, Row] with IterableStore[K, Row] = 
-        new CQLCassandraRowStore[K](columnFamily, columns, keyColumnName, consistency, poolSize, batchType, ttl) with CassandraCASStoreSimple[T, K, Row] {
+        new CQLCassandraRowStore[K](columnFamily, columns, keyColumnName, consistency, poolSize, batchType, ttl) with CassandraCASStoreSimple[T, K, Row]
+        with ReadableStore[K, Row] {
     override protected def createPutQuery[K1 <: K](kv: (K1, Row)) = super.createPutQuery(kv).value(tokenColumnName, tokenFactory.createNewToken)    
     override def cas(token: Option[T], kv: (K, Row))(implicit ev1: Equiv[T]): Future[Boolean] = { 
       def putQueryConversion(kv: (K, Option[Row])): BuiltStatement = createPutQuery[K](kv._1, kv._2.get)  
@@ -136,6 +138,7 @@ class CQLCassandraRowStore[K : CassandraPrimitive] (
     }
     override def get(key: K)(implicit ev1: Equiv[T]): Future[Option[(Row, T)]] =
       getImpl(key, createGetQuery(_), cassTokenSerializer, row => row, tokenColumnName, columnFamily, consistency)(ev1)
+    override def multiGet[K1 <: K](ks: Set[K1]): Map[K1, Future[Option[Row]]] = super[ReadableStore].multiGet(ks)
   }
 }
 
@@ -187,5 +190,14 @@ class CQLCassandraRow(columns: Map[String, _]) extends Row {
   override def getTupleValue(name: String): TupleValue = get[TupleValue](name)
   override def getUDTValue(i: Int): UDTValue = ???
   override def getUDTValue(name: String): UDTValue = get[UDTValue](name)
+  override def getList[T](i: Int, tt: TypeToken[T]): JList[T] = ???
+  override def getMap[K, V](i: Int, tt1: TypeToken[K], tt2: TypeToken[V]): JMap[K,V] = ???
+  override def getSet[T](i: Int, tt: TypeToken[T]): JSet[T] = ???
+  override def getList[T](name: String, tt: TypeToken[T]): JList[T] = get[List[T]](name).asJava
+  override def getMap[K, V](name: String, tt1: TypeToken[K], tt2: TypeToken[V]): JMap[K,V] = get[Map[K, V]](name).asJava
+  override def getSet[T](name: String, tt: TypeToken[T]): JSet[T] = get[Set[T]](name).asJava
+  override def getPartitionKeyToken(): Token = ???
+  override def getToken(name: String): Token = get[Token](name)
+  override def getToken(i: Int): Token = ???
 }
 

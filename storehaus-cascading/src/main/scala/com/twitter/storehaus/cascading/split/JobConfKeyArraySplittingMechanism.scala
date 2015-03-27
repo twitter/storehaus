@@ -67,7 +67,8 @@ class JobConfKeyArraySplittingMechanism[K, V, U <: StorehausCascadingInitializer
     }
     val keys = JobConfKeyArraySplittingMechanism.getKeyArray(conf)
     keys.map(keys => keys.grouped(getNumber(keys.size)).
-        map(new KeyBasedSplit(_, conf)).toArray.asInstanceOf[Array[InputSplit]]).get
+        map(new KeyBasedSplit(_, Some(conf), JobConfKeyArraySplittingMechanism.
+            getKeyClassFromConf[K](conf).toOption)).toArray.asInstanceOf[Array[InputSplit]]).get
   }
   
   override def fillRecord(split: InputSplit, key: Instance[K], value: Instance[V]): Boolean = {
@@ -97,15 +98,17 @@ object JobConfKeyArraySplittingMechanism {
    * use the default serializers (e.g. Hadoop Writables) for the keys 
    * but it is also possible to register a different one in the job itself
    */
-  def setKeyArray[K <: Object](conf: JobConf, keys: Array[K]) = {
+  def setKeyArray[K <: Object](conf: JobConf, keys: Array[K], clazz: Class[K]) = {
+    conf.set(KEYCLASSCONFID, clazz.getName)
     DefaultStringifier.storeArray(conf, keys, KEYARRAYCONFID)
   }
   def getKeyArray[K <: Object](conf: JobConf): Try[List[K]] = {
     Try {
-        val clazz = Class.forName(conf.get(KEYCLASSCONFID)).asInstanceOf[Class[K]]
-        DefaultStringifier.loadArray[K](conf, KEYARRAYCONFID, clazz).toList
+        DefaultStringifier.loadArray[K](conf, KEYARRAYCONFID, getKeyClassFromConf[K](conf).get).toList
     }
   }
+  def getKeyClassFromConf[K](conf: JobConf): Try[Class[K]] = 
+    Try(Class.forName(conf.get(KEYCLASSCONFID)).asInstanceOf[Class[K]])
 }
 
 

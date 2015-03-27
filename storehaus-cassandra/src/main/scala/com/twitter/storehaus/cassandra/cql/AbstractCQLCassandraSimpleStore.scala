@@ -25,6 +25,8 @@ import java.util.concurrent.{Executors, TimeUnit}
 import org.slf4j.{ Logger, LoggerFactory }
 import com.websudos.phantom.CassandraPrimitive
 import com.twitter.util.Time
+import com.datastax.driver.core.VersionNumber
+import com.twitter.util.Try
 
 abstract class AbstractCQLCassandraSimpleStore[K : CassandraPrimitive, V] (
     override val poolSize: Int, 
@@ -43,6 +45,11 @@ abstract class AbstractCQLCassandraSimpleStore[K : CassandraPrimitive, V] (
     load-balancing=${columnFamily.session.getCluster.getConfiguration.getPolicies.getLoadBalancingPolicy}""")
 
   val keySerializer = implicitly[CassandraPrimitive[K]]
+  
+  protected lazy val cassandraVersion: Option[VersionNumber] =
+    // assumes that all hosts are the same version and there is at least one host available
+    Try(columnFamily.session.getCluster.getMetadata.getAllHosts.iterator.next.getCassandraVersion).toOption
+
   
   protected def deleteColumns: Option[String]
   
@@ -77,6 +84,26 @@ abstract class AbstractCQLCassandraSimpleStore[K : CassandraPrimitive, V] (
     }
   }
 
+  /**
+   * In case we have a Cassandra 2.1.x and a single row key, use implementation of multi-get.
+   * Temporarily, data is stored in-memory for each multi-get.
+   */
+  override def multiGet[K1 <: K](ks: Set[K1]): Map[K1, Future[Option[V]]] = {
+    import scala.math.Ordering.Implicits._
+    import scala.collection.convert.WrapAsScala._
+    cassandraVersion match {
+      case Some(version) if (version.getMajor, version.getMinor) >= (2, 1) =>
+        val clause = QueryBuilder.in(keyColumnName, ks.map(k => keySerializer.toCType(k)))
+        val stmt = QueryBuilder.select().from(columnFamily.getPreparedNamed).where(clause).setConsistencyLevel(consistency)
+        val future = futurePool { 
+          val result = columnFamily.session.getSession.execute(stmt)
+          result.all().map(getKeyValueFromRow(_))
+        }
+        ks.map(k => (k, future.map(rows => rows.find(_._1 == k).map(_._2)))).toMap
+      case _ => super.multiGet[K1](ks)
+    }
+  }
+    
   protected def createGetQuery(key: K): Select.Where = {
     QueryBuilder
         .select()

@@ -136,8 +136,9 @@ class CQLCassandraStoreTupleValues[K: CassandraPrimitive, V <: Product, VL <: HL
   }
   
   override def getCASStore[T](tokenColumnName: String = CQLCassandraConfiguration.DEFAULT_TOKEN_COLUMN_NAME)(
-      implicit equiv: Equiv[T], cassTokenSerializer: CassandraPrimitive[T], tokenFactory: TokenFactory[T]): CASStore[T, K, V] with IterableStore[K, V] = new CQLCassandraStoreTupleValues[K, V, VL, VS](
-      columnFamily, valueColumnNames, valueSerializers, keyColumnName, consistency, poolSize, batchType, ttl) with CassandraCASStoreSimple[T, K, V] {
+      implicit equiv: Equiv[T], cassTokenSerializer: CassandraPrimitive[T], tokenFactory: TokenFactory[T]): CASStore[T, K, V] with IterableStore[K, V] = 
+        new CQLCassandraStoreTupleValues[K, V, VL, VS](columnFamily, valueColumnNames, valueSerializers, keyColumnName, consistency, 
+                poolSize, batchType, ttl) with CassandraCASStoreSimple[T, K, V] with ReadableStore[K, V] {
     override protected def deleteColumns: Option[String] = Some(s"${super.deleteColumns} , $tokenColumnName")
     override protected def createPutQuery[K1 <: K](kv: (K1, V)) = super.createPutQuery(kv).value(tokenColumnName, tokenFactory.createNewToken)    
     override def cas(token: Option[T], kv: (K, V))(implicit ev1: Equiv[T]): Future[Boolean] = { 
@@ -145,8 +146,9 @@ class CQLCassandraStoreTupleValues[K: CassandraPrimitive, V <: Product, VL <: HL
       casImpl(token, kv, putQueryConversion(_), tokenFactory, tokenColumnName, columnFamily, consistency)(ev1)
     }
     override def get(key: K)(implicit ev1: Equiv[T]): Future[Option[(V, T)]] = {
-	  def rowExtractor(r: Row): V = super.getRowValue(r).tupled
-	  getImpl(key, createGetQuery(_), cassTokenSerializer, rowExtractor(_), tokenColumnName, columnFamily, consistency)(ev1)
+	    def rowExtractor(r: Row): V = super.getRowValue(r).tupled
+	    getImpl(key, createGetQuery(_), cassTokenSerializer, rowExtractor(_), tokenColumnName, columnFamily, consistency)(ev1)
     }
+    override def multiGet[K1 <: K](ks: Set[K1]): Map[K1, Future[Option[V]]] = super[ReadableStore].multiGet(ks)
   }
 }
