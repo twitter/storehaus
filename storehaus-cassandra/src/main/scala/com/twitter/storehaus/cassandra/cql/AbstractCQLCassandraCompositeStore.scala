@@ -258,14 +258,14 @@ abstract class AbstractCQLCassandraCompositeStore[RK <: HList, CK <: HList, V, R
   }
   
   override def getKeyValueFromRow(row: Row): ((RK, CK), V) = {
-	val colDefs = row.getColumnDefinitions().asList().toList
-	// find value
-	val value = getRowValue(row)
-	// row key
-	val rk = addKey[RK, RS](row, rowkeySerializer, rowkeyColumnNames)
-	// column key
-	val ck = addKey[CK, CS](row, colkeySerializer, colkeyColumnNames)
-	((rk, ck), value)
+	  val colDefs = row.getColumnDefinitions().asList().toList
+	  // find value
+	  val value = getRowValue(row)
+	  // row key
+	  val rk = addKey[RK, RS](row, rowkeySerializer, rowkeyColumnNames)
+	  // column key
+	  val ck = addKey[CK, CS](row, colkeySerializer, colkeyColumnNames)
+	  ((rk, ck), value)
   }
 
   /**

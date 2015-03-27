@@ -144,7 +144,7 @@ object StorehausBuild extends Build {
   val scaldingVersion = "0.11.1"
   val cascadingVersion = "2.5.2"
   val hadoopVersion = "1.2.1"
-  val cassandraDriverVersion = "2.1.0"
+  val cassandraDriverVersion = "2.1.5"
   val cassandraVersion = "2.1.3"
 
   lazy val storehaus = Project(
@@ -321,12 +321,13 @@ object StorehausBuild extends Build {
 
   def cassandraDeps(scalaVersion: String) = if (!isScala210x(scalaVersion)) Seq() else Seq(
     "com.twitter" %% "algebird-core" % algebirdVersion,
+    "com.google.code.findbugs" % "jsr305" % "1.3.+",
     "com.twitter" %% "bijection-core" % bijectionVersion,
     "com.datastax.cassandra" % "cassandra-driver-core" % cassandraDriverVersion,
-    "org.apache.cassandra" % "cassandra-thrift" % cassandraVersion,
-    "org.apache.cassandra" % "cassandra-all" % cassandraVersion,
+    "org.apache.cassandra" % "cassandra-thrift" % cassandraVersion exclude ("com.google.guava", "guava"),
+    "org.apache.cassandra" % "cassandra-all" % cassandraVersion exclude ("com.google.guava", "guava"),
     "com.websudos" % "phantom-dsl_2.10" % "1.0.6" exclude ("com.datastax.cassandra", "cassandra-driver-core"),
-    withCross("com.twitter" %% "util-zk" % utilVersion),
+    withCross("com.twitter" %% "util-zk" % utilVersion)  exclude ("com.google.guava", "guava"),
     real210Version("com.chuusai" %% "shapeless" % "2.0.0"),
     "org.slf4j" % "slf4j-api" % "1.7.5",
     "org.apache.hadoop" % "hadoop-core" % hadoopVersion

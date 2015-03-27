@@ -14,6 +14,7 @@ CQLCassandraStore | x | x | | x | x | x | x
 CQLCassandraMultivalueStore | x | x | | x | x | x | x
 CQLCassandraRowStore | x | x | | x | x | x | x
 CQLCassandraCompositeStore | x | x | | x | x | x | x
+CQLCassandraCompositeRowStore | x | x | | x | x | x | x
 CQLCassandraCollectionStore | x | x | x | x | x | x | x
 CQLCassandraLongStore | x | (x) | x | x | x | | 
 CQLCassandraMultivalueStore | x | x | | x | x | x | x
