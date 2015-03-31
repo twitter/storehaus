@@ -55,12 +55,12 @@ class CassandraSplittingMechanism[K, V, U <: CassandraCascadingInitializer[K, V]
   
   override def getSplits(job: JobConf, hint: Int) : Array[InputSplit] = {
     val retryMaxNumber = Try(Option(conf.get(SPLIT_RETRIES)).map(_.toInt)).toOption.flatten.getOrElse(10)
-    def retrySplittingMechnism(tryNumber: Int): Try[Array[CassandraStorehausSplit]] = {
+    def retrySplittingMechnism(tryNumber: Int, columnFamilyFormat: CqlInputFormat): Try[Array[CassandraStorehausSplit]] = {
       Try(columnFamilyFormat.getSplits(conf, hint).map(split => 
         CassandraStorehausSplit(tapid, split.asInstanceOf[ColumnFamilySplit]))).
         onFailure { e => if(tryNumber < retryMaxNumber) {
             log.warn(s"Retrying getting splits due to error:", e)
-            retrySplittingMechnism(tryNumber + 1)
+            retrySplittingMechnism(tryNumber + 1, columnFamilyFormat)
           } else {
             Throw(e)
           }
@@ -76,7 +76,7 @@ class CassandraSplittingMechanism[K, V, U <: CassandraCascadingInitializer[K, V]
     CqlConfigHelper.setInputColumns(conf, storeinit.getCascadingRowMatcher.getColumnNamesString)
     CqlConfigHelper.setInputNativePort(conf, storeinit.getNativePort.toString)
     val columnFamilyFormat = new CqlInputFormat
-    val splits = retrySplittingMechnism(0).onFailure { e => 
+    val splits = retrySplittingMechnism(0, columnFamilyFormat).onFailure { e => 
         log.error(s"Got Exception from Cassandra while getting splits on seeds ${ ConfigHelper.getInputInitialAddress(conf)}", e)
         throw e
     }
