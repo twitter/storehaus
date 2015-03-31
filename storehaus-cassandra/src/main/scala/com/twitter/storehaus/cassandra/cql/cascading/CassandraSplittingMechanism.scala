@@ -85,6 +85,8 @@ class CassandraSplittingMechanism[K, V, U <: CassandraCascadingInitializer[K, V]
   
   override def initializeSplitInCluster(split: InputSplit, reporter: Reporter): Unit = {
     val storesplit = getStorehausSplit(split)
+    // if desired, throttle speed of how fast mappers are created
+    ThrottlingConfig.waitConfiguredSeconds(conf)
     // do this again on the mapper, so we can have multiple taps
     ConfigHelper.setInputColumnFamily(conf, storeinit.getKeyspaceName, storeinit.getColumnFamilyName(readVersion))
     ConfigHelper.setInputPartitioner(conf, storeinit.getPartitionerName)
@@ -132,4 +134,20 @@ class CassandraSplittingMechanism[K, V, U <: CassandraCascadingInitializer[K, V]
    */
   override def closeSplit(split: InputSplit) = getStorehausSplit(split).recordReader.close()
 
+  object ThrottlingConfig { 
+    val MAPPING_THROTTLING_SECONDS = "com.twitter.storehaus.cassandra.cql.cascading.mapthrottlesecs"
+  
+    def waitConfiguredSeconds(conf: JobConf): Unit = Option(conf.get(MAPPING_THROTTLING_SECONDS)) match {
+        case Some(seconds) => Try {
+          val secs = seconds.toInt
+          log.info(s"Mapper is waiting configured $secs seconds to throttle query speed.")
+          Thread.sleep(secs * 1000L)
+        }.onFailure ( _ match {
+          case n: NumberFormatException => log.error(s"$seconds does not seem to be an int described by $MAPPING_THROTTLING_SECONDS", n)
+          case e: Exception => log.error(s"Exception on waiting for $seconds as configured for $MAPPING_THROTTLING_SECONDS", e)
+        })
+        case None => 
+      }
+  }
 }
+
