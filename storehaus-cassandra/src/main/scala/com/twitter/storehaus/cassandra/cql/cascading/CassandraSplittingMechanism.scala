@@ -21,7 +21,7 @@ import org.apache.cassandra.thrift.Cassandra
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.cassandra.thrift.TFramedTransportFactory
 import org.apache.cassandra.hadoop.{ AbstractColumnFamilyInputFormat, ColumnFamilySplit, ConfigHelper }
-import com.twitter.util.Try
+import com.twitter.util.{Throw, Try}
 import com.twitter.storehaus.cascading.Instance
 import com.twitter.storehaus.cascading.split.StorehausSplittingMechanism
 import org.apache.cassandra.hadoop.cql3.{ CqlRecordReader, CqlInputFormat, CqlConfigHelper }
@@ -32,6 +32,8 @@ import org.apache.cassandra.utils.FBUtilities
 import scala.collection.JavaConversions._
 import java.net.InetAddress
 import org.slf4j.{ Logger, LoggerFactory }
+import java.io.IOException
+
 
 /**
  * Cassandra does not directly support Splitting, so we provide 
@@ -40,6 +42,8 @@ import org.slf4j.{ Logger, LoggerFactory }
 class CassandraSplittingMechanism[K, V, U <: CassandraCascadingInitializer[K, V]](override val conf: JobConf) 
 	extends StorehausSplittingMechanism[K, V, U](conf: JobConf) {
   @transient private val log = LoggerFactory.getLogger(classOf[CassandraSplittingMechanism[K, V, U]])
+  
+  val SPLIT_RETRIES = "com.twitter.storehaus.cassandra.cql.cascading.splitretries"
   
   val tapid = InitializableStoreObjectSerializer.getTapId(conf)
   val readVersion = InitializableStoreObjectSerializer.getReadVerion(conf, tapid)
@@ -50,6 +54,18 @@ class CassandraSplittingMechanism[K, V, U <: CassandraCascadingInitializer[K, V]
   lazy val rowMatcher = storeinit.getCascadingRowMatcher  
   
   override def getSplits(job: JobConf, hint: Int) : Array[InputSplit] = {
+    val retryMaxNumber = Try(Option(conf.get(SPLIT_RETRIES)).map(_.toInt)).toOption.flatten.getOrElse(10)
+    def retrySplittingMechnism(tryNumber: Int, columnFamilyFormat: CqlInputFormat): Try[Array[CassandraStorehausSplit]] = {
+      Try(columnFamilyFormat.getSplits(conf, hint).map(split => 
+        CassandraStorehausSplit(tapid, split.asInstanceOf[ColumnFamilySplit]))).
+        onFailure { e => if(tryNumber < retryMaxNumber) {
+            log.warn(s"Retrying getting splits due to error:", e)
+            retrySplittingMechnism(tryNumber + 1, columnFamilyFormat)
+          } else {
+            Throw(e)
+          }
+        }
+    }
     // ask for contact information -> call get_splits_ex via ColumnFamilyInputFormat
     log.debug(s"Getting splits for StorehausTap with id $tapid from Cassandra") 
     val connectionOptions = storeinit.getThriftConnections.trim.split(",")(0).split(":").map(s => s.trim)
@@ -60,9 +76,7 @@ class CassandraSplittingMechanism[K, V, U <: CassandraCascadingInitializer[K, V]
     CqlConfigHelper.setInputColumns(conf, storeinit.getCascadingRowMatcher.getColumnNamesString)
     CqlConfigHelper.setInputNativePort(conf, storeinit.getNativePort.toString)
     val columnFamilyFormat = new CqlInputFormat
-    val splits = Try(columnFamilyFormat.getSplits(conf, hint).map(split => 
-      CassandraStorehausSplit(tapid, split.asInstanceOf[ColumnFamilySplit]))).
-      onFailure { e => 
+    val splits = retrySplittingMechnism(0, columnFamilyFormat).onFailure { e => 
         log.error(s"Got Exception from Cassandra while getting splits on seeds ${ ConfigHelper.getInputInitialAddress(conf)}", e)
         throw e
     }
