@@ -16,13 +16,14 @@
 
 package com.twitter.storehaus.testing.generator
 
-import org.scalacheck.{ Choose, Gen }
+import org.scalacheck.Gen._
+import org.scalacheck.Gen
 
 /** Generators for non-empty data */
 object NonEmpty {
   /** Generator for non-empty alpha strings of random length */
   def alphaStr: Gen[String] =
-    for(cs <- Gen.listOf1(Gen.alphaChar)) yield cs.mkString
+    for(cs <- Gen.listOfN(1, Gen.alphaChar)) yield cs.mkString
 
   /** Generator for Options of non-empty alpha strings of random length */
   def alphaStrOpt: Gen[Option[String]] =
