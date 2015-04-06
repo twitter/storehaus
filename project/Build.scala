@@ -279,7 +279,7 @@ object StorehausBuild extends Build {
     settings = sharedSettings ++ Seq(
       name := "storehaus-testing",
       previousArtifact := youngestForwardCompatible("testing"),
-      libraryDependencies ++= Seq("org.scalacheck" %% "scalacheck" % "1.10.0" withSources(),
+      libraryDependencies ++= Seq("org.scalacheck" %% "scalacheck" % "1.12.2" withSources(),
         withCross("com.twitter" %% "util-core" % utilVersion))
     )
   )
