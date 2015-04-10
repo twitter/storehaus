@@ -57,7 +57,8 @@ object CQLCassandraCollectionStore {
 	colkeyColumnNames: List[String],
 	valueSerializer: CassandraPrimitive[X],
 	traversableType: V,
-	valueColumnName: String = CQLCassandraConfiguration.DEFAULT_VALUE_COLUMN_NAME)
+	valueColumnName: String = CQLCassandraConfiguration.DEFAULT_VALUE_COLUMN_NAME,
+  tablecomment: Option[String] = None)
 	(implicit mrk: Mapper.Aux[keyStringMapping.type, RS, MRKResult],
        mck: Mapper.Aux[keyStringMapping.type, CS, MCKResult],
        tork: ToList[MRKResult, String],
@@ -66,7 +67,7 @@ object CQLCassandraCollectionStore {
 	   ev1: CassandraPrimitive[X])= {
     createColumnFamilyWithToken[RS, CS, V, X, MRKResult, MCKResult, String] (columnFamily, rowkeySerializers, 
         rowkeyColumnNames, colkeySerializers, colkeyColumnNames, valueSerializer, traversableType, 
-        None, "", valueColumnName)
+        None, "", valueColumnName, tablecomment)
   }
 
   def createColumnFamilyWithToken[RS <: HList, CS <: HList, V, X, MRKResult <: HList, MCKResult <: HList, T] (
@@ -79,7 +80,8 @@ object CQLCassandraCollectionStore {
 	traversableType: V,
 	tokenSerializer: Option[CassandraPrimitive[T]] = None,
 	tokenColumnName: String = CQLCassandraConfiguration.DEFAULT_TOKEN_COLUMN_NAME,
-	valueColumnName: String = CQLCassandraConfiguration.DEFAULT_VALUE_COLUMN_NAME)
+	valueColumnName: String = CQLCassandraConfiguration.DEFAULT_VALUE_COLUMN_NAME,
+  tablecomment: Option[String] = None)
 	(implicit mrk: Mapper.Aux[keyStringMapping.type, RS, MRKResult],
        mck: Mapper.Aux[keyStringMapping.type, CS, MCKResult],
        tork: ToList[MRKResult, String],
@@ -106,7 +108,8 @@ object CQLCassandraCollectionStore {
 	        	case _ => ""
     		}) +
 	        "PRIMARY KEY ((\"" + rowkeyColumnNames.mkString("\", \"") + "\"), \"" +
-	        colkeyColumnNames.mkString("\", \"") + "\"));"
+	        colkeyColumnNames.mkString("\", \"") + "\"))" + 
+          tablecomment.map(comment => s" WITH comment='$comment';").getOrElse(";")
     columnFamily.session.getSession.execute(stmt)
   } 
 }

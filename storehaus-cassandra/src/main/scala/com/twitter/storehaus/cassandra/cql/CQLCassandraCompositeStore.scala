@@ -54,7 +54,8 @@ object CQLCassandraCompositeStore {
 	colkeySerializers: CS,
 	colkeyColumnNames: List[String],
 	valueSerializer: CassandraPrimitive[V],
-	valueColumnName: String = CQLCassandraConfiguration.DEFAULT_VALUE_COLUMN_NAME)
+	valueColumnName: String = CQLCassandraConfiguration.DEFAULT_VALUE_COLUMN_NAME,
+  tablecomment: Option[String] = None)
 	(implicit mrk: Mapper.Aux[keyStringMapping.type, RS, MRKResult],
        mck: Mapper.Aux[keyStringMapping.type, CS, MCKResult],
        tork: ToList[MRKResult, String],
@@ -72,7 +73,8 @@ object CQLCassandraCompositeStore {
 	valueSerializer: CassandraPrimitive[V],
 	tokenSerializer: Option[CassandraPrimitive[T]] = None,
 	tokenColumnName: String = CQLCassandraConfiguration.DEFAULT_TOKEN_COLUMN_NAME,
-	valueColumnName: String = CQLCassandraConfiguration.DEFAULT_VALUE_COLUMN_NAME)
+	valueColumnName: String = CQLCassandraConfiguration.DEFAULT_VALUE_COLUMN_NAME,
+  tablecomment: Option[String] = None)
 	(implicit mrk: Mapper.Aux[keyStringMapping.type, RS, MRKResult],
        mck: Mapper.Aux[keyStringMapping.type, CS, MCKResult],
        tork: ToList[MRKResult, String],
@@ -93,7 +95,8 @@ object CQLCassandraCompositeStore {
 	        	case _ => ""
     		}) +
 	        "PRIMARY KEY ((\"" + rowkeyColumnNames.mkString("\", \"") + "\"), \"" +
-	        colkeyColumnNames.mkString("\", \"") + "\"));"
+	        colkeyColumnNames.mkString("\", \"") + "\"))" +
+          tablecomment.map(comment => s" WITH comment='$comment';").getOrElse(";")
     columnFamily.session.getSession.execute(stmt)
   }
 }
