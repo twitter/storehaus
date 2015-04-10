@@ -49,7 +49,7 @@ class StorehausOutputFormat[K, V] extends OutputFormat[K, V] {
       // handle with care - make sure thread pools shut down TPEs on used stores correctly if asynchronous
       // that includes awaitTermination and adding shutdown hooks, depending on mode of operation of Hadoop
       if (conf.get(FORCE_FUTURE_IN_OUTPUTFORMAT) != null && conf.get(FORCE_FUTURE_IN_OUTPUTFORMAT).equalsIgnoreCase("true"))
-        store.get.put((key, Some(value)))
+        store.get.put((key, Some(value))).onFailure { case e: Exception => throw e }
       else
         Await.result(store.get.put((key, Some(value))))
     }
