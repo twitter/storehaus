@@ -75,13 +75,7 @@ trait CassandraCASStoreSimple[T, K, V] extends CASStore[T, K, V] { self: Abstrac
       tokenColumnName: String,
       columnFamily: CQLCassandraConfiguration.StoreColumnFamily,
       consistency: ConsistencyLevel)(implicit ev1: Equiv[T]): Future[Boolean] = futurePool {
-    val brokenStatement = createQuery((kv._1, Some(kv._2))).setForceNoValues(true).getQueryString()
-    val statement = brokenStatement.substring(0, brokenStatement.length() - 1)
-    val casCondition = token match {
-      case Some(tok) => tokenFactory.createIfAndComparison(tokenColumnName, tok)
-      case None => " IF NOT EXISTS"
-    }
-    val simpleStatement = new SimpleStatement(s"$statement $casCondition;").setConsistencyLevel(consistency)
+    val simpleStatement = createQuery((kv._1, Some(kv._2))).setConsistencyLevel(consistency)
     val resultSet = columnFamily.session.getSession.execute(simpleStatement)
     resultSet.one().getBool(0)
   }
@@ -102,3 +96,5 @@ trait CassandraCASStoreSimple[T, K, V] extends CASStore[T, K, V] { self: Abstrac
     }
   }
 }
+
+case class CassandraTokenInformation[T](cassTokenSerializer: CassandraPrimitive[T], token: T, tokenColumn: String)

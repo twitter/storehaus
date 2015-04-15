@@ -123,7 +123,7 @@ class CQLCassandraLongStore[RK <: HList, CK <: HList, RS <: HList, CS <: HList] 
       addKey(rk, rowkeyColumnNames, eqList, rowkeySerializer)
       addKey(ck, colkeyColumnNames, eqList, colkeySerializer)
       eqList
-    }.flatMap(eqList => sync.put.lock(lockId, Future {
+    }.flatMap(eqList => sync.put.lock(lockId, {
         val origValue = if(readbeforeWrite) Await.result(get((rk, ck))).getOrElse(0l) else 0l
     	val value = valueOpt.getOrElse(0l)
     	val update = putValue(value - origValue, QueryBuilder.update(columnFamily.getPreparedNamed)).where(_)
@@ -158,7 +158,7 @@ class CQLCassandraLongStore[RK <: HList, CK <: HList, RS <: HList, CS <: HList] 
           (if(value < 0) update.`with`(QueryBuilder.decr(valueColumnName, implicitly[CassandraPrimitive[Long]].toCType(-1 * value).asInstanceOf[java.lang.Long]))
           else update.`with`(QueryBuilder.incr(valueColumnName, implicitly[CassandraPrimitive[Long]].toCType(value).asInstanceOf[java.lang.Long]))
         ).where(_)}((clause, where) => where.and(clause)).setConsistencyLevel(consistency)
-    }.flatMap(stmt => sync.merge.lock(lockId, Future {
+    }.flatMap(stmt => sync.merge.lock(lockId, {
     	  val origValue = if(readbeforeWrite) Await.result(get((rk, ck))) else Some(0l)
           columnFamily.session.getSession.execute(stmt)
           origValue

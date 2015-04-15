@@ -20,7 +20,7 @@ import scala.collection.mutable.HashMap
 import com.twitter.storehaus.WritableStore
 import com.twitter.concurrent.AsyncMutex
 import com.twitter.concurrent.Permit
-import com.twitter.util.{Await, Duration, Future}
+import com.twitter.util.{Await, Duration, Future, FuturePool, Try}
 import com.twitter.zk.ZkClient
 import com.twitter.zk.coordination.ZkAsyncSemaphore
 
@@ -40,21 +40,21 @@ case class CassandraExternalSync (
  * for some use cases external synchronization is required
  */
 sealed trait ExternalSynchronization {
-  def lock[T](id: String, future: Future[T]): Future[T]
+  def lock[T](id: String, f: => T): Future[T]
 }
 
 case class NoSync() extends ExternalSynchronization {
-  override def lock[T](id: String, future: Future[T]) = future
+  override def lock[T](id: String, f: => T) = Future.value(f)
 }
 
 /**
  * sync based on util-zk
  * Example in the docs of ZkAsyncSemaphore
  */
-case class ZkSync(val zkclient: ZkClient) extends ExternalSynchronization {
-  override def lock[T](id: String, future: Future[T]) = {
-    val semaphore = new ZkAsyncSemaphore(zkclient, id, 1)
-    semaphore.acquire().flatMap { permit => future.ensure(permit.release)}
+case class ZkSync(val zkclient: ZkClient, val maxWaiters: Int) extends ExternalSynchronization {
+  override def lock[T](id: String, f: => T): Future[T] = {
+    val semaphore = new ZkAsyncSemaphore(zkclient, id, maxWaiters)
+    semaphore.acquire().map { permit => Try(f).ensure(permit.release).get }
   }
 } 
 
@@ -64,9 +64,9 @@ case class ZkSync(val zkclient: ZkClient) extends ExternalSynchronization {
  */
 case class LocalSync(val storeId: String, val maxWaiters: Int) extends ExternalSynchronization {
   LocalSync.init()
-  override def lock[T](id: String, future: Future[T]) = {  
-    LocalSync.getLock(storeId, id, maxWaiters).acquire().flatMap { permit => future.ensure(permit.release)}
-  }  
+  override def lock[T](id: String, f: => T): Future[T] = {
+    LocalSync.getLock(storeId, id, maxWaiters).acquire().map { permit => Try(f).ensure(permit.release).get }
+  }
 }
  
 object LocalSync {
@@ -94,29 +94,30 @@ object LocalSync {
 /**
  * sync based on Cassandra's compare-and-set
  */
-//case class CassandraCASSync(val store: CASStore[Long, String, Boolean] with WritableStore[String, Option[Boolean]], val busyWaitLoopTime: Duration) extends ExternalSynchronization {
-//  override def lock[T](id: String, future: Future[T]): T = {
-//    // poll store until we know it's finished
-//    val token = TokenFactory.longTokenFactory.createNewToken
-//    def busyWaitForAquiredLock: Future[T] = {
-//      def busyWaitForReleasedLock: Unit = {
-//        val lockCol = Await.result(store.get(id))
-//        if(lockCol != None && lockCol.get._1) {
-//          Thread.sleep(busyWaitLoopTime.inUnit(TimeUnit.MILLISECONDS))
-//          busyWaitForReleasedLock
-//        }
-//      }
-//      if(Await.result(store.cas(Some(token), (id, true)))) {
-//        future.ensure { 
-//          store.put((id, None))
-//        }
-//      } else {
-//        busyWaitForAquiredLock
-//      }
-//    }
-//    busyWaitForAquiredLock
-//  }
-//}
+case class CassandraCASSync(val store: CASStore[Long, String, Boolean] with WritableStore[String, Option[Boolean]], 
+                            val busyWaitLoopTime: Duration, val futurePool: FuturePool) extends ExternalSynchronization {
+  override def lock[T](id: String, f: => T): Future[T] = futurePool {
+    // poll store until we know it's finished
+    val token = TokenFactory.longTokenFactory.createNewToken
+    def busyWaitForAquiredLock: T = {
+      def busyWaitForReleasedLock: Unit = {
+        val lockCol = Await.result(store.get(id))
+        if(lockCol != None && lockCol.get._1) {
+          Thread.sleep(busyWaitLoopTime.inUnit(TimeUnit.MILLISECONDS))
+          busyWaitForReleasedLock
+        }
+      }
+      if(Await.result(store.cas(Some(token), (id, true)))) {
+        Try(f).ensure { 
+          store.put((id, None))
+        }.get
+      } else {
+        busyWaitForAquiredLock
+      }
+    }
+    busyWaitForAquiredLock
+  }
+}
 
 object mapKeyToSyncId {
   def apply(key: AnyRef, family: CQLCassandraConfiguration.StoreColumnFamily) = s"""\"${family.getName}\".""" + key.toString()  

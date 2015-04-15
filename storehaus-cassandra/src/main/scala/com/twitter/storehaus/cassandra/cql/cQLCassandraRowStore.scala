@@ -17,7 +17,7 @@ package com.twitter.storehaus.cassandra.cql
 
 import com.datastax.driver.core.{BatchStatement, ConsistencyLevel, ResultSet, Row, SimpleStatement, Statement, Token}
 import com.datastax.driver.core.policies.{Policies, RoundRobinPolicy, ReconnectionPolicy, RetryPolicy, TokenAwarePolicy}
-import com.datastax.driver.core.querybuilder.{BuiltStatement, QueryBuilder, Insert}
+import com.datastax.driver.core.querybuilder.{BuiltStatement, QueryBuilder, Insert, Update}
 import com.twitter.concurrent.Spool
 import com.twitter.storehaus.{IterableStore, QueryableStore, ReadableStore, ReadableStoreProxy, Store, WithPutTtl}
 import com.twitter.storehaus.cassandra.cql.cascading.CassandraCascadingRowMatcher
@@ -90,24 +90,48 @@ class CQLCassandraRowStore[K : CassandraPrimitive] (
   
   protected def deleteColumns: Option[String] = None
   
+  @tailrec final def recursiveAddValues[T](cols: List[(String, CassandraPrimitive[_])], 
+          bs: BuiltStatement, row: Row, token: Option[CassandraTokenInformation[T]] = None): BuiltStatement = {
+    def includeToken = token.map { tok => bs match {
+        case ins: Insert => ins.value(tok.tokenColumn, tok.cassTokenSerializer.toCType(tok.token))
+        case upd: Update => upd.`with`(QueryBuilder.set(tok.tokenColumn, tok.cassTokenSerializer.toCType(tok.token)))
+        case ass: Update.Assignments => ass.and(QueryBuilder.set(tok.tokenColumn, tok.cassTokenSerializer.toCType(tok.token)))
+      }
+    }.getOrElse(bs)
+    def getKeyValue = implicitly[CassandraPrimitive[K]].fromRow(row, keyColumnName)
+    def internalValue[T](name: String, cass: CassandraPrimitive[T], value: Option[T]): BuiltStatement = bs match {
+      case ins: Insert => ins.value(name, cass.toCType(value.get))
+      case upd: Update => if(name == keyColumnName) {
+          bs
+        } else {
+          upd.`with`(QueryBuilder.set(name, cass.toCType(value.get)))
+        }
+      case ass: Update.Assignments => if(name == keyColumnName) {
+          bs
+        } else {
+          ass.and(QueryBuilder.set(name, cass.toCType(value.get)))
+        }
+      }
+    if(cols.isEmpty) {
+      (includeToken match {
+        case upd: Update => upd.where(QueryBuilder.eq(keyColumnName, implicitly[CassandraPrimitive[K]].toCType(getKeyValue.get)))
+        case ass: Update.Assignments => ass.where(QueryBuilder.eq(keyColumnName, implicitly[CassandraPrimitive[K]].toCType(getKeyValue.get)))
+        case _ => bs
+      })
+    } else {
+      val name = cols.head._1
+      val optVal = cols.head._2.fromRow(row, name)
+      val ins2 = optVal match {
+        case None => bs
+        case Some(value) => internalValue(name, cols.head._2.asInstanceOf[CassandraPrimitive[Any]], optVal)
+      }
+      recursiveAddValues(cols.tail, ins2, row, token)
+    } 
+  }
+  
   protected def createPutQuery[K1 <: K](kv: (K1, Row)): Insert = {
     val (key, row) = kv
-    @tailrec def recursiveAddValues(cols: List[(String, CassandraPrimitive[_])], ins: Insert): Insert = {
-      def internalValue[T](name: String, cass: CassandraPrimitive[T], value: Option[T]): Insert = 
-        ins.value(name, cass.toCType(value.get))
-      if(cols.isEmpty) {
-        ins
-      } else {
-        val name = cols.head._1
-        val optVal = cols.head._2.fromRow(row, name)
-        val ins2 = optVal match {
-          case None => ins
-          case Some(value) => internalValue(name, cols.head._2.asInstanceOf[CassandraPrimitive[Any]], optVal)
-        }
-        recursiveAddValues(cols.tail, ins2)
-      } 
-    }
-    recursiveAddValues(columns, QueryBuilder.insertInto(columnFamily.getPreparedNamed))
+    recursiveAddValues(columns, QueryBuilder.insertInto(columnFamily.getPreparedNamed), row).asInstanceOf[Insert]
   }
   
   override def getKeyValueFromRow(row: Row): (K, Row) = (keySerializer.fromRow(row, keyColumnName).get, row)
@@ -131,9 +155,13 @@ class CQLCassandraRowStore[K : CassandraPrimitive] (
       implicit equiv: Equiv[T], cassTokenSerializer: CassandraPrimitive[T], tokenFactory: TokenFactory[T]): CASStore[T, K, Row] with IterableStore[K, Row] = 
         new CQLCassandraRowStore[K](columnFamily, columns, keyColumnName, consistency, poolSize, batchType, ttl) with CassandraCASStoreSimple[T, K, Row]
         with ReadableStore[K, Row] {
-    override protected def createPutQuery[K1 <: K](kv: (K1, Row)) = super.createPutQuery(kv).value(tokenColumnName, tokenFactory.createNewToken)    
+    override protected def createPutQuery[K1 <: K](kv: (K1, Row)) = super.createPutQuery(kv)    
     override def cas(token: Option[T], kv: (K, Row))(implicit ev1: Equiv[T]): Future[Boolean] = { 
-      def putQueryConversion(kv: (K, Option[Row])): BuiltStatement = createPutQuery[K](kv._1, kv._2.get)  
+      def putQueryConversion(kv: (K, Option[Row])): BuiltStatement = token match {
+        case None => createPutQuery[K](kv._1, kv._2.get).ifNotExists()
+        case Some(token) => recursiveAddValues[T](columns, QueryBuilder.update(columnFamily.getPreparedNamed), kv._2.get).asInstanceOf[Update.Assignments].
+          onlyIf(QueryBuilder.eq(tokenColumnName, token))
+      } 
       casImpl(token, kv, putQueryConversion(_), tokenFactory, tokenColumnName, columnFamily, consistency)(ev1)
     }
     override def get(key: K)(implicit ev1: Equiv[T]): Future[Option[(Row, T)]] =

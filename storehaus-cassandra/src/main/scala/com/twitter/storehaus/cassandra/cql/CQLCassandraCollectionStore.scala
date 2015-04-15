@@ -195,7 +195,7 @@ class CQLCassandraCollectionStore[RK <: HList, CK <: HList, V, X, RS <: HList, C
           case None => where
         })
       stmt.setConsistencyLevel(consistency)
-      }.flatMap(stmt => sync.merge.lock(lockId, Future {
+      }.flatMap(stmt => sync.merge.lock(lockId, {
    	      val origValue = Await.result(get((rk, ck)))
 	      // due to some unknown reason stmt does not execute in the same session object, except when executed multiple times, so we execute in a different one
    	      // TODO: this must be removed in the future as soon as the bug (?) is fixed in Datastax' driver 

@@ -17,7 +17,7 @@ package com.twitter.storehaus.cassandra.cql
 
 import com.datastax.driver.core.{BatchStatement, ConsistencyLevel, ResultSet, Row, SimpleStatement, Statement}
 import com.datastax.driver.core.policies.{Policies, RoundRobinPolicy, ReconnectionPolicy, RetryPolicy, TokenAwarePolicy}
-import com.datastax.driver.core.querybuilder.{BuiltStatement, Insert, QueryBuilder}
+import com.datastax.driver.core.querybuilder.{BuiltStatement, Insert, QueryBuilder, Update}
 import com.twitter.concurrent.Spool
 import com.twitter.storehaus.{IterableStore, QueryableStore, ReadableStore, ReadableStoreProxy, Store, WithPutTtl}
 import com.twitter.storehaus.cassandra.cql.cascading.CassandraCascadingRowMatcher
@@ -106,12 +106,21 @@ class CQLCassandraStoreTupleValues[K: CassandraPrimitive, V <: Product, VL <: HL
    * puts will not delete single columns if they are set to None. But it will delete all columns if the
    * hole Option[TupleX] is None. 
    */
-  protected def createPutQuery[K1 <: K](kv: (K1, V)): Insert = {
+  protected def createPutQuery[K1 <: K](kv: (K1, V)): Insert = 
+    createPutQuery(kv, QueryBuilder.insertInto(columnFamily.getPreparedNamed)).value(keyColumnName, implicitly[CassandraPrimitive[K]].toCType(kv._1))
+  
+  /**
+   * creates a put query without key column
+   */
+  protected def createPutQuery[K1 <: K, BS <: BuiltStatement](kv: (K1, V), bs: BS): BS = {
     val sets = ev2(kv._2).toList.zip(valueColumnNames)
-    sets.foldLeft(QueryBuilder.insertInto(columnFamily.getPreparedNamed))((insert, values) => values._1 match {
-      case Some(v) => insert.value(s""""${values._2}"""", v)
-      case None => insert
-    }).value(keyColumnName, kv._1)
+    sets.foldLeft(bs)((insUpd, values) => values._1 match {
+      case Some(v) => insUpd match {
+        case insert: Insert => insert.value(s""""${values._2}"""", v).asInstanceOf[BS]
+        case ass: Update.Assignments => ass.and(QueryBuilder.set(s""""${values._2}"""", v)).asInstanceOf[BS]
+      }
+      case None => insUpd
+    })
   }
   
   override def getKeyValueFromRow(row: Row): (K, V) = (keySerializer.fromRow(row, keyColumnName).get, getRowValue(row).tupled)
@@ -126,7 +135,7 @@ class CQLCassandraStoreTupleValues[K: CassandraPrimitive, V <: Product, VL <: HL
   }
       
   /**
-   * return comma separated list of key and value column name
+   * return comma separated list of key and value column names
    */
   override def getColumnNamesString: String = {
     val sb = new StringBuilder
@@ -140,9 +149,15 @@ class CQLCassandraStoreTupleValues[K: CassandraPrimitive, V <: Product, VL <: HL
         new CQLCassandraStoreTupleValues[K, V, VL, VS](columnFamily, valueColumnNames, valueSerializers, keyColumnName, consistency, 
                 poolSize, batchType, ttl) with CassandraCASStoreSimple[T, K, V] with ReadableStore[K, V] {
     override protected def deleteColumns: Option[String] = Some(s"${super.deleteColumns} , $tokenColumnName")
-    override protected def createPutQuery[K1 <: K](kv: (K1, V)) = super.createPutQuery(kv).value(tokenColumnName, tokenFactory.createNewToken)    
+    override protected def createPutQuery[K1 <: K](kv: (K1, V)) = super.createPutQuery(kv)    
     override def cas(token: Option[T], kv: (K, V))(implicit ev1: Equiv[T]): Future[Boolean] = { 
-      def putQueryConversion(kv: (K, Option[V])): BuiltStatement = createPutQuery[K](kv._1, kv._2.get)  
+      def putQueryConversion(kv: (K, Option[V])): BuiltStatement = token match {
+        case None => createPutQuery[K](kv._1, kv._2.get).value(tokenColumnName, cassTokenSerializer.toCType(tokenFactory.createNewToken)).ifNotExists()
+        case Some(tok) => createPutQuery[K, Update.Assignments]((kv._1, kv._2.get), QueryBuilder.update(columnFamily.getPreparedNamed).`with`).
+        and(QueryBuilder.set(tokenColumnName, cassTokenSerializer.toCType(tokenFactory.createNewToken))).
+        where(QueryBuilder.eq(keyColumnName, implicitly[CassandraPrimitive[K]].toCType(kv._1))).
+        onlyIf(QueryBuilder.eq(tokenColumnName, cassTokenSerializer.toCType(tok)))
+      }  
       casImpl(token, kv, putQueryConversion(_), tokenFactory, tokenColumnName, columnFamily, consistency)(ev1)
     }
     override def get(key: K)(implicit ev1: Equiv[T]): Future[Option[(V, T)]] = {
