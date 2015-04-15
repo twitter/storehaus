@@ -15,12 +15,13 @@
  */
 package com.twitter.storehaus.cascading
 
+import java.io.IOException
 import org.apache.hadoop.mapred.{ OutputFormat, JobConf, RecordWriter, Reporter }
 import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.util.Progressable
 import org.slf4j.{ Logger, LoggerFactory }
 import com.twitter.storehaus.WritableStore
-import com.twitter.util.Await
+import com.twitter.util.{Await, Try}
 
 /**
  * StorehausOuputFormat using a WriteableStore
@@ -32,7 +33,7 @@ class StorehausOutputFormat[K, V] extends OutputFormat[K, V] {
   /**
    * Simple StorehausRecordWriter delegating method-calls to store 
    */
-  class StorehausRecordWriter(val conf: JobConf) extends RecordWriter[K, V] {  
+  class StorehausRecordWriter(val conf: JobConf, val progress: Progressable) extends RecordWriter[K, V] {  
     var store: Option[WritableStore[K, Option[V]]] = None
     override def write(key: K, value: V) = {
       val tapid = InitializableStoreObjectSerializer.getTapId(conf)      
@@ -49,9 +50,9 @@ class StorehausOutputFormat[K, V] extends OutputFormat[K, V] {
       // handle with care - make sure thread pools shut down TPEs on used stores correctly if asynchronous
       // that includes awaitTermination and adding shutdown hooks, depending on mode of operation of Hadoop
       if (conf.get(FORCE_FUTURE_IN_OUTPUTFORMAT) != null && conf.get(FORCE_FUTURE_IN_OUTPUTFORMAT).equalsIgnoreCase("true"))
-        store.get.put((key, Some(value))).onFailure { case e: Exception => throw e }
+        store.get.put((key, Some(value))).onFailure { case e: Exception => throw new IOException(e) }
       else
-        Await.result(store.get.put((key, Some(value))))
+        Try(Await.result(store.get.put((key, Some(value))))).onFailure { throwable => new IOException(throwable) }
     }
     override def close(reporter: Reporter) = {
       log.debug(s"RecordWriter finished. Closing.")
@@ -67,7 +68,7 @@ class StorehausOutputFormat[K, V] extends OutputFormat[K, V] {
   override def getRecordWriter(fs: FileSystem, conf: JobConf, name: String, progress: Progressable): RecordWriter[K, V] = {
     // log.debug(s"Returning RecordWriter, retrieved store from StoreInitializer ${InitializableStoreObjectSerializer.getWritableStoreIntializer(conf, tapid).get.getClass.getName} by reflection: ${store.toString()}")
     StorehausInputFormat.getResourceConfClass(conf).get.configure(conf)
-    new StorehausRecordWriter(conf)
+    new StorehausRecordWriter(conf, progress)
   }
 
   override def checkOutputSpecs(fs: FileSystem, conf: JobConf) = {}
