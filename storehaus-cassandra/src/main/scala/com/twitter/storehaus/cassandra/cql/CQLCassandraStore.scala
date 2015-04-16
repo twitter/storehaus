@@ -21,7 +21,7 @@ import com.datastax.driver.core.querybuilder.{BuiltStatement, QueryBuilder}
 import com.twitter.concurrent.Spool
 import com.twitter.storehaus.{IterableStore, QueryableStore, ReadableStore, ReadableStoreProxy, Store, WithPutTtl}
 import com.twitter.storehaus.cassandra.cql.cascading.CassandraCascadingRowMatcher
-import com.twitter.util.{Await, Future, Duration, FuturePool, Promise, Try, Throw, Return}
+import com.twitter.util.{Await, Closable, Future, Duration, FuturePool, Promise, Try, Throw, Return}
 import com.websudos.phantom.CassandraPrimitive
 import java.util.concurrent.Executors
 
@@ -101,16 +101,16 @@ class CQLCassandraStore[K : CassandraPrimitive, V : CassandraPrimitive] (
   override def getValue(result: ResultSet): Option[V] = valueSerializer.fromRow(result.one(), valueColumnName)
   
   override def getCASStore[T](tokenColumnName: String = CQLCassandraConfiguration.DEFAULT_TOKEN_COLUMN_NAME)(
-      implicit equiv: Equiv[T], cassTokenSerializer: CassandraPrimitive[T], tokenFactory: TokenFactory[T]): CASStore[T, K, V] with IterableStore[K, V] = 
-        new CQLCassandraStore[K, V](columnFamily, valueColumnName, keyColumnName, consistency, poolSize, batchType, ttl) 
-        with CassandraCASStoreSimple[T, K, V] with ReadableStore[K, V] {
+      implicit equiv: Equiv[T], cassTokenSerializer: CassandraPrimitive[T], tokenFactory: TokenFactory[T]): CASStore[T, K, V] 
+      with IterableStore[K, V] with Closable = new CQLCassandraStore[K, V](columnFamily, valueColumnName, keyColumnName, 
+          consistency, poolSize, batchType, ttl) with CassandraCASStoreSimple[T, K, V] with ReadableStore[K, V] {
     import QueryBuilder.set
     override protected def deleteColumns: Option[String] = Some(s"$valueColumnName , $tokenColumnName")
     override protected def createPutQuery[K1 <: K](kv: (K1, V)) = super.createPutQuery(kv)
     override def cas(token: Option[T], kv: (K, V))(implicit ev1: Equiv[T]): Future[Boolean] = { 
       def putQueryConversion(kv: (K, Option[V])): BuiltStatement = token match {
         case None => createPutQuery[K](kv._1, kv._2.get).value(tokenColumnName, cassTokenSerializer.toCType(tokenFactory.createNewToken)).ifNotExists()
-        case Some(token) => QueryBuilder.update(columnFamily.getPreparedNamed).`with`(set(valueColumnName, kv._2)).
+        case Some(token) => QueryBuilder.update(columnFamily.getPreparedNamed).`with`(set(valueColumnName, kv._2.get)).
           and(set(tokenColumnName, tokenFactory.createNewToken)).where(QueryBuilder.eq(keyColumnName, kv._1)).
           onlyIf(QueryBuilder.eq(tokenColumnName, cassTokenSerializer.toCType(token)))
       }

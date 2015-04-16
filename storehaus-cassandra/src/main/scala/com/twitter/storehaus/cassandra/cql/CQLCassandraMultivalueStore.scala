@@ -18,7 +18,7 @@ package com.twitter.storehaus.cassandra.cql
 import com.datastax.driver.core.{BatchStatement, ConsistencyLevel, ResultSet, Row, SimpleStatement, Statement}
 import com.datastax.driver.core.policies.{LoadBalancingPolicy, Policies, RoundRobinPolicy, ReconnectionPolicy, RetryPolicy, TokenAwarePolicy}
 import com.datastax.driver.core.querybuilder.{Assignment, BuiltStatement, Clause, Delete, Insert, QueryBuilder, Select, Update}
-import com.twitter.util.{Duration, Future, FuturePool}
+import com.twitter.util.{Closable, Duration, Future, FuturePool}
 import com.twitter.storehaus.{IterableStore, Store, WithPutTtl}
 import com.websudos.phantom.CassandraPrimitive
 import java.util.concurrent.Executors
@@ -147,7 +147,9 @@ class CQLCassandraMultivalueStore[RK <: HList, CK <: HList, V <: HList, RS <: HL
     sb.toString
   }
   
-  override def getCASStore[T](tokenColumnName: String = CQLCassandraConfiguration.DEFAULT_TOKEN_COLUMN_NAME)(implicit equiv: Equiv[T], cassTokenSerializer: CassandraPrimitive[T], tokenFactory: TokenFactory[T]): CASStore[T, (RK, CK), V] with IterableStore[(RK, CK), V] = new CQLCassandraMultivalueStore[RK, CK, V, RS, CS, VS](
+  override def getCASStore[T](tokenColumnName: String = CQLCassandraConfiguration.DEFAULT_TOKEN_COLUMN_NAME)(implicit equiv: Equiv[T],
+      cassTokenSerializer: CassandraPrimitive[T], tokenFactory: TokenFactory[T]): CASStore[T, (RK, CK), V]
+      with IterableStore[(RK, CK), V] with Closable = new CQLCassandraMultivalueStore[RK, CK, V, RS, CS, VS](
       columnFamily, rowkeySerializer, rowkeyColumnNames, colkeySerializer, colkeyColumnNames, consistency, poolSize, 
       batchType, ttl)(cassSerValue, valueColumnNameList) with CassandraCASStoreSimple[T, (RK, CK), V] {
     override protected def putValue(value: V, update: Update): Update.Assignments = super.putValue(value, update).and(QueryBuilder.set(tokenColumnName, tokenFactory.createNewToken))

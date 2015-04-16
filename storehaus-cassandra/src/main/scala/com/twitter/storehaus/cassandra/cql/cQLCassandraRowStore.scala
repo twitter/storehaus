@@ -21,7 +21,7 @@ import com.datastax.driver.core.querybuilder.{BuiltStatement, QueryBuilder, Inse
 import com.twitter.concurrent.Spool
 import com.twitter.storehaus.{IterableStore, QueryableStore, ReadableStore, ReadableStoreProxy, Store, WithPutTtl}
 import com.twitter.storehaus.cassandra.cql.cascading.CassandraCascadingRowMatcher
-import com.twitter.util.{Await, Future, Duration, FuturePool, Promise, Try, Throw, Return}
+import com.twitter.util.{Await, Closable, Future, Duration, FuturePool, Promise, Try, Throw, Return}
 import com.websudos.phantom.CassandraPrimitive
 import java.util.concurrent.Executors
 import java.util.{ Date, List => JList, Map => JMap, Set => JSet, UUID }
@@ -152,9 +152,9 @@ class CQLCassandraRowStore[K : CassandraPrimitive] (
    * we assume the tokemColumns is part of columns, so there is not so much to do, here
    */
   override def getCASStore[T](tokenColumnName: String = CQLCassandraConfiguration.DEFAULT_TOKEN_COLUMN_NAME)(
-      implicit equiv: Equiv[T], cassTokenSerializer: CassandraPrimitive[T], tokenFactory: TokenFactory[T]): CASStore[T, K, Row] with IterableStore[K, Row] = 
-        new CQLCassandraRowStore[K](columnFamily, columns, keyColumnName, consistency, poolSize, batchType, ttl) with CassandraCASStoreSimple[T, K, Row]
-        with ReadableStore[K, Row] {
+      implicit equiv: Equiv[T], cassTokenSerializer: CassandraPrimitive[T], tokenFactory: TokenFactory[T]): CASStore[T, K, Row] 
+      with IterableStore[K, Row] with Closable = new CQLCassandraRowStore[K](columnFamily, columns, keyColumnName, consistency,
+      poolSize, batchType, ttl) with CassandraCASStoreSimple[T, K, Row] with ReadableStore[K, Row] {
     override protected def createPutQuery[K1 <: K](kv: (K1, Row)) = super.createPutQuery(kv)    
     override def cas(token: Option[T], kv: (K, Row))(implicit ev1: Equiv[T]): Future[Boolean] = { 
       def putQueryConversion(kv: (K, Option[Row])): BuiltStatement = token match {

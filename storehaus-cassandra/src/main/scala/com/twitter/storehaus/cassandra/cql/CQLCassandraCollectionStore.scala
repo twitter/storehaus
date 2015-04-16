@@ -17,7 +17,7 @@ package com.twitter.storehaus.cassandra.cql
 
 import com.websudos.phantom.CassandraPrimitive
 import com.twitter.storehaus.algebra.MergeableStore
-import com.twitter.util.{Await, Future, Duration, FuturePool}
+import com.twitter.util.{Await, Closable, Future, Duration, FuturePool}
 import com.datastax.driver.core.{Statement, ConsistencyLevel, BatchStatement, ResultSet, Row, SimpleStatement}
 import com.datastax.driver.core.policies.{LoadBalancingPolicy, Policies, RoundRobinPolicy, ReconnectionPolicy, RetryPolicy, TokenAwarePolicy}
 import com.datastax.driver.core.querybuilder.{QueryBuilder, BuiltStatement, Update, Delete, Select}
@@ -219,9 +219,11 @@ class CQLCassandraCollectionStore[RK <: HList, CK <: HList, V, X, RS <: HList, C
     optResult.get
   }
   
-  override def getCASStore[T](tokenColumnName: String = CQLCassandraConfiguration.DEFAULT_TOKEN_COLUMN_NAME)(implicit equiv: Equiv[T], cassTokenSerializer: CassandraPrimitive[T], tokenFactory: TokenFactory[T]): CASStore[T, (RK, CK), V] with IterableStore[(RK, CK), V] = new CQLCassandraCollectionStore[RK, CK, V, X, RS, CS](
-      columnFamily, rowkeySerializer, rowkeyColumnNames, colkeySerializer, colkeyColumnNames, valueColumnName, consistency, poolSize, batchType,
-      ttl)(mergeSemigroup, sync) with CassandraCASStoreSimple[T, (RK, CK), V] {
+  override def getCASStore[T](tokenColumnName: String = CQLCassandraConfiguration.DEFAULT_TOKEN_COLUMN_NAME)(implicit equiv: Equiv[T], 
+      cassTokenSerializer: CassandraPrimitive[T], tokenFactory: TokenFactory[T]): CASStore[T, (RK, CK), V] 
+      with IterableStore[(RK, CK), V] with Closable = new CQLCassandraCollectionStore[RK, CK, V, X, RS, CS](columnFamily, 
+            rowkeySerializer, rowkeyColumnNames, colkeySerializer, colkeyColumnNames, valueColumnName, consistency, 
+            poolSize, batchType, ttl)(mergeSemigroup, sync) with CassandraCASStoreSimple[T, (RK, CK), V] {
     override protected def putValue(value: V, update: Update): Update.Assignments = super.putValue(value, update).and(QueryBuilder.set(tokenColumnName, tokenFactory.createNewToken))
     override protected def deleteColumns: String = s"$valueColumnName , $tokenColumnName"
     override def cas(token: Option[T], kv: ((RK, CK), V))(implicit ev1: Equiv[T]): Future[Boolean] =

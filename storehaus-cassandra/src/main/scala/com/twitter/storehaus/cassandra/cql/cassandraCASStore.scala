@@ -16,7 +16,7 @@
 package com.twitter.storehaus.cassandra.cql
 
 import com.twitter.storehaus.IterableStore
-import com.twitter.util.Future
+import com.twitter.util.{Closable, Future}
 import com.websudos.phantom.CassandraPrimitive
 import java.net.InetAddress
 import java.util.UUID
@@ -31,7 +31,7 @@ import com.datastax.driver.core.querybuilder.{BuiltStatement, Select}
 trait CassandraCASStore[K, V] {
   def getCASStore[T](tokenColumnName: String = CQLCassandraConfiguration.DEFAULT_TOKEN_COLUMN_NAME)
     (implicit equiv: Equiv[T], cassTokenSerializer: CassandraPrimitive[T], tokenFactory: TokenFactory[T]): 
-    CASStore[T, K, V] with IterableStore[K, V]  
+    CASStore[T, K, V] with IterableStore[K, V] with Closable
 }
 
 /**

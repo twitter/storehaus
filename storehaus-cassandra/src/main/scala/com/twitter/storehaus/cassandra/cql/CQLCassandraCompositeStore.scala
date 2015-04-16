@@ -18,7 +18,7 @@ package com.twitter.storehaus.cassandra.cql
 import com.datastax.driver.core.{BatchStatement, ConsistencyLevel, ResultSet, Row, SimpleStatement, Statement}
 import com.datastax.driver.core.policies.{LoadBalancingPolicy, Policies, RoundRobinPolicy, ReconnectionPolicy, RetryPolicy, TokenAwarePolicy}
 import com.datastax.driver.core.querybuilder.{BuiltStatement, Clause, Delete, Insert, QueryBuilder, Select, Update}
-import com.twitter.util.{Duration, Future, FuturePool}
+import com.twitter.util.{Closable, Duration, Future, FuturePool}
 import com.twitter.storehaus.{IterableStore, Store, WithPutTtl}
 import com.websudos.phantom.CassandraPrimitive
 import java.util.concurrent.Executors
@@ -138,9 +138,11 @@ class CQLCassandraCompositeStore[RK <: HList, CK <: HList, V, RS <: HList, CS <:
 
   override def getRowValue(row: Row): V = cassSerValue.fromRow(row, valueColumnName).get
 
-  override def getCASStore[T](tokenColumnName: String = CQLCassandraConfiguration.DEFAULT_TOKEN_COLUMN_NAME)(implicit equiv: Equiv[T], cassTokenSerializer: CassandraPrimitive[T], tokenFactory: TokenFactory[T]): CASStore[T, (RK, CK), V] with IterableStore[(RK, CK), V] = new CQLCassandraCompositeStore[RK, CK, V, RS, CS](
-      columnFamily, rowkeySerializer, rowkeyColumnNames, colkeySerializer, colkeyColumnNames, valueColumnName, consistency, poolSize, 
-      batchType, ttl)(cassSerValue) with CassandraCASStoreSimple[T, (RK, CK), V] {
+  override def getCASStore[T](tokenColumnName: String = CQLCassandraConfiguration.DEFAULT_TOKEN_COLUMN_NAME)(implicit equiv: Equiv[T],
+      cassTokenSerializer: CassandraPrimitive[T], tokenFactory: TokenFactory[T]): CASStore[T, (RK, CK), V] with IterableStore[(RK, CK), V]
+      with Closable = new CQLCassandraCompositeStore[RK, CK, V, RS, CS](columnFamily, rowkeySerializer, rowkeyColumnNames, colkeySerializer,
+          colkeyColumnNames, valueColumnName, consistency, poolSize, batchType, ttl)(cassSerValue) with 
+          CassandraCASStoreSimple[T, (RK, CK), V] {
     override protected def putValue(value: V, update: Update): Update.Assignments = super.putValue(value, update).and(QueryBuilder.set(tokenColumnName, tokenFactory.createNewToken))
     override protected def deleteColumns: String = s"$valueColumnName , $tokenColumnName"
     override def cas(token: Option[T], kv: ((RK, CK), V))(implicit ev1: Equiv[T]): Future[Boolean] =

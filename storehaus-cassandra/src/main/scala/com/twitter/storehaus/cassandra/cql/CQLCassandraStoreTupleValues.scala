@@ -21,7 +21,7 @@ import com.datastax.driver.core.querybuilder.{BuiltStatement, Insert, QueryBuild
 import com.twitter.concurrent.Spool
 import com.twitter.storehaus.{IterableStore, QueryableStore, ReadableStore, ReadableStoreProxy, Store, WithPutTtl}
 import com.twitter.storehaus.cassandra.cql.cascading.CassandraCascadingRowMatcher
-import com.twitter.util.{Await, Future, Duration, FuturePool, Promise, Try, Throw, Return}
+import com.twitter.util.{Await, Closable, Future, Duration, FuturePool, Promise, Try, Throw, Return}
 import com.websudos.phantom.CassandraPrimitive
 import java.util.concurrent.Executors
 import shapeless._
@@ -145,9 +145,10 @@ class CQLCassandraStoreTupleValues[K: CassandraPrimitive, V <: Product, VL <: HL
   }
   
   override def getCASStore[T](tokenColumnName: String = CQLCassandraConfiguration.DEFAULT_TOKEN_COLUMN_NAME)(
-      implicit equiv: Equiv[T], cassTokenSerializer: CassandraPrimitive[T], tokenFactory: TokenFactory[T]): CASStore[T, K, V] with IterableStore[K, V] = 
-        new CQLCassandraStoreTupleValues[K, V, VL, VS](columnFamily, valueColumnNames, valueSerializers, keyColumnName, consistency, 
-                poolSize, batchType, ttl) with CassandraCASStoreSimple[T, K, V] with ReadableStore[K, V] {
+      implicit equiv: Equiv[T], cassTokenSerializer: CassandraPrimitive[T], tokenFactory: TokenFactory[T]): CASStore[T, K, V] 
+      with IterableStore[K, V] with Closable = new CQLCassandraStoreTupleValues[K, V, VL, VS](columnFamily, valueColumnNames,
+          valueSerializers, keyColumnName, consistency, poolSize, batchType, ttl) with CassandraCASStoreSimple[T, K, V] 
+      with ReadableStore[K, V]  with Closable  {
     override protected def deleteColumns: Option[String] = Some(s"${super.deleteColumns} , $tokenColumnName")
     override protected def createPutQuery[K1 <: K](kv: (K1, V)) = super.createPutQuery(kv)    
     override def cas(token: Option[T], kv: (K, V))(implicit ev1: Equiv[T]): Future[Boolean] = { 
