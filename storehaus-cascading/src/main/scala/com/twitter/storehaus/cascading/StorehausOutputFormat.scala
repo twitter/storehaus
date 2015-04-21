@@ -22,6 +22,7 @@ import org.apache.hadoop.util.Progressable
 import org.slf4j.{ Logger, LoggerFactory }
 import com.twitter.storehaus.WritableStore
 import com.twitter.util.{Await, Try}
+import scala.reflect.runtime._
 
 /**
  * StorehausOuputFormat using a WriteableStore
@@ -34,6 +35,7 @@ class StorehausOutputFormat[K, V] extends OutputFormat[K, V] {
    * Simple StorehausRecordWriter delegating method-calls to store 
    */
   class StorehausRecordWriter(val conf: JobConf, val progress: Progressable) extends RecordWriter[K, V] {  
+    val throttler = StorehausOutputFormat.getThrottlerClass(conf)
     var store: Option[WritableStore[K, Option[V]]] = None
     override def write(key: K, value: V) = {
       val tapid = InitializableStoreObjectSerializer.getTapId(conf)      
@@ -46,6 +48,7 @@ class StorehausOutputFormat[K, V] extends OutputFormat[K, V] {
           case Some(version) => InitializableStoreObjectSerializer.getWritableVersionedStore[K, Option[V]](conf, tapid, version)
         }
       }.onFailure(e => log.error(s"RecordWriter was not able to initialize the store for tap $tapid.", e)).toOption else store
+      throttler.map(_.throttle)
       log.debug(s"RecordWriter writing value=$value for key=$key into ${store.get}.")
       // handle with care - make sure thread pools shut down TPEs on used stores correctly if asynchronous
       // that includes awaitTermination and adding shutdown hooks, depending on mode of operation of Hadoop
@@ -56,6 +59,7 @@ class StorehausOutputFormat[K, V] extends OutputFormat[K, V] {
     }
     override def close(reporter: Reporter) = {
       log.debug(s"RecordWriter finished. Closing.")
+      throttler.map(_.close)
       store.map(_.close())
       reporter.setStatus("Completed Writing. Closed Store.")
     }
@@ -72,5 +76,32 @@ class StorehausOutputFormat[K, V] extends OutputFormat[K, V] {
   }
 
   override def checkOutputSpecs(fs: FileSystem, conf: JobConf) = {}
+}
 
+object StorehausOutputFormat {
+  
+  val OUTPUT_THROTTLER_CLASSNAME_CONFID = "com.twitter.storehaus.cascading.splitting.outputthrottler.class"
+  
+  def setResourceConfClass[T <: OutputThrottler](conf: JobConf, resourceConf: Class[T]) = {
+    conf.set(OUTPUT_THROTTLER_CLASSNAME_CONFID, resourceConf.getName)
+  } 
+    
+  def getThrottlerClass(conf: JobConf): Try[OutputThrottler] =
+    StorehausInputFormat.getConfClass[OutputThrottler](conf, OUTPUT_THROTTLER_CLASSNAME_CONFID, () => NullThrottler).
+    onSuccess(_.configure(conf))
+  
+  /**
+   * used to initialize map-side resources
+   */
+  trait OutputThrottler {
+    def configure(conf: JobConf)
+    def throttle
+    def close
+  }
+  
+  object NullThrottler extends OutputThrottler {
+    override def configure(conf: JobConf) = {}
+    override def throttle = {}
+    override def close = {}
+  }
 }

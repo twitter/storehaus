@@ -97,6 +97,8 @@ class CQLCassandraStoreTupleValues[K: CassandraPrimitive, V <: Product, VL <: HL
     with IterableStore[K, V] 
     with CassandraCASStore[K, V] {
   
+  val zippedColumnInfo = valueColumnNames.zip(valueSerializers.toList)
+  
   override def withPutTtl(ttl: Duration): CQLCassandraStoreTupleValues[K, V, VL, VS] = new CQLCassandraStoreTupleValues[K, V, VL, VS](columnFamily, 
       valueColumnNames, valueSerializers, keyColumnName, consistency, poolSize, batchType, Some(ttl))
 
@@ -113,11 +115,14 @@ class CQLCassandraStoreTupleValues[K: CassandraPrimitive, V <: Product, VL <: HL
    * creates a put query without key column
    */
   protected def createPutQuery[K1 <: K, BS <: BuiltStatement](kv: (K1, V), bs: BS): BS = {
-    val sets = ev2(kv._2).toList.zip(valueColumnNames)
+    def toCType[T](serializer: CassandraPrimitive[T], value: T) = serializer.toCType(value)
+    val sets = ev2(kv._2).toList.zip(zippedColumnInfo)
     sets.foldLeft(bs)((insUpd, values) => values._1 match {
       case Some(v) => insUpd match {
-        case insert: Insert => insert.value(s""""${values._2}"""", v).asInstanceOf[BS]
-        case ass: Update.Assignments => ass.and(QueryBuilder.set(s""""${values._2}"""", v)).asInstanceOf[BS]
+        case insert: Insert => 
+          insert.value(s""""${values._2._1}"""", toCType(values._2._2.asInstanceOf[CassandraPrimitive[Any]], v)).asInstanceOf[BS]
+        case ass: Update.Assignments =>
+          ass.and(QueryBuilder.set(s""""${values._2._1}"""", toCType(values._2._2.asInstanceOf[CassandraPrimitive[Any]], v))).asInstanceOf[BS]
       }
       case None => insUpd
     })

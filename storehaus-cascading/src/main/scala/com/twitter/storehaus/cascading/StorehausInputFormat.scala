@@ -93,9 +93,9 @@ object StorehausInputFormat {
     conf.set(SPLITTING_CLASSNAME_CONFID, mechanism.getName)
   } 
   
-  def getSplittingClass[K, V, U <: AbstractStorehausCascadingInitializer](conf: JobConf): Try[StorehausSplittingMechanism[K, V, U]] = {
-    // use reflection to initialize the splitting class, which reads it's params from the JobConf
-    val optname = Option(conf.get(SPLITTING_CLASSNAME_CONFID))
+  private [storehaus] def getConfClass[T](conf: JobConf, confOption: String, createDefault: () => T): Try[T] = {
+    // use reflection to initialize the class, which reads it's params from the JobConf
+    val optname = Option(conf.get(confOption))
     optname match {
       case Some(name) => Try {
         val rm = universe.runtimeMirror(getClass.getClassLoader)
@@ -104,11 +104,14 @@ object StorehausInputFormat {
         val refClass = rm.reflectClass(clazzSymbol)
         val constrSymbol = clazzSymbol.typeSignature.member(universe.nme.CONSTRUCTOR).asMethod
         val refConstr = refClass.reflectConstructor(constrSymbol)
-        refConstr(conf).asInstanceOf[StorehausSplittingMechanism[K, V, U]]
+        refConstr(conf).asInstanceOf[T]
       }
-      case None => Try(new JobConfKeyArraySplittingMechanism[K, V, U](conf))
+      case None => Try(createDefault())
     }
   }
+  
+  def getSplittingClass[K, V, U <: AbstractStorehausCascadingInitializer](conf: JobConf): Try[StorehausSplittingMechanism[K, V, U]] = 
+    getConfClass[StorehausSplittingMechanism[K, V, U]](conf, SPLITTING_CLASSNAME_CONFID, () => new JobConfKeyArraySplittingMechanism[K, V, U](conf))
   
   val RESOURCECONF_CLASSNAME_CONFID = "com.twitter.storehaus.cascading.splitting.resourceconf.class"
   
@@ -116,22 +119,8 @@ object StorehausInputFormat {
     conf.set(RESOURCECONF_CLASSNAME_CONFID, resourceConf.getName)
   } 
   
-  def getResourceConfClass(conf: JobConf): Try[ResourceConf] = {
-    // use reflection to initialize ResourceConf, which reads it's params from the JobConf
-    val optname = Option(conf.get(RESOURCECONF_CLASSNAME_CONFID))
-    optname match {
-      case Some(name) => Try {
-        val rm = universe.runtimeMirror(getClass.getClassLoader)
-        val clazz = Class.forName(name)
-        val clazzSymbol = rm.classSymbol(clazz)
-        val refClass = rm.reflectClass(clazzSymbol)
-        val constrSymbol = clazzSymbol.typeSignature.member(universe.nme.CONSTRUCTOR).asMethod
-        val refConstr = refClass.reflectConstructor(constrSymbol)
-        refConstr().asInstanceOf[ResourceConf]
-      }
-      case None => Try(NullResourceConf)
-    }
-  }
+  def getResourceConfClass(conf: JobConf): Try[ResourceConf] =
+    getConfClass[ResourceConf](conf, RESOURCECONF_CLASSNAME_CONFID, () => NullResourceConf)
   
   /**
    * used to initialize map-side resources

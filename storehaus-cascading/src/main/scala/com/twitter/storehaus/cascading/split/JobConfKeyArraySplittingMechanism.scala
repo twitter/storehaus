@@ -15,7 +15,7 @@
  */
 package com.twitter.storehaus.cascading.split
 
-import com.twitter.storehaus.cascading.{ Instance, StorehausCascadingInitializer, InitializableStoreObjectSerializer }
+import com.twitter.storehaus.cascading.{ AbstractStorehausCascadingInitializer, Instance, InitializableStoreObjectSerializer }
 import com.twitter.storehaus.ReadableStore
 import com.twitter.util.{ Try, Await }
 import org.apache.hadoop.io.DefaultStringifier
@@ -32,7 +32,7 @@ import org.apache.hadoop.mapred.{ InputSplit, JobConf }
  * 
  * Because keys must be provided this splitting mechanism is not for versioning stores.
  */
-class JobConfKeyArraySplittingMechanism[K, V, U <: StorehausCascadingInitializer[K, V]](override val conf: JobConf) 
+class JobConfKeyArraySplittingMechanism[K, V, U <: AbstractStorehausCascadingInitializer](override val conf: JobConf) 
     extends StorehausSplittingMechanism[K, V, U](conf) {
   val tapid = InitializableStoreObjectSerializer.getTapId(conf)
   val store = InitializableStoreObjectSerializer.getReadableStore(conf, tapid)
