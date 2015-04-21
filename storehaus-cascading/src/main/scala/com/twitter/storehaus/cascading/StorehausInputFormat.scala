@@ -104,7 +104,13 @@ object StorehausInputFormat {
         val refClass = rm.reflectClass(clazzSymbol)
         val constrSymbol = clazzSymbol.typeSignature.member(universe.nme.CONSTRUCTOR).asMethod
         val refConstr = refClass.reflectConstructor(constrSymbol)
-        refConstr(conf).asInstanceOf[T]
+        if(constrSymbol.paramss.size == 0 || constrSymbol.paramss(0).size == 0) {
+          // we create an object with zero constructor parameters
+          refConstr().asInstanceOf[T]
+        } else {
+          // we create an object with JobConf as constructor parameters (other options are not allowed)
+          refConstr(conf).asInstanceOf[T]
+        }
       }
       case None => Try(createDefault())
     }
