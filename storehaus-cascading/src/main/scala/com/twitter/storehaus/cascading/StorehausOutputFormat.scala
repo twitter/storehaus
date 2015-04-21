@@ -82,7 +82,7 @@ object StorehausOutputFormat {
   
   val OUTPUT_THROTTLER_CLASSNAME_CONFID = "com.twitter.storehaus.cascading.splitting.outputthrottler.class"
   
-  def setResourceConfClass[T <: OutputThrottler](conf: JobConf, resourceConf: Class[T]) = {
+  def setThrottlerClass[T <: OutputThrottler](conf: JobConf, resourceConf: Class[T]) = {
     conf.set(OUTPUT_THROTTLER_CLASSNAME_CONFID, resourceConf.getName)
   } 
     
