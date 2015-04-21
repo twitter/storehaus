@@ -35,14 +35,10 @@ class CassandraSelfAdaptingThrottler extends OutputThrottler {
   
   @volatile var throttleDelayMS = 0L
   
-  val CASSANDRA_REQUEST_REPEAT_DELAY = "com.twitter.storehaus.cassandra.cql.cascading.throttler.request.delay.seconds"
-  val CASSANDRA_JMX_PORT = "com.twitter.storehaus.cassandra.cql.cascading.throttler.request.jmxport"
-  val CASSANDRA_REQUEST_MINIMUM_TASKS = "com.twitter.storehaus.cassandra.cql.cascading.throttler.request.min.tasks"
-  val CASSANDRA_MAIN_HOST = "com.twitter.storehaus.cassandra.cql.cascading.throttler.request.host"
-
   val timer = new JavaTimer(true)
 
   def configure(conf: JobConf) = {
+    import CassandraSelfAdaptingThrottler._
     val seconds = Try(Option(conf.get(CASSANDRA_REQUEST_REPEAT_DELAY)).getOrElse("30").toInt).getOrElse(30)
     val jmxport = Try(Option(conf.get(CASSANDRA_JMX_PORT)).getOrElse("7199").toInt).getOrElse(7199)
     val minTaks = Try(Option(conf.get(CASSANDRA_REQUEST_MINIMUM_TASKS)).getOrElse("50").toLong).getOrElse(50L)
@@ -103,6 +99,13 @@ class CassandraSelfAdaptingThrottler extends OutputThrottler {
     case delay if delay > 0 => Thread.sleep(delay)
     case _ =>
   }
+}
+
+object CassandraSelfAdaptingThrottler {
+  val CASSANDRA_REQUEST_REPEAT_DELAY = "com.twitter.storehaus.cassandra.cql.cascading.throttler.request.delay.seconds"
+  val CASSANDRA_JMX_PORT = "com.twitter.storehaus.cassandra.cql.cascading.throttler.request.jmxport"
+  val CASSANDRA_REQUEST_MINIMUM_TASKS = "com.twitter.storehaus.cassandra.cql.cascading.throttler.request.min.tasks"
+  val CASSANDRA_MAIN_HOST = "com.twitter.storehaus.cassandra.cql.cascading.throttler.request.host"
 }
 
 object JMXConnector {
