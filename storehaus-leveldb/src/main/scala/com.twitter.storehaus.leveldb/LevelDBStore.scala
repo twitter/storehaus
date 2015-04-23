@@ -39,11 +39,7 @@ class LevelDBStore(val dir: File, val options: Options, val numThreads: Int)
     * Prefer multiGet if you are getting more than one key at a time.
     */
   override def get(k: Array[Byte]): Future[Option[Array[Byte]]] = futurePool {
-    require(k != null)
-    db.get(k) match {
-      case a: Array[Byte] => Some(a)
-      case _ => None
-    }
+    Option(db.get(k))
   }
 
   /**
