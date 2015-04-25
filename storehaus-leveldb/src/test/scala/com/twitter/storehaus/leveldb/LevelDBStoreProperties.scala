@@ -37,11 +37,11 @@ object LevelDBStoreProperties extends Properties("LevelDBStore") {
     forAll(pairs) { examples: List[(Array[Byte], Option[Array[Byte]])] =>
       val examplesMap = examples.toMap
       Await.result(Future.collect(store.multiPut(examplesMap).values.toList))
-      val result = store.multiGet(examplesMap.keySet)
-
-      val stringifiedResults = stringifyMap(result.map(kv => kv match {
+      val result = store.multiGet(examplesMap.keySet).map(kv => kv match {
         case (key, v) => (key, Await.result(v))
-      }))
+      })
+
+      val stringifiedResults = stringifyMap(result)
       val stringifiedExamples = stringifyMap(examplesMap)
 
       stringifiedResults == stringifiedExamples
