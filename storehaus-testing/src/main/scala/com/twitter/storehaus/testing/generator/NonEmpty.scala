@@ -30,7 +30,7 @@ object NonEmpty {
 
   /** Generator for non-empty byte arrays of random length */
   def byteArray: Gen[Array[Byte]] =
-    for (cs <- Gen.listOf1(Gen.alphaChar)) yield cs.mkString.getBytes
+    for (cs <- Gen.listOf1(Gen.alphaChar)) yield cs.mkString.getBytes("UTF-8")
 
   /** Generator for Options of non-empty by arrays of random length */
   def byteArrayOpt: Gen[Option[Array[Byte]]] =
