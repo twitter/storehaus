@@ -124,7 +124,6 @@ object StorehausBuild extends Build {
   val utilVersion = "6.22.0"
   val scaldingVersion = "0.13.1"
   lazy val storehaus = Project(
-
     id = "storehaus",
     base = file("."),
     settings = sharedSettings ++ DocGen.publishSettings
@@ -201,7 +200,7 @@ object StorehausBuild extends Build {
     parallelExecution in Test := false
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
-  lazy val storehausHBase= module("hbase").settings(
+  lazy val storehausHBase = module("hbase").settings(
     libraryDependencies ++= Seq(
       "com.twitter" %% "algebird-core" % algebirdVersion,
       "com.twitter" %% "bijection-core" % bijectionVersion,
@@ -228,9 +227,9 @@ object StorehausBuild extends Build {
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
   lazy val storehausLevelDB = module("leveldb").settings(
-    libraryDependencies ++= Seq(
-      "org.fusesource.leveldbjni" % "leveldbjni-all" % "1.8"
-    ),
+    testOptions in Test := Seq(),
+    libraryDependencies +=
+      "org.fusesource.leveldbjni" % "leveldbjni-all" % "1.8",
     parallelExecution in Test := false,
     // workaround because of how sbt handles native libraries
     // http://stackoverflow.com/questions/19425613/unsatisfiedlinkerror-with-native-library-under-sbt
@@ -249,7 +248,7 @@ object StorehausBuild extends Build {
     ),
     // we don't want various tests clobbering each others keys
     parallelExecution in Test := false
-  ).dependsOn(storehausAlgebra % "test->test;compile->compile")
+  ).dependsOn(storehausCore % "test->test;compile->compile")
 
   lazy val storehausKafka08 = module("kafka-08").settings(
     libraryDependencies ++= Seq (
