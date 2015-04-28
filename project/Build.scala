@@ -227,12 +227,12 @@ object StorehausBuild extends Build {
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
   lazy val storehausLevelDB = module("leveldb").settings(
-    testOptions in Test := Seq(),
     libraryDependencies +=
       "org.fusesource.leveldbjni" % "leveldbjni-all" % "1.8",
     parallelExecution in Test := false,
     // workaround because of how sbt handles native libraries
     // http://stackoverflow.com/questions/19425613/unsatisfiedlinkerror-with-native-library-under-sbt
+    testOptions in Test := Seq(),
     fork in Test := true
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
