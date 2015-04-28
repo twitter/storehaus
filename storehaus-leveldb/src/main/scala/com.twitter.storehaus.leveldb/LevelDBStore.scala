@@ -40,9 +40,8 @@ class LevelDBStore(val dir: File,
   /** Get a single key from the store.
     * Prefer multiGet if you are getting more than one key at a time.
     */
-  override def get(k: Array[Byte]): Future[Option[Array[Byte]]] = futurePool {
-    Option(db.get(k))
-  }
+  override def get(k: Array[Byte]): Future[Option[Array[Byte]]] =
+    futurePool { Option(db.get(k)) }
 
   /**
    * Replace a value
@@ -65,10 +64,10 @@ class LevelDBStore(val dir: File,
       : Map[K1, Future[Unit]] = {
     val future = futurePool {
       val batch = db.createWriteBatch()
-      kvs.foreach(kv => kv match {
+      kvs.foreach {
         case (k, Some(v)) => batch.put(k, v)
         case (k, None) => batch.delete(k)
-      })
+      }
       db.write(batch)
       batch.close()
     }

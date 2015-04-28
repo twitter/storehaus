@@ -18,7 +18,7 @@ import scala.util.Random
 object LevelDBStoreProperties extends Properties("LevelDBStore") {
 
   def putAndGetTest(store: Store[Array[Byte], Array[Byte]],
-                         pairs: Gen[List[(Array[Byte], Option[Array[Byte]])]]) =
+                    pairs: Gen[List[(Array[Byte], Option[Array[Byte]])]]) =
     forAll(pairs) { examples: List[(Array[Byte], Option[Array[Byte]])] =>
       examples.forall {
         case (k, v) => {
@@ -37,9 +37,8 @@ object LevelDBStoreProperties extends Properties("LevelDBStore") {
     forAll(pairs) { examples: List[(Array[Byte], Option[Array[Byte]])] =>
       val examplesMap = examples.toMap
       Await.result(Future.collect(store.multiPut(examplesMap).values.toList))
-      val result = store.multiGet(examplesMap.keySet).map(kv => kv match {
-        case (key, v) => (key, Await.result(v))
-      })
+      val result = store.multiGet(examplesMap.keySet)
+        .map { case (key, v) => (key, Await.result(v)) }
 
       val stringifiedResults = stringifyMap(result)
       val stringifiedExamples = stringifyMap(examplesMap)
@@ -49,10 +48,10 @@ object LevelDBStoreProperties extends Properties("LevelDBStore") {
 
   private def stringifyMap(map: Map[Array[Byte], Option[Array[Byte]]])
   :Map[String, Option[String]] = {
-    map.map(kv => kv match {
+    map.map {
       case (k, Some(v)) => (new String(k), Some(new String(v)))
       case (k, None) => (new String(k), None)
-    })
+    }
   }
 
   property("LevelDB[Array[Byte], Array[Byte]] single") = {
