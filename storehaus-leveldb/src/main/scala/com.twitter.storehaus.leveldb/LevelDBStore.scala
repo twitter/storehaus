@@ -29,7 +29,9 @@ import org.fusesource.leveldbjni.JniDBFactory._
  * @author Ben Fradet
  * @since 10/03/15
  */
-class LevelDBStore(val dir: File, val options: Options, val numThreads: Int)
+class LevelDBStore(val dir: File,
+                   val options: Options,
+                   val numThreads: Int = Runtime.getRuntime.availableProcessors)
     extends Store[Array[Byte], Array[Byte]] {
 
   private lazy val db = factory.open(dir, options)
