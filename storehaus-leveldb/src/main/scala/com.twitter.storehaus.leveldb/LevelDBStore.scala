@@ -20,12 +20,32 @@ import java.io.File
 import java.util.concurrent.Executors
 
 import com.twitter.storehaus.Store
-import com.twitter.util.{FuturePool, Time, Future, Duration}
+import com.twitter.util.{FuturePool, Time, Future}
 import org.iq80.leveldb._
 import org.fusesource.leveldbjni.JniDBFactory._
 
 /**
- * Store dealing with a LevelDB database.
+ * Store for interacting with a LevelDB database.
+ * Example usage:
+ * {{{
+ *   import java.io.File
+ *   import org.iq80.leveldb.Options
+ *   import com.twitter.storehaus.leveldb.LevelDBStore
+ *
+ *   val dir = new File("/some/path/myleveldb-directory")
+ *   dir.mkdirs()
+ *   val options = {
+ *     val opt = new Options
+ *     opt.createIfMissing(true)
+ *     opt.blockSize(8192)
+ *     opt
+ *   }
+ *   val store = new LevelDBStore(dir, new Options, 4)
+ * }}}
+ * @constructor Create a new LevelDB store.
+ * @param dir Directory where the database is/will be stored.
+ * @param options Different options for the database, see: https://github.com/google/leveldb/blob/master/util/options.cc
+ * @param numThreads Number of threads in the pool of threads interacting with the db.
  * @author Ben Fradet
  * @since 10/03/15
  */
@@ -37,15 +57,16 @@ class LevelDBStore(val dir: File,
   private lazy val db = factory.open(dir, options)
   private val futurePool = FuturePool(Executors.newFixedThreadPool(numThreads))
 
-  /** Get a single key from the store.
-    * Prefer multiGet if you are getting more than one key at a time.
-    */
+  /**
+   * Get a single key from the store.
+   * Prefer multiGet if you are getting more than one key at a time.
+   */
   override def get(k: Array[Byte]): Future[Option[Array[Byte]]] =
     futurePool { Option(db.get(k)) }
 
   /**
-   * Replace a value
-   * Delete is the same as put((k,None))
+   * Replace a value.
+   * Delete is the same as put((k,None)).
    */
   override def put(kv: (Array[Byte], Option[Array[Byte]])): Future[Unit] = {
     require(kv._1 != null)
@@ -59,7 +80,9 @@ class LevelDBStore(val dir: File,
     }
   }
 
-  /** Replace a set of keys at one time */
+  /**
+   * Replace a set of keys at one time.
+   */
   override def multiPut[K1 <: Array[Byte]](kvs: Map[K1, Option[Array[Byte]]])
       : Map[K1, Future[Unit]] = {
     val future = futurePool {
@@ -74,9 +97,10 @@ class LevelDBStore(val dir: File,
     kvs.mapValues(_ => future)
   }
 
-  /** Close this store and release any resources.
-    * It is undefined what happens on get/multiGet after close
-    */
+  /**
+   * Close this store and release any resources.
+   * It is undefined what happens on get/multiGet after close
+   */
   override def close(time: Time): Future[Unit] = {
     futurePool { db.close() }
     super.close(time)

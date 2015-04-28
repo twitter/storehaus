@@ -47,7 +47,7 @@ object LevelDBStoreProperties extends Properties("LevelDBStore") {
     }
 
   private def stringifyMap(map: Map[Array[Byte], Option[Array[Byte]]])
-  :Map[String, Option[String]] = {
+      :Map[String, Option[String]] = {
     map.map {
       case (k, Some(v)) => (new String(k), Some(new String(v)))
       case (k, None) => (new String(k), None)
