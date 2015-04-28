@@ -36,16 +36,18 @@ class StorehausOutputFormat[K, V] extends OutputFormat[K, V] {
    */
   class StorehausRecordWriter(val conf: JobConf, val progress: Progressable) extends RecordWriter[K, V] {  
     val throttler = StorehausOutputFormat.getThrottlerClass(conf)
+    log.info(s"Throttler is $throttler")
     var store: Option[WritableStore[K, Option[V]]] = None
     override def write(key: K, value: V) = {
       val tapid = InitializableStoreObjectSerializer.getTapId(conf)      
       store = if(store.isEmpty) {
         log.debug(s"RecordWriter will initialize the store.")
-        InitializableStoreObjectSerializer.getWriteVerion(conf, tapid) match {
-          case None => {
-            InitializableStoreObjectSerializer.getWritableStore[K, Option[V]](conf, tapid)
-          }
+        (InitializableStoreObjectSerializer.getWriteVerion(conf, tapid) match {
+          case None => InitializableStoreObjectSerializer.getWritableStore[K, Option[V]](conf, tapid)
           case Some(version) => InitializableStoreObjectSerializer.getWritableVersionedStore[K, Option[V]](conf, tapid, version)
+        }).onSuccess { store =>  
+          log.info(s"Going to config $throttler")
+          throttler.map(_.configure(conf, store))
         }
       }.onFailure(e => log.error(s"RecordWriter was not able to initialize the store for tap $tapid.", e)).toOption else store
       throttler.map(_.throttle)
@@ -87,20 +89,19 @@ object StorehausOutputFormat {
   } 
     
   def getThrottlerClass(conf: JobConf): Try[OutputThrottler] =
-    StorehausInputFormat.getConfClass[OutputThrottler](conf, OUTPUT_THROTTLER_CLASSNAME_CONFID, () => NullThrottler).
-    onSuccess(_.configure(conf))
+    StorehausInputFormat.getConfClass[OutputThrottler](conf, OUTPUT_THROTTLER_CLASSNAME_CONFID, () => NullThrottler)
   
   /**
    * used to initialize map-side resources
    */
   trait OutputThrottler {
-    def configure(conf: JobConf)
+    def configure[K, V](conf: JobConf, store: WritableStore[K, Option[V]])
     def throttle
     def close
   }
   
   object NullThrottler extends OutputThrottler {
-    override def configure(conf: JobConf) = {}
+    override def configure[K, V](conf: JobConf, store: WritableStore[K, Option[V]]) = {}
     override def throttle = {}
     override def close = {}
   }
