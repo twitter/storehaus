@@ -234,7 +234,7 @@ object StorehausBuild extends Build {
     // http://stackoverflow.com/questions/19425613/unsatisfiedlinkerror-with-native-library-under-sbt
     testOptions in Test := Seq(),
     fork in Test := true
-  ).dependsOn(storehausAlgebra % "test->test;compile->compile")
+  ).dependsOn(storehausCore % "test->test;compile->compile")
 
   lazy val storehausKafka = module("kafka").settings(
     libraryDependencies ++= Seq (
@@ -261,9 +261,9 @@ object StorehausBuild extends Build {
     ),
     // we don't want various tests clobbering each others keys
     parallelExecution in Test := false
-  ).dependsOn(storehausCore,storehausAlgebra % "test->test;compile->compile")
+  ).dependsOn(storehausCore, storehausAlgebra % "test->test;compile->compile")
 
-  lazy val storehausMongoDB= module("mongodb").settings(
+  lazy val storehausMongoDB = module("mongodb").settings(
     libraryDependencies ++= Seq(
       "com.twitter" %% "bijection-core" % bijectionVersion,
       "org.mongodb" %% "casbah" % "2.6.4"
