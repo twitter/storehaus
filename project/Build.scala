@@ -194,8 +194,7 @@ object StorehausBuild extends Build {
     libraryDependencies ++= Seq (
       "com.twitter" %% "bijection-core" % bijectionVersion,
       "com.twitter" %% "bijection-netty" % bijectionVersion,
-      "com.twitter" %% "finagle-redis" % finagleVersion,
-      "org.specs2" %% "specs2" % specs2Version % "test"
+      "com.twitter" %% "finagle-redis" % finagleVersion
     ),
     // we don't want various tests clobbering each others keys
     parallelExecution in Test := false
