@@ -77,10 +77,12 @@ object StorehausBuild extends Build {
     resolvers ++= Seq(
       Opts.resolver.sonatypeSnapshots,
       Opts.resolver.sonatypeReleases,
+      "Bintray JCenter" at "https://jcenter.bintray.com/",
       "Twitter Maven" at "http://maven.twttr.com",
       "Conjars Repository" at "http://conjars.org/repo",
       "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/",
-      "Websudos Repository" at "http://maven.websudos.co.uk/ext-release-local"
+      "Typesafe repository snapshots" at "http://repo.typesafe.com/typesafe/snapshots/",
+      "Java.net Maven2 Repository" at "http://download.java.net/maven/2/"
     ),
     parallelExecution in Test := true,
     scalacOptions ++= Seq(Opts.compile.unchecked, Opts.compile.deprecation),
@@ -326,7 +328,7 @@ object StorehausBuild extends Build {
     "com.datastax.cassandra" % "cassandra-driver-core" % cassandraDriverVersion,
     "org.apache.cassandra" % "cassandra-thrift" % cassandraVersion exclude ("com.google.guava", "guava"),
     "org.apache.cassandra" % "cassandra-all" % cassandraVersion exclude ("com.google.guava", "guava"),
-    "com.websudos" % "phantom-dsl_2.10" % "1.0.6" exclude ("com.datastax.cassandra", "cassandra-driver-core"),
+    "com.websudos" % "phantom-dsl_2.10" % "1.4.0" exclude ("com.datastax.cassandra", "cassandra-driver-core"),
     withCross("com.twitter" %% "util-zk" % utilVersion)  exclude ("com.google.guava", "guava"),
     real210Version("com.chuusai" %% "shapeless" % "2.0.0"),
     "org.slf4j" % "slf4j-api" % "1.7.5",
