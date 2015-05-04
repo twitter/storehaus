@@ -56,6 +56,7 @@ object StorehausBuild extends Build {
     crossScalaVersions := Seq("2.10.4"),
     javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
     javacOptions in doc := Seq("-source", "1.6"),
+    libraryDependencies += "org.scalatest" %% "scalatest" % scalatestVersion % "test",
     resolvers ++= Seq(
       Opts.resolver.sonatypeSnapshots,
       Opts.resolver.sonatypeReleases,
@@ -116,6 +117,7 @@ object StorehausBuild extends Build {
   val utilVersion = "6.22.0"
   val scaldingVersion = "0.13.1"
   val finagleVersion = "6.22.0"
+  val scalatestVersion = "2.2.4"
   val specs2Version = "1.13"
   lazy val storehaus = Project(
 
