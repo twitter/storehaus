@@ -28,15 +28,9 @@ import AssemblyKeys._
 object StorehausBuild extends Build {
   def withCross(dep: ModuleID) =
     dep cross CrossVersion.binaryMapped {
-      case "2.9.3" => "2.9.2" // TODO: hack because twitter hasn't built things against 2.9.3
       case version if version startsWith "2.10" => "2.10" // TODO: hack because sbt is broken
       case x => x
     }
-
-  def specs2Import(scalaVersion: String) = scalaVersion match {
-      case version if version startsWith "2.9" => "org.specs2" %% "specs2" % "1.12.4.1" % "test"
-      case version if version startsWith "2.10" => "org.specs2" %% "specs2" % "1.13" % "test"
-  }
   val extraSettings =
     Project.defaultSettings ++ Boilerplate.settings ++ assemblySettings ++ mimaDefaultSettings
 
@@ -62,7 +56,6 @@ object StorehausBuild extends Build {
     crossScalaVersions := Seq("2.10.4"),
     javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
     javacOptions in doc := Seq("-source", "1.6"),
-    libraryDependencies <+= scalaVersion(specs2Import(_)),
     resolvers ++= Seq(
       Opts.resolver.sonatypeSnapshots,
       Opts.resolver.sonatypeReleases,
@@ -123,6 +116,7 @@ object StorehausBuild extends Build {
   val utilVersion = "6.22.0"
   val scaldingVersion = "0.13.1"
   val finagleVersion = "6.22.0"
+  val specs2Version = "1.13"
   lazy val storehaus = Project(
 
     id = "storehaus",
@@ -159,7 +153,8 @@ object StorehausBuild extends Build {
 
   lazy val storehausCache = module("cache").settings(
     libraryDependencies += "com.twitter" %% "algebird-core" % algebirdVersion,
-    libraryDependencies += withCross("com.twitter" %% "util-core" % utilVersion)
+    libraryDependencies += withCross("com.twitter" %% "util-core" % utilVersion),
+    libraryDependencies += "org.specs2" %% "specs2" % specs2Version % "test"
   )
 
   lazy val storehausCore = module("core").settings(
@@ -198,7 +193,8 @@ object StorehausBuild extends Build {
     libraryDependencies ++= Seq (
       "com.twitter" %% "bijection-core" % bijectionVersion,
       "com.twitter" %% "bijection-netty" % bijectionVersion,
-      "com.twitter" %% "finagle-redis" % finagleVersion
+      "com.twitter" %% "finagle-redis" % finagleVersion,
+      "org.specs2" %% "specs2" % specs2Version % "test"
     ),
     // we don't want various tests clobbering each others keys
     parallelExecution in Test := false
@@ -238,7 +234,8 @@ object StorehausBuild extends Build {
         ExclusionRule("com.sun.jdmk","jmxtools"),
         ExclusionRule( "com.sun.jmx","jmxri"),
         ExclusionRule( "javax.jms","jms")
-        )
+        ),
+      "org.specs2" %% "specs2" % specs2Version % "test"
     ),
     // we don't want various tests clobbering each others keys
     parallelExecution in Test := false
@@ -251,7 +248,8 @@ object StorehausBuild extends Build {
       "org.apache.kafka" % "kafka_2.9.2" % "0.8.0" % "provided" excludeAll(
         ExclusionRule(organization = "com.sun.jdmk"),
         ExclusionRule(organization = "com.sun.jmx"),
-        ExclusionRule(organization = "javax.jms"))
+        ExclusionRule(organization = "javax.jms")),
+      "org.specs2" %% "specs2" % specs2Version % "test"
     ),
     // we don't want various tests clobbering each others keys
     parallelExecution in Test := false
@@ -270,7 +268,8 @@ object StorehausBuild extends Build {
       "org.elasticsearch" % "elasticsearch" % "0.90.9",
       "org.json4s" %% "json4s-native" % "3.2.6",
       "com.google.code.findbugs" % "jsr305" % "1.3.+",
-      "com.twitter" %% "bijection-json4s" % bijectionVersion
+      "com.twitter" %% "bijection-json4s" % bijectionVersion,
+      "org.specs2" %% "specs2" % specs2Version % "test"
     ),
     // we don't want various tests clobbering each others keys
     parallelExecution in Test := false
@@ -283,8 +282,10 @@ object StorehausBuild extends Build {
     settings = sharedSettings ++ Seq(
       name := "storehaus-testing",
       previousArtifact := youngestForwardCompatible("testing"),
-      libraryDependencies ++= Seq("org.scalacheck" %% "scalacheck" % "1.10.0" withSources(),
-        withCross("com.twitter" %% "util-core" % utilVersion))
+      libraryDependencies ++= Seq(
+        "org.scalacheck" %% "scalacheck" % "1.10.0" withSources(),
+        withCross("com.twitter" %% "util-core" % utilVersion)
+      )
     )
   )
 
@@ -293,8 +294,9 @@ object StorehausBuild extends Build {
       "com.google.code.java-allocation-instrumenter" % "java-allocation-instrumenter" % "2.0",
       "com.google.code.gson" % "gson" % "1.7.1",
       "com.twitter" %% "bijection-core" % bijectionVersion,
-      "com.twitter" %% "algebird-core" % algebirdVersion),
-      javaOptions in run <++= (fullClasspath in Runtime) map { cp => Seq("-cp", sbt.Build.data(cp).mkString(":")) }
+      "com.twitter" %% "algebird-core" % algebirdVersion
+    ),
+    javaOptions in run <++= (fullClasspath in Runtime) map { cp => Seq("-cp", sbt.Build.data(cp).mkString(":")) }
   ).dependsOn(storehausCore, storehausAlgebra, storehausCache)
 
   lazy val storehausHttp = module("http").settings(
