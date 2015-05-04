@@ -155,8 +155,7 @@ object StorehausBuild extends Build {
 
   lazy val storehausCache = module("cache").settings(
     libraryDependencies += "com.twitter" %% "algebird-core" % algebirdVersion,
-    libraryDependencies += withCross("com.twitter" %% "util-core" % utilVersion),
-    libraryDependencies += "org.specs2" %% "specs2" % specs2Version % "test"
+    libraryDependencies += withCross("com.twitter" %% "util-core" % utilVersion)
   )
 
   lazy val storehausCore = module("core").settings(
