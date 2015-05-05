@@ -268,8 +268,7 @@ object StorehausBuild extends Build {
       "org.elasticsearch" % "elasticsearch" % "0.90.9",
       "org.json4s" %% "json4s-native" % "3.2.6",
       "com.google.code.findbugs" % "jsr305" % "1.3.+",
-      "com.twitter" %% "bijection-json4s" % bijectionVersion,
-      "org.specs2" %% "specs2" % specs2Version % "test"
+      "com.twitter" %% "bijection-json4s" % bijectionVersion
     ),
     // we don't want various tests clobbering each others keys
     parallelExecution in Test := false
