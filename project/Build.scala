@@ -66,7 +66,6 @@ object StorehausBuild extends Build {
     resolvers ++= Seq(
       Opts.resolver.sonatypeSnapshots,
       Opts.resolver.sonatypeReleases,
-      "Twitter Maven" at "http://maven.twttr.com",
       "Conjars Repository" at "http://conjars.org/repo"
     ),
     parallelExecution in Test := true,
@@ -123,6 +122,7 @@ object StorehausBuild extends Build {
   val bijectionVersion = "0.7.2"
   val utilVersion = "6.22.0"
   val scaldingVersion = "0.13.1"
+  val finagleVersion = "6.22.0"
   lazy val storehaus = Project(
 
     id = "storehaus",
@@ -182,19 +182,23 @@ object StorehausBuild extends Build {
       "com.twitter" %% "algebird-core" % algebirdVersion,
       "com.twitter" %% "bijection-core" % bijectionVersion,
       "com.twitter" %% "bijection-netty" % bijectionVersion,
-      Finagle.module("memcached")
+      "com.twitter" %% "finagle-memcached" % finagleVersion excludeAll(
+        // we don't use this and its not on maven central.
+        ExclusionRule("com.twitter.common.zookeeper"),
+        ExclusionRule("com.twitter.common")
+        )
     )
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
   lazy val storehausMySQL = module("mysql").settings(
-    libraryDependencies += Finagle.module("mysql")
+    libraryDependencies += "com.twitter" %% "finagle-mysql" % finagleVersion
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
   lazy val storehausRedis = module("redis").settings(
     libraryDependencies ++= Seq (
       "com.twitter" %% "bijection-core" % bijectionVersion,
       "com.twitter" %% "bijection-netty" % bijectionVersion,
-      Finagle.module("redis")
+      "com.twitter" %% "finagle-redis" % finagleVersion
     ),
     // we don't want various tests clobbering each others keys
     parallelExecution in Test := false
@@ -295,7 +299,7 @@ object StorehausBuild extends Build {
 
   lazy val storehausHttp = module("http").settings(
     libraryDependencies ++= Seq(
-      Finagle.module("http"),
+      "com.twitter" %% "finagle-http" % finagleVersion,
       "com.twitter" %% "bijection-netty" % bijectionVersion
     )
   ).dependsOn(storehausCore)
