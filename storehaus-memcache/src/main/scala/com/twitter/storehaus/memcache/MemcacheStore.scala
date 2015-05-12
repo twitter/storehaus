@@ -113,7 +113,7 @@ object MemcacheStore {
     MergeableMemcacheStore[K, V](client, ttl, flag, retries)(kfn)(inj, implicitly[Semigroup[V]])
 }
 
-class MemcacheStore(val client: Client, ttl: Duration, flag: Int)
+class MemcacheStore(val client: Client, val ttl: Duration, flag: Int)
   extends Store[String, ChannelBuffer]
   with WithPutTtl[String, ChannelBuffer, MemcacheStore]
 {
