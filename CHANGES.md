@@ -1,5 +1,11 @@
 # Storehaus #
 
+### Version 0.11.0 ###
+* Add correct String/ChannelBuffer injections #257
+* initial scalatest migration #260
+* Remove usage of twitter's maven repo, travis seems to dislike it -- mayb... #261
+* Bijection 0.8.0, algebird 0.10.0, scalding 0.14.0, and scala 2.10.5
+
 ### Version 0.10.0 ###
 * Use latest scalding, algebird, and bijection versions: https://github.com/twitter/storehaus/pull/255
 * Use new Travis CI container infrastructure: https://github.com/twitter/storehaus/pull/254
