@@ -87,7 +87,7 @@ class MergeableMemcacheStore[K, V](underlying: MemcacheStore, maxRetries: Int)(k
               }
             // no pre-existing value, try to 'add' it
             case None =>
-              underlying.client.add(key, 0, underlying.ttl.fromNow, inj.apply(kv._2)).flatMap { success =>
+              underlying.client.add(key, underlying.flag, underlying.ttl.fromNow, inj.apply(kv._2)).flatMap { success =>
                 success.booleanValue match {
                   case true => Future.None
                   case false => doMerge(kv, currentRetry + 1) // retry, next retry should call cas
