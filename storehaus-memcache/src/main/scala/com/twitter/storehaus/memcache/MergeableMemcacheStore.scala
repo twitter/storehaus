@@ -77,7 +77,7 @@ class MergeableMemcacheStore[K, V](underlying: MemcacheStore, maxRetries: Int)(k
               inj.invert(cbValue) match {
                 case Success(v) => // attempt cas
                   val resV = semigroup.plus(v, kv._2)
-                  underlying.client.cas(key, inj.apply(resV), casunique).flatMap { success =>
+                  underlying.client.cas(key, underlying.flag, underlying.ttl.fromNow, inj.apply(resV), casunique).flatMap { success =>
                     success.booleanValue match {
                       case true => Future.value(Some(v))
                       case false => doMerge(kv, currentRetry + 1) // retry
@@ -87,7 +87,7 @@ class MergeableMemcacheStore[K, V](underlying: MemcacheStore, maxRetries: Int)(k
               }
             // no pre-existing value, try to 'add' it
             case None =>
-              underlying.client.add(key, inj.apply(kv._2)).flatMap { success =>
+              underlying.client.add(key, underlying.flag, underlying.ttl.fromNow, inj.apply(kv._2)).flatMap { success =>
                 success.booleanValue match {
                   case true => Future.None
                   case false => doMerge(kv, currentRetry + 1) // retry, next retry should call cas
