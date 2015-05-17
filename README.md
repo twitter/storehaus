@@ -87,13 +87,13 @@ Storehaus provides a number of modules wrapping existing key-value stores. Enric
   * [Storehaus-mysql](http://twitter.github.com/storehaus/#com.twitter.storehaus.mysql.MySqlStore) (wraps Twitter's [finagle-mysql](https://github.com/twitter/finagle/tree/master/finagle-mysql) library)
   * [Storehaus-redis](http://twitter.github.com/storehaus/#com.twitter.storehaus.redis.RedisStore) (wraps Twitter's [finagle-redis](https://github.com/twitter/finagle/tree/master/finagle-redis) library)
   * [Storehaus-hbase](http://twitter.github.com/storehaus/#com.twitter.storehaus.hbase.HBaseStore)
-  * [storehaus-dynamodb](https://github.com/twitter/storehaus/tree/develop/storehaus-dynamodb)
+  * [Storehaus-dynamodb](https://github.com/twitter/storehaus/tree/develop/storehaus-dynamodb)
+  * [Storehaus-leveldb](https://github.com/twitter/storehaus/tree/develop/storehaus-leveldb)
 
 #### Planned Modules
 
 Here's a list of modules we plan in implementing, with links to the github issues tracking progress on these modules:
 
-* [storehaus-leveldb](https://github.com/twitter/storehaus/issues/51)
 * [storehaus-berkeleydb](https://github.com/twitter/storehaus/issues/52)
 
 ## Community and Documentation
