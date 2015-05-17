@@ -102,7 +102,6 @@ class LevelDBStore(val dir: File,
    * It is undefined what happens on get/multiGet after close
    */
   override def close(time: Time): Future[Unit] = {
-    futurePool { db.close() }
-    super.close(time)
+    futurePool { db.close() }.flatMap { _ => super.close(time) }
   }
 }
