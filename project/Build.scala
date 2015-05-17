@@ -28,15 +28,9 @@ import AssemblyKeys._
 object StorehausBuild extends Build {
   def withCross(dep: ModuleID) =
     dep cross CrossVersion.binaryMapped {
-      case "2.9.3" => "2.9.2" // TODO: hack because twitter hasn't built things against 2.9.3
       case version if version startsWith "2.10" => "2.10" // TODO: hack because sbt is broken
       case x => x
     }
-
-  def specs2Import(scalaVersion: String) = scalaVersion match {
-      case version if version startsWith "2.9" => "org.specs2" %% "specs2" % "1.12.4.1" % "test"
-      case version if version startsWith "2.10" => "org.specs2" %% "specs2" % "1.13" % "test"
-  }
   val extraSettings =
     Project.defaultSettings ++ Boilerplate.settings ++ assemblySettings ++ mimaDefaultSettings
 
@@ -57,16 +51,15 @@ object StorehausBuild extends Build {
 
   val sharedSettings = extraSettings ++ ciSettings ++ Seq(
     organization := "com.twitter",
-    scalaVersion := "2.10.4",
-    version := "0.10.0",
-    crossScalaVersions := Seq("2.10.4"),
+    scalaVersion := "2.10.5",
+    version := "0.11.0",
+    crossScalaVersions := Seq("2.10.5"),
     javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
     javacOptions in doc := Seq("-source", "1.6"),
-    libraryDependencies <+= scalaVersion(specs2Import(_)),
+    libraryDependencies += "org.scalatest" %% "scalatest" % scalatestVersion % "test",
     resolvers ++= Seq(
       Opts.resolver.sonatypeSnapshots,
       Opts.resolver.sonatypeReleases,
-      "Twitter Maven" at "http://maven.twttr.com",
       "Conjars Repository" at "http://conjars.org/repo"
     ),
     parallelExecution in Test := true,
@@ -117,12 +110,15 @@ object StorehausBuild extends Build {
   def youngestForwardCompatible(subProj: String) =
     Some(subProj)
       .filterNot(unreleasedModules.contains(_))
-      .map { s => "com.twitter" % ("storehaus-" + s + "_2.10") % "0.10.0" }
+      .map { s => "com.twitter" % ("storehaus-" + s + "_2.10") % "0.11.0" }
 
-  val algebirdVersion = "0.9.0"
-  val bijectionVersion = "0.7.2"
+  val algebirdVersion = "0.10.0"
+  val bijectionVersion = "0.8.0"
   val utilVersion = "6.22.0"
-  val scaldingVersion = "0.13.1"
+  val scaldingVersion = "0.14.0"
+  val finagleVersion = "6.22.0"
+  val scalatestVersion = "2.2.4"
+  val specs2Version = "1.13"
   lazy val storehaus = Project(
     id = "storehaus",
     base = file("."),
@@ -182,19 +178,23 @@ object StorehausBuild extends Build {
       "com.twitter" %% "algebird-core" % algebirdVersion,
       "com.twitter" %% "bijection-core" % bijectionVersion,
       "com.twitter" %% "bijection-netty" % bijectionVersion,
-      Finagle.module("memcached")
+      "com.twitter" %% "finagle-memcached" % finagleVersion excludeAll(
+        // we don't use this and its not on maven central.
+        ExclusionRule("com.twitter.common.zookeeper"),
+        ExclusionRule("com.twitter.common")
+        )
     )
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
   lazy val storehausMySQL = module("mysql").settings(
-    libraryDependencies += Finagle.module("mysql")
+    libraryDependencies += "com.twitter" %% "finagle-mysql" % finagleVersion
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
   lazy val storehausRedis = module("redis").settings(
     libraryDependencies ++= Seq (
       "com.twitter" %% "bijection-core" % bijectionVersion,
       "com.twitter" %% "bijection-netty" % bijectionVersion,
-      Finagle.module("redis")
+      "com.twitter" %% "finagle-redis" % finagleVersion
     ),
     // we don't want various tests clobbering each others keys
     parallelExecution in Test := false
@@ -244,7 +244,8 @@ object StorehausBuild extends Build {
         ExclusionRule("com.sun.jdmk", "jmxtools"),
         ExclusionRule("com.sun.jmx", "jmxri"),
         ExclusionRule("javax.jms", "jms")
-      )
+      ),
+      "org.specs2" %% "specs2" % specs2Version % "test"
     ),
     // we don't want various tests clobbering each others keys
     parallelExecution in Test := false
@@ -257,7 +258,8 @@ object StorehausBuild extends Build {
       "org.apache.kafka" % "kafka_2.9.2" % "0.8.0" % "provided" excludeAll(
         ExclusionRule(organization = "com.sun.jdmk"),
         ExclusionRule(organization = "com.sun.jmx"),
-        ExclusionRule(organization = "javax.jms"))
+        ExclusionRule(organization = "javax.jms")),
+      "org.specs2" %% "specs2" % specs2Version % "test"
     ),
     // we don't want various tests clobbering each others keys
     parallelExecution in Test := false
@@ -288,8 +290,10 @@ object StorehausBuild extends Build {
     settings = sharedSettings ++ Seq(
       name := "storehaus-testing",
       previousArtifact := youngestForwardCompatible("testing"),
-      libraryDependencies ++= Seq("org.scalacheck" %% "scalacheck" % "1.10.0" withSources(),
-        withCross("com.twitter" %% "util-core" % utilVersion))
+      libraryDependencies ++= Seq(
+        "org.scalacheck" %% "scalacheck" % "1.10.0" withSources(),
+        withCross("com.twitter" %% "util-core" % utilVersion)
+      )
     )
   )
 
@@ -298,13 +302,14 @@ object StorehausBuild extends Build {
       "com.google.code.java-allocation-instrumenter" % "java-allocation-instrumenter" % "2.0",
       "com.google.code.gson" % "gson" % "1.7.1",
       "com.twitter" %% "bijection-core" % bijectionVersion,
-      "com.twitter" %% "algebird-core" % algebirdVersion),
-      javaOptions in run <++= (fullClasspath in Runtime) map { cp => Seq("-cp", sbt.Build.data(cp).mkString(":")) }
+      "com.twitter" %% "algebird-core" % algebirdVersion
+    ),
+    javaOptions in run <++= (fullClasspath in Runtime) map { cp => Seq("-cp", sbt.Build.data(cp).mkString(":")) }
   ).dependsOn(storehausCore, storehausAlgebra, storehausCache)
 
   lazy val storehausHttp = module("http").settings(
     libraryDependencies ++= Seq(
-      Finagle.module("http"),
+      "com.twitter" %% "finagle-http" % finagleVersion,
       "com.twitter" %% "bijection-netty" % bijectionVersion
     )
   ).dependsOn(storehausCore)
