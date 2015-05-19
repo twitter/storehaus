@@ -114,9 +114,9 @@ object StorehausBuild extends Build {
 
   val algebirdVersion = "0.10.0"
   val bijectionVersion = "0.8.0"
-  val utilVersion = "6.22.0"
+  val utilVersion = "6.24.0"
   val scaldingVersion = "0.14.0"
-  val finagleVersion = "6.22.0"
+  val finagleVersion = "6.25.0"
   val scalatestVersion = "2.2.4"
   val specs2Version = "1.13"
   lazy val storehaus = Project(
