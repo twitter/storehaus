@@ -19,7 +19,7 @@ package com.twitter.storehaus.memcache
 import com.twitter.algebird.Semigroup
 import com.twitter.bijection.NumericInjections
 import com.twitter.util.{Duration, Future}
-import com.twitter.finagle.memcached.Client
+import com.twitter.finagle.memcachedx.Client
 import com.twitter.storehaus.ConvertedStore
 import com.twitter.storehaus.algebra.MergeableStore
 import org.jboss.netty.buffer.ChannelBuffer

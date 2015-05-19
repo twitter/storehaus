@@ -21,10 +21,10 @@ import com.twitter.bijection.{ Bijection, Codec, Injection }
 import com.twitter.bijection.netty.Implicits._
 import com.twitter.conversions.time._
 import com.twitter.finagle.builder.ClientBuilder
-import com.twitter.finagle.memcached.KetamaClientBuilder
-import com.twitter.finagle.memcached.protocol.text.Memcached
+import com.twitter.finagle.memcachedx.KetamaClientBuilder
+import com.twitter.finagle.memcachedx.protocol.text.Memcached
 import com.twitter.util.{ Duration, Future, Time }
-import com.twitter.finagle.memcached.{ GetResult, Client }
+import com.twitter.finagle.memcachedx.{ GetResult, Client }
 import com.twitter.storehaus.{ FutureOps, Store, WithPutTtl }
 import com.twitter.storehaus.algebra.MergeableStore
 import org.jboss.netty.buffer.ChannelBuffer
