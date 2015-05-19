@@ -23,6 +23,7 @@ import com.twitter.conversions.time._
 import com.twitter.finagle.builder.ClientBuilder
 import com.twitter.finagle.memcachedx.KetamaClientBuilder
 import com.twitter.finagle.memcachedx.protocol.text.Memcached
+import com.twitter.finagle.netty3.{BufChannelBuffer, ChannelBufferBuf}
 import com.twitter.util.{ Duration, Future, Time }
 import com.twitter.finagle.memcachedx.{ GetResult, Client }
 import com.twitter.storehaus.{ FutureOps, Store, WithPutTtl }
@@ -119,23 +120,27 @@ class MemcacheStore(val client: Client, val ttl: Duration, val flag: Int)
 {
   override def withPutTtl(ttl: Duration) = new MemcacheStore(client, ttl, flag)
 
-  override def get(k: String): Future[Option[ChannelBuffer]] = client.get(k)
+  override def get(k: String): Future[Option[ChannelBuffer]] =
+    client.get(k).map(_.map(ChannelBufferBuf.Owned.extract))
 
   override def multiGet[K1 <: String](ks: Set[K1]): Map[K1, Future[Option[ChannelBuffer]]] = {
     val memcacheResult: Future[Map[String, Future[Option[ChannelBuffer]]]] =
       client.getResult(ks).map { result =>
-        result.hits.mapValues { v => Future.value(Some(v.value)) } ++
-        result.failures.mapValues { Future.exception(_) }
+        result.hits.mapValues { v =>
+          Future.value(Some(BufChannelBuffer(v.value)))
+        } ++ result.failures.mapValues(Future.exception)
       }
     FutureOps.liftValues(ks, memcacheResult, { (k: K1) => Future.value(Future.None) })
       .mapValues { _.flatten }
   }
 
-  protected def set(k: String, v: ChannelBuffer) = client.set(k, flag, ttl.fromNow, v)
+  protected def set(k: String, v: ChannelBuffer) =
+    client.set(k, flag, ttl.fromNow, ChannelBufferBuf.Owned(v))
 
   override def put(kv: (String, Option[ChannelBuffer])): Future[Unit] =
     kv match {
-      case (key, Some(value)) => client.set(key, flag, ttl.fromNow, value)
+      case (key, Some(value)) =>
+        client.set(key, flag, ttl.fromNow, ChannelBufferBuf.Owned(value))
       case (key, None) => client.delete(key).unit
     }
 

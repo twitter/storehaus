@@ -17,9 +17,10 @@
 package com.twitter.storehaus.memcache
 
 import com.twitter.algebird.Semigroup
-import com.twitter.bijection.NumericInjections
+import com.twitter.bijection.{Bijection, NumericInjections}
 import com.twitter.util.{Duration, Future}
 import com.twitter.finagle.memcachedx.Client
+import com.twitter.io.Buf
 import com.twitter.storehaus.ConvertedStore
 import com.twitter.storehaus.algebra.MergeableStore
 import org.jboss.netty.buffer.ChannelBuffer
@@ -34,9 +35,16 @@ import com.twitter.bijection.netty.ChannelBufferBijection
  */
 object MemcacheLongStore {
   private implicit val cb2ary = ChannelBufferBijection
+  private implicit val b2ary = new Bijection[Buf, Array[Byte]] {
+    def apply(buf: Buf) = Buf.ByteArray.Owned.extract(buf)
+    override def invert(ary: Array[Byte]) = Buf.ByteArray.Owned(ary)
+  }
   // Long => String => ChannelBuffer <= String <= Long
-  private [memcache] implicit val LongInjection: Injection[Long, ChannelBuffer] =
+  private[memcache] implicit val LongChannelBuffer: Injection[Long, ChannelBuffer] =
     Injection.connect[Long, String, Array[Byte], ChannelBuffer]
+  // Long => String => Buf <= String <= Long
+  private[memcache] implicit val LongBuf: Injection[Long, Buf] =
+    Injection.connect[Long, String, Array[Byte], Buf]
 
   def apply(client: Client, ttl: Duration = MemcacheStore.DEFAULT_TTL, flag: Int = MemcacheStore.DEFAULT_FLAG) =
     new MemcacheLongStore(MemcacheStore(client, ttl, flag))
@@ -58,7 +66,7 @@ class MemcacheLongStore(underlying: MemcacheStore)
       case None => // memcache does not create on increment
         underlying
           .client
-          .add(k, v.as[ChannelBuffer])
+          .add(k, v.as[Buf])
           .flatMap { b => if(b) Future.value(None) else merge(kv) }
     }
   }
