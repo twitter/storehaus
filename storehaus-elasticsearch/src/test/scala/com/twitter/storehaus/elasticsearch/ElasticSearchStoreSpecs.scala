@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus.elasticsearch
 
-import org.scalatest.{OneInstancePerTest, Matchers, WordSpec}
+import org.scalatest.{OneInstancePerTest, BeforeAndAfter, Matchers, WordSpec}
 import com.twitter.util.{Future, Await}
 import com.twitter.storehaus.FutureOps
 import org.elasticsearch.action.search.SearchRequestBuilder
@@ -28,11 +28,17 @@ import org.json4s.{native, NoTypeHints}
  * @author Mansur Ashraf
  * @since 1/13/14
  */
-class ElasticSearchStoreSpecs extends WordSpec with Matchers with OneInstancePerTest with DefaultElasticContext {
+class ElasticSearchStoreSpecs extends WordSpec with Matchers
+  with BeforeAndAfter with OneInstancePerTest with DefaultElasticContext {
 
   private implicit val formats = native.Serialization.formats(NoTypeHints)
 
   private val person = Person("Joe", "Smith", 29)
+
+  before {
+    // wait for the shards to load up
+    block(DEFAULT_TIMEOUT)
+  }
 
   "ElasticSearch Store" should {
 
