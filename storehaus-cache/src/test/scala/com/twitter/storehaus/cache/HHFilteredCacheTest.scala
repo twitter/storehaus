@@ -16,14 +16,14 @@
 
 package com.twitter.storehaus.cache
 
-import org.specs2.mutable._
+import org.scalatest.{Matchers, WordSpec}
 
-class HHFilteredCacheTest extends Specification {
+class HHFilteredCacheTest extends WordSpec with Matchers {
   def checkCache[K, V](pairs: Seq[(K, V)], m: Map[K, V])(implicit cache: MutableCache[K, V]) = {
     pairs.foldLeft(cache)(_ += _)
     val res = cache.iterator.toMap
     cache.clear
-    res must be_==(m)
+    res should equal(m)
   }
 
   "HHFilteredCache works properly" in {

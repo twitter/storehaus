@@ -32,17 +32,17 @@ import org.scalacheck.Prop.forAll
 
 /** Unit test using Long values */
 object MergeableMemcacheStoreProperties extends Properties("MergeableMemcacheStore")
-  with SelfAggregatingCloseableCleanup[MergeableMemcacheStore[Long]] {
+  with SelfAggregatingCloseableCleanup[MergeableMemcacheStore[String, Long]] {
 
-  def put(s: MergeableMemcacheStore[Long], pairs: List[(String, Option[Long])]) = {
+  def put(s: MergeableMemcacheStore[String, Long], pairs: List[(String, Option[Long])]) = {
     pairs.foreach { case (k, v) =>
       Await.result(s.put((k, v)))
     }
   }
 
-  def merge(s: MergeableMemcacheStore[Long], kvs: Map[String, Long]) = s.multiMerge(kvs)
+  def merge(s: MergeableMemcacheStore[String, Long], kvs: Map[String, Long]) = s.multiMerge(kvs)
 
-  def putAndGetStoreTest(store: MergeableMemcacheStore[Long],
+  def putAndGetStoreTest(store: MergeableMemcacheStore[String, Long],
       pairs: Gen[List[(String, Option[Long])]] = NonEmpty.Pairing.alphaStrNumerics[Long](10)) =
     forAll(pairs) { (examples: List[(String, Option[Long])]) =>
       put(store, examples)
@@ -52,7 +52,7 @@ object MergeableMemcacheStoreProperties extends Properties("MergeableMemcacheSto
       }
     }
 
-  def mergeStoreTest(store: MergeableMemcacheStore[Long],
+  def mergeStoreTest(store: MergeableMemcacheStore[String, Long],
       pairs: Gen[List[(String, Option[Long])]] = NonEmpty.Pairing.alphaStrNumerics[Long](10)) =
     forAll(pairs) { (examples: List[(String, Option[Long])]) =>
       put(store, examples)
@@ -84,7 +84,7 @@ object MergeableMemcacheStoreProperties extends Properties("MergeableMemcacheSto
     val client = Client("localhost:11211")
     val injection = Injection.connect[Long, String, Array[Byte], ChannelBuffer]
     val semigroup = implicitly[Semigroup[Long]]
-    val store = MergeableMemcacheStore[Long](client)(injection, semigroup)
+    val store = MergeableMemcacheStore[String, Long](client)(identity)(injection, semigroup)
 
     putAndGetStoreTest(store) && mergeStoreTest(store)
   }

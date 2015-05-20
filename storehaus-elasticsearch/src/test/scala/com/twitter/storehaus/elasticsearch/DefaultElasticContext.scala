@@ -20,15 +20,13 @@ import org.elasticsearch.common.settings.ImmutableSettings
 import java.util.UUID
 import java.io.File
 import org.elasticsearch.node.NodeBuilder._
-import org.specs2.specification.Scope
 import org.json4s.{native, NoTypeHints}
-
 
 /**
  * @author Mansur Ashraf
  * @since 1/13/14
  */
-trait DefaultElasticContext extends Scope {
+trait DefaultElasticContext {
 
   val tempFile = File.createTempFile("elasticsearchtests", "tmp")
   val homeDir = new File(tempFile.getParent + "/" + UUID.randomUUID().toString)
