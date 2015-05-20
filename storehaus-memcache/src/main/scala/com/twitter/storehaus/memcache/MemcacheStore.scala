@@ -121,7 +121,10 @@ class MemcacheStore(val client: Client, val ttl: Duration, val flag: Int)
   override def withPutTtl(ttl: Duration) = new MemcacheStore(client, ttl, flag)
 
   override def get(k: String): Future[Option[ChannelBuffer]] =
-    client.get(k).map(_.map(ChannelBufferBuf.Owned.extract))
+    client.get(k).flatMap {
+      case None => Future.None
+      case Some(buf) => Future.value(Some(ChannelBufferBuf.Owned.extract(buf)))
+    }
 
   override def multiGet[K1 <: String](ks: Set[K1]): Map[K1, Future[Option[ChannelBuffer]]] = {
     val memcacheResult: Future[Map[String, Future[Option[ChannelBuffer]]]] =
