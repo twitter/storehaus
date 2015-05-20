@@ -17,7 +17,8 @@
 package com.twitter.storehaus.memcache
 
 import com.twitter.algebird.Semigroup
-import com.twitter.bijection.{Bijection, NumericInjections}
+import com.twitter.bijection.NumericInjections
+import com.twitter.bijection.twitter_util.UtilBijections
 import com.twitter.util.{Duration, Future}
 import com.twitter.finagle.memcachedx.Client
 import com.twitter.io.Buf
@@ -34,14 +35,13 @@ import com.twitter.bijection.netty.ChannelBufferBijection
  *  @author Doug Tangren
  */
 object MemcacheLongStore {
+  import UtilBijections.Owned.byteArrayBufBijection
+
   private implicit val cb2ary = ChannelBufferBijection
-  private implicit val b2ary = new Bijection[Buf, Array[Byte]] {
-    def apply(buf: Buf) = Buf.ByteArray.Owned.extract(buf)
-    override def invert(ary: Array[Byte]) = Buf.ByteArray.Owned(ary)
-  }
   // Long => String => ChannelBuffer <= String <= Long
   private[memcache] implicit val LongChannelBuffer: Injection[Long, ChannelBuffer] =
     Injection.connect[Long, String, Array[Byte], ChannelBuffer]
+
   // Long => String => Buf <= String <= Long
   private[memcache] implicit val LongBuf: Injection[Long, Buf] =
     Injection.connect[Long, String, Array[Byte], Buf]
