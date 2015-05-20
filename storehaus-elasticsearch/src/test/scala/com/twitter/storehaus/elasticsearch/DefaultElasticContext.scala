@@ -32,7 +32,7 @@ trait DefaultElasticContext {
   val homeDir = new File(tempFile.getParent + "/" + UUID.randomUUID().toString)
   val test_index = "test_index"
   val test_type = "test_type"
-  val DEFAULT_TIMEOUT = 4 * 1000
+  val DEFAULT_TIMEOUT = 10 * 1000
 
   homeDir.mkdir()
   homeDir.deleteOnExit()
