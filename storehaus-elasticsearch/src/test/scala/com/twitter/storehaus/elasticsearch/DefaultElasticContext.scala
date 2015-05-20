@@ -52,7 +52,7 @@ trait DefaultElasticContext {
     node.client()
   }
   private implicit val formats = native.Serialization.formats(NoTypeHints)
-  lazy val store = ElasticSearchCaseClassStore[Person](test_index, test_type, client)
+  val store = ElasticSearchCaseClassStore[Person](test_index, test_type, client)
 
   def refreshIndex(): Unit = {
     refresh(test_index)
