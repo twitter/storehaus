@@ -107,7 +107,6 @@ class MergeableMemcacheStore[K, V](underlying: MemcacheStore, maxRetries: Int)(k
                 case false => doMerge(kv, currentRetry + 1) // retry, next retry should call cas
               }
             }
-          
         }
       // no more retries
       case true => Future.exception(new MergeFailedException(key))
