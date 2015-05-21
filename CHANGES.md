@@ -1,5 +1,11 @@
 # Storehaus #
 
+### Version 0.11.1 ###
+* storehaus-memcache: pass ttl for MergeableMemcacheStore CAS calls #262
+* Upgrade Finagle and Util #265
+* Ugprade finagle-memcached to finagle-memcachedx #266
+* Elasticsearch test increase timeout #267
+
 ### Version 0.11.0 ###
 * Add correct String/ChannelBuffer injections #257
 * initial scalatest migration #260
