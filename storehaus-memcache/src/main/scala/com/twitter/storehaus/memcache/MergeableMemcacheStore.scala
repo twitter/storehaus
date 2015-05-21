@@ -18,7 +18,9 @@ package com.twitter.storehaus.memcache
 
 import com.twitter.algebird.Semigroup
 import com.twitter.bijection.Injection
-import com.twitter.finagle.memcached.Client
+import com.twitter.finagle.memcachedx.Client
+import com.twitter.finagle.netty3.{BufChannelBuffer, ChannelBufferBuf}
+import com.twitter.io.Buf
 import com.twitter.storehaus.ConvertedStore
 import com.twitter.storehaus.algebra.MergeableStore
 import com.twitter.util.{ Duration, Future }
@@ -71,29 +73,40 @@ class MergeableMemcacheStore[K, V](underlying: MemcacheStore, maxRetries: Int)(k
     val key = kfn(kv._1)
     (currentRetry > maxRetries) match {
       case false => // use 'gets' api to obtain casunique token
-        underlying.client.gets(key).flatMap { res : Option[(ChannelBuffer, ChannelBuffer)] =>
-          res match {
-            case Some((cbValue, casunique)) =>
-              inj.invert(cbValue) match {
-                case Success(v) => // attempt cas
-                  val resV = semigroup.plus(v, kv._2)
-                  underlying.client.cas(key, inj.apply(resV), casunique).flatMap { success =>
-                    success.booleanValue match {
-                      case true => Future.value(Some(v))
-                      case false => doMerge(kv, currentRetry + 1) // retry
-                    }
+        underlying.client.gets(key).flatMap {
+          case Some((cbValue, casunique)) =>
+            inj.invert(BufChannelBuffer(cbValue)) match {
+              case Success(v) => // attempt cas
+                val resV = semigroup.plus(v, kv._2)
+                val buf = ChannelBufferBuf.Owned(inj.apply(resV))
+                underlying.client.cas(
+                  key,
+                  underlying.flag,
+                  underlying.ttl.fromNow,
+                  buf,
+                  casunique
+                ).flatMap { success =>
+                  success.booleanValue match {
+                    case true => Future.value(Some(v))
+                    case false => doMerge(kv, currentRetry + 1) // retry
                   }
-                case Failure(ex) => Future.exception(ex)
-              }
-            // no pre-existing value, try to 'add' it
-            case None =>
-              underlying.client.add(key, inj.apply(kv._2)).flatMap { success =>
-                success.booleanValue match {
-                  case true => Future.None
-                  case false => doMerge(kv, currentRetry + 1) // retry, next retry should call cas
                 }
+              case Failure(ex) => Future.exception(ex)
+            }
+          // no pre-existing value, try to 'add' it
+          case None =>
+            val buf = ChannelBufferBuf.Owned(inj.apply(kv._2))
+            underlying.client.add(
+              key,
+              underlying.flag,
+              underlying.ttl.fromNow,
+              buf
+            ).flatMap { success =>
+              success.booleanValue match {
+                case true => Future.None
+                case false => doMerge(kv, currentRetry + 1) // retry, next retry should call cas
               }
-          }
+            }
         }
       // no more retries
       case true => Future.exception(new MergeFailedException(key))
