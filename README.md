@@ -87,13 +87,13 @@ Storehaus provides a number of modules wrapping existing key-value stores. Enric
   * [Storehaus-mysql](http://twitter.github.com/storehaus/#com.twitter.storehaus.mysql.MySqlStore) (wraps Twitter's [finagle-mysql](https://github.com/twitter/finagle/tree/master/finagle-mysql) library)
   * [Storehaus-redis](http://twitter.github.com/storehaus/#com.twitter.storehaus.redis.RedisStore) (wraps Twitter's [finagle-redis](https://github.com/twitter/finagle/tree/master/finagle-redis) library)
   * [Storehaus-hbase](http://twitter.github.com/storehaus/#com.twitter.storehaus.hbase.HBaseStore)
-  * [storehaus-dynamodb](https://github.com/twitter/storehaus/tree/develop/storehaus-dynamodb)
+  * [Storehaus-dynamodb](https://github.com/twitter/storehaus/tree/develop/storehaus-dynamodb)
+  * [Storehaus-leveldb](https://github.com/twitter/storehaus/tree/develop/storehaus-leveldb)
 
 #### Planned Modules
 
 Here's a list of modules we plan in implementing, with links to the github issues tracking progress on these modules:
 
-* [storehaus-leveldb](https://github.com/twitter/storehaus/issues/51)
 * [storehaus-berkeleydb](https://github.com/twitter/storehaus/issues/52)
 
 ## Community and Documentation
@@ -126,6 +126,18 @@ Current published artifacts are
 * `storehaus-redis_2.10`
 * `storehaus-dynamodb_2.9.3`
 * `storehaus-dynamodb_2.10`
+* `storehaus-kafka_2.9.3`
+* `storehaus-kafka_2.10`
+* `storehaus-kafka-08_2.9.3`
+* `storehaus-kafka-08_2.10`
+* `storehaus-mongodb_2.9.3`
+* `storehaus-mongodb_2.10`
+* `storehaus-elasticsearch_2.9.3`
+* `storehaus-elasticsearch_2.10`
+* `storehaus-leveldb_2.9.3`
+* `storehaus-leveldb_2.10`
+* `storehaus-http_2.9.3`
+* `storehaus-http_2.10`
 * `storehaus-cache_2.9.3`
 * `storehaus-cache_2.10`
 * `storehaus-testing_2.9.3`
