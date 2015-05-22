@@ -52,7 +52,7 @@ object StorehausBuild extends Build {
   val sharedSettings = extraSettings ++ ciSettings ++ Seq(
     organization := "com.twitter",
     scalaVersion := "2.10.5",
-    version := "0.11.0",
+    version := "0.11.1",
     crossScalaVersions := Seq("2.10.5"),
     javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
     javacOptions in doc := Seq("-source", "1.6"),
@@ -110,13 +110,13 @@ object StorehausBuild extends Build {
   def youngestForwardCompatible(subProj: String) =
     Some(subProj)
       .filterNot(unreleasedModules.contains(_))
-      .map { s => "com.twitter" % ("storehaus-" + s + "_2.10") % "0.11.0" }
+      .map { s => "com.twitter" % ("storehaus-" + s + "_2.10") % "0.11.1" }
 
-  val algebirdVersion = "0.10.0"
+  val algebirdVersion = "0.10.1"
   val bijectionVersion = "0.8.0"
-  val utilVersion = "6.22.0"
+  val utilVersion = "6.24.0"
   val scaldingVersion = "0.14.0"
-  val finagleVersion = "6.22.0"
+  val finagleVersion = "6.25.0"
   val scalatestVersion = "2.2.4"
   val specs2Version = "1.13"
   lazy val storehaus = Project(
@@ -178,7 +178,7 @@ object StorehausBuild extends Build {
       "com.twitter" %% "algebird-core" % algebirdVersion,
       "com.twitter" %% "bijection-core" % bijectionVersion,
       "com.twitter" %% "bijection-netty" % bijectionVersion,
-      "com.twitter" %% "finagle-memcached" % finagleVersion excludeAll(
+      "com.twitter" %% "finagle-memcachedx" % finagleVersion excludeAll(
         // we don't use this and its not on maven central.
         ExclusionRule("com.twitter.common.zookeeper"),
         ExclusionRule("com.twitter.common")
