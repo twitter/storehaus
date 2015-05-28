@@ -112,7 +112,7 @@ object StorehausBuild extends Build {
       .filterNot(unreleasedModules.contains(_))
       .map { s => "com.twitter" % ("storehaus-" + s + "_2.10") % "0.11.1" }
 
-  val algebirdVersion = "0.10.1"
+  val algebirdVersion = "0.10.2"
   val bijectionVersion = "0.8.0"
   val utilVersion = "6.24.0"
   val scaldingVersion = "0.14.0"
