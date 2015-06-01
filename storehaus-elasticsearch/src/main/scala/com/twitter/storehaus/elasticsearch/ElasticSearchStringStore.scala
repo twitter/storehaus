@@ -41,7 +41,7 @@ object ElasticSearchStringStore {
 
 class ElasticSearchStringStore(private val index: String,
                                private val tipe: String, //tipe -> type since type is a reserved keyword
-                                private val client: Client) extends Store[String, String] with QueryableStore[SearchRequest, String] {
+                               private val client: Client) extends Store[String, String] with QueryableStore[SearchRequest, String] {
 
   private lazy val futurePool = FuturePool.unboundedPool
   private[this] lazy val mutex = new AsyncMutex

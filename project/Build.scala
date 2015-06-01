@@ -52,7 +52,7 @@ object StorehausBuild extends Build {
   val sharedSettings = extraSettings ++ ciSettings ++ Seq(
     organization := "com.twitter",
     scalaVersion := "2.10.5",
-    version := "0.11.1",
+    version := "0.11.2",
     crossScalaVersions := Seq("2.10.5"),
     javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
     javacOptions in doc := Seq("-source", "1.6"),
@@ -110,9 +110,9 @@ object StorehausBuild extends Build {
   def youngestForwardCompatible(subProj: String) =
     Some(subProj)
       .filterNot(unreleasedModules.contains(_))
-      .map { s => "com.twitter" % ("storehaus-" + s + "_2.10") % "0.11.1" }
+      .map { s => "com.twitter" % ("storehaus-" + s + "_2.10") % "0.11.2" }
 
-  val algebirdVersion = "0.10.1"
+  val algebirdVersion = "0.10.2"
   val bijectionVersion = "0.8.0"
   val utilVersion = "6.24.0"
   val scaldingVersion = "0.14.0"
@@ -120,7 +120,6 @@ object StorehausBuild extends Build {
   val scalatestVersion = "2.2.4"
   val specs2Version = "1.13"
   lazy val storehaus = Project(
-
     id = "storehaus",
     base = file("."),
     settings = sharedSettings ++ DocGen.publishSettings
@@ -137,6 +136,7 @@ object StorehausBuild extends Build {
     storehausRedis,
     storehausHBase,
     storehausDynamoDB,
+    storehausLevelDB,
     storehausKafka,
     storehausKafka08,
     storehausMongoDB,
@@ -200,7 +200,7 @@ object StorehausBuild extends Build {
     parallelExecution in Test := false
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
-  lazy val storehausHBase= module("hbase").settings(
+  lazy val storehausHBase = module("hbase").settings(
     libraryDependencies ++= Seq(
       "com.twitter" %% "algebird-core" % algebirdVersion,
       "com.twitter" %% "bijection-core" % bijectionVersion,
@@ -214,7 +214,7 @@ object StorehausBuild extends Build {
     parallelExecution in Test := false
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
-  lazy val storehausDynamoDB= module("dynamodb").settings(
+  lazy val storehausDynamoDB = module("dynamodb").settings(
     libraryDependencies ++= Seq(
       "com.twitter" %% "algebird-core" % algebirdVersion,
       "com.twitter" %% "bijection-core" % bijectionVersion,
@@ -226,20 +226,30 @@ object StorehausBuild extends Build {
     parallelExecution in Test := false
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
+  lazy val storehausLevelDB = module("leveldb").settings(
+    libraryDependencies +=
+      "org.fusesource.leveldbjni" % "leveldbjni-all" % "1.8",
+    parallelExecution in Test := false,
+    // workaround because of how sbt handles native libraries
+    // http://stackoverflow.com/questions/19425613/unsatisfiedlinkerror-with-native-library-under-sbt
+    testOptions in Test := Seq(),
+    fork in Test := true
+  ).dependsOn(storehausCore % "test->test;compile->compile")
+
   lazy val storehausKafka = module("kafka").settings(
     libraryDependencies ++= Seq (
       "com.twitter" %% "bijection-core" % bijectionVersion,
       "com.twitter" %% "bijection-avro" % bijectionVersion,
-      "com.twitter"%"kafka_2.9.2"%"0.7.0" % "provided" excludeAll(
-        ExclusionRule("com.sun.jdmk","jmxtools"),
-        ExclusionRule( "com.sun.jmx","jmxri"),
-        ExclusionRule( "javax.jms","jms")
-        ),
+      "com.twitter" % "kafka_2.9.2" % "0.7.0" % "provided" excludeAll(
+        ExclusionRule("com.sun.jdmk", "jmxtools"),
+        ExclusionRule("com.sun.jmx", "jmxri"),
+        ExclusionRule("javax.jms", "jms")
+      ),
       "org.specs2" %% "specs2" % specs2Version % "test"
     ),
     // we don't want various tests clobbering each others keys
     parallelExecution in Test := false
-  ).dependsOn(storehausAlgebra % "test->test;compile->compile")
+  ).dependsOn(storehausCore % "test->test;compile->compile")
 
   lazy val storehausKafka08 = module("kafka-08").settings(
     libraryDependencies ++= Seq (
@@ -253,9 +263,9 @@ object StorehausBuild extends Build {
     ),
     // we don't want various tests clobbering each others keys
     parallelExecution in Test := false
-  ).dependsOn(storehausCore,storehausAlgebra % "test->test;compile->compile")
+  ).dependsOn(storehausCore, storehausAlgebra % "test->test;compile->compile")
 
-  lazy val storehausMongoDB= module("mongodb").settings(
+  lazy val storehausMongoDB = module("mongodb").settings(
     libraryDependencies ++= Seq(
       "com.twitter" %% "bijection-core" % bijectionVersion,
       "org.mongodb" %% "casbah" % "2.6.4"
@@ -273,7 +283,6 @@ object StorehausBuild extends Build {
     // we don't want various tests clobbering each others keys
     parallelExecution in Test := false
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
-
 
   val storehausTesting = Project(
     id = "storehaus-testing",
@@ -304,6 +313,4 @@ object StorehausBuild extends Build {
       "com.twitter" %% "bijection-netty" % bijectionVersion
     )
   ).dependsOn(storehausCore)
-
-
 }

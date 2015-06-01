@@ -1,5 +1,8 @@
 # Storehaus #
 
+### Version 0.11.2 ###
+* Algebird to 0.10.2 #269
+
 ### Version 0.11.1 ###
 * storehaus-memcache: pass ttl for MergeableMemcacheStore CAS calls #262
 * Upgrade Finagle and Util #265
