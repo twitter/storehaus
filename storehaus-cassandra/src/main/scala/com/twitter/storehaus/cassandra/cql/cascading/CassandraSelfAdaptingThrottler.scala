@@ -131,7 +131,7 @@ class CassandraSelfAdaptingThrottler extends OutputThrottler {
     1 to buffer.maxSize foreach (_ => buffer += value)
   }
 
-  def calculateSumOfExps(buffer: RingBuffer[Long], exponent: Double, addValue: Long, fract: Double = 1.0d) = {
+  def calculateSumOfExps(buffer: RingBuffer[Long], exponent: Double, addValue: Long, fract: Double = 1.0d): Double = {
     val normalization: Double = 1 / (1 to buffer.size + 1).foldLeft(0d)((old, index) => old + math.pow(index.toDouble, exponent))
     (2 to buffer.size + 1).map { index: Int =>
       math.pow(index.toDouble, exponent) * buffer((buffer.size - index + 1)) * normalization
