@@ -23,6 +23,7 @@ import org.slf4j.{ Logger, LoggerFactory }
 import com.twitter.storehaus.WritableStore
 import com.twitter.util.{Await, Try}
 import scala.reflect.runtime._
+import scala.collection.mutable.HashMap
 
 /**
  * StorehausOuputFormat using a WriteableStore
@@ -30,12 +31,15 @@ import scala.reflect.runtime._
 class StorehausOutputFormat[K, V] extends OutputFormat[K, V] {  
   @transient private val log = LoggerFactory.getLogger(classOf[StorehausOutputFormat[K, V]])
   val FORCE_FUTURE_IN_OUTPUTFORMAT = "com.twitter.storehaus.cascading.outputformat.forcefuture"
+  val FORCE_FUTURE_BATCH_IN_OUTPUTFORMAT = "com.twitter.storehaus.cascading.outputformat.forcefuturebatch"
 
   /**
    * Simple StorehausRecordWriter delegating method-calls to store 
    */
   class StorehausRecordWriter(val conf: JobConf, val progress: Progressable) extends RecordWriter[K, V] {  
     val throttler = StorehausOutputFormat.getThrottlerClass(conf)
+    val buffer = new HashMap[K, Option[V]]
+    val maxbuffersize = Try(conf.get(FORCE_FUTURE_BATCH_IN_OUTPUTFORMAT).toInt).getOrElse(0)
     log.info(s"Throttler is $throttler")
     var store: Option[WritableStore[K, Option[V]]] = None
     override def write(key: K, value: V) = {
@@ -54,13 +58,27 @@ class StorehausOutputFormat[K, V] extends OutputFormat[K, V] {
       log.debug(s"RecordWriter writing value=$value for key=$key into ${store.get}.")
       // handle with care - make sure thread pools shut down TPEs on used stores correctly if asynchronous
       // that includes awaitTermination and adding shutdown hooks, depending on mode of operation of Hadoop
-      if (conf.get(FORCE_FUTURE_IN_OUTPUTFORMAT) != null && conf.get(FORCE_FUTURE_IN_OUTPUTFORMAT).equalsIgnoreCase("true"))
-        store.get.put((key, Some(value))).onFailure { case e: Exception => throw new IOException(e) }
-      else
+      if (conf.get(FORCE_FUTURE_IN_OUTPUTFORMAT) != null && conf.get(FORCE_FUTURE_IN_OUTPUTFORMAT).equalsIgnoreCase("true")) {
+        if(maxbuffersize > 1) {
+          // be aware that in case of an unorderly shutdown of this vm we might loose the rest of the buffer will not be persisted
+          if(buffer.size == maxbuffersize) {
+            store.map(_.multiPut(buffer.toMap))
+            buffer.clear()
+          } else {
+            buffer.put(key, Some(value))
+          }
+        } else {
+          store.get.put((key, Some(value))).onFailure { case e: Exception => throw new IOException(e) }
+        }
+      } else {
         Try(Await.result(store.get.put((key, Some(value))))).onFailure { throwable => new IOException(throwable) }
+      }
     }
     override def close(reporter: Reporter) = {
       log.debug(s"RecordWriter finished. Closing.")
+      if(buffer.size > 0) {
+        store.map(_.multiPut(buffer.toMap))
+      }
       throttler.map(_.close)
       store.map(_.close())
       reporter.setStatus("Completed Writing. Closed Store.")
