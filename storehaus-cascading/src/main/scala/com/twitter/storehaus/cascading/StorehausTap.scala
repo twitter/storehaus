@@ -28,7 +28,7 @@ import org.apache.hadoop.mapred.{ JobConf, RecordReader, OutputCollector }
 /**
  * Cascading-Tap for ReadableStore and WritableStore.
  * 
- * Initiatilizing stores is done in In- and OutputFormat and may require 
+ * Initializing stores is done in In- and OutputFormat and may require 
  * constructor parameters of the stores to be serialized to JobConf.
  * 
  * It is highly advisable to use a custom or store-specific version of a 
@@ -49,7 +49,7 @@ class StorehausTap[K, V](@transient store: StorehausCascadingInitializer[K, V])
 
   override def openForWrite(process: FlowProcess[JobConf], 
       output: OutputCollector[K, V]): TupleEntryCollector = { 
-    new HadoopTupleEntrySchemeCollector(process, this.asInstanceOf[StorehausTapTypeInJava])
+    new HadoopTupleEntrySchemeCollector(process, this.asInstanceOf[StorehausTapTypeInJava], output)
   }
   
   private val id: String = getScheme.asInstanceOf[StorehausScheme[K, V]].getId
