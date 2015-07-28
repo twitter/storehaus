@@ -17,7 +17,6 @@
 
 package com.twitter.storehaus.kafka
 
-import org.specs2.specification.Scope
 import java.util.concurrent.Executors
 import com.twitter.concurrent.NamedPoolThreadFactory
 import java.util.{Properties, Random}
@@ -34,7 +33,7 @@ import kafka.DataTuple
  * @author Mansur Ashraf
  * @since 12/7/13
  */
-trait KafkaContext extends Scope {
+case class KafkaContext() {
 
   val zK = "localhost:2181"
   val broker = "localhost:9092"

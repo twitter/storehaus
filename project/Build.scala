@@ -53,7 +53,7 @@ object StorehausBuild extends Build {
     organization := "com.twitter",
     scalaVersion := "2.10.5",
     version := "0.11.2",
-    crossScalaVersions := Seq("2.10.5"),
+    crossScalaVersions := Seq("2.10.5", "2.11.7"),
     javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
     javacOptions in doc := Seq("-source", "1.6"),
     libraryDependencies += "org.scalatest" %% "scalatest" % scalatestVersion % "test",
@@ -118,7 +118,6 @@ object StorehausBuild extends Build {
   val scaldingVersion = "0.14.0"
   val finagleVersion = "6.25.0"
   val scalatestVersion = "2.2.4"
-  val specs2Version = "1.13"
   lazy val storehaus = Project(
     id = "storehaus",
     base = file("."),
@@ -137,7 +136,6 @@ object StorehausBuild extends Build {
     storehausHBase,
     storehausDynamoDB,
     storehausLevelDB,
-    storehausKafka,
     storehausKafka08,
     storehausMongoDB,
     storehausElastic,
@@ -236,30 +234,14 @@ object StorehausBuild extends Build {
     fork in Test := true
   ).dependsOn(storehausCore % "test->test;compile->compile")
 
-  lazy val storehausKafka = module("kafka").settings(
-    libraryDependencies ++= Seq (
-      "com.twitter" %% "bijection-core" % bijectionVersion,
-      "com.twitter" %% "bijection-avro" % bijectionVersion,
-      "com.twitter" % "kafka_2.9.2" % "0.7.0" % "provided" excludeAll(
-        ExclusionRule("com.sun.jdmk", "jmxtools"),
-        ExclusionRule("com.sun.jmx", "jmxri"),
-        ExclusionRule("javax.jms", "jms")
-      ),
-      "org.specs2" %% "specs2" % specs2Version % "test"
-    ),
-    // we don't want various tests clobbering each others keys
-    parallelExecution in Test := false
-  ).dependsOn(storehausCore % "test->test;compile->compile")
-
   lazy val storehausKafka08 = module("kafka-08").settings(
     libraryDependencies ++= Seq (
       "com.twitter" %% "bijection-core" % bijectionVersion,
       "com.twitter" %% "bijection-avro" % bijectionVersion,
-      "org.apache.kafka" % "kafka_2.9.2" % "0.8.0" % "provided" excludeAll(
+      "org.apache.kafka" %% "kafka" % "0.8.2.1" % "provided" excludeAll(
         ExclusionRule(organization = "com.sun.jdmk"),
         ExclusionRule(organization = "com.sun.jmx"),
-        ExclusionRule(organization = "javax.jms")),
-      "org.specs2" %% "specs2" % specs2Version % "test"
+        ExclusionRule(organization = "javax.jms"))
     ),
     // we don't want various tests clobbering each others keys
     parallelExecution in Test := false
@@ -268,7 +250,7 @@ object StorehausBuild extends Build {
   lazy val storehausMongoDB = module("mongodb").settings(
     libraryDependencies ++= Seq(
       "com.twitter" %% "bijection-core" % bijectionVersion,
-      "org.mongodb" %% "casbah" % "2.6.4"
+      "org.mongodb" %% "casbah" % "2.8.2"
     ),
     parallelExecution in Test := false
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
@@ -276,7 +258,7 @@ object StorehausBuild extends Build {
   lazy val storehausElastic = module("elasticsearch").settings(
     libraryDependencies ++= Seq (
       "org.elasticsearch" % "elasticsearch" % "0.90.9",
-      "org.json4s" %% "json4s-native" % "3.2.6",
+      "org.json4s" %% "json4s-native" % "3.2.10",
       "com.google.code.findbugs" % "jsr305" % "1.3.+",
       "com.twitter" %% "bijection-json4s" % bijectionVersion
     ),
