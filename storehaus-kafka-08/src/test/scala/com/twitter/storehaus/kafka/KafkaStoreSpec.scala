@@ -29,7 +29,7 @@ import KafkaInjections._
  */
 class KafkaStoreSpec extends WordSpec {
 
-  "Kafka store" should {
+  "Kafka store" ignore {
     "put a value on a topic" in {
       val context = KafkaContext()
       val topic = "test-topic-" + context.random
