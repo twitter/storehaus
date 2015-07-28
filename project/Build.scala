@@ -63,7 +63,12 @@ object StorehausBuild extends Build {
       "Conjars Repository" at "http://conjars.org/repo"
     ),
     parallelExecution in Test := true,
-    scalacOptions ++= Seq(Opts.compile.unchecked, Opts.compile.deprecation),
+    scalacOptions ++= Seq(
+      "-unchecked",
+      "-deprecation",
+      "-Xlint",
+      "-Yresolve-term-conflict:package"
+    ),
 
     // Publishing options:
     publishMavenStyle := true,
@@ -273,7 +278,7 @@ object StorehausBuild extends Build {
       name := "storehaus-testing",
       previousArtifact := youngestForwardCompatible("testing"),
       libraryDependencies ++= Seq(
-        "org.scalacheck" %% "scalacheck" % "1.10.0" withSources(),
+        "org.scalacheck" %% "scalacheck" % "1.12.2" withSources(),
         withCross("com.twitter" %% "util-core" % utilVersion)
       )
     )
