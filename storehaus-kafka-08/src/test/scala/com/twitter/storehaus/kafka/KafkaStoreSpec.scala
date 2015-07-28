@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus.kafka
 
-import org.specs2.mutable.Specification
+import org.scalatest.WordSpec
 import kafka.serializer.Decoder
 import com.twitter.util.{Future, Await}
 import kafka.consumer.{ConsumerTimeoutException, Whitelist}
@@ -27,44 +27,46 @@ import KafkaInjections._
  * @author Mansur Ashraf
  * @since 12/7/13
  */
-class KafkaStoreSpec extends Specification {
+class KafkaStoreSpec extends WordSpec {
 
-  "Kafka store" should {
-    "put a value on a topic" in new KafkaContext {
-      val topic = "test-topic-" + random
+  "Kafka store" ignore {
+    "put a value on a topic" in {
+      val context = KafkaContext()
+      val topic = "test-topic-" + context.random
 
-      Await.result(store(topic).put("testKey", "testValue"))
+      Await.result(context.store(topic).put("testKey", "testValue"))
       try {
-        val stream = consumer.createMessageStreamsByFilter(new Whitelist(topic), 1, implicitly[Decoder[String]], implicitly[Decoder[String]])(0)
+        val stream = context.consumer.createMessageStreamsByFilter(new Whitelist(topic), 1, implicitly[Decoder[String]], implicitly[Decoder[String]])(0)
         val message = stream.iterator().next().message
         message === "testValue"
       }
       catch {
-        case e: ConsumerTimeoutException => failure("test failed as consumer timed out without getting any msges")
+        case e: ConsumerTimeoutException => fail("test failed as consumer timed out without getting any msges")
       }
-    } .pendingUntilFixed
+    }
 
-    "put multiple values on a topic" in new KafkaContext {
-      val multiput_topic = "multiput-test-topic-" + random
+    "put multiple values on a topic" in {
+      val context = KafkaContext()
+      val multiput_topic = "multiput-test-topic-" + context.random
 
-      private val map = Map(
+      val map = Map(
         "Key_1" -> "value_2",
         "Key_2" -> "value_4",
         "Key_3" -> "value_6"
       )
 
-      private val multiputResponse = store(multiput_topic).multiPut(map)
+      val multiputResponse = context.store(multiput_topic).multiPut(map)
       Await.result(Future.collect(multiputResponse.values.toList))
       try {
-        val stream = consumer.createMessageStreamsByFilter(new Whitelist(multiput_topic), 1, implicitly[Decoder[String]], implicitly[Decoder[String]])(0)
+        val stream = context.consumer.createMessageStreamsByFilter(new Whitelist(multiput_topic), 1, implicitly[Decoder[String]], implicitly[Decoder[String]])(0)
         val iterator = stream.iterator()
         iterator.next().message.contains("value_")
         iterator.next().message.contains("value_")
         iterator.next().message.contains("value_")
       }
       catch {
-        case e: ConsumerTimeoutException => failure("test failed as consumer timed out without getting any msges")
+        case e: ConsumerTimeoutException => fail("test failed as consumer timed out without getting any msges")
       }
-    }.pendingUntilFixed
+    }
   }
 }

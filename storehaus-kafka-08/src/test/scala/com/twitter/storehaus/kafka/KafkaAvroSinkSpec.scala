@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus.kafka
 
-import org.specs2.mutable.Specification
+import org.scalatest.WordSpec
 import kafka.DataTuple
 import java.util.Date
 import com.twitter.util.{Future, Await}
@@ -29,11 +29,12 @@ import kafka.serializer.Decoder
  * @author Mansur Ashraf
  * @since 12/8/13
  */
-class KafkaAvroSinkSpec extends Specification {
+class KafkaAvroSinkSpec extends WordSpec {
   "KafkaAvroSink" should {
-    "put avro object on a topic" in new KafkaContext {
-      val topic = "avro-topic-" + random
-      val sink = KafkaAvroSink[DataTuple](Seq(broker), topic,executor)
+    "put avro object on a topic" ignore {
+      val context = KafkaContext()
+      val topic = "avro-topic-" + context.random
+      val sink = KafkaAvroSink[DataTuple](Seq(context.broker), topic, context.executor)
         .filter {
         case (k, v) => v.getValue % 2 == 0
       }
@@ -43,17 +44,17 @@ class KafkaAvroSinkSpec extends Specification {
         .map(sink.write()("key", _))
 
       Await.result(Future.collect(futures))
-
+      import context._
       try {
-        val stream = consumer.createMessageStreamsByFilter(new Whitelist(topic), 1,implicitly[Decoder[String]], implicitly[Decoder[DataTuple]])(0)
+        val stream = context.consumer.createMessageStreamsByFilter(new Whitelist(topic), 1,implicitly[Decoder[String]], implicitly[Decoder[DataTuple]])(0)
         val iterator = stream.iterator()
         iterator.next().message.getValue % 2 === 0
         iterator.next().message.getValue % 2 === 0
         iterator.next().message.getValue % 2 === 0
         iterator.next().message.getValue % 2 === 0
       } catch {
-        case e: ConsumerTimeoutException => failure("test failed as consumer timed out without getting any msges")
+        case e: ConsumerTimeoutException => fail("test failed as consumer timed out without getting any msges")
       }
-    }.pendingUntilFixed
+    }
   }
 }
