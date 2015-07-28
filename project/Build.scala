@@ -52,7 +52,6 @@ object StorehausBuild extends Build {
   val sharedSettings = extraSettings ++ ciSettings ++ Seq(
     organization := "com.twitter",
     scalaVersion := "2.10.5",
-    version := "0.11.2",
     crossScalaVersions := Seq("2.10.5", "2.11.7"),
     javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
     javacOptions in doc := Seq("-source", "1.6"),
