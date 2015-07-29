@@ -1,5 +1,12 @@
 # Storehaus #
 
+### Version 0.12.0 ###
+* Update for new finagle: https://github.com/twitter/storehaus/pull/277
+* Move version to separate file, recommended way to do it for sbt: https://github.com/twitter/storehaus/pull/276
+* Upgrades scalacheck to the same as other projects, add same scalac op…: https://github.com/twitter/storehaus/pull/275
+* Updates for 2.11: https://github.com/twitter/storehaus/pull/274
+* AsyncHBaseStringStore is returning wrong instance: https://github.com/twitter/storehaus/pull/271
+
 ### Version 0.11.2 ###
 * Algebird to 0.10.2 #269
 

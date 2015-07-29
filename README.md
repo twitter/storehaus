@@ -108,39 +108,37 @@ Discussion occurs primarily on the [Storehaus mailing list](https://groups.googl
 
 ## Maven
 
-Storehaus modules are available on maven central. The current groupid and version for all modules is, respectively, `"com.twitter"` and  `0.10.0`.
+Storehaus modules are available on maven central. The current groupid and version for all modules is, respectively, `"com.twitter"` and  `0.12.0`.
 
 Current published artifacts are
 
-* `storehaus-core_2.9.3`
+* `storehaus-core_2.11`
 * `storehaus-core_2.10`
-* `storehaus-algebra_2.9.3`
+* `storehaus-algebra_2.11`
 * `storehaus-algebra_2.10`
-* `storehaus-memcache_2.9.3`
+* `storehaus-memcache_2.11`
 * `storehaus-memcache_2.10`
-* `storehaus-mysql_2.9.3`
+* `storehaus-mysql_2.11`
 * `storehaus-mysql_2.10`
-* `storehaus-hbase_2.9.3`
+* `storehaus-hbase_2.11`
 * `storehaus-hbase_2.10`
-* `storehaus-redis_2.9.3`
+* `storehaus-redis_2.11`
 * `storehaus-redis_2.10`
-* `storehaus-dynamodb_2.9.3`
+* `storehaus-dynamodb_2.11`
 * `storehaus-dynamodb_2.10`
-* `storehaus-kafka_2.9.3`
-* `storehaus-kafka_2.10`
-* `storehaus-kafka-08_2.9.3`
+* `storehaus-kafka-08_2.11`
 * `storehaus-kafka-08_2.10`
-* `storehaus-mongodb_2.9.3`
+* `storehaus-mongodb_2.11`
 * `storehaus-mongodb_2.10`
-* `storehaus-elasticsearch_2.9.3`
+* `storehaus-elasticsearch_2.11`
 * `storehaus-elasticsearch_2.10`
-* `storehaus-leveldb_2.9.3`
+* `storehaus-leveldb_2.11`
 * `storehaus-leveldb_2.10`
-* `storehaus-http_2.9.3`
+* `storehaus-http_2.11`
 * `storehaus-http_2.10`
-* `storehaus-cache_2.9.3`
+* `storehaus-cache_2.11`
 * `storehaus-cache_2.10`
-* `storehaus-testing_2.9.3`
+* `storehaus-testing_2.11`
 * `storehaus-testing_2.10`
 
 The suffix denotes the scala version.
