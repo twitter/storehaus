@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus.mysql
 
-import com.twitter.finagle.exp.mysql.{ Client, Result }
+import com.twitter.finagle.exp.mysql.{ Client, Result, Parameter }
 import com.twitter.storehaus.FutureOps
 import com.twitter.storehaus.Store
 import com.twitter.util.{ Await, Future, Time }
@@ -101,20 +101,22 @@ class MySqlStore(protected [mysql] val client: Client, table: String, kCol: Stri
     val insertSql = MULTI_INSERT_SQL_PREFIX + Stream.continually("(?, ?)").take(kvs.size).mkString(",")
     val insertParams = kvs.map { kv =>
       List(MySqlStringInjection(kv._1).getBytes, MySqlStringInjection(kv._2).getBytes)
-    }.toSeq.flatten
+    }.toSeq.flatten.map(Parameter.wrap[Array[Byte]])
     client.prepare(insertSql)(insertParams:_*)
   }
 
   protected [mysql] def executeMultiUpdate[K1 <: MySqlValue](kvs: Map[K1, MySqlValue]) = {
     val updateSql = MULTI_UPDATE_SQL_PREFIX + Stream.continually("WHEN ? THEN ?").take(kvs.size).mkString(" ") +
       MULTI_UPDATE_SQL_INFIX + Stream.continually("?").take(kvs.size).mkString("(", ",", ")")
+
     val updateParams = kvs.map { kv =>
       (MySqlStringInjection(kv._1).getBytes, MySqlStringInjection(kv._2).getBytes)
     }
     // params for "WHEN ? THEN ?"
-    val updateCaseParams = updateParams.map { kv => List(kv._1, kv._2) }.toSeq.flatten
+      val updateCaseParams: Seq[Parameter] =
+        updateParams.map { kv => List(kv._1, kv._2) }.toSeq.flatten.map(Parameter.wrap[Array[Byte]])
     // params for "IN (?, ?, ?)"
-    val updateInParams = updateParams.map { kv => kv._1 }.toSeq
+    val updateInParams = updateParams.map { kv => kv._1 }.toSeq.map(Parameter.wrap[Array[Byte]])
     client.prepare(updateSql)((updateCaseParams ++ updateInParams):_*)
   }
 
@@ -136,7 +138,7 @@ class MySqlStore(protected [mysql] val client: Client, table: String, kCol: Stri
     val placeholders = Stream.continually("?").take(ks.size).mkString("(", ",", ")")
     val selectSql = MULTI_SELECT_SQL_PREFIX + placeholders
 
-    val params = ks.map(key => MySqlStringInjection(key).getBytes).toSeq
+    val params = ks.map(key => MySqlStringInjection(key).getBytes).toSeq.map(Parameter.wrap[Array[Byte]])
     val mysqlResult =
       client.prepare(selectSql).select(params:_*) { row =>
         (row(kCol).map(MySqlValue(_)), row(vCol).map(MySqlValue(_)))
@@ -198,7 +200,7 @@ class MySqlStore(protected [mysql] val client: Client, table: String, kCol: Stri
           case true => Future.Unit
           case false =>
             val deleteSql = MULTI_DELETE_SQL_PREFIX + Stream.continually("?").take(deleteKeys.size).mkString("(", ",", ")")
-            val deleteParams = deleteKeys.map { k => MySqlStringInjection(k).getBytes }.toSeq
+            val deleteParams = deleteKeys.map { k => MySqlStringInjection(k).getBytes }.toSeq.map(Parameter.wrap[Array[Byte]])
             client.prepare(deleteSql)(deleteParams:_*)
         }
 
