@@ -83,20 +83,22 @@ The [`MergeableStore`](http://twitter.github.com/storehaus/#com.twitter.storehau
 
 Storehaus provides a number of modules wrapping existing key-value stores. Enriching these key-value stores with Storehaus's combinators has been hugely helpful to us here at Twitter. Writing your jobs in terms of Storehaus stores makes it easy to test your jobs; use an in-memory `JMapStore` in testing and a `MemcacheStore` in production.
 
-  * [Storehaus-memcache](http://twitter.github.com/storehaus/#com.twitter.storehaus.memcache.MemcacheStore) (wraps Twitter's [finagle-memcached](https://github.com/twitter/finagle/tree/master/finagle-memcached) library)
+  * [Storehaus-memcache](http://twitter.github.com/storehaus/#com.twitter.storehaus.memcache.MemcacheStore) (wraps Twitter's [finagle-memcachedx](https://github.com/twitter/finagle/tree/master/finagle-memcachedx) library)
   * [Storehaus-mysql](http://twitter.github.com/storehaus/#com.twitter.storehaus.mysql.MySqlStore) (wraps Twitter's [finagle-mysql](https://github.com/twitter/finagle/tree/master/finagle-mysql) library)
   * [Storehaus-redis](http://twitter.github.com/storehaus/#com.twitter.storehaus.redis.RedisStore) (wraps Twitter's [finagle-redis](https://github.com/twitter/finagle/tree/master/finagle-redis) library)
   * [Storehaus-hbase](http://twitter.github.com/storehaus/#com.twitter.storehaus.hbase.HBaseStore)
-  * [storehaus-dynamodb](https://github.com/twitter/storehaus/tree/develop/storehaus-dynamodb)
+  * [Storehaus-dynamodb](https://github.com/twitter/storehaus/tree/develop/storehaus-dynamodb)
+  * [Storehaus-leveldb](https://github.com/twitter/storehaus/tree/develop/storehaus-leveldb)
 
 #### Planned Modules
 
 Here's a list of modules we plan in implementing, with links to the github issues tracking progress on these modules:
 
-* [storehaus-leveldb](https://github.com/twitter/storehaus/issues/51)
 * [storehaus-berkeleydb](https://github.com/twitter/storehaus/issues/52)
 
 ## Community and Documentation
+
+This, and all [github.com/twitter](https://github.com/twitter) projects, are under the [Twitter Open Source Code of Conduct](https://engineering.twitter.com/opensource/code-of-conduct). Additionally, see the [Typelevel Code of Conduct](http://typelevel.org/conduct) for specific examples of harassing behavior that are not tolerated.
 
 To learn more and find links to tutorials and information around the web, check out the [Storehaus Wiki](https://github.com/twitter/storehaus/wiki).
 
@@ -106,27 +108,37 @@ Discussion occurs primarily on the [Storehaus mailing list](https://groups.googl
 
 ## Maven
 
-Storehaus modules are available on maven central. The current groupid and version for all modules is, respectively, `"com.twitter"` and  `0.9.0`.
+Storehaus modules are available on maven central. The current groupid and version for all modules is, respectively, `"com.twitter"` and  `0.12.0`.
 
 Current published artifacts are
 
-* `storehaus-core_2.9.3`
+* `storehaus-core_2.11`
 * `storehaus-core_2.10`
-* `storehaus-algebra_2.9.3`
+* `storehaus-algebra_2.11`
 * `storehaus-algebra_2.10`
-* `storehaus-memcache_2.9.3`
+* `storehaus-memcache_2.11`
 * `storehaus-memcache_2.10`
-* `storehaus-mysql_2.9.3`
+* `storehaus-mysql_2.11`
 * `storehaus-mysql_2.10`
-* `storehaus-hbase_2.9.3`
+* `storehaus-hbase_2.11`
 * `storehaus-hbase_2.10`
-* `storehaus-redis_2.9.3`
+* `storehaus-redis_2.11`
 * `storehaus-redis_2.10`
-* `storehaus-dynamodb_2.9.3`
+* `storehaus-dynamodb_2.11`
 * `storehaus-dynamodb_2.10`
-* `storehaus-cache_2.9.3`
+* `storehaus-kafka-08_2.11`
+* `storehaus-kafka-08_2.10`
+* `storehaus-mongodb_2.11`
+* `storehaus-mongodb_2.10`
+* `storehaus-elasticsearch_2.11`
+* `storehaus-elasticsearch_2.10`
+* `storehaus-leveldb_2.11`
+* `storehaus-leveldb_2.10`
+* `storehaus-http_2.11`
+* `storehaus-http_2.10`
+* `storehaus-cache_2.11`
 * `storehaus-cache_2.10`
-* `storehaus-testing_2.9.3`
+* `storehaus-testing_2.11`
 * `storehaus-testing_2.10`
 
 The suffix denotes the scala version.

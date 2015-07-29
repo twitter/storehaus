@@ -1,5 +1,43 @@
 # Storehaus #
 
+### Version 0.12.0 ###
+* Update for new finagle: https://github.com/twitter/storehaus/pull/277
+* Move version to separate file, recommended way to do it for sbt: https://github.com/twitter/storehaus/pull/276
+* Upgrades scalacheck to the same as other projects, add same scalac op…: https://github.com/twitter/storehaus/pull/275
+* Updates for 2.11: https://github.com/twitter/storehaus/pull/274
+* AsyncHBaseStringStore is returning wrong instance: https://github.com/twitter/storehaus/pull/271
+
+### Version 0.11.2 ###
+* Algebird to 0.10.2 #269
+
+### Version 0.11.1 ###
+* storehaus-memcache: pass ttl for MergeableMemcacheStore CAS calls #262
+* Upgrade Finagle and Util #265
+* Ugprade finagle-memcached to finagle-memcachedx #266
+* Elasticsearch test increase timeout #267
+
+### Version 0.11.0 ###
+* Add correct String/ChannelBuffer injections #257
+* initial scalatest migration #260
+* Remove usage of twitter's maven repo, travis seems to dislike it -- mayb... #261
+* Bijection 0.8.0, algebird 0.10.0, scalding 0.14.0, and scala 2.10.5
+
+### Version 0.10.0 ###
+* Use latest scalding, algebird, and bijection versions: https://github.com/twitter/storehaus/pull/255
+* Use new Travis CI container infrastructure: https://github.com/twitter/storehaus/pull/254
+* Add hook for CAS based memcache mergeable: https://github.com/twitter/storehaus/pull/252
+* Bump bijection/algebird versions: https://github.com/twitter/storehaus/pull/253
+* Remove + operator: https://github.com/twitter/storehaus/pull/21
+* Memcache mergeable - use semigroup: https://github.com/twitter/storehaus/pull/251
+* add logic for replicating writes and reads to stores: https://github.com/twitter/storehaus/pull/20
+* bump finagle and util to 6.22.0: https://github.com/twitter/storehaus/pull/247
+* Minified kill 2.9.3: https://github.com/twitter/storehaus/pull/249
+* Read through store - do not query backing store when no cache miss: https://github.com/twitter/storehaus/pull/246
+* implementation of store that uses http protocol: https://github.com/twitter/storehaus/pull/241
+* Retry unittest: https://github.com/twitter/storehaus/pull/240
+* Added endpoint support to storehaus-dynamodb: https://github.com/twitter/storehaus/pull/236
+* Https sonatype: https://github.com/twitter/storehaus/pull/237
+
 ### Version 0.9.1 ###
 * Feature/write through cache perf: https://github.com/twitter/storehaus/pull/234
 * Share the Retrying Read Write store in storehaus repo: https://github.com/twitter/storehaus/pull/230

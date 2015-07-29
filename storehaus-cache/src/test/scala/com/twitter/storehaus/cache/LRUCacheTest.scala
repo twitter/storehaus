@@ -16,11 +16,11 @@
 
 package com.twitter.storehaus.cache
 
-import org.specs2.mutable._
+import org.scalatest.{Matchers, WordSpec}
 
-class LRUCacheTest extends Specification {
+class LRUCacheTest extends WordSpec with Matchers {
   def checkCache[K, V](pairs: Seq[(K, V)], m: Map[K, V])(implicit cache: Cache[K, V]) =
-    pairs.foldLeft(cache)(_ + _).toMap must be_==(m)
+    pairs.foldLeft(cache)(_ + _).toMap should equal(m)
 
   "LRUCache works properly with threshold 2" in {
     implicit val cache = Cache.lru[String, Int](2)
@@ -36,7 +36,7 @@ class LRUCacheTest extends Specification {
       Seq("a" -> 1, "b" -> 2, "b" -> 3),
       Map("a" -> 1, "b" -> 3)
     )
-    ((cache + ("a" -> 1) + ("b" -> 2)).hit("a") + ("c" -> 3)).toMap
-      .must(be_==(Map("a" -> 1, "c" -> 3)))
+    val result = ((cache + ("a" -> 1) + ("b" -> 2)).hit("a") + ("c" -> 3)).toMap
+    result should equal(Map("a" -> 1, "c" -> 3))
   }
 }

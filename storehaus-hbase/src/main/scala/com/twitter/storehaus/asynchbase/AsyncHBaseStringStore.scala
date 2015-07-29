@@ -30,8 +30,8 @@ object AsyncHBaseStringStore {
             table: String,
             columnFamily: String,
             column: String,
-            threads: Int=4): AsyncHBaseLongStore = {
-    val store = new AsyncHBaseLongStore(quorumNames, table, columnFamily, column, new HBaseClient(quorumNames.mkString(",")), threads)
+            threads: Int=4): AsyncHBaseStringStore = {
+    val store = new AsyncHBaseStringStore(quorumNames, table, columnFamily, column, new HBaseClient(quorumNames.mkString(",")), threads)
     store.validateConfiguration()
     store
   }
@@ -48,7 +48,6 @@ class AsyncHBaseStringStore(protected val quorumNames: Seq[String],
     */
   override def get(k: String): Future[Option[String]] = {
     import com.twitter.bijection.hbase.HBaseBijections._
-    implicit val stringInj = fromBijectionRep[String, StringBytes]
     getValue[String, String](k)
   }
 
@@ -58,7 +57,6 @@ class AsyncHBaseStringStore(protected val quorumNames: Seq[String],
    */
   override def put(kv: (String, Option[String])): Future[Unit] = {
     import com.twitter.bijection.hbase.HBaseBijections._
-    implicit val stringInj = fromBijectionRep[String, StringBytes]
     putValue(kv)
   }
 

@@ -18,6 +18,7 @@ package com.twitter.storehaus.mysql
 
 import java.util.logging.Level
 
+import com.twitter.finagle.exp.Mysql
 import com.twitter.finagle.exp.mysql.Client
 import com.twitter.storehaus.testing.SelfAggregatingCloseableCleanup
 import com.twitter.storehaus.testing.generator.NonEmpty
@@ -126,13 +127,15 @@ object MySqlStoreProperties extends Properties("MySqlStore")
     withStore(multiPutAndMultiGetStoreTest(_, NonEmpty.Pairing.numerics[Short]()), "smallint", "smallint", true)
 
   private def withStore[T](f: MySqlStore => T, kColType: String, vColType: String, multiGet: Boolean = false): T = {
-    val client = Client("localhost:3306", "storehaususer", "test1234", "storehaus_test", Level.WARNING)
+    val client = Mysql.client
+      .withCredentials("storehaususer", "test1234")
+      .withDatabase("storehaus_test")
+      .newRichClient("127.0.0.1:3306")
     // these should match mysql setup used in .travis.yml
 
     val tableName = "storehaus-mysql-"+kColType+"-"+vColType + ( if (multiGet) { "-multiget" } else { "" } )
-    val schema = "CREATE TEMPORARY TABLE IF NOT EXISTS `"+tableName+"` (`key` "+kColType+" DEFAULT NULL, `value` "+vColType+" DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8;"
+    val schema = s"CREATE TEMPORARY TABLE IF NOT EXISTS `${tableName}` (`key` ${kColType} DEFAULT NULL, `value` ${vColType} DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8;"
     Await.result(client.query(schema))
-
     f(newStore(client, tableName))
   }
 
