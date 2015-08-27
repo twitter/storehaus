@@ -15,7 +15,7 @@
  */
 package com.twitter.storehaus.cassandra.cql
 
-import com.datastax.driver.core.{ BatchStatement, ConsistencyLevel, Cluster, Session }
+import com.datastax.driver.core.{ BatchStatement, ConsistencyLevel, Cluster, Session, ProtocolVersion }
 import com.datastax.driver.core.policies.{ LoadBalancingPolicy, Policies, ReconnectionPolicy, RetryPolicy, RoundRobinPolicy, TokenAwarePolicy }
 import com.twitter.util.Duration
 import java.util.concurrent.TimeUnit
@@ -62,6 +62,7 @@ object CQLCassandraConfiguration {
       clusterBuilder.withReconnectionPolicy(reconnectPolicy)
       clusterBuilder.withRetryPolicy(retryPolicy)
       clusterBuilder.withMaxSchemaAgreementWaitSeconds(maxSchemaAgreementWaitSeconds.inUnit(TimeUnit.SECONDS).toInt)
+      clusterBuilder.withProtocolVersion(ProtocolVersion.V3)
       clusterBuilder.build()
     }
     def close: Unit = cluster.close

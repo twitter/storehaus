@@ -66,6 +66,8 @@ The downside of the default SplittingMechanism based on IterableSplittableStore 
 Example 5: Using a very simple JobConf-Splitting Mechanism and Memcached as a source
 ------------------------------------------------------------------------------------
 
+This example reads from Memcached using a pre-defined set of keys which has been written into JobConf. You shouldn't store too many data (and therefore too many keys) in JobConf. So this is best used if number(keys)/size(values) is almost zero, e.g. values are previously stored arrays.
 
-
-
+   * KeyBasedJobConfSplittingMechanism can be used to split any Storehaus-store.
+   * KeyBasedJobconfSplittingMechanism can be used if the job only gets a small number of keys from the store.
+   * The mechanism can easily be extended to read a set of larger files with keys from HDFS.

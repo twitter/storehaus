@@ -24,6 +24,7 @@ import cascading.tuple.{ Fields, Tuple, TupleEntryIterator, TupleEntryCollector 
 import java.util.Date
 import org.apache.hadoop.io.NullWritable
 import org.apache.hadoop.mapred.{ JobConf, RecordReader, OutputCollector }
+import org.slf4j.LoggerFactory
 
 /**
  * Cascading-Tap for ReadableStore and WritableStore.
@@ -38,18 +39,27 @@ import org.apache.hadoop.mapred.{ JobConf, RecordReader, OutputCollector }
  * @author Ruban Monu
  * @author Andreas Petter
  */
-class StorehausTap[K, V](@transient store: StorehausCascadingInitializer[K, V])
+class StorehausTap[K, V](@transient store: StorehausCascadingInitializer[K, V], useStorehausCollector: Boolean = true)
   extends Tap[JobConf, RecordReader[Instance[K], Instance[V]], OutputCollector[K, V]](new StorehausScheme(store)) 
   with StorehausTapBasics {
     
+  @transient lazy val logger = LoggerFactory.getLogger(classOf[StorehausTap[K, V]])
+  
   override def openForRead(process: FlowProcess[JobConf], 
       input: RecordReader[Instance[K], Instance[V]]): TupleEntryIterator = { 
     new HadoopTupleEntrySchemeIterator(process, this, input)
   }
 
   override def openForWrite(process: FlowProcess[JobConf], 
-      output: OutputCollector[K, V]): TupleEntryCollector = { 
-    new HadoopTupleEntrySchemeCollector(process, this.asInstanceOf[StorehausTapTypeInJava], output)
+      output: OutputCollector[K, V]): TupleEntryCollector = {
+    useStorehausCollector match {
+      case true => 
+        logger.info(s"Opening StorehausOutputCollector as OutputCollector")
+        new StorehausOutputCollector(process, this.asInstanceOf[Tap[JobConf, RecordReader[Any, Any], OutputCollector[Any, Any]]])
+      case false => 
+        logger.info(s"Opening HadoopTupleEntrySchemeCollector as OutputCollector")
+        new HadoopTupleEntrySchemeCollector(process, this.asInstanceOf[StorehausTapTypeInJava])
+    }
   }
   
   private val id: String = getScheme.asInstanceOf[StorehausScheme[K, V]].getId

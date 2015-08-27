@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 SEEBURGER AG
+ * Copyright 2014 Twitter, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -197,11 +197,7 @@ class CQLCassandraCollectionStore[RK <: HList, CK <: HList, V, X, RS <: HList, C
       stmt.setConsistencyLevel(consistency)
       }.flatMap(stmt => sync.merge.lock(lockId, {
    	      val origValue = Await.result(get((rk, ck)))
-	      // due to some unknown reason stmt does not execute in the same session object, except when executed multiple times, so we execute in a different one
-   	      // TODO: this must be removed in the future as soon as the bug (?) is fixed in Datastax' driver 
-   	      val newSession = columnFamily.session.cluster.getCluster.connect("\"" + columnFamily.session.keyspacename + "\"") 
-   	      newSession.execute(stmt)
-   	      newSession.close()
+   	      columnFamily.session.getSession.execute(stmt)
           origValue
         })
       )

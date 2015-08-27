@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Twitter, Inc.; Original source created by Miles Sabin
+ * Copyright 2014 Twitter, Inc.; some copied from shapeless
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain

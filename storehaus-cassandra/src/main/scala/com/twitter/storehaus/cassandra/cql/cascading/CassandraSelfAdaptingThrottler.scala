@@ -1,23 +1,32 @@
+/**
+ * Copyright 2014 Twitter, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.twitter.storehaus.cassandra.cql.cascading
 
-import java.util.{ HashMap => JHashMap }
-import java.util.{ Map => JMap }
+import java.util.{ HashMap => JHashMap, Map => JMap }
 import org.apache.hadoop.mapred.JobConf
 import org.slf4j.LoggerFactory
 import com.twitter.storehaus.WritableStore
 import com.twitter.storehaus.cascading.StorehausOutputFormat.OutputThrottler
 import com.twitter.storehaus.cascading.split.StorehausSplittingMechanism
-import com.twitter.storehaus.cassandra.cql.AbstractCQLCassandraStore
-import com.twitter.storehaus.cassandra.cql.CassandraTupleMultiValueStore
-import com.twitter.storehaus.cassandra.cql.CassandraTupleStore
-import com.twitter.util.Duration
-import com.twitter.util.JavaTimer
-import com.twitter.util.Try
+import com.twitter.storehaus.cassandra.cql.{ AbstractCQLCassandraStore, CassandraTupleMultiValueStore, CassandraTupleStore }
+import com.twitter.util.{ Duration, JavaTimer, RingBuffer, Try }
 import javax.management.ObjectName
-import javax.management.remote.JMXConnectorFactory
-import javax.management.remote.JMXServiceURL
-import scala.collection.mutable.ArrayBuffer
-import com.twitter.util.RingBuffer
+import javax.management.remote.{ JMXConnector => JJMXConnector, JMXConnectorFactory, JMXServiceURL }
+import scala.collection.mutable.{ ArrayBuffer, HashMap }
+import java.util.concurrent.locks.ReentrantLock
 
 /**
  * A self-adapting throttler for Cassandra. If used with StorehausOutputFormat it can
@@ -138,7 +147,10 @@ class CassandraSelfAdaptingThrottler extends OutputThrottler {
     }.reduce(_ + _) + addValue * normalization
   }
 
-  def close = timer.stop()
+  def close = {
+    JMXConnector.close
+    timer.stop()
+  }
 
   /**
    * throttle speed by sleeping
@@ -165,17 +177,21 @@ object CassandraSelfAdaptingThrottler {
 
 object JMXConnector {
 
+  val jmxConnectionPool = new HashMap[String, JJMXConnector]()
+  val poolLock = new ReentrantLock  
+  
   @transient val logger = LoggerFactory.getLogger(JMXConnector.getClass.getName)
 
   def createJMXURL(host: String, port: Int) = s"service:jmx:rmi:///jndi/rmi://$host:$port/jmxrmi"
 
   def requestObject[T](url: String, objectCoordinate: String, attribute: String, default: T): Try[T] = Try {
-    val jmxcon = JMXConnectorFactory.connect(new JMXServiceURL(url), null)
-    val mbsc = jmxcon.getMBeanServerConnection()
+    val jmxcon = getOrCreateJMXConnection(url)
+    // retry on failure and setup a new connection
+    val mbsc = Try(jmxcon.getMBeanServerConnection()).getOrElse(createJMXConnection(url).getMBeanServerConnection())
     val mbeanName = new ObjectName(objectCoordinate)
     val result = mbsc.getAttribute(mbeanName, attribute)
     logger.info(s"requestObject returns $result")
-    jmxcon.close()
+    // jmxcon.close()
     Try(result.asInstanceOf[T]).getOrElse(default)
   }
 
@@ -186,5 +202,35 @@ object JMXConnector {
       "SimpleStates", new JHashMap[String, String]())
     logger.info(s"fetchAllHosts returns $hostmap")
     hostmap.map { hosts => hosts.filter(entry => entry._2 == "UP").map(host => host._1.stripPrefix("/")).toSet }
+  }
+  
+  def createJMXConnection(url: String): JJMXConnector = {
+    poolLock.lock()
+    try {
+      val connection = JMXConnectorFactory.connect(new JMXServiceURL(url), null)
+      jmxConnectionPool += (url -> connection)
+      connection
+    } finally {
+      poolLock.unlock()
+    }
+  }
+  
+  def getOrCreateJMXConnection(url: String): JJMXConnector = {
+    poolLock.lock()
+    try {
+      jmxConnectionPool.get(url).getOrElse(createJMXConnection(url))
+    } finally {
+      poolLock.unlock()
+    }
+  }
+  
+  def close() = {
+    poolLock.lock()
+    try {
+      jmxConnectionPool.foreach(_._2.close())
+      jmxConnectionPool.clear()
+    } finally {
+      poolLock.unlock()
+    }
   }
 }

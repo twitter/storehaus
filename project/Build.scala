@@ -146,7 +146,7 @@ object StorehausBuild extends Build {
   val scaldingVersion = "0.11.1"
   val cascadingVersion = "2.5.2"
   val hadoopVersion = "1.2.1"
-  val cassandraDriverVersion = "2.1.5"
+  val cassandraDriverVersion = "2.1.7.1"
   val cassandraVersion = "2.1.3"
 
   lazy val storehaus = Project(
@@ -325,7 +325,7 @@ object StorehausBuild extends Build {
     "com.twitter" %% "algebird-core" % algebirdVersion,
     "com.google.code.findbugs" % "jsr305" % "1.3.+",
     "com.twitter" %% "bijection-core" % bijectionVersion,
-    "com.datastax.cassandra" % "cassandra-driver-core" % cassandraDriverVersion,
+    "com.datastax.cassandra" % "cassandra-driver-core" % cassandraDriverVersion classifier "shaded" exclude("io.netty", "*"),
     "org.apache.cassandra" % "cassandra-thrift" % cassandraVersion exclude ("com.google.guava", "guava"),
     "org.apache.cassandra" % "cassandra-all" % cassandraVersion exclude ("com.google.guava", "guava"),
     "com.websudos" % "phantom-dsl_2.10" % "1.4.0" exclude ("com.datastax.cassandra", "cassandra-driver-core"),
@@ -384,6 +384,7 @@ object StorehausBuild extends Build {
         case x if x startsWith "org/slf4j/" => MergeStrategy.first
         case x if x startsWith "com/esotericsoftware/minlog" => MergeStrategy.first
         case x if x startsWith "org/objectweb/asm" => MergeStrategy.first
+        case x if x startsWith "org/stringtemplate/v4" => MergeStrategy.first
         case x => old(x)
       }
     },

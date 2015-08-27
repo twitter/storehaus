@@ -40,26 +40,27 @@ class StorehausOutputFormat[K, V] extends OutputFormat[K, V] {
     val throttler = StorehausOutputFormat.getThrottlerClass(conf)
     val buffer = new HashMap[K, Option[V]]
     val maxbuffersize = Try(conf.get(FORCE_FUTURE_BATCH_IN_OUTPUTFORMAT).toInt).getOrElse(0)
+    val parallel = conf.get(FORCE_FUTURE_IN_OUTPUTFORMAT) != null && conf.get(FORCE_FUTURE_IN_OUTPUTFORMAT).equalsIgnoreCase("true")
+    val tapid = InitializableStoreObjectSerializer.getTapId(conf)
+    log.info(s"Will write tuples in ${if(parallel) "parallel" else "sequence"}")
     log.info(s"Throttler is $throttler")
     var store: Option[WritableStore[K, Option[V]]] = None
-    override def write(key: K, value: V) = {
-      val tapid = InitializableStoreObjectSerializer.getTapId(conf)
+    override def write(key: K, value: V): Unit = {
       store = if (store.isEmpty) {
-        log.debug(s"RecordWriter will initialize the store.")
+        log.info(s"RecordWriter initializes the store.")
         (InitializableStoreObjectSerializer.getWriteVerion(conf, tapid) match {
           case None          => InitializableStoreObjectSerializer.getWritableStore[K, Option[V]](conf, tapid)
           case Some(version) => InitializableStoreObjectSerializer.getWritableVersionedStore[K, Option[V]](conf, tapid, version)
         }).onSuccess { store =>
-          log.info(s"Going to config $throttler")
+          log.info(s"Configuring $throttler")
           throttler.map(_.configure(conf, store))
         }
       }.onFailure(e => log.error(s"RecordWriter was not able to initialize the store for tap $tapid.", e)).toOption
       else store
       throttler.map(_.throttle)
-      log.debug(s"RecordWriter writing value=$value for key=$key into ${store.get}.")
       // handle with care - make sure thread pools shut down TPEs on used stores correctly if asynchronous
       // that includes awaitTermination and adding shutdown hooks, depending on mode of operation of Hadoop
-      if (conf.get(FORCE_FUTURE_IN_OUTPUTFORMAT) != null && conf.get(FORCE_FUTURE_IN_OUTPUTFORMAT).equalsIgnoreCase("true")) {
+      if (parallel) {
         if (maxbuffersize > 1) {
           // be aware that in case of an unorderly shutdown of this vm we might loose the rest of the buffer will not be persisted
           if (buffer.size == maxbuffersize) {
@@ -75,8 +76,8 @@ class StorehausOutputFormat[K, V] extends OutputFormat[K, V] {
         Try(Await.result(store.get.put((key, Some(value))))).onFailure { throwable => new IOException(throwable) }
       }
     }
-    override def close(reporter: Reporter) = {
-      log.debug(s"RecordWriter finished. Closing.")
+    override def close(reporter: Reporter): Unit = {
+      log.info(s"RecordWriter finished. Closing.")
       if (buffer.size > 0) {
         store.map(_.multiPut(buffer.toMap))
       }
@@ -91,7 +92,6 @@ class StorehausOutputFormat[K, V] extends OutputFormat[K, V] {
    * putting into that store.
    */
   override def getRecordWriter(fs: FileSystem, conf: JobConf, name: String, progress: Progressable): RecordWriter[K, V] = {
-    // log.debug(s"Returning RecordWriter, retrieved store from StoreInitializer ${InitializableStoreObjectSerializer.getWritableStoreIntializer(conf, tapid).get.getClass.getName} by reflection: ${store.toString()}")
     StorehausInputFormat.getResourceConfClass(conf).get.configure(conf)
     new StorehausRecordWriter(conf, progress)
   }

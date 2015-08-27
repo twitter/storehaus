@@ -227,5 +227,7 @@ class CQLCassandraRow(columns: Map[String, _]) extends Row {
   override def getPartitionKeyToken(): Token = ???
   override def getToken(name: String): Token = get[Token](name)
   override def getToken(i: Int): Token = ???
+  override def getObject(name: String): Object = get[Object](name)
+  override def getObject(i: Int): Object = ???
 }
 

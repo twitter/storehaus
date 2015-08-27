@@ -15,13 +15,9 @@ Sources
 Cascading sources provide cascading-tuples to pipes. Since most ReadableStores do not provide key- or tuple-streams keys must be provided by other means other than ReadableStore.get. This is achieved using SplittingMechanism, which requires that splits can be calculated and data can be enumerated. The following SplittingMechanism are being provided:
   * JobConf-Key-Based: keys must be provided as part of JobConf. Every ReadableStore can be used with this SplittingMechanism (default), but it is limited in space and splits are enumerate all keys on the client. See object JobConfKeyArraySplittingMechanism for how to provide the keys and serialization.
   * SplittableStore-Based: SplittableStores can be split up into sub-ranges or sub-stores, called splits. There are default implementations for IterableStores and QueryableStores.
-  * Specific SplittingMechanisms: Some stores provide specific SplittingMechanisms which are more specifically designed for the use case at hand. An example is the family of CassandraStores which provide CassandraSplittingMechanism.
+  * Specific SplittingMechanisms: Some stores provide specific SplittingMechanisms which are more specifically designed for the use case at hand. The only example available at the time writing is the family of CassandraStores which provide CassandraSplittingMechanism.
 
 To set a splitting mechanism use StorehausInputFormat.setSplittingClass on JobConf.
-
-
-
-
 
 Scalding and Summingbird
 ------------------------
@@ -30,6 +26,3 @@ There are implementations for Scalding sources and Summingbrid VersionedBatchedS
 How to use?
 -----------
 Project storehaus-cascading-examples contains a few examples which makes usage more clear. 
-
-
-

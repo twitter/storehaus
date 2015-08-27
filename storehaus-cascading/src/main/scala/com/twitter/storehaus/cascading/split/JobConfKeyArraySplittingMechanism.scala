@@ -20,7 +20,7 @@ import com.twitter.storehaus.ReadableStore
 import com.twitter.util.{ Try, Await }
 import org.apache.hadoop.io.DefaultStringifier
 import org.apache.hadoop.mapred.{ InputSplit, JobConf }
-
+import org.slf4j.LoggerFactory
 
 /**
  * Reads a stream of keys from the JobConf and eventually from a storehaus store.
@@ -34,18 +34,17 @@ import org.apache.hadoop.mapred.{ InputSplit, JobConf }
  */
 class JobConfKeyArraySplittingMechanism[K, V, U <: AbstractStorehausCascadingInitializer](override val conf: JobConf) 
     extends StorehausSplittingMechanism[K, V, U](conf) {
+  @transient val log = LoggerFactory.getLogger(classOf[JobConfKeyArraySplittingMechanism[K, V, U]])
   val tapid = InitializableStoreObjectSerializer.getTapId(conf)
-  val store = InitializableStoreObjectSerializer.getReadableStore(conf, tapid)
-    
+  lazy val store = InitializableStoreObjectSerializer.getReadableStore[K, V](conf, tapid)
   val DEFAULT_NUMBER_OF_MAPPERS = 1
-  
-  def getReadableStore: Option[ReadableStore[K, V]] = {
-    store match {
-      case readable: ReadableStore[K, V] => Some(readable)
-      case _ => None
-    }
+  @transient private var keyIterator: Option[Iterator[K]] = None
+
+  lazy val readableStore: ReadableStore[K, V] = {
+    store.onFailure { e => log.error("Error intializing store: " + e); e.printStackTrace; throw e }
+    store.toOption.get
   }
-  
+
   override def getSplits(conf: JobConf, hint: Int) : Array[InputSplit] = {
     def getNumber(size: Int) = {
       val numMapper = hint match {
@@ -66,29 +65,37 @@ class JobConfKeyArraySplittingMechanism[K, V, U <: AbstractStorehausCascadingIni
           size
     }
     val keys = JobConfKeyArraySplittingMechanism.getKeyArray(conf)
-    keys.map(keys => keys.grouped(getNumber(keys.size)).
+    keys.map(klist => log.info("Number of keys: " + klist.length))
+    val res = keys.map(keys => keys.grouped(getNumber(keys.size)).
         map(new KeyBasedSplit(_, Some(conf), JobConfKeyArraySplittingMechanism.
             getKeyClassFromConf[K](conf).toOption)).toArray.asInstanceOf[Array[InputSplit]]).get
+    log.info("Number of splits: " + res.length)
+    res
   }
-  
+
   override def fillRecord(split: InputSplit, key: Instance[K], value: Instance[V]): Boolean = {
     split match {
-      case ksplit: KeyBasedSplit[K] => 
-        getReadableStore match {
-          case Some(rstore) => 
-        	  if (ksplit.getIterator.hasNext) {
-        		val keyValue = ksplit.getIterator.next 
-        	    key.set(keyValue)
-        		Await.result(rstore.get(keyValue)).map(value.set(_))
-        		true
-        	  } else false
-          case None => false
+      case ksplit: KeyBasedSplit[K] =>
+        if(keyIterator.isEmpty) {
+          keyIterator = Some(ksplit.getIterator)
         }
-      case _ => false 
+        keyIterator.map{it =>
+          if (it.hasNext) {
+            val keyValue = it.next
+            key.set(keyValue)
+            Await.result(readableStore.get(keyValue)).map(value.set(_))
+            log.info("key/value:" + keyValue + ":" + value.get)
+            true
+          } else {
+            log.info("Split contains no more keys to get from store. Reading complete.")
+            false
+          }
+        }.getOrElse(false)
+      case _ => false
     }
   }
-  
-  override def close() = getReadableStore.map(store => store.close())
+
+  override def close() = store.toOption.map(rstore => rstore.close())
 }
 
 object JobConfKeyArraySplittingMechanism {
@@ -107,9 +114,6 @@ object JobConfKeyArraySplittingMechanism {
         DefaultStringifier.loadArray[K](conf, KEYARRAYCONFID, getKeyClassFromConf[K](conf).get).toList
     }
   }
-  def getKeyClassFromConf[K](conf: JobConf): Try[Class[K]] = 
+  def getKeyClassFromConf[K](conf: JobConf): Try[Class[K]] =
     Try(Class.forName(conf.get(KEYCLASSCONFID)).asInstanceOf[Class[K]])
 }
-
-
-
