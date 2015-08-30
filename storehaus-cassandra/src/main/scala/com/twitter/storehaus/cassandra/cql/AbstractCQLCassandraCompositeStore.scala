@@ -292,5 +292,5 @@ abstract class AbstractCQLCassandraCompositeStore[RK <: HList, CK <: HList, V, R
     sb.toString
   }
   
-  override def close(deadline: Time) = super[AbstractCQLCassandraStore].close()
+  override def close(deadline: Time) = super[AbstractCQLCassandraStore].close(deadline)
 }
