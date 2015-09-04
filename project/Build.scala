@@ -138,6 +138,7 @@ object StorehausBuild extends Build {
     storehausMySQL,
     storehausRedis,
     storehausHBase,
+    storehausInstrument,
     storehausDynamoDB,
     storehausLevelDB,
     storehausKafka08,
@@ -174,6 +175,9 @@ object StorehausBuild extends Build {
     libraryDependencies += "com.twitter" %% "algebird-bijection" % algebirdVersion,
     libraryDependencies += "com.twitter" %% "scalding-date" % scaldingVersion
   ).dependsOn(storehausCore % "test->test;compile->compile")
+
+  lazy val storehausInstrument =
+    module("instrument").dependsOn(storehausCore)
 
   lazy val storehausMemcache = module("memcache").settings(
     libraryDependencies ++= Seq(
