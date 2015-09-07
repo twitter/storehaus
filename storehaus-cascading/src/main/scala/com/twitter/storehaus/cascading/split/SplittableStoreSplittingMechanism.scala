@@ -70,5 +70,5 @@ class SplittableStoreSplittingMechanism[K, V, Q <: Writable, T <: SplittableStor
   
   private def getStorehausSplit(split: InputSplit): SplittableStoreInputSplit[K, V, Q] = split.asInstanceOf[SplittableStoreInputSplit[K, V, Q]]
   
-  override def close = {}
+  override def close() = {}
 }

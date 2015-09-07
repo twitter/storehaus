@@ -81,7 +81,7 @@ object StorehausCascadingMemcacheKeyBasedSplitExample {
    */
   def putSomeDataForFun(count: Int, store: WritableStore[String, Option[Long]]): List[String] =
     1.to(count).map { number =>
-      store.put(number.toString, Some(number))
+      store.put((number.toString, Some(number)))
       number.toString
     }.toList
 

@@ -42,7 +42,7 @@ abstract class StorehausSplittingMechanism[K, V, U <: AbstractStorehausCascading
   /**
    * free resources after splitting is done
    */
-  def close: Unit = {}
+  def close(): Unit = {}
   
   /**
    * free resources of split

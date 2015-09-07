@@ -117,13 +117,13 @@ object StorehausOutputFormat {
    */
   trait OutputThrottler {
     def configure[K, V](conf: JobConf, store: WritableStore[K, Option[V]])
-    def throttle
-    def close
+    def throttle()
+    def close()
   }
 
   object NullThrottler extends OutputThrottler {
     override def configure[K, V](conf: JobConf, store: WritableStore[K, Option[V]]) = {}
-    override def throttle = {}
-    override def close = {}
+    override def throttle() = {}
+    override def close() = {}
   }
 }
