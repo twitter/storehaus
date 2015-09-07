@@ -19,7 +19,6 @@ package com.twitter.storehaus
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.ConcurrentHashMap
 
-import scala.collection.mutable.ConcurrentMap
 import scala.collection.JavaConverters._
 
 import com.twitter.util.{ Future, Promise, Return, Throw, Time }

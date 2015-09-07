@@ -24,7 +24,7 @@ import com.twitter.util.{ Closable, Duration, Future, Time }
  */
 trait WritableStore[-K, -V] extends Closable {
   /**
-   * replace a value
+   * Replace a value
    * Delete is the same as put((k,None))
    */
   def put(kv: (K, V)): Future[Unit] = multiPut(Map(kv)).apply(kv._1)

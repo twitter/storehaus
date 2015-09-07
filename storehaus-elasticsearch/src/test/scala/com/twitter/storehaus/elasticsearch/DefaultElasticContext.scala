@@ -20,21 +20,19 @@ import org.elasticsearch.common.settings.ImmutableSettings
 import java.util.UUID
 import java.io.File
 import org.elasticsearch.node.NodeBuilder._
-import org.specs2.specification.Scope
 import org.json4s.{native, NoTypeHints}
-
 
 /**
  * @author Mansur Ashraf
  * @since 1/13/14
  */
-trait DefaultElasticContext extends Scope {
+trait DefaultElasticContext {
 
   val tempFile = File.createTempFile("elasticsearchtests", "tmp")
   val homeDir = new File(tempFile.getParent + "/" + UUID.randomUUID().toString)
   val test_index = "test_index"
   val test_type = "test_type"
-  val DEFAULT_TIMEOUT = 4 * 1000
+  val DEFAULT_TIMEOUT = 10 * 1000
 
   homeDir.mkdir()
   homeDir.deleteOnExit()
@@ -54,7 +52,7 @@ trait DefaultElasticContext extends Scope {
     node.client()
   }
   private implicit val formats = native.Serialization.formats(NoTypeHints)
-  lazy val store = ElasticSearchCaseClassStore[Person](test_index, test_type, client)
+  val store = ElasticSearchCaseClassStore[Person](test_index, test_type, client)
 
   def refreshIndex(): Unit = {
     refresh(test_index)

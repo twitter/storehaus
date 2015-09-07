@@ -16,15 +16,15 @@
 
 package com.twitter.storehaus.cache
 
-import org.specs2.mutable._
+import org.scalatest.{Matchers, WordSpec}
 
-class MutableLRUCacheTest extends Specification {
+class MutableLRUCacheTest extends WordSpec with Matchers {
   def freshCache = MutableLRUCache[String, Int](2)
 
   def checkCache(pairs: Seq[(String, Int)], results: Seq[Boolean]) = {
     val cache = freshCache
     pairs.foreach(cache += _)
-    pairs.map { case (k, _) => cache.contains(k) } must be_==(results)
+    pairs.map { case (k, _) => cache.contains(k) } should equal(results)
   }
 
   "MutableLRUCache works properly with threshold 2" in {

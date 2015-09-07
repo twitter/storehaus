@@ -65,7 +65,7 @@ object CQLCassandraConfiguration {
       clusterBuilder.withProtocolVersion(ProtocolVersion.V3)
       clusterBuilder.build()
     }
-    def close: Unit = cluster.close
+    def close(): Unit = cluster.close
   }
 
   case class StoreColumnFamily(name: String, val session: StoreSession) {
@@ -88,14 +88,14 @@ object CQLCassandraConfiguration {
     def getSession: Session = session
     def getCluster: Cluster = getSession.getCluster
     def getKeyspacename: String = keyspacename.filterNot(_ == '"')
-    def createKeyspace = {
+    def createKeyspace() = {
       val stmt = "CREATE KEYSPACE IF NOT EXISTS \"" + getKeyspacename + "\" WITH REPLICATION = " + replicationOptions + " ;"
       independentKeyspaceOp(stmt)
     }
     /**
      * WARNING! *Permanently DELETES* given keyspace and contained data. Session may not be used afterwards.
      */
-    def dropAndDeleteKeyspaceAndContainedData = {
+    def dropAndDeleteKeyspaceAndContainedData() = {
       val stmt = "DROP KEYSPACE \"" + getKeyspacename + "\";"
       independentKeyspaceOp(stmt)
     }

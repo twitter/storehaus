@@ -158,7 +158,7 @@ class CQLCassandraStoreTupleValues[K: CassandraPrimitive, V <: Product, VL <: HL
     override protected def createPutQuery[K1 <: K](kv: (K1, V)) = super.createPutQuery(kv)    
     override def cas(token: Option[T], kv: (K, V))(implicit ev1: Equiv[T]): Future[Boolean] = { 
       def putQueryConversion(kv: (K, Option[V])): BuiltStatement = token match {
-        case None => createPutQuery[K](kv._1, kv._2.get).value(tokenColumnName, cassTokenSerializer.toCType(tokenFactory.createNewToken)).ifNotExists()
+        case None => createPutQuery[K]((kv._1, kv._2.get)).value(tokenColumnName, cassTokenSerializer.toCType(tokenFactory.createNewToken)).ifNotExists()
         case Some(tok) => createPutQuery[K, Update.Assignments]((kv._1, kv._2.get), QueryBuilder.update(columnFamily.getPreparedNamed).`with`).
         and(QueryBuilder.set(tokenColumnName, cassTokenSerializer.toCType(tokenFactory.createNewToken))).
         where(QueryBuilder.eq(keyColumnName, implicitly[CassandraPrimitive[K]].toCType(kv._1))).

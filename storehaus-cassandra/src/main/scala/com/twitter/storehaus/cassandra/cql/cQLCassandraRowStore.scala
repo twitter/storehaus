@@ -99,7 +99,7 @@ class CQLCassandraRowStore[K : CassandraPrimitive] (
       }
     }.getOrElse(bs)
     def getKeyValue = implicitly[CassandraPrimitive[K]].fromRow(row, keyColumnName)
-    def internalValue[T](name: String, cass: CassandraPrimitive[T], value: Option[T]): BuiltStatement = bs match {
+    def internalValue[U](name: String, cass: CassandraPrimitive[U], value: Option[U]): BuiltStatement = bs match {
       case ins: Insert => ins.value(name, cass.toCType(value.get))
       case upd: Update => if(name == keyColumnName) {
           bs
@@ -158,7 +158,7 @@ class CQLCassandraRowStore[K : CassandraPrimitive] (
     override protected def createPutQuery[K1 <: K](kv: (K1, Row)) = super.createPutQuery(kv)    
     override def cas(token: Option[T], kv: (K, Row))(implicit ev1: Equiv[T]): Future[Boolean] = { 
       def putQueryConversion(kv: (K, Option[Row])): BuiltStatement = token match {
-        case None => createPutQuery[K](kv._1, kv._2.get).ifNotExists()
+        case None => createPutQuery[K]((kv._1, kv._2.get)).ifNotExists()
         case Some(token) => recursiveAddValues[T](columns, QueryBuilder.update(columnFamily.getPreparedNamed), kv._2.get).asInstanceOf[Update.Assignments].
           onlyIf(QueryBuilder.eq(tokenColumnName, token))
       } 

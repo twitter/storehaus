@@ -92,7 +92,7 @@ abstract class AbstractCQLCassandraSimpleStore[K : CassandraPrimitive, V] (
     import scala.math.Ordering.Implicits._
     import scala.collection.convert.WrapAsScala._
     cassandraVersion match {
-      case Some(version) if (version.getMajor, version.getMinor) >= (2, 1) =>
+      case Some(version) if (version.getMajor, version.getMinor) >= ((2, 1)) =>
         val clause = QueryBuilder.in(keyColumnName, ks.map(k => keySerializer.toCType(k)))
         val stmt = QueryBuilder.select().from(columnFamily.getPreparedNamed).where(clause).setConsistencyLevel(consistency)
         val future = futurePool { 

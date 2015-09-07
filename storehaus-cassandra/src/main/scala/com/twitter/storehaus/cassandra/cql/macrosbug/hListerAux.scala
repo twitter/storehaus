@@ -13,35 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.twitter.storehaus.cassandra.cql
+package com.twitter.storehaus.cassandra.cql.macrobug
 
 import shapeless._
 
-/**
- * While moving from shapeless-1.2.4 to shapeless-2.0.0 a bug in the macro system
- * which comes up with Generic.Aux. This is to be used in conjunction with tuples 
- * producing HLists. 
- * See: https://github.com/milessabin/shapeless/wiki/Migration-guide:-shapeless-1.2.4-to-2.0.0
- * This set of traits and stuff is more or less a copy of the old shapeless-1.2.4
- * HListerAux trait (+ generated stuff) to circumvent using macros in this case.
- * Unfortunately this is verbose, because this should work without code generation.
- * Ugly, but working.
- */
-/*
-package object macrobug {
-  
-  trait HLister[-T <: Product] { type Out <: HList; def apply(t : T) : Out }
-  
-  trait HListerAux[-T <: Product, Out <: HList] { def apply(t : T) : Out }
-  
-  object HLister {
-     implicit def hlister[T <: Product, Out0 <: HList](implicit hlister : HListerAux[T, Out0]) = new HLister[T] {
-       type Out = Out0
-       def apply(t : T) : Out = hlister(t)
-     }
-  }
+trait HListerAux[-T <: Product, Out <: HList] { def apply(t : T) : Out }
 
-  trait HListerAuxInstances {
+trait HListerAuxInstances {
     implicit def tupleHLister1[A] = new HListerAux[Product1[A], A :: HNil] {
       def apply(t: Product1[A]) = t._1 :: HNil
     }
@@ -145,8 +123,6 @@ package object macrobug {
         t._1 :: t._2 :: t._3 :: t._4 :: t._5 :: t._6 :: t._7 :: t._8 :: t._9 :: t._10 :: t._11 ::
         t._12 :: t._13 :: t._14 :: t._15 :: t._16 :: t._17 :: t._18 :: t._19 :: t._20 :: t._21 :: t._22 :: HNil
     }
-  }
-
-  object HListerAux extends HListerAuxInstances
 }
-*/
+
+object HListerAux extends HListerAuxInstances

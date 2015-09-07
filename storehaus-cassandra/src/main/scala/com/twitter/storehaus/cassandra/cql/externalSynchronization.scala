@@ -100,7 +100,7 @@ case class CassandraCASSync(val store: CASStore[Long, String, Boolean] with Writ
     // poll store until we know it's finished
     val token = TokenFactory.longTokenFactory.createNewToken
     def busyWaitForAquiredLock: T = {
-      def busyWaitForReleasedLock: Unit = {
+      def busyWaitForReleasedLock(): Unit = {
         val lockCol = Await.result(store.get(id))
         if(lockCol != None && lockCol.get._1) {
           Thread.sleep(busyWaitLoopTime.inUnit(TimeUnit.MILLISECONDS))

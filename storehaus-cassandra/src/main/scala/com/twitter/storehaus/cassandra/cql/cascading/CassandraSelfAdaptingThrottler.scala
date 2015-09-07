@@ -147,7 +147,7 @@ class CassandraSelfAdaptingThrottler extends OutputThrottler {
     }.reduce(_ + _) + addValue * normalization
   }
 
-  def close = {
+  def close() = {
     JMXConnector.close
     timer.stop()
   }
@@ -155,7 +155,7 @@ class CassandraSelfAdaptingThrottler extends OutputThrottler {
   /**
    * throttle speed by sleeping
    */
-  def throttle = if (throttleDelayMS > 0) {
+  def throttle() = if (throttleDelayMS > 0) {
     val before = System.nanoTime()
     try {
       Thread.sleep(throttleDelayMS)
