@@ -20,7 +20,6 @@ import com.datastax.driver.core.policies.{Policies, RoundRobinPolicy, Reconnecti
 import com.datastax.driver.core.querybuilder.{BuiltStatement, Insert, QueryBuilder, Update}
 import com.twitter.concurrent.Spool
 import com.twitter.storehaus.{IterableStore, QueryableStore, ReadableStore, ReadableStoreProxy, Store, WithPutTtl}
-import com.twitter.storehaus.cassandra.cql.cascading.CassandraCascadingRowMatcher
 import com.twitter.util.{Await, Closable, Future, Duration, FuturePool, Promise, Try, Throw, Return}
 import com.websudos.phantom.CassandraPrimitive
 import java.util.concurrent.Executors
@@ -92,7 +91,6 @@ class CQLCassandraStoreTupleValues[K: CassandraPrimitive, V <: Product, VL <: HL
 	extends AbstractCQLCassandraSimpleStore[K, V](poolSize, columnFamily, keyColumnName, consistency, batchType, ttl)
 	with Store[K, V] 
     with WithPutTtl[K, V, CQLCassandraStoreTupleValues[K, V, VL, VS]] 
-    with CassandraCascadingRowMatcher[K, V]
     with QueryableStore[String, (K, V)] 
     with IterableStore[K, V] 
     with CassandraCASStore[K, V] {

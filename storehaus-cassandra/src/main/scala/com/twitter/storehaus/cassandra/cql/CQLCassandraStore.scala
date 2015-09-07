@@ -20,7 +20,6 @@ import com.datastax.driver.core.policies.{Policies, RoundRobinPolicy, Reconnecti
 import com.datastax.driver.core.querybuilder.{BuiltStatement, QueryBuilder}
 import com.twitter.concurrent.Spool
 import com.twitter.storehaus.{IterableStore, QueryableStore, ReadableStore, ReadableStoreProxy, Store, WithPutTtl}
-import com.twitter.storehaus.cassandra.cql.cascading.CassandraCascadingRowMatcher
 import com.twitter.util.{Await, Closable, Future, Duration, FuturePool, Promise, Try, Throw, Return}
 import com.websudos.phantom.CassandraPrimitive
 import java.util.concurrent.Executors

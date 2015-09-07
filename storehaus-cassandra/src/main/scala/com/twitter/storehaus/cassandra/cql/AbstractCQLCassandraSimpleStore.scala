@@ -19,7 +19,6 @@ import com.datastax.driver.core.querybuilder.{Insert, QueryBuilder, Select}
 import com.datastax.driver.core.{BatchStatement, ConsistencyLevel, ResultSet, Row, SimpleStatement, Statement}
 import com.twitter.concurrent.Spool
 import com.twitter.storehaus.{IterableStore, QueryableStore, ReadableStore, Store}
-import com.twitter.storehaus.cassandra.cql.cascading.CassandraCascadingRowMatcher
 import com.twitter.util.{Duration, Future, FuturePool, Promise, Throw, Return}
 import java.util.concurrent.{Executors, TimeUnit}
 import org.slf4j.{ Logger, LoggerFactory }
@@ -36,8 +35,7 @@ abstract class AbstractCQLCassandraSimpleStore[K : CassandraPrimitive, V] (
     batchType: BatchStatement.Type = CQLCassandraConfiguration.DEFAULT_BATCH_STATEMENT_TYPE,
     ttl: Option[Duration] = CQLCassandraConfiguration.DEFAULT_TTL_DURATION) 
   extends AbstractCQLCassandraStore[K, V](poolSize, columnFamily)
-  with Store[K, V]
-  with CassandraCascadingRowMatcher[K, V] {
+  with Store[K, V] {
   
   @transient private val log = LoggerFactory.getLogger(classOf[AbstractCQLCassandraSimpleStore[K, V]])
 

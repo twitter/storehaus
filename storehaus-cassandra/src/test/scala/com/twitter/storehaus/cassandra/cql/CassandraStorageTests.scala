@@ -66,11 +66,11 @@ object CassandraStoreProperties extends Properties("CassandraStore") {
     val rowKey = BigInt("1234567890123456789")
     
     // put and get value
-    Await.result(store.put(rowKey, expected))
+    Await.result(store.put((rowKey, expected)))
     val result = Await.result(store.get(rowKey)) == expected
     
     // delete value
-    Await.result(store.put(rowKey, None))
+    Await.result(store.put((rowKey, None)))
     val result2 = Await.result(store.get(rowKey)) == None
 
     if(!(result && result2)) println("Cassandra-Results do not match in putAndGetBasicKeyValeStore")
@@ -113,7 +113,7 @@ object CassandraStoreProperties extends Properties("CassandraStore") {
       CassandraPrimitive[Date] :: CassandraPrimitive[String] :: HNil](columnFamily, valueColumnNames, valueSerializers)
     
     // put and get value
-    Await.result(store.put(rowKey, expected))
+    Await.result(store.put((rowKey, expected)))
     var result = Await.result(store.get(rowKey)) == expected
     
     // test IterableStore (this is a very simple test, as only one item can be returned)
@@ -158,12 +158,12 @@ object CassandraStoreProperties extends Properties("CassandraStore") {
         "birthdate" -> new Date(), "account" -> BigDecimal.double2bigDecimal(Math.random()))))
     
     // put and get value
-    Await.result(store.put(rowKey, value))
+    Await.result(store.put((rowKey, value)))
     val resultrow = Await.result(store.get(rowKey))
     val result = resultrow.get.getString("city") == city && resultrow.get.getInt("zip") == zip
     
     // delete value
-    Await.result(store.put(rowKey, None))
+    Await.result(store.put((rowKey, None)))
     val result2 = Await.result(store.get(rowKey)) == None
 
     if(!(result && result2)) println("Cassandra-Results do not match in putAndGetKeyRowStore")
@@ -206,7 +206,7 @@ object CassandraStoreProperties extends Properties("CassandraStore") {
 	      columnFamily, rkSerializers, rowNames, ckSerializers, colNames)(implicitly[Semigroup[Set[String]]])
     
 	// put and get value
-    Await.result(store.put(key, expected))
+    Await.result(store.put((key, expected)))
     val result = Await.result(store.get(key))
     
     // merge in value
@@ -258,7 +258,7 @@ object CassandraStoreProperties extends Properties("CassandraStore") {
 	    columnFamily, rkSerializers, rowNames, ckSerializers, colNames, ttl = ttl)(valueSerializer)
     
 	// put and get value
-    Await.result(store.put(key, expected))
+    Await.result(store.put((key, expected)))
     var result = Await.result(store.get(key)) == expected
 
     if(!(result)) println("Cassandra-Results do not match in putAndGetCompositeStoreWithTTL")
@@ -273,7 +273,7 @@ object CassandraStoreProperties extends Properties("CassandraStore") {
     // do s.th. with CassandraTupleStore to test that we can also use simple Tuples instead of HLists
     val tuplestore = new CassandraTupleStore(store, (("", 0), ("", 0.0d, UUID.randomUUID())))
     val newkey = (("1", 1), ("1", 1.0d, UUID.randomUUID()))
-    Await.result(tuplestore.put(newkey, expected))
+    Await.result(tuplestore.put((newkey, expected)))
     result = result && Await.result(tuplestore.get(newkey)) == expected
 
     if(!(result)) println("Cassandra-Results do not match in putAndGetCompositeStoreWithTTL for CassandraTupleStore")
@@ -321,7 +321,7 @@ object CassandraStoreProperties extends Properties("CassandraStore") {
 	    columnFamily, rkSerializers, rowNames, ckSerializers, colNames)(valueSerializers, valNames)
     
 	// put and get value
-    Await.result(store.put(key, expected))
+    Await.result(store.put((key, expected)))
     var result = Await.result(store.get(key)) == expected
 
     if(!(result)) println("Cassandra-Results do not match in putAndGetCompositeStoreWithTupleValues")
@@ -330,7 +330,7 @@ object CassandraStoreProperties extends Properties("CassandraStore") {
     val tuplestore = new CassandraTupleMultiValueStore(store, (("", 0), ("", 0.0d, UUID.randomUUID())), (UUID.randomUUID, "", 0.0d))
     val newexpected = Some((UUID.randomUUID(), "man", 1.2d))
 	val newkey = (("1", 1), ("1", 1.0d, UUID.randomUUID()))
-    Await.result(tuplestore.put(newkey, newexpected))
+    Await.result(tuplestore.put((newkey, newexpected)))
     result = result && Await.result(tuplestore.get(newkey)) == newexpected
 
     if(!(result)) println("Cassandra-Results do not match in putAndGetCompositeStoreWithTupleValues for CassandraTupleMultiValueStore")
@@ -378,7 +378,7 @@ object CassandraStoreProperties extends Properties("CassandraStore") {
     val expected = (number - 1) * value
 
     var result = 0L
-    for(_ <- (1 to number)) result = Await.result(store.merge(key, value)).getOrElse(0L)
+    for(_ <- (1 to number)) result = Await.result(store.merge((key, value))).getOrElse(0L)
     
     // close store to shutdown futurePool correctly
     store.close(Duration(10, TimeUnit.SECONDS))

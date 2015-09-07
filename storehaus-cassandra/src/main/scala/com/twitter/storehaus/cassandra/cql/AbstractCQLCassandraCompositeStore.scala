@@ -22,7 +22,6 @@ import com.datastax.driver.core.policies.{LoadBalancingPolicy, Policies, Reconne
 import com.datastax.driver.core.querybuilder.{BuiltStatement, Clause, QueryBuilder, Update, Select}
 import com.twitter.storehaus.{IterableStore, QueryableStore, ReadableStore, Store}
 import com.websudos.phantom.CassandraPrimitive
-import com.twitter.storehaus.cassandra.cql.cascading.CassandraCascadingRowMatcher
 import java.util.concurrent.{Executors, TimeUnit}
 import scala.annotation.tailrec
 import scala.collection.JavaConversions._
@@ -180,7 +179,6 @@ abstract class AbstractCQLCassandraCompositeStore[RK <: HList, CK <: HList, V, R
     csUTC:  *->*[CassandraPrimitive]#λ[CS])
   extends AbstractCQLCassandraStore[(RK, CK), V](poolSize, columnFamily)
   with Store[(RK, CK), V] 
-  with CassandraCascadingRowMatcher[(RK, CK), V] 
   with QueryableStore[String, ((RK, CK), V)] 
   with IterableStore[(RK, CK), V] {
   import AbstractCQLCassandraCompositeStore._

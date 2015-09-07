@@ -16,17 +16,15 @@
 package com.twitter.storehaus.cassandra.cql
 
 import com.datastax.driver.core.querybuilder.QueryBuilder
-import com.datastax.driver.core.ResultSet
+import com.datastax.driver.core.{ResultSet, Row}
 import com.twitter.concurrent.Spool
 import com.twitter.storehaus.{IterableStore, QueryableStore, ReadableStore}
-import com.twitter.storehaus.cassandra.cql.cascading.CassandraCascadingRowMatcher
 import com.twitter.util.{Closable, Future, FuturePool, Promise, Throw, Time, Return}
 import java.util.concurrent.{LinkedBlockingQueue, Executors, ThreadPoolExecutor, TimeUnit}
 import org.slf4j.{ Logger, LoggerFactory }
 
 abstract class AbstractCQLCassandraStore[K, V] (val poolSize: Int, val columnFamily: CQLCassandraConfiguration.StoreColumnFamily) 
   extends QueryableStore[String, (K, V)] 
-  with CassandraCascadingRowMatcher[K, V]
   with IterableStore[K, V] 
   with Closable {
 
@@ -56,6 +54,10 @@ abstract class AbstractCQLCassandraStore[K, V] (val poolSize: Int, val columnFam
       }
     }
   })  
+  
+  // interim defs
+  def getColumnNamesString: String
+  def getKeyValueFromRow(row: Row): (K, V)
   
   /**
    * takes a where condition-string (and where condition only) of a CQL query 

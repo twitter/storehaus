@@ -20,14 +20,12 @@ import com.datastax.driver.core.policies.{Policies, RoundRobinPolicy, Reconnecti
 import com.datastax.driver.core.querybuilder.{BuiltStatement, QueryBuilder, Insert, Update}
 import com.twitter.concurrent.Spool
 import com.twitter.storehaus.{IterableStore, QueryableStore, ReadableStore, ReadableStoreProxy, Store, WithPutTtl}
-import com.twitter.storehaus.cassandra.cql.cascading.CassandraCascadingRowMatcher
 import com.twitter.util.{Await, Closable, Future, Duration, FuturePool, Promise, Try, Throw, Return}
 import com.websudos.phantom.CassandraPrimitive
 import java.util.concurrent.Executors
 import java.util.{ Date, List => JList, Map => JMap, Set => JSet, UUID }
 import java.nio.ByteBuffer
 import scala.annotation.tailrec
-import com.twitter.storehaus.cascading.Instance
 import com.datastax.driver.core.ColumnDefinitions
 import java.math.{BigInteger => JBigInteger, BigDecimal => JBigDecimal}
 import java.net.InetAddress

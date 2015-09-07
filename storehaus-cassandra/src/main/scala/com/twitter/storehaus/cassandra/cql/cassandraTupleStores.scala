@@ -18,7 +18,6 @@ package com.twitter.storehaus.cassandra.cql
 import com.datastax.driver.core.Row
 import com.twitter.concurrent.Spool
 import com.twitter.storehaus.{IterableStore, ReadableStore, QueryableStore, Store}
-import com.twitter.storehaus.cassandra.cql.cascading.CassandraCascadingRowMatcher
 import com.twitter.util.{Future, FutureTransformer, Return, Throw}
 import shapeless.ops.hlist.Tupler
 import shapeless.syntax.std.tuple._
@@ -37,7 +36,6 @@ class CassandraTupleStore[RKT <: Product, CKT <: Product, V, RK <: HList, CK <: 
 		    ev3: Tupler.Aux[RK, RKT],
 		    ev4: Tupler.Aux[CK, CKT])
 	extends Store[(RKT, CKT), V]  
-    with CassandraCascadingRowMatcher[(RKT, CKT), V] 
     with QueryableStore[String, ((RKT, CKT), V)]
     with IterableStore[(RKT, CKT), V] {
 
@@ -50,12 +48,14 @@ class CassandraTupleStore[RKT <: Product, CKT <: Product, V, RK <: HList, CK <: 
     resultMap.map(kv => ((kv._1._1.tupled, kv._1._2.tupled).asInstanceOf[K1], kv._2))
   }
   
-  override def getKeyValueFromRow(row: Row): ((RKT, CKT), V) = {
+  // interim: no override
+  def getKeyValueFromRow(row: Row): ((RKT, CKT), V) = {
     val (keys, value) = store.getKeyValueFromRow(row)
     ((keys._1.tupled, keys._2.tupled), value)
   }
   
-  override def getColumnNamesString: String = store.getColumnNamesString
+  // interim: no override
+  def getColumnNamesString: String = store.getColumnNamesString
   
   override def queryable: ReadableStore[String, Seq[((RKT, CKT), V)]] = new Object with ReadableStore[String, Seq[((RKT, CKT), V)]] {
     override def get(whereCondition: String): Future[Option[Seq[((RKT, CKT), V)]]] = store.queryable.get(whereCondition).transformedBy {
@@ -88,7 +88,6 @@ class CassandraTupleMultiValueStore[RKT <: Product, CKT <: Product, V <: Product
 		    ev5: Tupler.Aux[CK, CKT],
 		    ev6: Tupler.Aux[VL, V])
 	extends Store[(RKT, CKT), V]  
-    with CassandraCascadingRowMatcher[(RKT, CKT), V] 
     with QueryableStore[String, ((RKT, CKT), V)]
     with IterableStore[(RKT, CKT), V] {
 
@@ -101,12 +100,14 @@ class CassandraTupleMultiValueStore[RKT <: Product, CKT <: Product, V <: Product
     resultMap.map(kv => ((kv._1._1.tupled, kv._1._2.tupled).asInstanceOf[K1], kv._2))
   }
   
-  override def getKeyValueFromRow(row: Row): ((RKT, CKT), V) = {
+  // interim: no override
+  def getKeyValueFromRow(row: Row): ((RKT, CKT), V) = {
     val (keys, value) = store.getKeyValueFromRow(row)
     ((keys._1.tupled, keys._2.tupled), value.tupled)
   }
   
-  override def getColumnNamesString: String = store.getColumnNamesString
+  // interim: no override
+  def getColumnNamesString: String = store.getColumnNamesString
   
   override def queryable: ReadableStore[String, Seq[((RKT, CKT), V)]] = new Object with ReadableStore[String, Seq[((RKT, CKT), V)]] {
     override def get(whereCondition: String): Future[Option[Seq[((RKT, CKT), V)]]] = store.queryable.get(whereCondition).transformedBy {

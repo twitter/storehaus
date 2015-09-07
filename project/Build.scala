@@ -166,8 +166,6 @@ object StorehausBuild extends Build {
     storehausMongoDB,
     storehausElastic,
     storehausCassandra,
-    storehausCascading,
-    storehausCascadingExamples,
     storehausHttp,
     storehausTesting
   )
@@ -323,13 +321,10 @@ object StorehausBuild extends Build {
     "com.google.code.findbugs" % "jsr305" % "1.3.+",
     "com.twitter" %% "bijection-core" % bijectionVersion,
     "com.datastax.cassandra" % "cassandra-driver-core" % cassandraDriverVersion classifier "shaded" exclude("io.netty", "*"),
-    "org.apache.cassandra" % "cassandra-thrift" % cassandraVersion exclude ("com.google.guava", "guava"),
-    "org.apache.cassandra" % "cassandra-all" % cassandraVersion exclude ("com.google.guava", "guava"),
     "com.websudos" %% "phantom-dsl" % "1.5.0" exclude ("com.datastax.cassandra", "cassandra-driver-core"),
     withCross("com.twitter" %% "util-zk" % utilVersion)  exclude ("com.google.guava", "guava"),
     bogus210Version("com.chuusai" %% "shapeless" % "2.0.0"),
-    "org.slf4j" % "slf4j-api" % "1.7.5",
-    "org.apache.hadoop" % "hadoop-core" % hadoopVersion
+    "org.slf4j" % "slf4j-api" % "1.7.5"
   )
 
   lazy val storehausCassandra = module("cassandra").settings(
@@ -339,57 +334,7 @@ object StorehausBuild extends Build {
     publishArtifact := isScalaGreater29x(scalaVersion.value),
     libraryDependencies ++= cassandraDeps(scalaVersion.value),
     parallelExecution in Test := false
-  ).dependsOn(storehausAlgebra % "test->test;compile->compile", storehausCascading)
-
-  def cascadingDeps(scalaVersion: String) = if (!isScalaGreater29x(scalaVersion)) Seq() else Seq(
-    "cascading" % "cascading-core" % cascadingVersion,
-    "cascading" % "cascading-hadoop" % cascadingVersion,
-    "org.slf4j" % "slf4j-api" % "1.7.5",
-    "org.scala-lang" % "scala-reflect" % scalaVersion,
-    "org.apache.hadoop" % "hadoop-core" % hadoopVersion
-  )
-
-  lazy val storehausCascading = module("cascading").settings(
-    skip in test := !isScalaGreater29x(scalaVersion.value),
-    skip in compile := !isScalaGreater29x(scalaVersion.value),
-    skip in doc := !isScalaGreater29x(scalaVersion.value),
-    publishArtifact := isScalaGreater29x(scalaVersion.value),
-    libraryDependencies ++= cascadingDeps(scalaVersion.value),
-    parallelExecution in Test := false
-  ).dependsOn(storehausCore, storehausAlgebra % "test->test;compile->compile")
-
-  def cascadingExampleDeps(scalaVersion: String) = if (!isScalaGreater29x(scalaVersion)) Seq() else Seq(
-    "cascading" % "cascading-core" % cascadingVersion,
-    "cascading" % "cascading-hadoop" % cascadingVersion,
-    "org.slf4j" % "slf4j-api" % "1.7.5",
-    bogus210Version("com.chuusai" %% "shapeless" % "2.0.0"),
-    "org.apache.hadoop" % "hadoop-core" % hadoopVersion,
-    "com.twitter" % "chill-hadoop" % "0.5.1"
-  )
-
-  lazy val storehausCascadingExamples = module("cascading-examples").settings(
-    skip in test := !isScalaGreater29x(scalaVersion.value),
-    skip in compile := !isScalaGreater29x(scalaVersion.value),
-    skip in doc := !isScalaGreater29x(scalaVersion.value),
-    mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) => {
-        case x if x startsWith "javax/servlet" => MergeStrategy.first
-        case x if x startsWith "javax/xml/stream/" => MergeStrategy.last
-        case x if x startsWith "org/apache/commons/beanutils/" => MergeStrategy.last
-        case x if x startsWith "org/apache/commons/collections/" => MergeStrategy.last
-        case x if x startsWith "org/apache/jasper/" => MergeStrategy.last
-        case x if x startsWith "com/twitter/common/args/apt/" => MergeStrategy.last
-        case x if x startsWith "org/slf4j/" => MergeStrategy.first
-        case x if x startsWith "com/esotericsoftware/minlog" => MergeStrategy.first
-        case x if x startsWith "org/objectweb/asm" => MergeStrategy.first
-        case x if x startsWith "org/stringtemplate/v4" => MergeStrategy.first
-        case x => old(x)
-      }
-    },
-    jarName in assembly := s"${name.value}-${version.value}.jar",
-    libraryDependencies ++= cascadingExampleDeps(scalaVersion.value),
-    publishArtifact := false,
-    parallelExecution in Test := false
-  ).dependsOn(storehausCore, storehausAlgebra % "test->test;compile->compile", storehausCascading, storehausCassandra, storehausMemcache)
+  ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
   lazy val storehausHttp = module("http").settings(
     libraryDependencies ++= Seq(
