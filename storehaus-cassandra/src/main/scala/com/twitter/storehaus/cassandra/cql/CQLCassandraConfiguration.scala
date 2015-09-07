@@ -31,7 +31,8 @@ object CQLCassandraConfiguration {
   val DEFAULT_BATCH_STATEMENT_TYPE = BatchStatement.Type.UNLOGGED
   val DEFAULT_SYNC = CassandraExternalSync(NoSync(), NoSync())
   val DEFAULT_SHUTDOWN_TIMEOUT = Duration(60, TimeUnit.SECONDS)
-  val DEFAULT_SCHEMA_AGREEMENT_TIMEOUT = Duration(10, TimeUnit.SECONDS);
+  val DEFAULT_SCHEMA_AGREEMENT_TIMEOUT = Duration(10, TimeUnit.SECONDS)
+  val DEFAULT_PROTOCOL_VERSION = ProtocolVersion.V3
 
   case class StoreHost(val name: String)
 
@@ -43,7 +44,8 @@ object CQLCassandraConfiguration {
                           val reconnectPolicy: ReconnectionPolicy = Policies.defaultReconnectionPolicy,
                           val retryPolicy: RetryPolicy = Policies.defaultRetryPolicy,
                           val shutdownTimeout: Duration = DEFAULT_SHUTDOWN_TIMEOUT,
-                          val maxSchemaAgreementWaitSeconds: Duration = DEFAULT_SCHEMA_AGREEMENT_TIMEOUT) {
+                          val maxSchemaAgreementWaitSeconds: Duration = DEFAULT_SCHEMA_AGREEMENT_TIMEOUT,
+                          val protocolVersion: ProtocolVersion = DEFAULT_PROTOCOL_VERSION) {
     lazy val cluster = createCluster
     def getCluster: Cluster = cluster
     def createCluster: Cluster = {
@@ -62,7 +64,7 @@ object CQLCassandraConfiguration {
       clusterBuilder.withReconnectionPolicy(reconnectPolicy)
       clusterBuilder.withRetryPolicy(retryPolicy)
       clusterBuilder.withMaxSchemaAgreementWaitSeconds(maxSchemaAgreementWaitSeconds.inUnit(TimeUnit.SECONDS).toInt)
-      clusterBuilder.withProtocolVersion(ProtocolVersion.V3)
+      clusterBuilder.withProtocolVersion(protocolVersion)
       clusterBuilder.build()
     }
     def close(): Unit = cluster.close

@@ -18,6 +18,7 @@ package com.twitter.storehaus.cassandra.cql
 import com.twitter.algebird.Semigroup
 import com.twitter.util.{ Await, Duration, Try }
 import com.websudos.phantom.CassandraPrimitive
+import com.datastax.driver.core.ProtocolVersion
 import org.scalacheck.{ Gen, Properties }
 import org.scalacheck.Prop.forAll
 import java.util.{Date, UUID}
@@ -389,7 +390,7 @@ object CassandraStoreProperties extends Properties("CassandraStore") {
 
   property("Various Cassandrastores put, get and merge") = {
     val host = new CQLCassandraConfiguration.StoreHost(hostname)
-    val cluster = new CQLCassandraConfiguration.StoreCluster(clusterName, Set(host))
+    val cluster = new CQLCassandraConfiguration.StoreCluster(clusterName, Set(host), protocolVersion = ProtocolVersion.V2)
     val session = new CQLCassandraConfiguration.StoreSession(keyspaceName, cluster, 
         "{'class' : 'SimpleStrategy', 'replication_factor' : 1}")
     
