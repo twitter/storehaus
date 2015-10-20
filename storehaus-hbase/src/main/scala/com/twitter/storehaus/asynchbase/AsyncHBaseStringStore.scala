@@ -29,8 +29,7 @@ object AsyncHBaseStringStore {
   def apply(quorumNames: Seq[String],
             table: String,
             columnFamily: String,
-            column: String,
-            threads: Int=4): AsyncHBaseStringStore = {
+            column: String): AsyncHBaseStringStore = {
     val store = new AsyncHBaseStringStore(quorumNames, table, columnFamily, column, new HBaseClient(quorumNames.mkString(",")))
     store.validateConfiguration()
     store
