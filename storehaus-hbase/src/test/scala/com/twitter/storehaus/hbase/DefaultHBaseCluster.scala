@@ -33,7 +33,6 @@ trait DefaultHBaseCluster[C <: Closable] extends CloseableCleanup[C] {
   val createTable = true
   val testingUtil = new HBaseTestingUtility()
   val conf = testingUtil.getConfiguration
-  //conf.set("dfs.datanode.data.dir.perm", "775")
   val pool = new HTablePool(conf, 1)
 
   override def cleanup() = {
