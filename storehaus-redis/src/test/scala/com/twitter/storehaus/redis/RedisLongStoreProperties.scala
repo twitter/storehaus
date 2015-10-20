@@ -25,7 +25,6 @@ import com.twitter.storehaus.testing.CloseableCleanup
 import com.twitter.storehaus.testing.generator.NonEmpty
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
-import org.scalacheck.Gen.listOf1
 import org.scalacheck.Prop._
 import org.scalacheck.Properties
 

@@ -18,10 +18,11 @@ package com.twitter.storehaus.mysql
 
 import java.util.logging.Level
 
+import com.twitter.finagle.exp.Mysql
 import com.twitter.finagle.exp.mysql.Client
 import com.twitter.storehaus.testing.SelfAggregatingCloseableCleanup
 import com.twitter.storehaus.testing.generator.NonEmpty
-import com.twitter.util.{Await, Future}
+import com.twitter.util.Await
 
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
@@ -91,7 +92,10 @@ object MySqlLongStoreProperties extends Properties("MySqlLongStore")
     withStore(multiMergeStoreTest(_), "text", "bigint", true)
 
   private def withStore[T](f: MySqlLongStore => T, kColType: String, vColType: String, merge: Boolean = false): T = {
-    val client = Client("localhost:3306", "storehaususer", "test1234", "storehaus_test", Level.WARNING)
+    val client = Mysql.client
+      .withCredentials("storehaususer", "test1234")
+      .withDatabase("storehaus_test")
+      .newRichClient("127.0.0.1:3306")
     // these should match mysql setup used in .travis.yml
 
     val tableName = "storehaus-mysql-long-"+kColType+"-"+vColType + ( if (merge) { "-merge" } else { "" } )

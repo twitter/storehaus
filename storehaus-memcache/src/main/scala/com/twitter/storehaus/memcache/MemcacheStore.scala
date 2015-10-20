@@ -16,15 +16,16 @@
 
 package com.twitter.storehaus.memcache
 
-import com.twitter.algebird.Monoid
+import com.twitter.algebird.Semigroup
 import com.twitter.bijection.{ Bijection, Codec, Injection }
 import com.twitter.bijection.netty.Implicits._
 import com.twitter.conversions.time._
 import com.twitter.finagle.builder.ClientBuilder
-import com.twitter.finagle.memcached.KetamaClientBuilder
-import com.twitter.finagle.memcached.protocol.text.Memcached
+import com.twitter.finagle.memcachedx.KetamaClientBuilder
+import com.twitter.finagle.memcachedx.protocol.text.Memcached
+import com.twitter.finagle.netty3.{BufChannelBuffer, ChannelBufferBuf}
 import com.twitter.util.{ Duration, Future, Time }
-import com.twitter.finagle.memcached.{ GetResult, Client }
+import com.twitter.finagle.memcachedx.{ GetResult, Client }
 import com.twitter.storehaus.{ FutureOps, Store, WithPutTtl }
 import com.twitter.storehaus.algebra.MergeableStore
 import org.jboss.netty.buffer.ChannelBuffer
@@ -92,39 +93,57 @@ object MemcacheStore {
   /**
     * Returns a Memcache-backed MergeableStore[K, V] that uses
     * implicitly-supplied Injection instances from K and V ->
-    * Array[Byte] to manage type conversion. The Monoid[V] is also
+    * Array[Byte] to manage type conversion. The Semigroup[V] is also
     * pulled in implicitly.
     */
-  def mergeable[K: Codec, V: Codec: Monoid](client: Client, keyPrefix: String,
+  def mergeable[K: Codec, V: Codec: Semigroup](client: Client, keyPrefix: String,
     ttl: Duration = DEFAULT_TTL, flag: Int = DEFAULT_FLAG): MergeableStore[K, V] =
     MergeableStore.fromStore(
       MemcacheStore.typed(client, keyPrefix, ttl, flag)
     )
+
+  /**
+   * Returns a Memcache-backed MergeableStore[K, V] that uses
+   * compare-and-swap with retries. It supports multiple concurrent
+   * writes to the same key and is useful when one thread/node does not
+   * own a key space.
+   */
+  def mergeableWithCAS[K, V: Semigroup](client: Client, retries: Int,
+    ttl: Duration = DEFAULT_TTL, flag: Int = DEFAULT_FLAG)(kfn: K => String)
+      (implicit inj: Injection[V, ChannelBuffer]): MergeableStore[K, V] =
+    MergeableMemcacheStore[K, V](client, ttl, flag, retries)(kfn)(inj, implicitly[Semigroup[V]])
 }
 
-class MemcacheStore(val client: Client, ttl: Duration, flag: Int)
+class MemcacheStore(val client: Client, val ttl: Duration, val flag: Int)
   extends Store[String, ChannelBuffer]
   with WithPutTtl[String, ChannelBuffer, MemcacheStore]
 {
   override def withPutTtl(ttl: Duration) = new MemcacheStore(client, ttl, flag)
 
-  override def get(k: String): Future[Option[ChannelBuffer]] = client.get(k)
+  override def get(k: String): Future[Option[ChannelBuffer]] =
+    client.get(k).flatMap {
+      case None => Future.None
+      case Some(buf) => Future.value(Some(ChannelBufferBuf.Owned.extract(buf)))
+    }
 
   override def multiGet[K1 <: String](ks: Set[K1]): Map[K1, Future[Option[ChannelBuffer]]] = {
     val memcacheResult: Future[Map[String, Future[Option[ChannelBuffer]]]] =
       client.getResult(ks).map { result =>
-        result.hits.mapValues { v => Future.value(Some(v.value)) } ++
-        result.failures.mapValues { Future.exception(_) }
+        result.hits.mapValues { v =>
+          Future.value(Some(BufChannelBuffer(v.value)))
+        } ++ result.failures.mapValues(Future.exception)
       }
     FutureOps.liftValues(ks, memcacheResult, { (k: K1) => Future.value(Future.None) })
       .mapValues { _.flatten }
   }
 
-  protected def set(k: String, v: ChannelBuffer) = client.set(k, flag, ttl.fromNow, v)
+  protected def set(k: String, v: ChannelBuffer) =
+    client.set(k, flag, ttl.fromNow, ChannelBufferBuf.Owned(v))
 
   override def put(kv: (String, Option[ChannelBuffer])): Future[Unit] =
     kv match {
-      case (key, Some(value)) => client.set(key, flag, ttl.fromNow, value)
+      case (key, Some(value)) =>
+        client.set(key, flag, ttl.fromNow, ChannelBufferBuf.Owned(value))
       case (key, None) => client.delete(key).unit
     }
 

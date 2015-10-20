@@ -59,7 +59,7 @@ class CyclicIncrementProvider[@specialized(Int, Long) K: Successible]
    nextSideCount: Int,
    maxNextSideVal: K) extends IdProvider[CyclicIncrement[K]] {
 
-  implicit val ord = implicitly[Successible[K]].ordering
+  implicit val ord = implicitly[Successible[K]].partialOrdering
   private def next(v: K) =
     Successible.next(v).getOrElse(throw new IllegalStateException("Hit maximum value for increment"))
 
