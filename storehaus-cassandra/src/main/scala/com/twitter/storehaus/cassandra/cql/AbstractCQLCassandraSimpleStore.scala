@@ -16,16 +16,13 @@
 package com.twitter.storehaus.cassandra.cql
 
 import com.datastax.driver.core.querybuilder.{Insert, QueryBuilder, Select}
-import com.datastax.driver.core.{BatchStatement, ConsistencyLevel, ResultSet, Row, SimpleStatement, Statement}
+import com.datastax.driver.core.{BatchStatement, ConsistencyLevel, ResultSet, Row, SimpleStatement, Statement, VersionNumber}
 import com.twitter.concurrent.Spool
 import com.twitter.storehaus.{IterableStore, QueryableStore, ReadableStore, Store}
-import com.twitter.util.{Duration, Future, FuturePool, Promise, Throw, Return}
+import com.twitter.util.{Duration, Future, FuturePool, Promise, Time, Try}
+import com.websudos.phantom.CassandraPrimitive
 import java.util.concurrent.{Executors, TimeUnit}
 import org.slf4j.{ Logger, LoggerFactory }
-import com.websudos.phantom.CassandraPrimitive
-import com.twitter.util.Time
-import com.datastax.driver.core.VersionNumber
-import com.twitter.util.Try
 
 abstract class AbstractCQLCassandraSimpleStore[K : CassandraPrimitive, V] (
     override val poolSize: Int, 
@@ -74,6 +71,7 @@ abstract class AbstractCQLCassandraSimpleStore[K : CassandraPrimitive, V] (
     	  })
     	}
     	mutator.setConsistencyLevel(consistency)
+    	// thread-safe: http://docs.datastax.com/en/drivers/java/2.0/com/datastax/driver/core/Session.html
     	columnFamily.session.getSession.execute(mutator)
       }
       kvs.map{(kv : (K1, Option[V])) => (kv._1, result)}
@@ -94,6 +92,7 @@ abstract class AbstractCQLCassandraSimpleStore[K : CassandraPrimitive, V] (
         val clause = QueryBuilder.in(keyColumnName, ks.map(k => keySerializer.toCType(k)))
         val stmt = QueryBuilder.select().from(columnFamily.getPreparedNamed).where(clause).setConsistencyLevel(consistency)
         val future = futurePool { 
+          // thread-safe: http://docs.datastax.com/en/drivers/java/2.0/com/datastax/driver/core/Session.html
           val result = columnFamily.session.getSession.execute(stmt)
           result.all().map(getKeyValueFromRow(_))
         }
@@ -114,6 +113,7 @@ abstract class AbstractCQLCassandraSimpleStore[K : CassandraPrimitive, V] (
       val stmt = createGetQuery(key)
         .limit(1)
         .setConsistencyLevel(consistency)
+      // thread-safe: http://docs.datastax.com/en/drivers/java/2.0/com/datastax/driver/core/Session.html
       val result = columnFamily.session.getSession.execute(stmt)
       result.isExhausted() match {
         case false => getValue(result)

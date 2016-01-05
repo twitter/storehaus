@@ -15,32 +15,24 @@
  */
 package com.twitter.storehaus.cassandra.cql
 
-import com.websudos.phantom.CassandraPrimitive
-import com.twitter.storehaus.algebra.MergeableStore
-import com.twitter.util.{Await, Future, Duration, FuturePool}
 import com.datastax.driver.core.{Statement, ConsistencyLevel, BatchStatement, ResultSet, Row}
 import com.datastax.driver.core.policies.{LoadBalancingPolicy, Policies, RoundRobinPolicy, ReconnectionPolicy, RetryPolicy, TokenAwarePolicy}
-import com.datastax.driver.core.querybuilder.{QueryBuilder, BuiltStatement, Update, Delete, Select}
+import com.datastax.driver.core.querybuilder.{Clause, QueryBuilder, Insert, BuiltStatement, Update, Delete, Select}
 import com.datastax.driver.core.DataType.Name
-import com.twitter.storehaus.WritableStore
 import com.twitter.algebird.Semigroup
-import com.twitter.storehaus.WithPutTtl
-import com.datastax.driver.core.querybuilder.Insert
+import com.twitter.storehaus.{WithPutTtl, WritableStore}
+import com.twitter.storehaus.algebra.MergeableStore
+import com.twitter.util.{Await, Future, Duration, FuturePool}
+import com.websudos.phantom.CassandraPrimitive
 import scala.language.implicitConversions
-import java.util.concurrent.Executors
 import java.util.ArrayList
-import scala.collection.immutable.Nil
-import scala.collection.JavaConverters._
-import scala.collection.JavaConversions._
-import shapeless._
-import HList._
-import ops.hlist.Mapped
-import ops.hlist.Mapper
-import ops.hlist.ToList
-import Nat._
-import UnaryTCConstraint._
+import java.util.concurrent.Executors
 import scala.collection.mutable.ArrayBuffer
-import com.datastax.driver.core.querybuilder.Clause
+import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
+import shapeless.HList
+import shapeless.ops.hlist.{Mapped, Mapper, ToList}
+
 
 object CQLCassandraLongStore {
   import AbstractCQLCassandraCompositeStore._
@@ -56,17 +48,15 @@ object CQLCassandraLongStore {
 	colkeySerializers: CS,
 	colkeyColumnNames: List[String],
 	valueColumnName: String = CQLCassandraConfiguration.DEFAULT_VALUE_COLUMN_NAME)
-	(implicit mrk: Mapper.Aux[keyStringMapping.type, RS, MRKResult],
-       mck: Mapper.Aux[keyStringMapping.type, CS, MCKResult],
-       tork: ToList[MRKResult, String],
-       tock: ToList[MCKResult, String])= {
+	(implicit rs2str: CassandraPrimitivesToStringlist[RS],
+      cs2str: CassandraPrimitivesToStringlist[CS])= {
       def createColumnListing(names: List[String], types: List[String]): String = names.size match {
           case 0 => ""
           case _ => "\"" + names.head.filterNot(_ == '"') + "\" " + types.head.filterNot(_ == '"') + ", " + createColumnListing(names.tail, types.tail)
       }
     columnFamily.session.createKeyspace
-    val rowKeyStrings = rowkeySerializers.map(keyStringMapping).toList
-    val colKeyStrings = colkeySerializers.map(keyStringMapping).toList
+    val rowKeyStrings = rowkeySerializers.stringlistify
+    val colKeyStrings = colkeySerializers.stringlistify
     val stmt = s"""CREATE TABLE IF NOT EXISTS ${columnFamily.getPreparedNamed} (""" +
     		createColumnListing(rowkeyColumnNames, rowKeyStrings) +
 	        createColumnListing(colkeyColumnNames, colKeyStrings) +
@@ -95,12 +85,10 @@ class CQLCassandraLongStore[RK <: HList, CK <: HList, RS <: HList, CS <: HList] 
      sync: CassandraExternalSync = CQLCassandraConfiguration.DEFAULT_SYNC)
   	(implicit evrow: Mapped.Aux[RK, CassandraPrimitive, RS],
   			evcol: Mapped.Aux[CK, CassandraPrimitive, CS],
-		    rowmap: AbstractCQLCassandraCompositeStore.Row2Result[RK, RS],
-		    colmap: AbstractCQLCassandraCompositeStore.Row2Result[CK, CS],
+		    rowmap: AbstractCQLCassandraCompositeStore.Row2Result.Aux[RS, RK],
+		    colmap: AbstractCQLCassandraCompositeStore.Row2Result.Aux[CS, CK],
   			a2cRow: AbstractCQLCassandraCompositeStore.Append2Composite[ArrayBuffer[Clause], RK, RS], 
   			a2cCol: AbstractCQLCassandraCompositeStore.Append2Composite[ArrayBuffer[Clause], CK, CS],
-  			rsUTC: *->*[CassandraPrimitive]#λ[RS],
-  			csUTC: *->*[CassandraPrimitive]#λ[CS],
 		    ev2: CassandraPrimitive[Long]) 
 	extends AbstractCQLCassandraCompositeStore[RK, CK, Long, RS, CS](columnFamily, rowkeySerializer, 
 	    rowkeyColumnNames, colkeySerializer, colkeyColumnNames, valueColumnName, consistency,
@@ -109,8 +97,9 @@ class CQLCassandraLongStore[RK <: HList, CK <: HList, RS <: HList, CS <: HList] 
   
   override def multiPut[K1 <: (RK, CK)](kvs: Map[K1, Option[Long]]): Map[K1, Future[Unit]] = super[WritableStore].multiPut(kvs)
 
-  override protected def putValue(value: Long, update: Update): Update.Assignments = {
-    update.`with`(QueryBuilder.incr(valueColumnName, implicitly[CassandraPrimitive[Long]].toCType(value).asInstanceOf[java.lang.Long]))
+  override protected def putValue[S <: BuiltStatement, U <: BuiltStatement, T](value: Long, stmt: S, token: Option[T]): U = stmt match {
+    case update: Update => update.`with`(QueryBuilder.incr(valueColumnName, 
+        implicitly[CassandraPrimitive[Long]].toCType(value).asInstanceOf[java.lang.Long])).asInstanceOf[U]
   }
   
   override def put(kv: ((RK, CK), Option[Long])): Future[Unit] = {
@@ -126,7 +115,7 @@ class CQLCassandraLongStore[RK <: HList, CK <: HList, RS <: HList, CS <: HList] 
     }.flatMap(eqList => sync.put.lock(lockId, {
         val origValue = if(readbeforeWrite) Await.result(get((rk, ck))).getOrElse(0l) else 0l
     	val value = valueOpt.getOrElse(0l)
-    	val update = putValue(value - origValue, QueryBuilder.update(columnFamily.getPreparedNamed)).where(_)
+    	val update = putValue[Update, Update.Assignments, Boolean](value - origValue, QueryBuilder.update(columnFamily.getPreparedNamed), Some(true)).where(_)
     	val stmt = eqList.join(update)((clause, where) => where.and(clause)).setConsistencyLevel(consistency)
     	columnFamily.session.getSession.execute(stmt)
     	if (valueOpt.isEmpty) {

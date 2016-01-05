@@ -23,13 +23,10 @@ import com.twitter.storehaus.{IterableStore, QueryableStore, ReadableStore, Read
 import com.twitter.util.{Await, Closable, Future, Duration, FuturePool, Promise, Try, Throw, Return}
 import com.websudos.phantom.CassandraPrimitive
 import java.util.concurrent.Executors
-import shapeless._
+import shapeless.{Generic, HList}
 import shapeless.ops.hlist.{Mapper, ToList, Tupler}
 import shapeless.ops.traversable.FromTraversable
-import shapeless.UnaryTCConstraint.*->*
-import shapeless.syntax.std.product._
-import syntax.std.traversable._
-import com.twitter.storehaus.cassandra.cql.macrobug._
+import shapeless.syntax.std.traversable.traversableOps
 
 object CQLCassandraStoreTupleValues {
   import AbstractCQLCassandraCompositeStore._
@@ -39,8 +36,7 @@ object CQLCassandraStoreTupleValues {
 		valueColumnNames: List[String],
 		valueSerializers: VS,
 		keyColumnName: String = CQLCassandraConfiguration.DEFAULT_KEY_COLUMN_NAME
-      )(implicit vss: Mapper.Aux[keyStringMapping.type, VS, MVResult],
-       tov: ToList[MVResult, String]) = {
+      )(implicit vs2str: CassandraPrimitivesToStringlist[VS]) = {
     createColumnFamilyWithToken[K, VS, MVResult, String](columnFamily, valueColumnNames, valueSerializers, None, "", keyColumnName)
   }
 
@@ -51,9 +47,8 @@ object CQLCassandraStoreTupleValues {
 		tokenSerializer: Option[CassandraPrimitive[T]],
 		tokenColumnName: String = CQLCassandraConfiguration.DEFAULT_TOKEN_COLUMN_NAME,
 		keyColumnName: String = CQLCassandraConfiguration.DEFAULT_KEY_COLUMN_NAME
-      )(implicit vss: Mapper.Aux[keyStringMapping.type, VS, MVResult],
-       tov: ToList[MVResult, String]) = {
-    val valSerStrings = valueSerializers.map(keyStringMapping).toList	
+      )(implicit vs2str: CassandraPrimitivesToStringlist[VS]) = {
+    val valSerStrings = valueSerializers.stringlistify
     val keySerializer = implicitly[CassandraPrimitive[K]]
     columnFamily.session.createKeyspace
     val stmt = "CREATE TABLE IF NOT EXISTS " + columnFamily.getPreparedNamed +
@@ -82,17 +77,16 @@ class CQLCassandraStoreTupleValues[K: CassandraPrimitive, V <: Product, VL <: HL
 		override val poolSize: Int = CQLCassandraConfiguration.DEFAULT_FUTURE_POOL_SIZE,
 		val batchType: BatchStatement.Type = CQLCassandraConfiguration.DEFAULT_BATCH_STATEMENT_TYPE,
 		val ttl: Option[Duration] = CQLCassandraConfiguration.DEFAULT_TTL_DURATION)(
-		   implicit ev2: HListerAux[V, VL],
+		   implicit ev2: Generic.Aux[V, VL],
 		   ev3: Tupler.Aux[VL, V],
 		   vAsList: ToList[VL, Any], 
-		   vsAsList: ToList[VS, CassandraPrimitive[_]],
+		   val vsAsList: ToList[VS, CassandraPrimitive[_]],
 		   vsFromList: FromTraversable[VL])
-		   // this implicit may crash the Scala compiler: rsUTC: *->*[CassandraPrimitive]#λ[VS])
 	extends AbstractCQLCassandraSimpleStore[K, V](poolSize, columnFamily, keyColumnName, consistency, batchType, ttl)
-	with Store[K, V] 
-    with WithPutTtl[K, V, CQLCassandraStoreTupleValues[K, V, VL, VS]] 
-    with QueryableStore[String, (K, V)] 
-    with IterableStore[K, V] 
+	with Store[K, V]
+    with WithPutTtl[K, V, CQLCassandraStoreTupleValues[K, V, VL, VS]]
+    with QueryableStore[String, (K, V)]
+    with IterableStore[K, V]
     with CassandraCASStore[K, V] {
   
   val zippedColumnInfo = valueColumnNames.zip(valueSerializers.toList)
@@ -114,7 +108,7 @@ class CQLCassandraStoreTupleValues[K: CassandraPrimitive, V <: Product, VL <: HL
    */
   protected def createPutQuery[K1 <: K, BS <: BuiltStatement](kv: (K1, V), bs: BS): BS = {
     def toCType[T](serializer: CassandraPrimitive[T], value: T) = serializer.toCType(value)
-    val sets = ev2(kv._2).toList.zip(zippedColumnInfo)
+    val sets = ev2.to(kv._2).toList.zip(zippedColumnInfo)
     sets.foldLeft(bs)((insUpd, values) => values._1 match {
       case Some(v) => insUpd match {
         case insert: Insert => 

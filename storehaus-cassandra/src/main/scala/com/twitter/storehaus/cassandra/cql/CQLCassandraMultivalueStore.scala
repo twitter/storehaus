@@ -27,9 +27,8 @@ import scala.collection.mutable.ArrayBuffer
 import scala.collection.JavaConversions._
 import shapeless.HList
 import shapeless.ops.hlist.{ Mapper, Mapped, ToList}
-import shapeless.UnaryTCConstraint.*->*
-import shapeless.ops.traversable._
-import shapeless.syntax.std.traversable._
+import shapeless.ops.traversable.FromTraversable
+import shapeless.syntax.std.traversable.traversableOps
 
 /**
  *  Cassandra store for multiple values which can be matched to columns in Cassandra.
@@ -48,12 +47,9 @@ object CQLCassandraMultivalueStore {
 	colkeyColumnNames: List[String],
 	valueSerializers: VS,
 	valueColumnNames: List[String])
-	(implicit mrk: Mapper.Aux[keyStringMapping.type, RS, MRKResult],
-       mck: Mapper.Aux[keyStringMapping.type, CS, MCKResult],
-       vss: Mapper.Aux[keyStringMapping.type, VS, MVResult],
-       tork: ToList[MRKResult, String],
-       tock: ToList[MCKResult, String],
-       tov: ToList[MVResult, String])= {
+	(implicit rs2str: CassandraPrimitivesToStringlist[RS],
+      cs2str: CassandraPrimitivesToStringlist[CS],
+      vs2str: CassandraPrimitivesToStringlist[VS])= {
     createColumnFamilyWithToken[RS, CS, VS, MRKResult, MCKResult, MVResult, String](columnFamily, rowkeySerializers, rowkeyColumnNames,
         colkeySerializers, colkeyColumnNames, valueSerializers, valueColumnNames, None, "")
   }
@@ -68,16 +64,13 @@ object CQLCassandraMultivalueStore {
 	valueColumnNames: List[String],
 	tokenSerializer: Option[CassandraPrimitive[T]] = None,
 	tokenColumnName: String = CQLCassandraConfiguration.DEFAULT_TOKEN_COLUMN_NAME)
-	(implicit mrk: Mapper.Aux[keyStringMapping.type, RS, MRKResult],
-       mck: Mapper.Aux[keyStringMapping.type, CS, MCKResult],
-       vss: Mapper.Aux[keyStringMapping.type, VS, MVResult],
-       tork: ToList[MRKResult, String],
-       tock: ToList[MCKResult, String],
-       tov: ToList[MVResult, String])= {
+	(implicit rs2str: CassandraPrimitivesToStringlist[RS],
+      cs2str: CassandraPrimitivesToStringlist[CS],
+      vs2str: CassandraPrimitivesToStringlist[VS])= {
     columnFamily.session.createKeyspace
-    val rowKeyStrings = rowkeySerializers.map(keyStringMapping).toList
-    val colKeyStrings = colkeySerializers.map(keyStringMapping).toList
-    val valueStrings = valueSerializers.map(keyStringMapping).toList
+    val rowKeyStrings = rowkeySerializers.stringlistify
+    val colKeyStrings = colkeySerializers.stringlistify
+    val valueStrings = valueSerializers.stringlistify
     val stmt = s"""CREATE TABLE IF NOT EXISTS ${columnFamily.getPreparedNamed} (""" +
     		createColumnListing(rowkeyColumnNames, rowKeyStrings) +
 	        createColumnListing(colkeyColumnNames, colKeyStrings) +
@@ -106,13 +99,10 @@ class CQLCassandraMultivalueStore[RK <: HList, CK <: HList, V <: HList, RS <: HL
     implicit evrow: Mapped.Aux[RK, CassandraPrimitive, RS],
     evcol: Mapped.Aux[CK, CassandraPrimitive, CS],
     evval: Mapped.Aux[V, CassandraPrimitive, VS],
-    rowmap: AbstractCQLCassandraCompositeStore.Row2Result[RK, RS],
-    colmap: AbstractCQLCassandraCompositeStore.Row2Result[CK, CS],
+    rowmap: AbstractCQLCassandraCompositeStore.Row2Result.Aux[RS, RK],
+    colmap: AbstractCQLCassandraCompositeStore.Row2Result.Aux[CS, CK],
     a2cRow: AbstractCQLCassandraCompositeStore.Append2Composite[ArrayBuffer[Clause], RK, RS], 
     a2cCol: AbstractCQLCassandraCompositeStore.Append2Composite[ArrayBuffer[Clause], CK, CS],
-    rsUTC: *->*[CassandraPrimitive]#λ[RS],
-    csUTC: *->*[CassandraPrimitive]#λ[CS],
-    vUTC: *->*[CassandraPrimitive]#λ[VS],
     vAsList: ToList[V, Any],
     vsAsList: ToList[VS, Any],
     vsFromList: FromTraversable[V])
@@ -129,9 +119,14 @@ class CQLCassandraMultivalueStore[RK <: HList, CK <: HList, V <: HList, RS <: HL
 
   override protected def deleteColumns: String = valueColumnNameList.mkString(" , ")
   
-  override protected def putValue(value: V, update: Update): Update.Assignments = { 
-    val sets = value.toList.zip(valueColumnNameList).map(colvalues => QueryBuilder.set(s""""${colvalues._2}"""", colvalues._1))
-    sets.join(update.`with`(_))((clause, set) => set.and(clause))
+  override protected def putValue[S <: BuiltStatement, U <: BuiltStatement, T](value: V, stmt: S, token: Option[T]): U = {
+    val zipped = value.toList.zip(valueColumnNameList)
+    stmt match { 
+      case update: Update.Assignments => 
+        val sets = zipped.map(colvalues => QueryBuilder.set(s""""${colvalues._2}"""", colvalues._1))
+        sets.foldLeft(update)((acc, clause) => acc.and(clause)).asInstanceOf[U]
+      case insert: Insert => zipped.foldLeft(insert)((acc, colvalues) => acc.value(s""""${colvalues._2}"""", colvalues._1)).asInstanceOf[U]
+    }
   }
 
   override protected def getValue(result: ResultSet): Option[V] = Some(getRowValue(result.one()))
@@ -152,10 +147,10 @@ class CQLCassandraMultivalueStore[RK <: HList, CK <: HList, V <: HList, RS <: HL
       with IterableStore[(RK, CK), V] with Closable = new CQLCassandraMultivalueStore[RK, CK, V, RS, CS, VS](
       columnFamily, rowkeySerializer, rowkeyColumnNames, colkeySerializer, colkeyColumnNames, consistency, poolSize, 
       batchType, ttl)(cassSerValue, valueColumnNameList) with CassandraCASStoreSimple[T, (RK, CK), V] {
-    override protected def putValue(value: V, update: Update): Update.Assignments = super.putValue(value, update).and(QueryBuilder.set(tokenColumnName, tokenFactory.createNewToken))
     override protected def deleteColumns: String = s"${super.deleteColumns} , $tokenColumnName"
     override def cas(token: Option[T], kv: ((RK, CK), V))(implicit ev1: Equiv[T]): Future[Boolean] =
-      casImpl(token, kv, createPutQuery[(RK, CK)](_), tokenFactory, tokenColumnName, columnFamily, consistency)(ev1)
+      casImpl(token, kv, createPutQuery[(RK, CK), T](token, Some(putToken(tokenColumnName, 
+          tokenFactory, cassTokenSerializer)))(_), tokenFactory, tokenColumnName, columnFamily, consistency)(ev1)
     override def get(key: (RK, CK))(implicit ev1: Equiv[T]): Future[Option[(V, T)]] =
       getImpl(key, createGetQuery(_), cassTokenSerializer, getRowValue(_), tokenColumnName, columnFamily, consistency)(ev1)
   }

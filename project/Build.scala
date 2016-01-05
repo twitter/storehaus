@@ -32,16 +32,6 @@ object StorehausBuild extends Build {
       case x => x
     }
 
-  def bogus210Version(dep: ModuleID) = dep cross CrossVersion.binaryMapped {
-    case version if version startsWith "2.10" => "2.10.3"
-    case x => x
-  }
-
-  def isScalaGreater29x(scalaVersion: String) = scalaVersion match {
-    case version if version startsWith "2.9" => false
-    case version if version matches "^2.1[0-2].*" => true
-  }
-
   val extraSettings =
     Project.defaultSettings ++ Boilerplate.settings ++ assemblySettings ++ mimaDefaultSettings
 
@@ -71,12 +61,6 @@ object StorehausBuild extends Build {
       Opts.resolver.sonatypeSnapshots,
       Opts.resolver.sonatypeReleases,
       "Conjars Repository" at "http://conjars.org/repo"
-//      "Bintray JCenter" at "https://jcenter.bintray.com/",
-//      "Twitter Maven" at "http://maven.twttr.com",
-//      "Conjars Repository" at "http://conjars.org/repo",
-//      "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/",
-//      "Typesafe repository snapshots" at "http://repo.typesafe.com/typesafe/snapshots/",
-//      "Java.net Maven2 Repository" at "http://download.java.net/maven/2/"
     ),
     parallelExecution in Test := true,
     scalacOptions ++= Seq(
@@ -139,10 +123,9 @@ object StorehausBuild extends Build {
   val scaldingVersion = "0.15.0"
   val finagleVersion = "6.27.0"
   val scalatestVersion = "2.2.4"
-  val cascadingVersion = "2.5.2"
-  val hadoopVersion = "1.2.1"
   val cassandraDriverVersion = "2.1.7.1"
   val cassandraVersion = "2.1.3"
+  val shapelessVersion = "2.2.3"
 
   lazy val storehaus = Project(
     id = "storehaus",
@@ -316,23 +299,17 @@ object StorehausBuild extends Build {
     javaOptions in run <++= (fullClasspath in Runtime) map { cp => Seq("-cp", sbt.Build.data(cp).mkString(":")) }
   ).dependsOn(storehausCore, storehausAlgebra, storehausCache)
 
-  def cassandraDeps(scalaVersion: String) = if (!isScalaGreater29x(scalaVersion)) Seq() else Seq(
-    "com.twitter" %% "algebird-core" % algebirdVersion,
-    "com.google.code.findbugs" % "jsr305" % "1.3.+",
-    "com.twitter" %% "bijection-core" % bijectionVersion,
-    "com.datastax.cassandra" % "cassandra-driver-core" % cassandraDriverVersion classifier "shaded" exclude("io.netty", "*"),
-    "com.websudos" %% "phantom-dsl" % "1.5.0" exclude ("com.datastax.cassandra", "cassandra-driver-core"),
-    withCross("com.twitter" %% "util-zk" % utilVersion)  exclude ("com.google.guava", "guava"),
-    bogus210Version("com.chuusai" %% "shapeless" % "2.0.0"),
-    "org.slf4j" % "slf4j-api" % "1.7.5"
-  )
-
   lazy val storehausCassandra = module("cassandra").settings(
-    skip in test := !isScalaGreater29x(scalaVersion.value),
-    skip in compile := !isScalaGreater29x(scalaVersion.value),
-    skip in doc := !isScalaGreater29x(scalaVersion.value),
-    publishArtifact := isScalaGreater29x(scalaVersion.value),
-    libraryDependencies ++= cassandraDeps(scalaVersion.value),
+    libraryDependencies ++= Seq(
+      "com.twitter" %% "algebird-core" % algebirdVersion,
+      "com.google.code.findbugs" % "jsr305" % "1.3.+",
+      "com.twitter" %% "bijection-core" % bijectionVersion,
+      "com.datastax.cassandra" % "cassandra-driver-core" % cassandraDriverVersion,
+      "com.websudos" %% "phantom-dsl" % "1.5.0" exclude ("com.datastax.cassandra", "cassandra-driver-core"),
+      withCross("com.twitter" %% "util-zk" % utilVersion) exclude ("com.google.guava", "guava"),
+      "com.chuusai" %% "shapeless" % shapelessVersion,
+      "org.slf4j" % "slf4j-api" % "1.7.5"
+    ),
     parallelExecution in Test := false
   ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 

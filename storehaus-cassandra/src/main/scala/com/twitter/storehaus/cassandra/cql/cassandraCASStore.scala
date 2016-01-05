@@ -15,6 +15,8 @@
  */
 package com.twitter.storehaus.cassandra.cql
 
+import com.datastax.driver.core.{ConsistencyLevel, Row}
+import com.datastax.driver.core.querybuilder.{BuiltStatement, Select, Insert, Update}
 import com.twitter.storehaus.IterableStore
 import com.twitter.util.{Closable, Future}
 import com.websudos.phantom.CassandraPrimitive
@@ -22,8 +24,7 @@ import java.net.InetAddress
 import java.util.UUID
 import scala.util.Random
 import scala.util.hashing.MurmurHash3
-import com.datastax.driver.core.{ConsistencyLevel, ResultSet, Row, SimpleStatement}
-import com.datastax.driver.core.querybuilder.{BuiltStatement, Select}
+import shapeless.HList
 
 /**
  * factory to create token based Cassandra-stores
@@ -58,7 +59,7 @@ object TokenFactory {
     override def createNewToken: UUID = {
       val hostHash = MurmurHash3.stringHash(InetAddress.getLocalHost.getHostAddress)
       val threadHash = MurmurHash3.stringHash(Thread.currentThread().getName())
-      new UUID(Random.nextLong, (hostHash << 32) | threadHash)
+      new UUID(Random.nextLong, (hostHash.toLong << 32) | threadHash.toLong)
     }
     override def createIfAndComparison(columnName: String, t: UUID): String = s""" IF "$columnName"=${t.toString} """
   }

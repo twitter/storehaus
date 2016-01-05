@@ -17,21 +17,15 @@ package com.twitter.storehaus.cassandra.cql
 
 import com.datastax.driver.core.{BatchStatement, ConsistencyLevel, ResultSet, Row, SimpleStatement, Statement}
 import com.datastax.driver.core.policies.{LoadBalancingPolicy, Policies, RoundRobinPolicy, ReconnectionPolicy, RetryPolicy, TokenAwarePolicy}
-import com.datastax.driver.core.querybuilder.{BuiltStatement, Clause, Delete, Insert, QueryBuilder, Select, Update}
-import com.twitter.util.{Closable, Duration, Future, FuturePool}
+import com.datastax.driver.core.querybuilder.{BuiltStatement, Clause, Insert, QueryBuilder, Update}
+import com.twitter.util.{Closable, Duration, Future}
 import com.twitter.storehaus.{IterableStore, Store, WithPutTtl}
 import com.websudos.phantom.CassandraPrimitive
 import java.util.concurrent.Executors
-import scala.collection.immutable.Nil
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.JavaConversions._
-import shapeless._
-import HList._
-import ops.hlist.Mapper
-import ops.hlist.Mapped
-import ops.hlist.ToList
-import Nat._
-import UnaryTCConstraint._
+import shapeless.HList
+import shapeless.ops.hlist.{Mapped, Mapper, ToList}
 
 /**
  *  Cassandra store for fixed composite keys, allows to do slice queries over column slices.
@@ -56,10 +50,8 @@ object CQLCassandraCompositeStore {
 	valueSerializer: CassandraPrimitive[V],
 	valueColumnName: String = CQLCassandraConfiguration.DEFAULT_VALUE_COLUMN_NAME,
   tablecomment: Option[String] = None)
-	(implicit mrk: Mapper.Aux[keyStringMapping.type, RS, MRKResult],
-       mck: Mapper.Aux[keyStringMapping.type, CS, MCKResult],
-       tork: ToList[MRKResult, String],
-       tock: ToList[MCKResult, String])= {
+	(implicit rs2str: CassandraPrimitivesToStringlist[RS],
+      cs2str: CassandraPrimitivesToStringlist[CS])= {
     createColumnFamilyWithToken[RS, CS, V, MRKResult, MCKResult, String](columnFamily, rowkeySerializers, rowkeyColumnNames,
         colkeySerializers, colkeyColumnNames, valueSerializer, None, "", valueColumnName)
   }
@@ -75,17 +67,15 @@ object CQLCassandraCompositeStore {
 	tokenColumnName: String = CQLCassandraConfiguration.DEFAULT_TOKEN_COLUMN_NAME,
 	valueColumnName: String = CQLCassandraConfiguration.DEFAULT_VALUE_COLUMN_NAME,
   tablecomment: Option[String] = None)
-	(implicit mrk: Mapper.Aux[keyStringMapping.type, RS, MRKResult],
-       mck: Mapper.Aux[keyStringMapping.type, CS, MCKResult],
-       tork: ToList[MRKResult, String],
-       tock: ToList[MCKResult, String])= {
+	(implicit rs2str: CassandraPrimitivesToStringlist[RS],
+      cs2str: CassandraPrimitivesToStringlist[CS])= {
       def createColumnListing(names: List[String], types: List[String]): String = names.size match {
           case 0 => ""
           case _ => "\"" + names.head.filterNot(_ == '"') + "\" " + types.head.filterNot(_ == '"') + ", " + createColumnListing(names.tail, types.tail)
         }
     columnFamily.session.createKeyspace
-    val rowKeyStrings = rowkeySerializers.map(keyStringMapping).toList
-    val colKeyStrings = colkeySerializers.map(keyStringMapping).toList
+    val rowKeyStrings = rowkeySerializers.stringlistify
+    val colKeyStrings = colkeySerializers.stringlistify
     val stmt = s"""CREATE TABLE IF NOT EXISTS ${columnFamily.getPreparedNamed} (""" +
     		createColumnListing(rowkeyColumnNames, rowKeyStrings) +
 	        createColumnListing(colkeyColumnNames, colKeyStrings) +
@@ -115,12 +105,10 @@ class CQLCassandraCompositeStore[RK <: HList, CK <: HList, V, RS <: HList, CS <:
   (cassSerValue: CassandraPrimitive[V])(
     implicit evrow: Mapped.Aux[RK, CassandraPrimitive, RS],
     evcol: Mapped.Aux[CK, CassandraPrimitive, CS],
-    rowmap: AbstractCQLCassandraCompositeStore.Row2Result[RK, RS],
-    colmap: AbstractCQLCassandraCompositeStore.Row2Result[CK, CS],
+    rowmap: AbstractCQLCassandraCompositeStore.Row2Result.Aux[RS, RK],
+    colmap: AbstractCQLCassandraCompositeStore.Row2Result.Aux[CS, CK],
     a2cRow: AbstractCQLCassandraCompositeStore.Append2Composite[ArrayBuffer[Clause], RK, RS], 
-    a2cCol: AbstractCQLCassandraCompositeStore.Append2Composite[ArrayBuffer[Clause], CK, CS],
-    rsUTC: *->*[CassandraPrimitive]#λ[RS],
-    csUTC: *->*[CassandraPrimitive]#λ[CS])
+    a2cCol: AbstractCQLCassandraCompositeStore.Append2Composite[ArrayBuffer[Clause], CK, CS])
   extends AbstractCQLCassandraCompositeStore[RK, CK, V, RS, CS] (columnFamily, rowkeySerializer, rowkeyColumnNames,
     colkeySerializer, colkeyColumnNames, valueColumnName, consistency, poolSize, batchType, ttl)
   with WithPutTtl[(RK, CK), V, CQLCassandraCompositeStore[RK, CK, V, RS, CS]] 
@@ -132,7 +120,10 @@ class CQLCassandraCompositeStore[RK <: HList, CK <: HList, V, RS <: HList, CS <:
     columnFamily, rowkeySerializer, rowkeyColumnNames, colkeySerializer, colkeyColumnNames, valueColumnName, consistency, poolSize, batchType,
     Option(ttl))(cassSerValue)
 
-  override protected def putValue(value: V, update: Update): Update.Assignments = update.`with`(QueryBuilder.set(valueColumnName, value))
+  override protected def putValue[S <: BuiltStatement, U <: BuiltStatement, T](value: V, stmt: S, token: Option[T]): U = stmt match {
+    case update: Update.Assignments => update.and(QueryBuilder.set(valueColumnName, cassSerValue.toCType(value))).asInstanceOf[U]
+    case insert: Insert => insert.value(valueColumnName, cassSerValue.toCType(value)).asInstanceOf[U]
+  }
 
   override protected def getValue(result: ResultSet): Option[V] = cassSerValue.fromRow(result.one(), valueColumnName)
 
@@ -143,10 +134,10 @@ class CQLCassandraCompositeStore[RK <: HList, CK <: HList, V, RS <: HList, CS <:
       with Closable = new CQLCassandraCompositeStore[RK, CK, V, RS, CS](columnFamily, rowkeySerializer, rowkeyColumnNames, colkeySerializer,
           colkeyColumnNames, valueColumnName, consistency, poolSize, batchType, ttl)(cassSerValue) with 
           CassandraCASStoreSimple[T, (RK, CK), V] {
-    override protected def putValue(value: V, update: Update): Update.Assignments = super.putValue(value, update).and(QueryBuilder.set(tokenColumnName, tokenFactory.createNewToken))
     override protected def deleteColumns: String = s"$valueColumnName , $tokenColumnName"
     override def cas(token: Option[T], kv: ((RK, CK), V))(implicit ev1: Equiv[T]): Future[Boolean] =
-      casImpl(token, kv, createPutQuery[(RK, CK)](_), tokenFactory, tokenColumnName, columnFamily, consistency)(ev1)
+      casImpl(token, kv, createPutQuery[(RK, CK), T](token, Some(putToken(tokenColumnName, 
+          tokenFactory, cassTokenSerializer)))(_), tokenFactory, tokenColumnName, columnFamily, consistency)(ev1)
     override def get(key: (RK, CK))(implicit ev1: Equiv[T]): Future[Option[(V, T)]] =
       getImpl(key, createGetQuery(_), cassTokenSerializer, getRowValue(_), tokenColumnName, columnFamily, consistency)(ev1)
   }

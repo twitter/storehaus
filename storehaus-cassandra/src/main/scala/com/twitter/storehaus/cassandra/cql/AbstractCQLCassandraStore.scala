@@ -15,11 +15,11 @@
  */
 package com.twitter.storehaus.cassandra.cql
 
-import com.datastax.driver.core.querybuilder.QueryBuilder
 import com.datastax.driver.core.{ResultSet, Row}
+import com.datastax.driver.core.querybuilder.QueryBuilder
 import com.twitter.concurrent.Spool
 import com.twitter.storehaus.{IterableStore, QueryableStore, ReadableStore}
-import com.twitter.util.{Closable, Future, FuturePool, Promise, Throw, Time, Return}
+import com.twitter.util.{Closable, Future, FuturePool, Time}
 import java.util.concurrent.{LinkedBlockingQueue, Executors, ThreadPoolExecutor, TimeUnit}
 import org.slf4j.{ Logger, LoggerFactory }
 
@@ -77,6 +77,7 @@ abstract class AbstractCQLCassandraStore[K, V] (val poolSize: Int, val columnFam
           s"$qStart WHERE $whereCondition"
         }
       }  
+  	  // thread-safe: http://docs.datastax.com/en/drivers/java/2.0/com/datastax/driver/core/Session.html
   	  val rSet = columnFamily.session.getSession.execute(query)
   	  if(rSet.isExhausted) None else {
   		Some(iterableAsScalaIterableConverter(rSet).asScala.view.toSeq.map(row => getKeyValueFromRow(row)))
@@ -87,11 +88,9 @@ abstract class AbstractCQLCassandraStore[K, V] (val poolSize: Int, val columnFam
   /**
    * allows iteration over all (K, V) using a query against queryable
    */
-  override def getAll: Future[Spool[(K, V)]] = queryable.get("").transform {
-    case Throw(y) => Future.exception(y)
-    case Return(x) => 
-      // construct lazy spool
-      IterableStore.iteratorToSpool(x.getOrElse(Seq[(K, V)]()).view.iterator)   
+  override def getAll: Future[Spool[(K, V)]] = queryable.get("").flatMap { x =>
+    // construct lazy spool
+    IterableStore.iteratorToSpool(x.getOrElse(Seq[(K, V)]()).view.iterator)   
   }
   
   protected def getValue(result: ResultSet): Option[V]

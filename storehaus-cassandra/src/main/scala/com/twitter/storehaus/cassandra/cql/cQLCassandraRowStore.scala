@@ -16,22 +16,20 @@
 package com.twitter.storehaus.cassandra.cql
 
 import com.datastax.driver.core.{BatchStatement, ConsistencyLevel, ResultSet, Row, SimpleStatement, Statement, Token}
+import com.datastax.driver.core.{ColumnDefinitions, TupleValue, UDTValue}
 import com.datastax.driver.core.policies.{Policies, RoundRobinPolicy, ReconnectionPolicy, RetryPolicy, TokenAwarePolicy}
 import com.datastax.driver.core.querybuilder.{BuiltStatement, QueryBuilder, Insert, Update}
+import com.google.common.reflect.TypeToken
 import com.twitter.concurrent.Spool
 import com.twitter.storehaus.{IterableStore, QueryableStore, ReadableStore, ReadableStoreProxy, Store, WithPutTtl}
 import com.twitter.util.{Await, Closable, Future, Duration, FuturePool, Promise, Try, Throw, Return}
 import com.websudos.phantom.CassandraPrimitive
-import java.util.concurrent.Executors
+import java.math.{BigInteger => JBigInteger, BigDecimal => JBigDecimal}
 import java.util.{ Date, List => JList, Map => JMap, Set => JSet, UUID }
+import java.util.concurrent.Executors
+import java.net.InetAddress
 import java.nio.ByteBuffer
 import scala.annotation.tailrec
-import com.datastax.driver.core.ColumnDefinitions
-import java.math.{BigInteger => JBigInteger, BigDecimal => JBigDecimal}
-import java.net.InetAddress
-import com.datastax.driver.core.TupleValue
-import com.datastax.driver.core.UDTValue
-import com.google.common.reflect.TypeToken
 
 object CQLCassandraRowStore {
   
@@ -156,9 +154,10 @@ class CQLCassandraRowStore[K : CassandraPrimitive] (
     override protected def createPutQuery[K1 <: K](kv: (K1, Row)) = super.createPutQuery(kv)    
     override def cas(token: Option[T], kv: (K, Row))(implicit ev1: Equiv[T]): Future[Boolean] = { 
       def putQueryConversion(kv: (K, Option[Row])): BuiltStatement = token match {
-        case None => createPutQuery[K]((kv._1, kv._2.get)).ifNotExists()
-        case Some(token) => recursiveAddValues[T](columns, QueryBuilder.update(columnFamily.getPreparedNamed), kv._2.get).asInstanceOf[Update.Assignments].
-          onlyIf(QueryBuilder.eq(tokenColumnName, token))
+        case None => createPutQuery[K]((kv._1, kv._2.get)).value(tokenColumnName, cassTokenSerializer.toCType(tokenFactory.createNewToken)).ifNotExists()
+        case Some(token) => recursiveAddValues[T](columns, QueryBuilder.update(columnFamily.getPreparedNamed), kv._2.get, 
+            Some(CassandraTokenInformation(cassTokenSerializer, tokenFactory.createNewToken, tokenColumnName))).asInstanceOf[Update.Where].
+          onlyIf(QueryBuilder.eq(tokenColumnName, cassTokenSerializer.toCType(token)))
       } 
       casImpl(token, kv, putQueryConversion(_), tokenFactory, tokenColumnName, columnFamily, consistency)(ev1)
     }

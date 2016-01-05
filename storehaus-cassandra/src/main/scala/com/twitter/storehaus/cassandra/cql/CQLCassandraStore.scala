@@ -110,7 +110,7 @@ class CQLCassandraStore[K : CassandraPrimitive, V : CassandraPrimitive] (
       def putQueryConversion(kv: (K, Option[V])): BuiltStatement = token match {
         case None => createPutQuery[K]((kv._1, kv._2.get)).value(tokenColumnName, cassTokenSerializer.toCType(tokenFactory.createNewToken)).ifNotExists()
         case Some(token) => QueryBuilder.update(columnFamily.getPreparedNamed).`with`(set(valueColumnName, kv._2.get)).
-          and(set(tokenColumnName, tokenFactory.createNewToken)).where(QueryBuilder.eq(keyColumnName, kv._1)).
+          and(set(tokenColumnName, cassTokenSerializer.toCType(tokenFactory.createNewToken))).where(QueryBuilder.eq(keyColumnName, kv._1)).
           onlyIf(QueryBuilder.eq(tokenColumnName, cassTokenSerializer.toCType(token)))
       }
       casImpl(token, kv, putQueryConversion(_), tokenFactory, tokenColumnName, columnFamily, consistency)(ev1)
