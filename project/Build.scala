@@ -139,6 +139,7 @@ object StorehausBuild extends Build {
     storehausCache,
     storehausCore,
     storehausAlgebra,
+    storehausCassandra,
     storehausMemcache,
     storehausMySQL,
     storehausRedis,
@@ -148,7 +149,6 @@ object StorehausBuild extends Build {
     storehausKafka08,
     storehausMongoDB,
     storehausElastic,
-    storehausCassandra,
     storehausHttp,
     storehausTesting
   )

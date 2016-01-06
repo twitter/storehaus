@@ -112,7 +112,9 @@ class CassandraStoreProperties extends FlatSpec with BeforeAndAfterAll {
     
     // delete value
     Await.result(store.put((rowKey, None)))
-    assert(Await.result(store.get(rowKey)) === None)    
+    assert(Await.result(store.get(rowKey)) === None)
+    
+    store.close(Duration(10, TimeUnit.SECONDS))
   }
   
   it should "be able to produce a cas-store and do various cas operations" in {
@@ -126,6 +128,8 @@ class CassandraStoreProperties extends FlatSpec with BeforeAndAfterAll {
     val rowKey = BigInt(Random.nextLong())
     
     checkCasStoreOperations(casstore, rowKey, expected)
+    
+    store.close(Duration(10, TimeUnit.SECONDS))
   }
   
   behavior of "Basic Cassandra Key-Value-Store with tuples as values"
@@ -167,6 +171,8 @@ class CassandraStoreProperties extends FlatSpec with BeforeAndAfterAll {
     // test IterableStore (this is a very simple test, as only one item can be returned)
     val head = Await.result(store.getAll)
     assert(Await.result(head.tail).isEmpty)
+    
+    store.close(Duration(10, TimeUnit.SECONDS))
   }
 
   it should "be able to produce a cas-store and do various cas operations" in {
@@ -192,6 +198,8 @@ class CassandraStoreProperties extends FlatSpec with BeforeAndAfterAll {
     val casstore = store.getCASStore[Long]()
     
     checkCasStoreOperations(casstore, rowKey, expected)
+    
+    store.close(Duration(10, TimeUnit.SECONDS))
   }
   
   behavior of "Cassandra Key-Row-Store"
@@ -234,6 +242,8 @@ class CassandraStoreProperties extends FlatSpec with BeforeAndAfterAll {
     // delete value
     Await.result(store.put((rowKey, None)))
     assert(Await.result(store.get(rowKey)) === None)
+    
+    store.close(Duration(10, TimeUnit.SECONDS))
   }  
   
   it should "be able to produce a cas-store and do various cas operations" in {
@@ -269,6 +279,8 @@ class CassandraStoreProperties extends FlatSpec with BeforeAndAfterAll {
     val casstore = store.getCASStore[Long]()
     
     checkCasStoreOperations(casstore, rowKey, expected)
+    
+    store.close(Duration(10, TimeUnit.SECONDS))
   }
   
   behavior of "Composite Cassandra Key-Value-Store with collections as values"
@@ -319,7 +331,7 @@ class CassandraStoreProperties extends FlatSpec with BeforeAndAfterAll {
     
     assert(result === expected) 
     assert(result2 != None)
-    assert(result2.get.size === 2)
+    assert(result2.get.size === 2)    
   }  
 
   it should "be able to produce a cas-store and do various cas operations" in {
@@ -344,6 +356,8 @@ class CassandraStoreProperties extends FlatSpec with BeforeAndAfterAll {
     val casstore = store.getCASStore[Long]()
     
     checkCasStoreOperations(casstore, key, expected)
+    
+    store.close(Duration(10, TimeUnit.SECONDS))
   }
 
   behavior of "Composite Cassandra Key-Value-Store with simple values"
@@ -401,6 +415,8 @@ class CassandraStoreProperties extends FlatSpec with BeforeAndAfterAll {
 	  // put and get value
     Await.result(store.put((key, expected)))
     assert(Await.result(store.get(key)) === expected)
+    
+    store.close(Duration(10, TimeUnit.SECONDS))
   }
 
   it should "be able to be used with CassandraTupleStore" in {
@@ -438,6 +454,8 @@ class CassandraStoreProperties extends FlatSpec with BeforeAndAfterAll {
     Try(Thread.sleep(ttl.get.inUnit(TimeUnit.MILLISECONDS))).onSuccess{
       _ => assert(Await.result(store.get(key)) === None)
     }
+    
+    store.close(Duration(10, TimeUnit.SECONDS))
   }
   
   it should "be able to produce a cas-store and do various cas operations" in {
@@ -453,6 +471,8 @@ class CassandraStoreProperties extends FlatSpec with BeforeAndAfterAll {
     val casstore = store.getCASStore[Long]()
     
     checkCasStoreOperations(casstore, key, expected)
+    
+    store.close(Duration(10, TimeUnit.SECONDS))
   }
   
   behavior of "Composite Cassandra Key-Value-Store with Tuple values"
@@ -537,6 +557,8 @@ class CassandraStoreProperties extends FlatSpec with BeforeAndAfterAll {
     val casstore = store.getCASStore[Long]()
     
     checkCasStoreOperations(casstore, key, expected)
+    
+    store.close(Duration(10, TimeUnit.SECONDS))
   }
   
   behavior of "Composite Cassandra Key-Value-Store with Long values"
