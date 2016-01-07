@@ -10,6 +10,5 @@ before_script:
 services:
   - redis-server
   - memcache
-  - cassandra
   - mongodb
 script: umask 0022 && sbt ++$TRAVIS_SCALA_VERSION test

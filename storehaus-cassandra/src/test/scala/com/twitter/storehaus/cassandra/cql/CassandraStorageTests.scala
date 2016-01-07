@@ -32,12 +32,13 @@ import AbstractCQLCassandraCompositeStore._
 import scala.collection.mutable.ArrayBuffer
 import com.datastax.driver.core.querybuilder.Clause
 import scala.util.Random
+import org.cassandraunit.utils.EmbeddedCassandraServerHelper
 
 /** Tests for Storehaus-Cassandra */
 class CassandraStoreProperties extends FlatSpec with BeforeAndAfterAll {
-  val hostname = "localhost"
+  val hostname = "localhost:9142"
   val clusterName = "Test Cluster"
-  val keyspaceName = "Myspace"
+  val keyspaceName = "myspace"
   val countercf = "countercf"
   val collcf = "collectioncompositecf"
   val comcf = "compositecf"
@@ -52,12 +53,16 @@ class CassandraStoreProperties extends FlatSpec with BeforeAndAfterAll {
         "{'class' : 'SimpleStrategy', 'replication_factor' : 1}")
   
   override def beforeAll() {
+    System.setProperty("log4j.configuration", "log4j.properties")
+    EmbeddedCassandraServerHelper.startEmbeddedCassandra(240000L)
     session.createKeyspace
   }
   
   override def afterAll() {
     // session.dropAndDeleteKeyspaceAndContainedData
     cluster.getCluster.close
+    Try { EmbeddedCassandraServerHelper.cleanEmbeddedCassandra() }
+    Try { EmbeddedCassandraServerHelper.stopEmbeddedCassandra() }
   }
   
   /**

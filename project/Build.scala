@@ -308,7 +308,8 @@ object StorehausBuild extends Build {
       "com.websudos" %% "phantom-dsl" % "1.5.0" exclude ("com.datastax.cassandra", "cassandra-driver-core"),
       withCross("com.twitter" %% "util-zk" % utilVersion) exclude ("com.google.guava", "guava"),
       "com.chuusai" %% "shapeless" % shapelessVersion,
-      "org.slf4j" % "slf4j-api" % "1.7.5"
+      "org.slf4j" % "slf4j-api" % "1.7.5",
+      "org.cassandraunit" % "cassandra-unit" % "2.2.2.1" % "test" exclude ("com.datastax.cassandra", "cassandra-driver-core")
     ),
     parallelExecution in Test := false
   ).dependsOn(storehausAlgebra % "test->test;compile->compile", storehausHBase % "test->test", storehausElastic % "test->test", storehausKafka08 % "test->test")
