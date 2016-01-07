@@ -78,6 +78,7 @@ object StorehausBuild extends Build {
       Some(if (v.trim.toUpperCase.endsWith("SNAPSHOT")) Opts.resolver.sonatypeSnapshots
            else Opts.resolver.sonatypeStaging)
     },
+    concurrentRestrictions in Global += Tags.limit(Tags.Test, 1),
     pomExtra := (
       <url>https://github.com/twitter/storehaus</url>
       <licenses>
