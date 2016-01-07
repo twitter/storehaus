@@ -304,7 +304,7 @@ object StorehausBuild extends Build {
       "com.twitter" %% "algebird-core" % algebirdVersion,
       "com.google.code.findbugs" % "jsr305" % "1.3.+",
       "com.twitter" %% "bijection-core" % bijectionVersion,
-      "com.datastax.cassandra" % "cassandra-driver-core" % cassandraDriverVersion,
+      "com.datastax.cassandra" % "cassandra-driver-core" % cassandraDriverVersion classifier "shaded" exclude("io.netty", "*"),
       "com.websudos" %% "phantom-dsl" % "1.5.0" exclude ("com.datastax.cassandra", "cassandra-driver-core"),
       withCross("com.twitter" %% "util-zk" % utilVersion) exclude ("com.google.guava", "guava"),
       "com.chuusai" %% "shapeless" % shapelessVersion,
