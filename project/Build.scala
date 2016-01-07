@@ -78,7 +78,6 @@ object StorehausBuild extends Build {
       Some(if (v.trim.toUpperCase.endsWith("SNAPSHOT")) Opts.resolver.sonatypeSnapshots
            else Opts.resolver.sonatypeStaging)
     },
-    concurrentRestrictions in Global += Tags.limit(Tags.Test, 1),
     pomExtra := (
       <url>https://github.com/twitter/storehaus</url>
       <licenses>
@@ -311,8 +310,8 @@ object StorehausBuild extends Build {
       "com.chuusai" %% "shapeless" % shapelessVersion,
       "org.slf4j" % "slf4j-api" % "1.7.5"
     ),
-    parallelExecution in Test := false
-  ).dependsOn(storehausAlgebra % "test->test;compile->compile")
+    parallelExecution in Test := false,
+  ).dependsOn(storehausAlgebra % "test->test;compile->compile", storehausHBase % "test->test", storehausElastic % "test->test", storehausKafka08 % "test->test")
 
   lazy val storehausHttp = module("http").settings(
     libraryDependencies ++= Seq(
