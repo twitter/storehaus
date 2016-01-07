@@ -320,4 +320,5 @@ object StorehausBuild extends Build {
       "com.twitter" %% "bijection-netty" % bijectionVersion
     )
   ).dependsOn(storehausCore)
+
 }
