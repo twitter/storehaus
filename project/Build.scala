@@ -310,7 +310,7 @@ object StorehausBuild extends Build {
       "com.chuusai" %% "shapeless" % shapelessVersion,
       "org.slf4j" % "slf4j-api" % "1.7.5"
     ),
-    parallelExecution in Test := false,
+    parallelExecution in Test := false
   ).dependsOn(storehausAlgebra % "test->test;compile->compile", storehausHBase % "test->test", storehausElastic % "test->test", storehausKafka08 % "test->test")
 
   lazy val storehausHttp = module("http").settings(
