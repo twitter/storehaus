@@ -312,7 +312,7 @@ object StorehausBuild extends Build {
       "org.cassandraunit" % "cassandra-unit" % "2.2.2.1" % "test" exclude ("com.datastax.cassandra", "cassandra-driver-core")
     ),
     parallelExecution in Test := false
-  ).dependsOn(storehausAlgebra % "test->test;compile->compile", storehausHBase % "test->test", storehausElastic % "test->test", storehausKafka08 % "test->test")
+  ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
   lazy val storehausHttp = module("http").settings(
     libraryDependencies ++= Seq(
