@@ -31,6 +31,7 @@ object StorehausBuild extends Build {
       case version if version startsWith "2.10" => "2.10" // TODO: hack because sbt is broken
       case x => x
     }
+
   val extraSettings =
     Project.defaultSettings ++ Boilerplate.settings ++ assemblySettings ++ mimaDefaultSettings
 
@@ -122,6 +123,10 @@ object StorehausBuild extends Build {
   val scaldingVersion = "0.15.1-RC9"
   val finagleVersion = "6.27.0"
   val scalatestVersion = "2.2.4"
+  val cassandraDriverVersion = "2.1.7.1"
+  val cassandraVersion = "2.1.3"
+  val shapelessVersion = "2.2.3"
+
   lazy val storehaus = Project(
     id = "storehaus",
     base = file("."),
@@ -134,6 +139,7 @@ object StorehausBuild extends Build {
     storehausCache,
     storehausCore,
     storehausAlgebra,
+    storehausCassandra,
     storehausMemcache,
     storehausMySQL,
     storehausRedis,
@@ -293,6 +299,21 @@ object StorehausBuild extends Build {
     javaOptions in run <++= (fullClasspath in Runtime) map { cp => Seq("-cp", sbt.Build.data(cp).mkString(":")) }
   ).dependsOn(storehausCore, storehausAlgebra, storehausCache)
 
+  lazy val storehausCassandra = module("cassandra").settings(
+    libraryDependencies ++= Seq(
+      "com.twitter" %% "algebird-core" % algebirdVersion,
+      "com.google.code.findbugs" % "jsr305" % "1.3.+",
+      "com.twitter" %% "bijection-core" % bijectionVersion,
+      "com.datastax.cassandra" % "cassandra-driver-core" % cassandraDriverVersion classifier "shaded" exclude("io.netty", "*"),
+      "com.websudos" %% "phantom-dsl" % "1.5.0" exclude ("com.datastax.cassandra", "cassandra-driver-core"),
+      withCross("com.twitter" %% "util-zk" % utilVersion) exclude ("com.google.guava", "guava"),
+      "com.chuusai" %% "shapeless" % shapelessVersion,
+      "org.slf4j" % "slf4j-api" % "1.7.5",
+      "org.cassandraunit" % "cassandra-unit" % "2.2.2.1" % "test" exclude ("com.datastax.cassandra", "cassandra-driver-core")
+    ),
+    parallelExecution in Test := false
+  ).dependsOn(storehausAlgebra % "test->test;compile->compile")
+
   lazy val storehausHttp = module("http").settings(
     libraryDependencies ++= Seq(
       "com.twitter" %% "finagle-httpx" % finagleVersion,
@@ -300,4 +321,5 @@ object StorehausBuild extends Build {
       "com.twitter" %% "bijection-netty" % bijectionVersion
     )
   ).dependsOn(storehausCore)
+
 }
