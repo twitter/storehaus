@@ -21,10 +21,15 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hbase.{HColumnDescriptor, HTableDescriptor, HBaseConfiguration}
 import com.twitter.bijection.hbase.HBaseBijections._
 import com.twitter.bijection.Conversion._
-import com.twitter.bijection.Injection
+import com.twitter.bijection.{Codec, Injection}
 import com.twitter.util.{FuturePool, Future}
-import scala.Some
 import java.util.concurrent.Executors
+import scala.collection.JavaConverters._
+import com.twitter.storehaus.FutureOps
+import scala.Some
+import scala.Seq
+import scala.collection.breakOut
+import java.util
 
 /**
  * @author Mansur Ashraf
@@ -67,32 +72,91 @@ trait HBaseStore {
     require(isNotEmpty(column), "column is required")
   }
 
-  def getValue[K, V](key: K)(implicit keyInj: Injection[K, Array[Byte]], valueInj: Injection[V, Array[Byte]]): Future[Option[V]] = {
+
+  def getValue[K: Codec, V: Codec](key: K): Future[Option[V]] = {
     val tbl = pool.getTable(table)
     futurePool {
-      val g = new Get(keyInj(key))
-      g.addColumn(columnFamily.as[StringBytes], column.as[StringBytes])
-
-      val result = tbl.get(g)
-      val value = result.getValue(columnFamily.as[StringBytes], column.as[StringBytes])
-
-      Option(value).map(v => valueInj.invert(v).get)
+      implicit val fn = implicitly[Codec[K]].toFunction
+      val result = tbl.get(createGet(key))
+      getValue[V](result)
     } ensure tbl.close
   }
 
-  def putValue[K, V](kv: (K, Option[V]))(implicit keyInj: Injection[K, Array[Byte]], valueInj: Injection[V, Array[Byte]]): Future[Unit] = {
+  def putValue[K: Codec, V: Codec](kv: (K, Option[V])): Future[Unit] = {
     val tbl = pool.getTable(table)
+    implicit val fn = implicitly[Codec[K]].toFunction
+
     kv match {
       case (k, Some(v)) => futurePool {
-        val p = new Put(keyInj(k))
-        p.add(columnFamily.as[StringBytes], column.as[StringBytes], valueInj(v))
-        tbl.put(p)
+        tbl.put(createPut(k, v))
       } ensure tbl.close
 
       case (k, None) => futurePool {
-        val delete = new Delete(keyInj(k))
-        tbl.delete(delete)
+        tbl.delete(createDelete(k))
       } ensure tbl.close
     }
+  }
+
+  def multiGetValues[K <% Array[Byte], V: Codec](ks: Set[K]): Map[K, Future[Option[V]]] = {
+    val tbl = pool.getTable(table)
+    val result = futurePool {
+      val indexedKeys = ks.map(k1 => (k1: Array[Byte]) -> k1).toMap
+      val keys = ks.map(k => createGet(k)).toList.asJava
+      val results= tbl.get(keys)
+
+      results.toList.map {
+        r =>
+          val key = indexedKeys(r.getRow)
+          val value = getValue[V](r)
+          (key, value)
+      }.toMap
+    } ensure tbl.close
+    FutureOps.liftValues(ks, result, k => Future(None))
+  }
+
+  def multiPutValues[K <% Array[Byte], V: Codec](kvs: Map[K, Option[V]]): Map[K, Future[Unit]] = {
+    val tbl = pool.getTable(table)
+    val result = futurePool {
+      val (puts, deletes) = kvs.partition(_._2.isDefined)
+
+      if (!puts.isEmpty) {
+        tbl.put(puts.map {
+          case (k, Some(v)) => createPut(k, v)
+        }.toList.asJava)
+      }
+
+      if (!deletes.isEmpty) {
+        tbl.delete(deletes.map {
+          case (k, None) => createDelete[K](k)
+        }.toBuffer.asJava)
+      }
+
+    } ensure tbl.close
+    kvs.map {
+      case (k, _) => k -> result
+    }(breakOut)
+  }
+
+  private def createGet[K<% Array[Byte]](key: K): Get = {
+    val g = new Get(key)
+    g.addColumn(columnFamily.as[StringBytes], column.as[StringBytes])
+    g
+  }
+
+  private def getValue[V: Codec](result: Result): Option[V] = {
+    val value = result.getValue(columnFamily.as[StringBytes], column.as[StringBytes])
+    Option(value).map(v => Injection.invert[V, Array[Byte]](v).get)
+  }
+
+  private def createPut[K <% Array[Byte], V: Codec](key: K, value: V): Put = {
+    val p = new Put(key)
+    p.add(columnFamily.as[StringBytes], column.as[StringBytes], Injection[V, Array[Byte]](value))
+    p
+  }
+
+  private def createDelete[K <% Array[Byte]](key: K): Delete = {
+    val delete = new Delete(key)
+    delete.deleteColumn(columnFamily.as[StringBytes], column.as[StringBytes])
+    delete
   }
 }

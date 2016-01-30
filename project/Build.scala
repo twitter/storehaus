@@ -214,7 +214,7 @@ object StorehausBuild extends Build {
       "org.apache.hadoop" % "hadoop-test" % "1.2.0" % "test"
     ),
     parallelExecution in Test := false
-  ).dependsOn(storehausAlgebra % "test->test;compile->compile")
+  ).dependsOn(storehausAlgebra % "test->test;compile->compile",storehausCore)
 
   lazy val storehausDynamoDB = module("dynamodb").settings(
     libraryDependencies ++= Seq(
