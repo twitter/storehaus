@@ -5,7 +5,6 @@ resolvers ++= Seq(
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.11.2")
 addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.0")
 addSbtPlugin("com.jsuereth" % "sbt-pgp" % "1.0.0")
-addSbtPlugin("com.twitter" %% "scrooge-sbt-plugin" % "3.20.0")
 addSbtPlugin("com.typesafe" % "sbt-mima-plugin" % "0.1.8")
 addSbtPlugin("com.typesafe.sbt" % "sbt-ghpages" % "0.5.3")
 addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "0.6.2")
