@@ -1,4 +1,5 @@
 import AssemblyKeys._
+import ReleaseTransformations._
 import com.typesafe.tools.mima.plugin.MimaKeys.previousArtifact
 import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
 import sbtassembly.Plugin._
