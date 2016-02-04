@@ -31,8 +31,8 @@ val testCleanup = Seq(
 
 val sharedSettings = extraSettings ++ ciSettings ++ Seq(
   organization := "com.twitter",
-  scalaVersion := "2.10.5",
-  crossScalaVersions := Seq("2.10.5", "2.11.7"),
+  scalaVersion := "2.11.7",
+  crossScalaVersions := Seq("2.10.6", "2.11.7"),
   javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
   javacOptions in doc := Seq("-source", "1.6"),
   libraryDependencies += "org.scalatest" %% "scalatest" % scalatestVersion % "test",
@@ -115,10 +115,10 @@ def youngestForwardCompatible(subProj: String) =
     .filterNot(unreleasedModules.contains(_))
     .map { s => "com.twitter" % ("storehaus-" + s + "_2.10") % "0.12.0" }
 
-val algebirdVersion = "0.11.0"
-val bijectionVersion = "0.8.0"
+val algebirdVersion = "0.12.0"
+val bijectionVersion = "0.9.1"
 val utilVersion = "6.26.0"
-val scaldingVersion = "0.15.1-RC9"
+val scaldingVersion = "0.16.0-RC1"
 val finagleVersion = "6.27.0"
 val scalatestVersion = "2.2.4"
 
