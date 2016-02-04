@@ -62,7 +62,7 @@ val sharedSettings = extraSettings ++ ciSettings ++ Seq(
     checkSnapshotDependencies,
     inquireVersions,
     runClean,
-    runTest,
+ // runTest, // tests need services installed that travis has. MAKE SURE YOU ARE GREEN!!!
     setReleaseVersion,
     commitReleaseVersion,
     tagRelease,
@@ -220,7 +220,6 @@ lazy val storehausDynamoDB = module("dynamodb").settings(
   libraryDependencies ++= Seq(
     "com.twitter" %% "algebird-core" % algebirdVersion,
     "com.twitter" %% "bijection-core" % bijectionVersion,
-    "com.twitter" %% "bijection-hbase" % bijectionVersion ,
     "com.amazonaws" % "aws-java-sdk" % "1.5.7"
     ////use alternator for local testing
     //"com.michelboudreau" % "alternator" % "0.6.4" % "test"
