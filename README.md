@@ -10,7 +10,7 @@ Storehaus's core module defines three traits; a read-only `ReadableStore` a writ
 package com.twitter.storehaus
 
 import com.twitter.util.{ Closable, Future, Time }
-
+0
 trait ReadableStore[-K, +V] extends Closeable {
   def get(k: K): Future[Option[V]]
   def multiGet[K1 <: K](ks: Set[K1]): Map[K1, Future[Option[V]]]
@@ -108,7 +108,7 @@ Discussion occurs primarily on the [Storehaus mailing list](https://groups.googl
 
 ## Maven
 
-Storehaus modules are available on maven central. The current groupid and version for all modules is, respectively, `"com.twitter"` and  `0.12.0`.
+Storehaus modules are available on maven central. The current groupid and version for all modules is, respectively, `"com.twitter"` and  `0.13.0`.
 
 Current published artifacts are
 
