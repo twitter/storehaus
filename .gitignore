@@ -10,7 +10,7 @@
 
 /target/
 /src/jline/target/
-
+sonatype.sbt
 # target directories for ant build
 /build/
 /dists/

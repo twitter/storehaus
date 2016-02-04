@@ -73,7 +73,7 @@ object MergeableStoreProperties extends Properties("MergeableStore") {
         expectedResult,
         Await.result(FutureOps.mapCollect(store.multiGet(expectedResult.keySet)))
       ) && Equiv[Map[K, Option[V]]].equiv(expectedResult, finalMerged)
-    }
+    }.label("baseTest")
 
   def newStore[K, V: Semigroup]: MergeableStore[K, V] =
     MergeableStore.fromStore(new JMapStore[K, V])
@@ -98,10 +98,14 @@ object MergeableStoreProperties extends Properties("MergeableStore") {
     }
 
   def mergeableStoreTest[K: Arbitrary, V: Arbitrary: Monoid: Equiv](store: MergeableStore[K, V]) =
-    singleMergeableStoreTest(store) && multiMergeableStoreTest(store)
+    singleMergeableStoreTest(store).label("single") &&
+      multiMergeableStoreTest(store).label("multi")
 
   property("MergeableStore from JMapStore obeys the mergeable store laws") =
     mergeableStoreTest(newStore[Int, Map[Int, Int]])
+
+  property("MergeableStore from ConcurrentHashMapMergeableStore[Byte, Int] obeys the mergeable store laws") =
+    mergeableStoreTest(ConcurrentHashMapMergeableStore[Byte, Int])
 
   property("MergeableStore - sparse - from JMapStore obeys the mergeable store laws") =
     mergeableStoreTest(newSparseStore[Int, Map[Int, Int]])

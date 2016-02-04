@@ -47,26 +47,18 @@ class AsyncHBaseLongStore(protected val quorumNames: Seq[String],
                           protected val threads: Int) extends Store[String, Long] with AsyncHBaseStore {
 
 
+  import com.twitter.bijection.hbase.HBaseInjections.{string2BytesInj, long2BytesInj}
   /** get a single key from the store.
-    * Prefer multiGet if you are getting more than one key at a time
     */
-  override def get(k: String): Future[Option[Long]] = {
-    import com.twitter.bijection.hbase.HBaseBijections._
-    implicit val stringInj = fromBijectionRep[String, StringBytes]
-    implicit val LongInj = fromBijectionRep[Long, LongBytes]
-    getValue[String, Long](k)
-  }
+  override def get(k: String): Future[Option[Long]] =
+    getValue(k)(string2BytesInj, long2BytesInj)
 
   /**
    * replace a value
    * Delete is the same as put((k,None))
    */
-  override def put(kv: (String, Option[Long])): Future[Unit] = {
-    import com.twitter.bijection.hbase.HBaseBijections._
-    implicit val stringInj = fromBijectionRep[String, StringBytes]
-    implicit val LongInj = fromBijectionRep[Long, LongBytes]
-    putValue(kv)
-  }
+  override def put(kv: (String, Option[Long])): Future[Unit] =
+    putValue(kv)(string2BytesInj, long2BytesInj)
 
   /** Close this store and release any resources.
     * It is undefined what happens on get/multiGet after close

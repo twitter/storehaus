@@ -1,5 +1,12 @@
 # Storehaus #
 
+### Version 0.13.0 ###
+* Bump to latest versions: https://github.com/twitter/storehaus/pull/285
+* Update the build to support sbt-release: https://github.com/twitter/storehaus/pull/284
+* Added a concurrent local mergeable store.: https://github.com/twitter/storehaus/pull/283
+* Remove dependency on finagle-http: https://github.com/twitter/storehaus/pull/279
+* Bump scalding: https://github.com/twitter/storehaus/pull/278
+
 ### Version 0.12.0 ###
 * Update for new finagle: https://github.com/twitter/storehaus/pull/277
 * Move version to separate file, recommended way to do it for sbt: https://github.com/twitter/storehaus/pull/276
