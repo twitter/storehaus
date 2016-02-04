@@ -19,7 +19,7 @@ package com.twitter.storehaus.hbase
 import org.apache.hadoop.hbase.client._
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hbase.{HColumnDescriptor, HTableDescriptor, HBaseConfiguration}
-import com.twitter.bijection.hbase.HBaseBijections._
+import com.twitter.bijection.hbase.HBaseInjections.string2BytesInj
 import com.twitter.bijection.Conversion._
 import com.twitter.bijection.Injection
 import com.twitter.util.{FuturePool, Future}
@@ -71,10 +71,11 @@ trait HBaseStore {
     val tbl = pool.getTable(table)
     futurePool {
       val g = new Get(keyInj(key))
-      g.addColumn(columnFamily.as[StringBytes], column.as[StringBytes])
+      g.addColumn(string2BytesInj(columnFamily), string2BytesInj(column))
 
       val result = tbl.get(g)
-      val value = result.getValue(columnFamily.as[StringBytes], column.as[StringBytes])
+      val value = result.getValue(string2BytesInj(columnFamily),
+        string2BytesInj(column))
 
       Option(value).map(v => valueInj.invert(v).get)
     } ensure tbl.close
@@ -85,7 +86,7 @@ trait HBaseStore {
     kv match {
       case (k, Some(v)) => futurePool {
         val p = new Put(keyInj(k))
-        p.add(columnFamily.as[StringBytes], column.as[StringBytes], valueInj(v))
+        p.add(string2BytesInj(columnFamily), string2BytesInj(column), valueInj(v))
         tbl.put(p)
       } ensure tbl.close
 
