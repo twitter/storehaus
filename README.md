@@ -10,7 +10,7 @@ Storehaus's core module defines three traits; a read-only `ReadableStore` a writ
 package com.twitter.storehaus
 
 import com.twitter.util.{ Closable, Future, Time }
-0
+
 trait ReadableStore[-K, +V] extends Closeable {
   def get(k: K): Future[Option[V]]
   def multiGet[K1 <: K](ks: Set[K1]): Map[K1, Future[Option[V]]]
