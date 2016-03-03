@@ -93,10 +93,10 @@ object KafkaStore {
     props.put("value.serializer", implicitly[Manifest[VS]].runtimeClass.getName)
     props.put("bootstrap.servers", brokers.mkString(","))
     props.put("acks", "all")
-    props.put("retries", 0)
-    props.put("batch.size", 16384)
-    props.put("linger.ms", 1)
-    props.put("buffer.memory", 33554432)
+    props.put("retries", "0")
+    props.put("batch.size", "16384")
+    props.put("linger.ms", "1")
+    props.put("buffer.memory", "33554432")
     props
   }
 }
