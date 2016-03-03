@@ -19,34 +19,31 @@ package com.twitter.storehaus.kafka
 import com.twitter.util.Future
 import KafkaSink.Dispatcher
 import com.twitter.bijection.Injection
-import scala.Array
-import java.util.concurrent.{Executors, ExecutorService}
-import com.twitter.concurrent.NamedPoolThreadFactory
-import kafka.serializer.Encoder
-import com.twitter.storehaus.kafka.KafkaInjections.ByteArrayEncoder
+import org.apache.kafka.common.serialization.Serializer
 import java.util.Properties
 
 /**
- * Kafka Sink that can be used with SummingBird to sink messages to a Kafka Queue
- * @author Mansur Ashraf
- * @since 11/22/13
- */
+  * KafkaSink that can be used with SummingBird to sink messages to a Kafka topic
+  *
+  * @author Mansur Ashraf
+  * @since 11/22/13
+  */
 @deprecated("use com.twitter.storehaus.kafka.KafkaStore with com.twitter.summingbird.storm.WritableStoreSink","0.9.0")
 class KafkaSink[K, V](dispatcher: Dispatcher[K, V]) extends Serializable {
   /**
-   * Function that satisfies Storm#Sink
-   * @return  () => (K,V) => Future[Unit]
-   */
+    * Function that satisfies Storm#Sink
+    * @return  () => (K,V) => Future[Unit]
+    */
   def write: () => Dispatcher[K, V] = () => dispatcher
 
   /**
-   * Converts KafkaSink[k,V] to KafkaSink[k1,V1]
-   * @param kfn function that converts K1 to K
-   * @param inj  injection from V1 to V
-   * @tparam K1  new Store Key
-   * @tparam V1  new Store Value
-   * @return   KafkaSink[k1,V1]
-   */
+    * Convert a KafkaSink[K, V] to KafkaSink[K1, V1]
+    * @param kfn function that converts K1 to K
+    * @param inj injection from V1 to V
+    * @tparam K1 new sink Key
+    * @tparam V1 new sink Value
+    * @return KafkaSink[K1, V1]
+    */
   def convert[K1, V1](kfn: K1 => K)(implicit inj: Injection[V1, V]) = {
     val fn: Dispatcher[K1, V1] = {
       kv: (K1, V1) => dispatcher(compose(kfn, inj)(kv))
@@ -55,10 +52,10 @@ class KafkaSink[K, V](dispatcher: Dispatcher[K, V]) extends Serializable {
   }
 
   /**
-   * Filter all the messages that do not satisfy the given predicate
-   * @param fn  predicate
-   * @return KafkaSink
-   */
+    * Filter all the messages that do not satisfy the given predicate
+    * @param fn predicate
+    * @return KafkaSink
+    */
   def filter(fn: ((K, V)) => Boolean) = {
     val f: Dispatcher[K, V] = {
       kv: (K, V) =>
@@ -78,40 +75,36 @@ object KafkaSink {
   type Dispatcher[K, V] = ((K, V)) => Future[Unit]
 
   /**
-   * Creates KafkaSink by wrapping KafkaStore
-   * @param store KafkaStore
-   * @tparam K key
-   * @tparam V value
-   * @return KafkaSink
-   */
-  def apply[K, V](store: KafkaStore[K, V]): KafkaSink[K, V] = {
-    val sink = new KafkaSink[K, V](store.put)
-    sink
-  }
+    * Create a KafkaSink by wrapping a KafkaStore
+    * @param store KafkaStore
+    * @return KafkaSink[K, V]
+    */
+  def apply[K, V](store: KafkaStore[K, V]): KafkaSink[K, V] =
+    new KafkaSink[K, V](store.put)
 
   /**
-   * Returns KafkaSink[K,V]
-   * @param brokers  kafka brokers
-   * @param topic kafka topic.
-   * @tparam K key
-   * @tparam V value
-   * @return KafkaSink[K,V]
-   */
-  def apply[K, V, E <: Encoder[V] : Manifest](brokers: Seq[String], topic: String): KafkaSink[K, V] = {
-    val store = KafkaStore[K, V, E](brokers, topic)
+    * Create a KafkaSink
+    * @param brokers Addresses of the Kafka brokers in the comma-separated hostname:port format
+    * @param topic Kafka topic
+    * @return KafkaSink[K, V]
+    */
+  def apply[K, V, KS <: Serializer[K] : Manifest, VS <: Serializer[V] : Manifest](
+    brokers: Seq[String],
+    topic: String
+  ): KafkaSink[K, V] = {
+    val store = KafkaStore[K, V, KS, VS](brokers, topic)
     lazy val sink = apply[K, V](store)
     sink
   }
 
   /**
-   * Returns KafkaSink[K,V]
-   * @param props  kafka props
-   * @param topic kafka topic.
-   * @tparam K key
-   * @tparam V value
-   * @return KafkaSink[K,V]
-   */
-  def apply[K, V](props: Properties, topic: String): KafkaSink[K, V] = {
+    * Create a KafkaSink based on the given properties
+    * @param topic Kafka topic to produce the messages to
+    * @param props Kafka producer properties
+    *              { @see http://kafka.apache.org/documentation.html#producerconfigs }
+    * @return KafkaSink[K, V]
+    */
+  def apply[K, V](topic: String, props: Properties): KafkaSink[K, V] = {
     lazy val store = KafkaStore[K, V](topic, props)
     lazy val sink = apply[K, V](store)
     sink
