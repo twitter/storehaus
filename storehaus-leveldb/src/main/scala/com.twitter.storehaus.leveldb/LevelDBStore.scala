@@ -25,7 +25,7 @@ import org.iq80.leveldb._
 import org.fusesource.leveldbjni.JniDBFactory._
 
 /**
- * Store for interacting with a LevelDB database.
+ * Store interacting with a LevelDB database.
  * Example usage:
  * {{{
  *   import java.io.File
@@ -80,9 +80,7 @@ class LevelDBStore(val dir: File,
     }
   }
 
-  /**
-   * Replace a set of keys at one time.
-   */
+  /** Replace a set of (key, value) pairs at one time. */
   override def multiPut[K1 <: Array[Byte]](kvs: Map[K1, Option[Array[Byte]]])
       : Map[K1, Future[Unit]] = {
     val future = futurePool {

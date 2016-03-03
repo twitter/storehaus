@@ -16,8 +16,10 @@
 
 package com.twitter.storehaus.kafka
 
-import kafka.serializer.{Decoder, Encoder}
+import java.util
+
 import com.twitter.bijection.{Codec, Injection}
+import org.apache.kafka.common.serialization.{Serializer, Deserializer}
 
 /**
  * @author Mansur Ashraf
@@ -29,27 +31,37 @@ object KafkaInjections {
     def injection: Injection[Array[Byte], Array[Byte]] = Injection.identity[Array[Byte]]
   }
 
-  trait FromInjectionDecoder[T] extends Decoder[T] {
+  trait FromInjectionDecoder[T] extends Deserializer[T] {
     def injection: Injection[T, Array[Byte]]
 
-    override def fromBytes(bytes: Array[Byte]): T = injection.invert(bytes).get
+    override def deserialize(topic: String, data: Array[Byte]): T =
+      injection.invert(data).get
+
+    override def configure(configs: util.Map[String, _], isKey: Boolean): Unit = ()
+
+    override def close(): Unit = ()
   }
 
-  trait FromInjectionEncoder[T] extends Encoder[T] {
+  trait FromInjectionEncoder[T] extends Serializer[T] {
     def injection: Injection[T, Array[Byte]]
 
-    override def toBytes(t: T): Array[Byte] = injection(t)
+    override def serialize(topic: String, data: T): Array[Byte] =
+      injection(data)
+
+    override def configure(configs: util.Map[String, _], isKey: Boolean): Unit = ()
+
+    override def close(): Unit = ()
   }
 
-  def fromInjection[T: Codec]: (Encoder[T], Decoder[T]) = {
+  def fromInjection[T: Codec]: (Serializer[T], Deserializer[T]) = {
     val result = new FromInjectionEncoder[T] with FromInjectionDecoder[T] {
       def injection: Injection[T, Array[Byte]] = implicitly[Codec[T]]
     }
     (result, result)
   }
 
-  implicit def injectionEncoder[T: Codec] : Encoder[T] = fromInjection[T]._1
+  implicit def injectionEncoder[T: Codec] : Serializer[T] = fromInjection[T]._1
 
-  implicit def injectionDecoder[T: Codec] : Decoder[T] = fromInjection[T]._2
+  implicit def injectionDecoder[T: Codec] : Deserializer[T] = fromInjection[T]._2
 
 }
