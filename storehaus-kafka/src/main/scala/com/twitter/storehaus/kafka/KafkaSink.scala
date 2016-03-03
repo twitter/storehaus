@@ -24,7 +24,6 @@ import java.util.Properties
 
 /**
   * KafkaSink that can be used with SummingBird to sink messages to a Kafka topic
-  *
   * @author Mansur Ashraf
   * @since 11/22/13
   */
@@ -84,15 +83,15 @@ object KafkaSink {
 
   /**
     * Create a KafkaSink
-    * @param brokers Addresses of the Kafka brokers in the comma-separated hostname:port format
     * @param topic Kafka topic
+    * @param brokers Addresses of the Kafka brokers in the hostname:port format
     * @return KafkaSink[K, V]
     */
   def apply[K, V, KS <: Serializer[K] : Manifest, VS <: Serializer[V] : Manifest](
-    brokers: Seq[String],
-    topic: String
+    topic: String,
+    brokers: Seq[String]
   ): KafkaSink[K, V] = {
-    val store = KafkaStore[K, V, KS, VS](brokers, topic)
+    val store = KafkaStore[K, V, KS, VS](topic, brokers)
     lazy val sink = apply[K, V](store)
     sink
   }

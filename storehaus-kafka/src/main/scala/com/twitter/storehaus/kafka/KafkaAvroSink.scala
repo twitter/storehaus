@@ -20,60 +20,73 @@ import org.apache.avro.specific.SpecificRecordBase
 import com.twitter.bijection.avro.SpecificAvroCodecs
 import com.twitter.bijection._
 import java.util.concurrent.ExecutorService
-import kafka.serializer.DefaultEncoder
 import java.util.Properties
 
+import org.apache.kafka.common.serialization.ByteArraySerializer
+
 /**
- * @author Mansur Ashraf
- * @since 12/12/13
- */
-/**
- * KafkaSink capable of sending Avro messages to a Kafka Topic
- */
+  * KafkaSink capable of sending Avro messages to a Kafka topic
+ *
+  * @author Mansur Ashraf
+  * @since 12/12/13
+  */
 object KafkaAvroSink {
 
   import com.twitter.bijection.StringCodec.utf8
 
   /**
-   * Creates KafkaSink that can sends message of form (String,SpecificRecord) to a Kafka Topic
-   * @param brokers kafka brokers
-   * @param topic  Kafka Topic
-   * @tparam V  Avro Record
-   * @return KafkaSink[String,SpecificRecordBase]
-   */
-  def apply[V <: SpecificRecordBase : Manifest](brokers: Seq[String], topic: String, executor: => ExecutorService): KafkaSink[String, V] = {
+    * Create a KafkaSink that can send messages of the form (String, SpecificRecord) to a Kafka
+    * topic
+    * @param topic Kafka topic
+    * @param brokers Addresses of the Kafka brokers in the hostname:port format
+    * @tparam V Type of the Avro record
+    * @return KafkaSink[String, SpecificRecordBase]
+    */
+  def apply[V <: SpecificRecordBase : Manifest](
+    topic: String,
+    brokers: Seq[String],
+    executor: => ExecutorService
+  ): KafkaSink[String, V] = {
     implicit val inj = SpecificAvroCodecs[V]
-    lazy val sink = KafkaSink[Array[Byte], Array[Byte], DefaultEncoder](brokers: Seq[String], topic: String)
-      .convert[String, V](utf8.toFunction)
+    lazy val sink =
+      KafkaSink[Array[Byte], Array[Byte], ByteArraySerializer, ByteArraySerializer](
+        topic: String, brokers: Seq[String]).convert[String, V](utf8.toFunction)
     sink
   }
 
   /**
-   * Creates KafkaSink that can sends message of form (T,SpecificRecord) to a Kafka Topic
-   * @param brokers kafka brokers
-   * @param topic  Kafka Topic
-   * @tparam V  Avro Record
-   * @tparam K key
-   * @return KafkaSink[T,SpecificRecordBase]
-   */
-  def apply[K: Codec, V <: SpecificRecordBase : Manifest](brokers: Seq[String], topic: String): KafkaSink[K, V] = {
+    * Create KafkaSink that can send messages of the form (T, SpecificRecord) to a Kafka topic
+    * @param topic Kafka topic
+    * @param brokers Addresses of the Kafka brokers in the hostname:port format
+    * @tparam V Type of Avro record
+    * @tparam K key
+    * @return KafkaSink[T, SpecificRecordBase]
+    */
+  def apply[K: Codec, V <: SpecificRecordBase : Manifest](
+    topic: String,
+    brokers: Seq[String]
+  ): KafkaSink[K, V] = {
     implicit val inj = SpecificAvroCodecs[V]
-    lazy val sink = KafkaSink[Array[Byte], Array[Byte], DefaultEncoder](brokers: Seq[String], topic: String)
-      .convert[K, V](implicitly[Codec[K]].toFunction)
+    lazy val sink = KafkaSink[Array[Byte], Array[Byte], ByteArraySerializer, ByteArraySerializer](
+      topic: String, brokers: Seq[String]).convert[K, V](implicitly[Codec[K]].toFunction)
     sink
   }
 
   /**
-   * Creates KafkaSink that can sends message of form (T,SpecificRecord) to a Kafka Topic
-   * @param props kafka props
-   * @param topic  Kafka Topic
-   * @tparam V  Avro Record
-   * @tparam K key
-   * @return KafkaSink[T,SpecificRecordBase]
-   */
-  def apply[K: Codec, V <: SpecificRecordBase : Manifest](props: Properties, topic: String): KafkaSink[K, V] = {
+    * Create a KafkaSink that can send messages of the form (T, SpecificRecord) to a Kafka topic
+    * @param topic Kafka topic to produce the messages to
+    * @param props Kafka producer properties
+    *              { @see http://kafka.apache.org/documentation.html#producerconfigs }
+    * @tparam V Type of the Avro record
+    * @tparam K key
+    * @return KafkaSink[T, SpecificRecordBase]
+    */
+  def apply[K: Codec, V <: SpecificRecordBase : Manifest](
+    topic: String,
+    props: Properties
+  ): KafkaSink[K, V] = {
     implicit val inj = SpecificAvroCodecs[V]
-    lazy val sink = KafkaSink[Array[Byte], Array[Byte]](props, topic: String)
+    lazy val sink = KafkaSink[Array[Byte], Array[Byte]](topic, props)
       .convert[K, V](implicitly[Codec[K]].toFunction)
     sink
   }

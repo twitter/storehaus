@@ -65,7 +65,7 @@ class KafkaStore[K, V](topic: String, props: Properties)
 object KafkaStore {
 
   /**
-    * Create an instance of KafkaStore based on the given properties
+    * Create a KafkaStore based on the given properties
     * @param topic Kafka topic to produce the messages to
     * @param props Kafka producer properties
     *              { @see http://kafka.apache.org/documentation.html#producerconfigs }
@@ -74,14 +74,14 @@ object KafkaStore {
   def apply[K, V](topic: String, props: Properties) = new KafkaStore[K, V](topic, props)
 
   /**
-    * Creates a Kafka store
-    * @param brokers Addresses of the Kafka brokers in the comma-separated hostname:port format
+    * Create a KafkaStore
     * @param topic Kafka topic to produce the messages to
+    * @param brokers Addresses of the Kafka brokers in the hostname:port format
     * @return Kafka Store
     */
   def apply[K, V, KS <: Serializer[K] : Manifest, VS <: Serializer[V] : Manifest](
-    brokers: Seq[String],
-    topic: String
+    topic: String,
+    brokers: Seq[String]
   ) = new KafkaStore[K, V](topic, createProps[K, V, KS, VS](brokers))
 
 
