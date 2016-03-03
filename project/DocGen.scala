@@ -23,8 +23,8 @@ object DocGen {
 
   private def cleanSite(dir: File, git: GitRunner, s: TaskStreams): Unit = {
     val toClean = IO.listFiles(dir).filterNot(_.getName == ".git").map(_.getAbsolutePath).toList
-    if(!toClean.isEmpty)
-      git(("rm" :: "-r" :: "-f" :: "--ignore-unmatch" :: toClean) :_*)(dir, s.log)
+    if (toClean.nonEmpty)
+      git("rm" :: "-r" :: "-f" :: "--ignore-unmatch" :: toClean :_*)(dir, s.log)
     ()
   }
 

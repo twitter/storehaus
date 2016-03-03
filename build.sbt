@@ -1,26 +1,25 @@
-import AssemblyKeys._
 import ReleaseTransformations._
 import com.typesafe.tools.mima.plugin.MimaKeys.previousArtifact
 import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
 import sbtassembly.Plugin._
 import spray.boilerplate.BoilerplatePlugin.Boilerplate
-import storehaus._
+import storehaus.DocGen
 
 def withCross(dep: ModuleID) =
   dep cross CrossVersion.binaryMapped {
-    case version if version startsWith "2.10" => "2.10" // TODO: hack because sbt is broken
+    case ver if ver startsWith "2.10" => "2.10" // TODO: hack because sbt is broken
     case x => x
   }
 val extraSettings =
   Project.defaultSettings ++ Boilerplate.settings ++ assemblySettings ++ mimaDefaultSettings
 
-def ciSettings: Seq[Project.Setting[_]] =
+def ciSettings: Seq[Def.Setting[_]] =
   if (sys.env.getOrElse("TRAVIS", "false").toBoolean) Seq(
     ivyLoggingLevel := UpdateLogging.Quiet,
     logLevel in Global := Level.Warn,
     logLevel in Compile := Level.Warn,
     logLevel in Test := Level.Info
-  ) else Seq.empty[Project.Setting[_]]
+  ) else Seq.empty[Def.Setting[_]]
 
 val testCleanup = Seq(
   testOptions in Test += Tests.Cleanup { loader =>
@@ -76,7 +75,7 @@ val sharedSettings = extraSettings ++ ciSettings ++ Seq(
     Some(if (v.trim.toUpperCase.endsWith("SNAPSHOT")) Opts.resolver.sonatypeSnapshots
          else Opts.resolver.sonatypeStaging)
   },
-  pomExtra := (
+  pomExtra :=
     <url>https://github.com/twitter/storehaus</url>
     <licenses>
       <license>
@@ -101,7 +100,7 @@ val sharedSettings = extraSettings ++ ciSettings ++ Seq(
         <name>Sam Ritchie</name>
         <url>http://twitter.com/sritchie</url>
       </developer>
-    </developers>)
+    </developers>
 )
 
 /**
@@ -112,7 +111,7 @@ val unreleasedModules = Set[String]()
 
 def youngestForwardCompatible(subProj: String) =
   Some(subProj)
-    .filterNot(unreleasedModules.contains(_))
+    .filterNot(unreleasedModules.contains)
     .map { s => "com.twitter" % ("storehaus-" + s + "_2.10") % "0.12.0" }
 
 val algebirdVersion = "0.12.0"
@@ -140,7 +139,7 @@ lazy val storehaus = Project(
   storehausHBase,
   storehausDynamoDB,
   storehausLevelDB,
-  storehausKafka08,
+  storehausKafka,
   storehausMongoDB,
   storehausElastic,
   storehausHttp,
@@ -237,11 +236,11 @@ lazy val storehausLevelDB = module("leveldb").settings(
   fork in Test := true
 ).dependsOn(storehausCore % "test->test;compile->compile")
 
-lazy val storehausKafka08 = module("kafka-08").settings(
+lazy val storehausKafka = module("kafka").settings(
   libraryDependencies ++= Seq (
     "com.twitter" %% "bijection-core" % bijectionVersion,
     "com.twitter" %% "bijection-avro" % bijectionVersion,
-    "org.apache.kafka" %% "kafka" % "0.8.2.1" % "provided" excludeAll(
+    "org.apache.kafka" % "kafka-clients" % "0.9.0.1" % "provided" excludeAll(
       ExclusionRule(organization = "com.sun.jdmk"),
       ExclusionRule(organization = "com.sun.jmx"),
       ExclusionRule(organization = "javax.jms"))
@@ -289,7 +288,7 @@ lazy val storehausCaliper = module("caliper").settings(
     "com.twitter" %% "bijection-core" % bijectionVersion,
     "com.twitter" %% "algebird-core" % algebirdVersion
   ),
-  javaOptions in run <++= (fullClasspath in Runtime) map { cp => Seq("-cp", sbt.Build.data(cp).mkString(":")) }
+  javaOptions in run <++= (fullClasspath in Runtime) map { cp => Seq("-cp", sbt.Attributed.data(cp).mkString(":")) }
 ).dependsOn(storehausCore, storehausAlgebra, storehausCache)
 
 lazy val storehausHttp = module("http").settings(
