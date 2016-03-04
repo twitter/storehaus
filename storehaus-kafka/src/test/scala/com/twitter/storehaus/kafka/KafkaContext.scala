@@ -14,44 +14,43 @@
  *    limitations under the License.
  */
 
-
 package com.twitter.storehaus.kafka
 
 import java.util.concurrent.Executors
 import com.twitter.concurrent.NamedPoolThreadFactory
 import java.util.{Properties, Random}
-import kafka.serializer.{Decoder, StringEncoder}
-import kafka.consumer.{Consumer, ConsumerConfig}
-import kafka.message.Message
-import com.twitter.bijection.Injection
-import java.nio.ByteBuffer
-import org.apache.avro.specific.SpecificRecordBase
 import com.twitter.bijection.avro.SpecificAvroCodecs
 import kafka.DataTuple
+import org.apache.kafka.clients.consumer.KafkaConsumer
+import org.apache.kafka.common.serialization.StringSerializer
 
 /**
- * @author Mansur Ashraf
- * @since 12/7/13
- */
+  * @author Mansur Ashraf
+  * @since 12/7/13
+  */
 case class KafkaContext() {
-
-  val zK = "localhost:2181"
+  val zk = "localhost:2181"
   val broker = "localhost:9092"
   lazy val executor = Executors.newCachedThreadPool(new NamedPoolThreadFactory("KafkaTestPool"))
-  implicit val dataTupleInj= SpecificAvroCodecs[DataTuple]
+  implicit val dataTupleInj = SpecificAvroCodecs[DataTuple]
 
-  def store(topic: String) = KafkaStore[String, String,StringEncoder](Seq(broker), topic)
+  def store(topic: String) = KafkaStore[String, String, StringSerializer, StringSerializer](
+    topic, Seq(broker))
 
   def random = new Random().nextInt(100000)
 
-  //Consumer props
-  val props = new Properties()
-  props.put("group.id", "consumer-"+random)
-  props.put("autocommit.interval.ms", 1000.toString)
-  props.put("zookeeper.connect", zK)
-  props.put("consumer.timeout.ms", (60 * 1000).toString)
-  props.put("auto.offset.reset", "smallest")
-  val config = new ConsumerConfig(props)
-  lazy val consumer = Consumer.create(config)
+  val consumerProps = {
+    val p = new Properties()
+    p.put("bootstrap.servers", broker)
+    p.put("enable.auto.commit", "true")
+    p.put("auto.commit.interval.ms", "1000")
+    p.put("session.timeout.ms", "30000")
+    p.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
+    p.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
+    p.put("group.id", "consumer-" + random)
+    p.put("auto.offset.reset", "smallest")
+    p
+  }
+  lazy val consumer = new KafkaConsumer[String, String](consumerProps)
 }
 
