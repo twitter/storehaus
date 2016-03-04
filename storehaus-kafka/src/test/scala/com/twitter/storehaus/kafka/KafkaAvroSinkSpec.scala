@@ -16,16 +16,16 @@
 
 package com.twitter.storehaus.kafka
 
+import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.scalatest.WordSpec
 import kafka.DataTuple
-import java.util.Date
 import com.twitter.util.{Future, Await}
-import kafka.consumer.{ConsumerTimeoutException, Whitelist}
-import KafkaInjections._
-import kafka.serializer.Decoder
+
+import scala.collection.JavaConverters._
 
 /**
  * Integration Test! Remove .pendingUntilFixed if testing against a Kafka Cluster
+ *
  * @author Mansur Ashraf
  * @since 12/8/13
  */
@@ -34,27 +34,19 @@ class KafkaAvroSinkSpec extends WordSpec {
     "put avro object on a topic" ignore {
       val context = KafkaContext()
       val topic = "avro-topic-" + context.random
-      val sink = KafkaAvroSink[DataTuple](Seq(context.broker), topic, context.executor)
-        .filter {
-        case (k, v) => v.getValue % 2 == 0
-      }
+      val sink = KafkaAvroSink[DataTuple](topic, Seq(context.broker), context.executor)
+        .filter { case (k, v) => v.getValue % 2 == 0 }
 
       val futures = (1 to 10)
-        .map(new DataTuple(_, "key", new Date().getTime))
+        .map(i => new DataTuple(i.toLong, "key", 1L))
         .map(sink.write()("key", _))
 
       Await.result(Future.collect(futures))
-      import context._
-      try {
-        val stream = context.consumer.createMessageStreamsByFilter(new Whitelist(topic), 1,implicitly[Decoder[String]], implicitly[Decoder[DataTuple]])(0)
-        val iterator = stream.iterator()
-        iterator.next().message.getValue % 2 === 0
-        iterator.next().message.getValue % 2 === 0
-        iterator.next().message.getValue % 2 === 0
-        iterator.next().message.getValue % 2 === 0
-      } catch {
-        case e: ConsumerTimeoutException => fail("test failed as consumer timed out without getting any msges")
-      }
+      lazy val consumer = new KafkaConsumer[String, DataTuple](context.consumerProps)
+      consumer.subscribe(Seq(topic).asJava)
+      val records = consumer.poll(100).asScala
+      records.size === 5
+      records.foreach(record => record.value().getValue % 2 === 0)
     }
   }
 }
