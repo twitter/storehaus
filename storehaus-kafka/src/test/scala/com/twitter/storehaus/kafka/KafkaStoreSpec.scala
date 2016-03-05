@@ -16,16 +16,17 @@
 
 package com.twitter.storehaus.kafka
 
+import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.scalatest.WordSpec
 import com.twitter.util.{Future, Await}
 
 import scala.collection.JavaConverters._
 
 /**
- * Integration Test! Remove .pendingUntilFixed if testing against a Kafka Cluster
- * @author Mansur Ashraf
- * @since 12/7/13
- */
+  * Integration Test! Replace ignore by should if testing against a running Kafka broker
+  * @author Mansur Ashraf
+  * @since 12/7/13
+  */
 class KafkaStoreSpec extends WordSpec {
 
   "Kafka store" ignore {
@@ -33,9 +34,11 @@ class KafkaStoreSpec extends WordSpec {
       val context = KafkaContext()
       val topic = "test-topic-" + context.random
 
-      Await.result(context.store(topic).put("testKey", "testValue"))
-      context.consumer.subscribe(Seq(topic).asJava)
-      val records = context.consumer.poll(100).asScala
+      Await.result(context.store(topic).put(("testKey", "testValue")))
+      val consumer = new KafkaConsumer[String, String](context.consumerProps)
+      consumer.subscribe(Seq(topic).asJava)
+      val records = consumer.poll(10000).asScala
+      records.size === 1
       records.head.value() === "testValue"
     }
 
@@ -51,10 +54,11 @@ class KafkaStoreSpec extends WordSpec {
 
       val multiputResponse = context.store(multiputTopic).multiPut(map)
       Await.result(Future.collect(multiputResponse.values.toList))
-      context.consumer.subscribe(Seq(multiputTopic).asJava)
-      val records = context.consumer.poll(100).asScala
+      val consumer = new KafkaConsumer[String, String](context.consumerProps)
+      consumer.subscribe(Seq(multiputTopic).asJava)
+      val records = consumer.poll(10000).asScala
       records.size === 3
-      records.foreach(record => record.value().contains("value_"))
+      records.map(_.value()).toSeq === map.values.toSeq
     }
   }
 }

@@ -24,14 +24,13 @@ import com.twitter.util.{Future, Await}
 import scala.collection.JavaConverters._
 
 /**
- * Integration Test! Remove .pendingUntilFixed if testing against a Kafka Cluster
- *
- * @author Mansur Ashraf
- * @since 12/8/13
- */
+  * Integration Test! Replace ignore by should if testing against a running Kafka broker
+  * @author Mansur Ashraf
+  * @since 12/8/13
+  */
 class KafkaAvroSinkSpec extends WordSpec {
-  "KafkaAvroSink" should {
-    "put avro object on a topic" ignore {
+  "KafkaAvroSink" ignore {
+    "put avro object on a topic" in {
       val context = KafkaContext()
       val topic = "avro-topic-" + context.random
       val sink = KafkaAvroSink[DataTuple](topic, Seq(context.broker), context.executor)
@@ -42,7 +41,7 @@ class KafkaAvroSinkSpec extends WordSpec {
         .map(sink.write()("key", _))
 
       Await.result(Future.collect(futures))
-      lazy val consumer = new KafkaConsumer[String, DataTuple](context.consumerProps)
+      val consumer = new KafkaConsumer[String, DataTuple](context.consumerProps)
       consumer.subscribe(Seq(topic).asJava)
       val records = consumer.poll(100).asScala
       records.size === 5

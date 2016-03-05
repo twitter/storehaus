@@ -21,7 +21,6 @@ import com.twitter.concurrent.NamedPoolThreadFactory
 import java.util.{Properties, Random}
 import com.twitter.bijection.avro.SpecificAvroCodecs
 import kafka.DataTuple
-import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.serialization.StringSerializer
 
 /**
@@ -48,9 +47,8 @@ case class KafkaContext() {
     p.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
     p.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
     p.put("group.id", "consumer-" + random)
-    p.put("auto.offset.reset", "smallest")
+    p.put("auto.offset.reset", "earliest")
     p
   }
-  lazy val consumer = new KafkaConsumer[String, String](consumerProps)
 }
 
