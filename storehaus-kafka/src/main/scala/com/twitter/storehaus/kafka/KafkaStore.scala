@@ -43,17 +43,6 @@ class KafkaStore[K, V](topic: String, props: Properties)
   }
 
   /**
-    * Put multiple (key, value) pairs at one time
-    * @param kvs (key, value) pairs
-    */
-  override def multiPut[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Unit]] = {
-    val future = Future {
-      kvs.foreach { case (k, v) => producer.send(new ProducerRecord[K, V](topic, k, v)) }
-    }
-    kvs.mapValues(v => future)
-  }
-
-  /**
     * Close this store and release any resources.
     * It is undefined what happens on put/multiGet after close
     */
