@@ -22,8 +22,11 @@ import java.util.Properties
 import org.apache.kafka.clients.producer.{ProducerRecord, KafkaProducer}
 import org.apache.kafka.common.serialization.Serializer
 
+import scala.reflect.ClassTag
+
 /**
   * Store capable of writing to a Kafka topic.
+ *
   * @author Mansur Ashraf
   * @since 11/22/13
   */
@@ -34,6 +37,7 @@ class KafkaStore[K, V](topic: String, props: Properties)
 
   /**
     * Put a key/value pair in a Kafka topic
+ *
     * @param kv (key, value)
     * @return Future.unit
     */
@@ -55,6 +59,7 @@ object KafkaStore {
 
   /**
     * Create a KafkaStore based on the given properties
+ *
     * @param topic Kafka topic to produce the messages to
     * @param props Kafka producer properties
     *              { @see http://kafka.apache.org/documentation.html#producerconfigs }
@@ -64,6 +69,7 @@ object KafkaStore {
 
   /**
     * Create a KafkaStore
+ *
     * @param topic Kafka topic to produce the messages to
     * @param brokers Addresses of the Kafka brokers in the hostname:port format
     * @return Kafka Store
@@ -74,12 +80,12 @@ object KafkaStore {
   ) = new KafkaStore[K, V](topic, createProps[K, V, KS, VS](brokers))
 
 
-  private def createProps[K, V, KS <: Serializer[K] : Manifest, VS <: Serializer[V] : Manifest](
+  private def createProps[K, V, KS <: Serializer[K] : ClassTag, VS <: Serializer[V] : ClassTag](
     brokers: Seq[String]
   ): Properties = {
     val props = new Properties()
-    props.put("key.serializer", implicitly[Manifest[KS]].runtimeClass.getName)
-    props.put("value.serializer", implicitly[Manifest[VS]].runtimeClass.getName)
+    props.put("key.serializer", implicitly[ClassTag[KS]].runtimeClass.getName)
+    props.put("value.serializer", implicitly[ClassTag[VS]].runtimeClass.getName)
     props.put("bootstrap.servers", brokers.mkString(","))
     props.put("acks", "all")
     props.put("retries", "0")
