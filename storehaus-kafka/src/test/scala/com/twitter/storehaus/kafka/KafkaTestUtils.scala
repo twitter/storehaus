@@ -27,7 +27,7 @@ import org.apache.kafka.common.serialization.StringSerializer
   * @author Mansur Ashraf
   * @since 12/7/13
   */
-case class KafkaContext() {
+case class KafkaTestUtils() {
   val zk = "localhost:2181"
   val broker = "localhost:9092"
   lazy val executor = Executors.newCachedThreadPool(new NamedPoolThreadFactory("KafkaTestPool"))
