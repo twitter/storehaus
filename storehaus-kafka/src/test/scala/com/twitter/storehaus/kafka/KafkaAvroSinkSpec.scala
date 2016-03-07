@@ -31,14 +31,14 @@ import scala.collection.JavaConverters._
 class KafkaAvroSinkSpec extends WordSpec {
   "KafkaAvroSink" ignore {
     "put avro object on a topic" in {
-      val context = KafkaContext()
+      val context = KafkaTestUtils()
       val topic = "avro-topic-" + context.random
       val sink = KafkaAvroSink[DataTuple](topic, Seq(context.broker), context.executor)
         .filter { case (k, v) => v.getValue % 2 == 0 }
 
       val futures = (1 to 10)
-        .map(i => new DataTuple(i.toLong, "key", 1L))
-        .map(sink.write()("key", _))
+        .map(i => ("key", new DataTuple(i.toLong, "key", 1L)))
+        .map(sink.write()(_))
 
       Await.result(Future.collect(futures))
       val consumer = new KafkaConsumer[String, DataTuple](context.consumerProps)

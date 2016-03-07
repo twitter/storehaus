@@ -29,9 +29,9 @@ import scala.collection.JavaConverters._
   */
 class KafkaStoreSpec extends WordSpec {
 
-  "Kafka store" ignore {
+  "KafkaStore" ignore {
     "put a value on a topic" in {
-      val context = KafkaContext()
+      val context = KafkaTestUtils()
       val topic = "test-topic-" + context.random
 
       Await.result(context.store(topic).put(("testKey", "testValue")))
@@ -43,7 +43,7 @@ class KafkaStoreSpec extends WordSpec {
     }
 
     "put multiple values on a topic" in {
-      val context = KafkaContext()
+      val context = KafkaTestUtils()
       val multiputTopic = "multiput-test-topic-" + context.random
 
       val map = Map(

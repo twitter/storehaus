@@ -65,7 +65,7 @@ class KafkaSink[K, V](dispatcher: Dispatcher[K, V]) extends Serializable {
   }
 
   private def compose[K1, V1](kfn: K1 => K, inj: Injection[V1, V]): ((K1, V1)) => ((K, V)) = {
-    case (k: K1, v: V1) => (kfn(k), inj(v))
+    case (k, v) => (kfn(k), inj(v))
   }
 }
 
