@@ -19,33 +19,94 @@ package com.twitter.storehaus.kafka
 import java.io.File
 import java.net.InetSocketAddress
 import java.nio.file.Files
-import java.util.concurrent.Executors
-import com.twitter.concurrent.NamedPoolThreadFactory
 import java.util.{Properties, Random}
+
 import com.twitter.bijection.avro.SpecificAvroCodecs
-import kafka.DataTuple
-import org.apache.kafka.common.serialization.StringSerializer
+import kafka.server.{KafkaServer, KafkaConfig}
+import org.apache.kafka.clients.consumer.{ConsumerRecord, KafkaConsumer}
 import org.apache.zookeeper.server.{NIOServerCnxnFactory, ZooKeeperServer}
+
+import scala.collection.JavaConverters._
 
 /**
   * Heavily inspired by Apache Spark's KafkaTestUtils
+  *
   * @author BenFradet
   * @since 08/03/16
   */
 class KafkaTestUtils {
-  val zk = "localhost:2181"
-  val broker = "localhost:9092"
-  lazy val executor = Executors.newCachedThreadPool(new NamedPoolThreadFactory("KafkaTestPool"))
-  implicit val dataTupleInj = SpecificAvroCodecs[DataTuple]
+  private val zkHost = "localhost"
+  private var zkPort: Int = 0
+  private var zookeeper: EmbeddedZookeeper = _
 
-  def store(topic: String) = KafkaStore[String, String, StringSerializer, StringSerializer](
-    topic, Seq(broker))
+  private val brokerHost = "localhost"
+  private val brokerPort = 9092
+  private var brokerConf: KafkaConfig = _
+  private var broker: KafkaServer = _
+
+  private var zkReady = false
+  private var brokerReady = false
+
+  def zkAddress: String = {
+    assert(zkReady, "Zookeeper not setup yet or already torn down, cannot get zookeeper address")
+    s"$zkHost:$zkPort"
+  }
+
+  def brokerAddress: String = {
+    assert(brokerReady, "Broker not setup yet or already torn down, cannot get zookeeper address")
+    s"$brokerHost:$brokerPort"
+  }
+
+  private def setupEmbeddedZookeeper(): Unit = {
+    zookeeper = new EmbeddedZookeeper(s"$zkHost:$zkPort")
+    zkPort = zookeeper.actualPort
+    zkReady = true
+  }
+
+  private def setupEmbeddedKafkaBroker(): Unit = {
+    assert(zkReady, "Zookeeper should be setup beforehand")
+    brokerConf = new KafkaConfig(brokerConfiguration)
+    broker = {
+      val b = new KafkaServer(brokerConf)
+      b.startup()
+      b
+    }
+    brokerReady = true
+  }
+
+  def setup(): Unit = {
+    setupEmbeddedZookeeper()
+    setupEmbeddedKafkaBroker()
+  }
+
+  def tearDown(): Unit = {
+    brokerReady = false
+    zkReady = false
+
+    if (broker != null) {
+      broker.shutdown()
+      broker = null
+    }
+
+    brokerConf.logDirs.foreach(f => deleteFile(new File(f)))
+
+    if (zookeeper != null) {
+      zookeeper.shutdown()
+      zookeeper = null
+    }
+  }
+
+  def getMessages[K, V](topic: String): Seq[ConsumerRecord[K, V]] = {
+    val consumer = new KafkaConsumer[K, V](consumerProps)
+    consumer.subscribe(Seq(topic).asJava)
+    consumer.poll(10000).asScala.toSeq
+  }
 
   def random = new Random().nextInt(100000)
 
-  val consumerProps = {
+  def consumerProps = {
     val p = new Properties()
-    p.put("bootstrap.servers", broker)
+    p.put("bootstrap.servers", brokerAddress)
     p.put("enable.auto.commit", "true")
     p.put("auto.commit.interval.ms", "1000")
     p.put("session.timeout.ms", "30000")
@@ -54,6 +115,25 @@ class KafkaTestUtils {
     p.put("group.id", "consumer-" + random)
     p.put("auto.offset.reset", "earliest")
     p
+  }
+
+  private def brokerConfiguration: Properties = {
+    val p = new Properties()
+    p.put("broker.id", "0")
+    p.put("host.name", brokerHost)
+    p.put("port", brokerPort.toString)
+    p.put("log.dir", Files.createTempDirectory("kafkaTestLogDir").toAbsolutePath.toString)
+    p.put("zookeeper.connect", zkAddress)
+    p.put("log.flush.interval.messages", "1")
+    p.put("replica.socket.timeout.ms", "1500")
+    p
+  }
+
+  private def deleteFile(file: File): Unit = {
+    if (file.isDirectory) {
+      file.listFiles().foreach(deleteFile)
+    }
+    file.delete()
   }
 
   private class EmbeddedZookeeper(val zkConnect: String) {
@@ -72,19 +152,12 @@ class KafkaTestUtils {
       f
     }
 
-    private val actualPort = factory.getLocalPort
+    val actualPort = factory.getLocalPort
 
     def shutdown(): Unit = {
       factory.shutdown()
       deleteFile(snapshotDir)
       deleteFile(logDir)
-    }
-
-    private def deleteFile(file: File): Unit = {
-      if (file.isDirectory) {
-        file.listFiles().foreach(deleteFile)
-      }
-      file.delete()
     }
   }
 }
