@@ -19,7 +19,7 @@
  *
  * DO NOT EDIT DIRECTLY
  */
-package kafka;
+package com.twitter.storehaus.kafka;
 @SuppressWarnings("all")
 public class DataTuple extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
     public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"DataTuple\",\"namespace\":\"kafka\",\"fields\":[{\"name\":\"value\",\"type\":\"long\"},{\"name\":\"key\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"long\"}]}");
