@@ -16,18 +16,23 @@
 
 package com.twitter.storehaus.kafka
 
+import java.io.File
+import java.net.InetSocketAddress
+import java.nio.file.Files
 import java.util.concurrent.Executors
 import com.twitter.concurrent.NamedPoolThreadFactory
 import java.util.{Properties, Random}
 import com.twitter.bijection.avro.SpecificAvroCodecs
 import kafka.DataTuple
 import org.apache.kafka.common.serialization.StringSerializer
+import org.apache.zookeeper.server.{NIOServerCnxnFactory, ZooKeeperServer}
 
 /**
-  * @author Mansur Ashraf
-  * @since 12/7/13
+  * Heavily inspired by Apache Spark's KafkaTestUtils
+  * @author BenFradet
+  * @since 08/03/16
   */
-case class KafkaTestUtils() {
+class KafkaTestUtils {
   val zk = "localhost:2181"
   val broker = "localhost:9092"
   lazy val executor = Executors.newCachedThreadPool(new NamedPoolThreadFactory("KafkaTestPool"))
@@ -49,6 +54,38 @@ case class KafkaTestUtils() {
     p.put("group.id", "consumer-" + random)
     p.put("auto.offset.reset", "earliest")
     p
+  }
+
+  private class EmbeddedZookeeper(val zkConnect: String) {
+    private val snapshotDir = Files.createTempDirectory("zkTestSnapshotDir").toFile
+    private val logDir = Files.createTempDirectory("zkTestLogDir").toFile
+
+    private val zookeeper = new ZooKeeperServer(snapshotDir, logDir, 500)
+    private val (ip, port) = {
+      val splits = zkConnect.split(":")
+      (splits(0), splits(1).toInt)
+    }
+    private val factory = {
+      val f = new NIOServerCnxnFactory
+      f.configure(new InetSocketAddress(ip, port), 10)
+      f.startup(zookeeper)
+      f
+    }
+
+    private val actualPort = factory.getLocalPort
+
+    def shutdown(): Unit = {
+      factory.shutdown()
+      deleteFile(snapshotDir)
+      deleteFile(logDir)
+    }
+
+    private def deleteFile(file: File): Unit = {
+      if (file.isDirectory) {
+        file.listFiles().foreach(deleteFile)
+      }
+      file.delete()
+    }
   }
 }
 

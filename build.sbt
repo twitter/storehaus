@@ -240,10 +240,8 @@ lazy val storehausKafka = module("kafka").settings(
   libraryDependencies ++= Seq (
     "com.twitter" %% "bijection-core" % bijectionVersion,
     "com.twitter" %% "bijection-avro" % bijectionVersion,
-    "org.apache.kafka" % "kafka-clients" % "0.9.0.1" % "provided" excludeAll(
-      ExclusionRule(organization = "com.sun.jdmk"),
-      ExclusionRule(organization = "com.sun.jmx"),
-      ExclusionRule(organization = "javax.jms"))
+    "org.apache.kafka" % "kafka-clients" % "0.9.0.1",
+    "org.apache.zookeeper" % "zookeeper" % "3.4.8"
   ),
   // we don't want various tests clobbering each others keys
   parallelExecution in Test := false
