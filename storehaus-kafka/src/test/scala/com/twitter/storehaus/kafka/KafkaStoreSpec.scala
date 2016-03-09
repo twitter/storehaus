@@ -16,35 +16,45 @@
 
 package com.twitter.storehaus.kafka
 
-import org.apache.kafka.clients.consumer.KafkaConsumer
-import org.scalatest.WordSpec
+import org.apache.kafka.clients.consumer.{KafkaConsumer, ConsumerRecord}
+import org.apache.kafka.common.serialization.StringSerializer
+import org.scalatest.{BeforeAndAfterAll, WordSpec}
 import com.twitter.util.{Future, Await}
 
 import scala.collection.JavaConverters._
 
-/**
-  * Integration Test! Replace ignore by should if testing against a running Kafka broker
-  * @author Mansur Ashraf
-  * @since 12/7/13
-  */
-class KafkaStoreSpec extends WordSpec {
+class KafkaStoreSpec extends WordSpec with BeforeAndAfterAll {
 
-  "KafkaStore" ignore {
+  private var ktu: KafkaTestUtils = _
+
+  override protected def beforeAll(): Unit = {
+    ktu = new KafkaTestUtils
+    ktu.setup()
+  }
+
+  override protected def afterAll(): Unit = {
+    if (ktu != null) {
+      ktu.tearDown()
+      ktu = null
+    }
+  }
+
+  "KafkaStore" should {
     "put a value on a topic" in {
-      val context = KafkaTestUtils()
-      val topic = "test-topic-" + context.random
+      val topic = "test-topic-" + ktu.random
+      val store = KafkaStore[String, String, StringSerializer, StringSerializer](
+        topic, Seq(ktu.brokerAddress))
 
-      Await.result(context.store(topic).put(("testKey", "testValue")))
-      val consumer = new KafkaConsumer[String, String](context.consumerProps)
-      consumer.subscribe(Seq(topic).asJava)
-      val records = consumer.poll(10000).asScala
+      Await.result(store.put(("testKey", "testValue")))
+      val records = getMessages(topic)
       records.size === 1
       records.head.value() === "testValue"
     }
 
     "put multiple values on a topic" in {
-      val context = KafkaTestUtils()
-      val multiputTopic = "multiput-test-topic-" + context.random
+      val multiputTopic = "multiput-test-topic-" + ktu.random
+      val store = KafkaStore[String, String, StringSerializer, StringSerializer](
+        multiputTopic, Seq(ktu.brokerAddress))
 
       val map = Map(
         "Key_1" -> "value_2",
@@ -52,13 +62,17 @@ class KafkaStoreSpec extends WordSpec {
         "Key_3" -> "value_6"
       )
 
-      val multiputResponse = context.store(multiputTopic).multiPut(map)
+      val multiputResponse = store.multiPut(map)
       Await.result(Future.collect(multiputResponse.values.toList))
-      val consumer = new KafkaConsumer[String, String](context.consumerProps)
-      consumer.subscribe(Seq(multiputTopic).asJava)
-      val records = consumer.poll(10000).asScala
+      val records = getMessages(multiputTopic)
       records.size === 3
-      records.map(_.value()).toSeq === map.values.toSeq
+      records.map(_.value()) === map.values.toSeq
     }
+  }
+
+  private def getMessages(topic: String): Seq[ConsumerRecord[String, String]] = {
+    val consumer = new KafkaConsumer[String, String](ktu.consumerProps)
+    consumer.subscribe(Seq(topic).asJava)
+    consumer.poll(10000).asScala.toSeq
   }
 }

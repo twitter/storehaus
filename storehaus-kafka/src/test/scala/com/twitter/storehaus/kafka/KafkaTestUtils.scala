@@ -21,12 +21,8 @@ import java.net.InetSocketAddress
 import java.nio.file.Files
 import java.util.{Properties, Random}
 
-import com.twitter.bijection.avro.SpecificAvroCodecs
 import kafka.server.{KafkaServer, KafkaConfig}
-import org.apache.kafka.clients.consumer.{ConsumerRecord, KafkaConsumer}
 import org.apache.zookeeper.server.{NIOServerCnxnFactory, ZooKeeperServer}
-
-import scala.collection.JavaConverters._
 
 /**
   * Heavily inspired by Apache Spark's KafkaTestUtils
@@ -94,12 +90,6 @@ class KafkaTestUtils {
       zookeeper.shutdown()
       zookeeper = null
     }
-  }
-
-  def getMessages[K, V](topic: String): Seq[ConsumerRecord[K, V]] = {
-    val consumer = new KafkaConsumer[K, V](consumerProps)
-    consumer.subscribe(Seq(topic).asJava)
-    consumer.poll(10000).asScala.toSeq
   }
 
   def random = new Random().nextInt(100000)

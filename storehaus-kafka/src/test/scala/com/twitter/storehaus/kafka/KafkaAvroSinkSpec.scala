@@ -16,24 +16,40 @@
 
 package com.twitter.storehaus.kafka
 
+import java.util.concurrent.Executors
+
+import com.twitter.bijection.avro.SpecificAvroCodecs
+import com.twitter.concurrent.NamedPoolThreadFactory
 import org.apache.kafka.clients.consumer.KafkaConsumer
-import org.scalatest.WordSpec
-import kafka.DataTuple
+import org.apache.kafka.common.serialization.Deserializer
+import org.scalatest.{BeforeAndAfterAll, WordSpec}
 import com.twitter.util.{Future, Await}
 
 import scala.collection.JavaConverters._
 
-/**
-  * Integration Test! Replace ignore by should if testing against a running Kafka broker
-  * @author Mansur Ashraf
-  * @since 12/8/13
-  */
-class KafkaAvroSinkSpec extends WordSpec {
-  "KafkaAvroSink" ignore {
+class KafkaAvroSinkSpec extends WordSpec with BeforeAndAfterAll {
+
+  private var ktu: KafkaTestUtils = _
+
+  override protected def beforeAll(): Unit = {
+    ktu = new KafkaTestUtils
+    ktu.setup()
+  }
+
+  override protected def afterAll(): Unit = {
+    if (ktu != null) {
+      ktu.tearDown()
+      ktu = null
+    }
+  }
+
+  "KafkaAvroSink" should {
     "put avro object on a topic" in {
-      val context = KafkaTestUtils()
-      val topic = "avro-topic-" + context.random
-      val sink = KafkaAvroSink[DataTuple](topic, Seq(context.broker), context.executor)
+      val topic = "avro-topic-" + ktu.random
+
+      implicit val dataTupleInj = SpecificAvroCodecs[DataTuple]
+      lazy val executor = Executors.newCachedThreadPool(new NamedPoolThreadFactory("KafkaTestPool"))
+      val sink = KafkaAvroSink[DataTuple](topic, Seq(ktu.brokerAddress), executor)
         .filter { case (k, v) => v.getValue % 2 == 0 }
 
       val futures = (1 to 10)
@@ -41,9 +57,13 @@ class KafkaAvroSinkSpec extends WordSpec {
         .map(sink.write()(_))
 
       Await.result(Future.collect(futures))
-      val consumer = new KafkaConsumer[String, DataTuple](context.consumerProps)
-      consumer.subscribe(Seq(topic).asJava)
-      val records = consumer.poll(100).asScala
+      val records = {
+        import KafkaInjections._
+        val consumer = new KafkaConsumer[String, DataTuple](
+          ktu.consumerProps, implicitly[Deserializer[String]], implicitly[Deserializer[DataTuple]])
+        consumer.subscribe(Seq(topic).asJava)
+        consumer.poll(10000).asScala.toSeq
+      }
       records.size === 5
       records.foreach(record => record.value().getValue % 2 === 0)
     }
