@@ -16,10 +16,7 @@
 
 package com.twitter.storehaus.kafka
 
-import java.util.concurrent.Executors
-
 import com.twitter.bijection.avro.SpecificAvroCodecs
-import com.twitter.concurrent.NamedPoolThreadFactory
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.serialization.Deserializer
 import org.scalatest.{BeforeAndAfterAll, WordSpec}
@@ -48,8 +45,7 @@ class KafkaAvroSinkSpec extends WordSpec with BeforeAndAfterAll {
       val topic = "avro-topic-" + ktu.random
 
       implicit val dataTupleInj = SpecificAvroCodecs[DataTuple]
-      lazy val executor = Executors.newCachedThreadPool(new NamedPoolThreadFactory("KafkaTestPool"))
-      val sink = KafkaAvroSink[DataTuple](topic, Seq(ktu.brokerAddress), executor)
+      val sink = KafkaAvroSink[DataTuple](topic, Seq(ktu.brokerAddress))
         .filter { case (k, v) => v.getValue % 2 == 0 }
 
       val futures = (1 to 10)

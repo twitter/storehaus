@@ -26,7 +26,7 @@ import org.apache.kafka.common.serialization.ByteArraySerializer
 
 /**
   * KafkaSink capable of sending Avro messages to a Kafka topic
- *
+  *
   * @author Mansur Ashraf
   * @since 12/12/13
   */
@@ -44,8 +44,7 @@ object KafkaAvroSink {
     */
   def apply[V <: SpecificRecordBase : Manifest](
     topic: String,
-    brokers: Seq[String],
-    executor: => ExecutorService
+    brokers: Seq[String]
   ): KafkaSink[String, V] = {
     implicit val inj = SpecificAvroCodecs[V]
     lazy val sink =
