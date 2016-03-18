@@ -18,12 +18,15 @@ package com.twitter.storehaus.kafka
 
 import org.apache.kafka.clients.consumer.{KafkaConsumer, ConsumerRecord}
 import org.apache.kafka.common.serialization.StringSerializer
+import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfterAll, WordSpec}
 import com.twitter.util.{Future, Await}
 
 import scala.collection.JavaConverters._
+import scala.concurrent.duration._
+import scala.language.postfixOps
 
-class KafkaStoreSpec extends WordSpec with BeforeAndAfterAll {
+class KafkaStoreSpec extends WordSpec with BeforeAndAfterAll with Eventually {
 
   private var ktu: KafkaTestUtils = _
 
@@ -46,9 +49,11 @@ class KafkaStoreSpec extends WordSpec with BeforeAndAfterAll {
         topic, Seq(ktu.brokerAddress))
 
       Await.result(store.put(("testKey", "testValue")))
-      val records = getMessages(topic)
-      records.size === 1
-      records.head.value() === "testValue"
+      eventually(timeout(10 seconds), interval(1 second)) {
+        val records = getMessages(topic)
+        records.size === 1
+        records.head.value() === "testValue"
+      }
     }
 
     "put multiple values on a topic" in {
@@ -64,9 +69,11 @@ class KafkaStoreSpec extends WordSpec with BeforeAndAfterAll {
 
       val multiputResponse = store.multiPut(map)
       Await.result(Future.collect(multiputResponse.values.toList))
-      val records = getMessages(multiputTopic)
-      records.size === 3
-      records.map(_.value()) === map.values.toSeq
+      eventually(timeout(10 seconds), interval(1 second)) {
+        val records = getMessages(multiputTopic)
+        records.size === 3
+        records.map(_.value()) === map.values.toSeq
+      }
     }
   }
 

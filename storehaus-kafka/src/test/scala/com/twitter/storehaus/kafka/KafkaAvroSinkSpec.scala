@@ -19,12 +19,15 @@ package com.twitter.storehaus.kafka
 import com.twitter.bijection.avro.SpecificAvroCodecs
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.serialization.Deserializer
+import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfterAll, WordSpec}
 import com.twitter.util.{Future, Await}
 
 import scala.collection.JavaConverters._
+import scala.concurrent.duration._
+import scala.language.postfixOps
 
-class KafkaAvroSinkSpec extends WordSpec with BeforeAndAfterAll {
+class KafkaAvroSinkSpec extends WordSpec with BeforeAndAfterAll with Eventually {
 
   private var ktu: KafkaTestUtils = _
 
@@ -53,15 +56,17 @@ class KafkaAvroSinkSpec extends WordSpec with BeforeAndAfterAll {
         .map(sink.write()(_))
 
       Await.result(Future.collect(futures))
-      val records = {
-        import KafkaInjections._
-        val consumer = new KafkaConsumer[String, DataTuple](
-          ktu.consumerProps, implicitly[Deserializer[String]], implicitly[Deserializer[DataTuple]])
-        consumer.subscribe(Seq(topic).asJava)
-        consumer.poll(10000).asScala.toSeq
+      eventually(timeout(10 seconds), interval(1 second)) {
+        val records = {
+          import KafkaInjections._
+          val consumer = new KafkaConsumer[String, DataTuple](
+            ktu.consumerProps, implicitly[Deserializer[String]], implicitly[Deserializer[DataTuple]])
+          consumer.subscribe(Seq(topic).asJava)
+          consumer.poll(10000).asScala.toSeq
+        }
+        records.size === 5
+        records.foreach(record => record.value().getValue % 2 === 0)
       }
-      records.size === 5
-      records.foreach(record => record.value().getValue % 2 === 0)
     }
   }
 }
