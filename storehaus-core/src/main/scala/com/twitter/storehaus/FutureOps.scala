@@ -81,12 +81,19 @@ object FutureOps {
     * returns the first Future to both succeed and pass the supplied
     * predicate.
     */
-  def find[T](futures: Stream[Future[T]])(pred: T => Boolean): Future[T] =
-    futures match {
-      case Stream.Empty => Future.exception(new RuntimeException("Empty iterator in FutureOps.find"))
-      case last #:: Stream.Empty => last
-      case next #:: rest => next.filter(pred).rescue { case _: Throwable => find(rest)(pred) }
+  def find[T](futures: Stream[Future[T]])(pred: T => Boolean): Future[T] = {
+    if (futures.isEmpty) {
+      Future.exception(new RuntimeException("Empty iterator in FutureOps.find"))
+    } else {
+      val hd = futures.head
+      hd.filter(pred).rescue {
+        case _: Throwable =>
+          val tl = futures.tail
+          if (tl.isEmpty) hd
+          else find(tl)(pred)
+      }
     }
+  }
 
   /** Use the given future collector to produce a single Future of Map from a Map with Future values */
   def mapCollect[K, V](m: Map[K, Future[V]])(implicit fc: FutureCollector[(K, V)]): Future[Map[K, V]] =

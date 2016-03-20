@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus
 
-import com.twitter.util.Await
+import com.twitter.util.{Future, Await}
 
 import org.scalacheck.Properties
 import org.scalacheck.Prop._
@@ -33,5 +33,31 @@ object SearchingReadableStoreProperties extends Properties("SearchingReadableSto
       val leftGet = store.multiGet(m1.keySet).mapValues(Await.result(_))
       val rightGet = store.multiGet(m2.keySet).mapValues(Await.result(_))
       leftGet == m1.mapValues(Some(_)) && rightGet.forall { case (k, v) => v == (m2 ++ m1).get(k) }
+    }
+
+  /**
+   * Creates a Readable Store that delegates to underlying store and
+   * records accesses.
+   */
+  def accessRecordingStore[K, V](underlying: ReadableStore[K, V]) = new ReadableStore[K, V] {
+    var accesses = 0
+
+    override def get(k: K): Future[Option[V]] = {
+      this.synchronized { accesses += 1 }
+      underlying.get(k)
+    }
+
+    override def multiGet[K1 <: K](ks: Set[K1]): Map[K1, Future[Option[V]]] = {
+      this.synchronized { accesses += 1 }
+      underlying.multiGet(ks)
+    }
+  }
+
+  property("ReadableStore.find does not call the second store if value found in first") =
+    forAll { (m: Map[String, Int]) =>
+      val aRecStore = accessRecordingStore(ReadableStore.fromMap(Map.empty[String, Int]))
+      val store = ReadableStore.find(Seq(ReadableStore.fromMap(m), aRecStore))(_.isDefined)
+      val leftGet = store.multiGet(m.keySet).mapValues(Await.result(_))
+      aRecStore.accesses == 0
     }
 }
