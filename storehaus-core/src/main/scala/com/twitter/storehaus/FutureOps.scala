@@ -85,12 +85,10 @@ object FutureOps {
     if (futures.isEmpty) {
       Future.exception(new RuntimeException("Empty iterator in FutureOps.find"))
     } else {
-      val hd = futures.head
-      hd.filter(pred).rescue {
+      futures.head.filter(pred).rescue {
         case _: Throwable =>
-          val tl = futures.tail
-          if (tl.isEmpty) hd
-          else find(tl)(pred)
+          if (futures.tail.isEmpty) futures.head
+          else find(futures.tail)(pred)
       }
     }
   }
