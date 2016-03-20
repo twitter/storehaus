@@ -36,7 +36,7 @@ object SearchingReadableStoreProperties extends Properties("SearchingReadableSto
     }
 
   /**
-   * Creates a Readable Store that delegates to underlying store and
+   * Creates a ReadableStore that delegates to underlying store and
    * records accesses.
    */
   def accessRecordingStore[K, V](underlying: ReadableStore[K, V]) = new ReadableStore[K, V] {
