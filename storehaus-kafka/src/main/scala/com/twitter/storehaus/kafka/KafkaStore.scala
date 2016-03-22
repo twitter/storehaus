@@ -74,7 +74,7 @@ object KafkaStore {
     * @param brokers Addresses of the Kafka brokers in the hostname:port format
     * @return Kafka Store
     */
-  def apply[K, V, KS <: Serializer[K] : Manifest, VS <: Serializer[V] : Manifest](
+  def apply[K, V, KS <: Serializer[K] : ClassTag, VS <: Serializer[V] : ClassTag](
     topic: String,
     brokers: Seq[String]
   ) = new KafkaStore[K, V](topic, createProps[K, V, KS, VS](brokers))
