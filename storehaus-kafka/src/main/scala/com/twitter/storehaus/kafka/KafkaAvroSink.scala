@@ -19,7 +19,6 @@ package com.twitter.storehaus.kafka
 import org.apache.avro.specific.SpecificRecordBase
 import com.twitter.bijection.avro.SpecificAvroCodecs
 import com.twitter.bijection._
-import java.util.concurrent.ExecutorService
 import java.util.Properties
 
 import org.apache.kafka.common.serialization.ByteArraySerializer
@@ -47,10 +46,8 @@ object KafkaAvroSink {
     brokers: Seq[String]
   ): KafkaSink[String, V] = {
     implicit val inj = SpecificAvroCodecs[V]
-    lazy val sink =
-      KafkaSink[Array[Byte], Array[Byte], ByteArraySerializer, ByteArraySerializer](
-        topic: String, brokers: Seq[String]).convert[String, V](utf8.toFunction)
-    sink
+    KafkaSink[Array[Byte], Array[Byte], ByteArraySerializer, ByteArraySerializer](
+      topic: String, brokers: Seq[String]).convert[String, V](utf8.toFunction)
   }
 
   /**
@@ -66,9 +63,8 @@ object KafkaAvroSink {
     brokers: Seq[String]
   ): KafkaSink[K, V] = {
     implicit val inj = SpecificAvroCodecs[V]
-    lazy val sink = KafkaSink[Array[Byte], Array[Byte], ByteArraySerializer, ByteArraySerializer](
+    KafkaSink[Array[Byte], Array[Byte], ByteArraySerializer, ByteArraySerializer](
       topic: String, brokers: Seq[String]).convert[K, V](implicitly[Codec[K]].toFunction)
-    sink
   }
 
   /**
@@ -85,8 +81,7 @@ object KafkaAvroSink {
     props: Properties
   ): KafkaSink[K, V] = {
     implicit val inj = SpecificAvroCodecs[V]
-    lazy val sink = KafkaSink[Array[Byte], Array[Byte]](topic, props)
+    KafkaSink[Array[Byte], Array[Byte]](topic, props)
       .convert[K, V](implicitly[Codec[K]].toFunction)
-    sink
   }
 }

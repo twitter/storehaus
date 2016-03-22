@@ -90,11 +90,8 @@ object KafkaSink {
   def apply[K, V, KS <: Serializer[K] : Manifest, VS <: Serializer[V] : Manifest](
     topic: String,
     brokers: Seq[String]
-  ): KafkaSink[K, V] = {
-    val store = KafkaStore[K, V, KS, VS](topic, brokers)
-    lazy val sink = apply[K, V](store)
-    sink
-  }
+  ): KafkaSink[K, V] =
+    apply[K, V](KafkaStore[K, V, KS, VS](topic, brokers))
 
   /**
     * Create a KafkaSink based on the given properties
@@ -103,10 +100,7 @@ object KafkaSink {
     *              { @see http://kafka.apache.org/documentation.html#producerconfigs }
     * @return KafkaSink[K, V]
     */
-  def apply[K, V](topic: String, props: Properties): KafkaSink[K, V] = {
-    lazy val store = KafkaStore[K, V](topic, props)
-    lazy val sink = apply[K, V](store)
-    sink
-  }
+  def apply[K, V](topic: String, props: Properties): KafkaSink[K, V] =
+    apply[K, V](KafkaStore[K, V](topic, props))
 }
 
