@@ -24,7 +24,7 @@ import com.twitter.util.{Future, Try, Promise}
 import scala.annotation.tailrec
 
 /** Utility class for converting Java futures to Twitter's */
-private[kafka] class JavaFutureToTwitterFuture {
+private[kafka] class JavaFutureToTwitterFutureConverter {
   
   def apply[T](javaFuture: JFuture[T]): Future[T] = {
     val promise = new Promise[T]()

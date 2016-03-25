@@ -16,9 +16,11 @@
 
 package com.twitter.storehaus.kafka
 
+import java.util.Properties
+import java.util.concurrent.{Future => JFuture, TimeUnit}
+
 import com.twitter.storehaus.WritableStore
 import com.twitter.util.{Time, Future}
-import java.util.Properties
 import org.apache.kafka.clients.producer.{ProducerRecord, KafkaProducer}
 import org.apache.kafka.common.serialization.Serializer
 
@@ -26,7 +28,6 @@ import scala.reflect.ClassTag
 
 /**
   * Store capable of writing to a Kafka topic.
- *
   * @author Mansur Ashraf
   * @since 11/22/13
   */
@@ -34,17 +35,38 @@ class KafkaStore[K, V](topic: String, props: Properties)
   extends WritableStore[K, V] with Serializable {
 
   private lazy val producer = new KafkaProducer[K, V](props)
+  private lazy val jFutureToTFutureConverter = {
+    val converter = new JavaFutureToTwitterFutureConverter
+    converter.start()
+    converter
+  }
 
   /**
     * Put a key/value pair in a Kafka topic
- *
     * @param kv (key, value)
     * @return Future.unit
     */
-  override def put(kv: (K, V)): Future[Unit] = Future {
+  override def put(kv: (K, V)): Future[Unit] = jFutureToTFutureConverter {
     val (key, value) = kv
-    producer.send(new ProducerRecord[K, V](topic, key, value))
+    val f = producer.send(new ProducerRecord[K, V](topic, key, value))
+    new JFuture[Unit] {
+      override def isCancelled: Boolean = f.isCancelled
+      override def get(): Unit = f.get()
+      override def get(timeout: Long, unit: TimeUnit): Unit = f.get(timeout, unit)
+      override def cancel(mayInterruptIfRunning: Boolean): Boolean = f.cancel(mayInterruptIfRunning)
+      override def isDone: Boolean = f.isDone
+    }
   }
+  
+  ///**
+  //  * Put a key/value pair in a Kafka topic
+  //  * @param kv (key, value)
+  //  * @return Future.unit
+  //  */
+  //override def put(kv: (K, V)): Future[RecordMetadata] = jFutureToTFutureConverter {
+  //  val (key, value) = kv
+  //  producer.send(new ProducerRecord[K, V](topic, key, value))
+  //}
 
   /**
     * Close this store and release any resources.
@@ -59,7 +81,6 @@ object KafkaStore {
 
   /**
     * Create a KafkaStore based on the given properties
- *
     * @param topic Kafka topic to produce the messages to
     * @param props Kafka producer properties
     *              { @see http://kafka.apache.org/documentation.html#producerconfigs }
@@ -69,7 +90,6 @@ object KafkaStore {
 
   /**
     * Create a KafkaStore
- *
     * @param topic Kafka topic to produce the messages to
     * @param brokers Addresses of the Kafka brokers in the hostname:port format
     * @return Kafka Store

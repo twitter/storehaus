@@ -25,7 +25,6 @@ import org.apache.kafka.common.serialization.ByteArraySerializer
 
 /**
   * KafkaSink capable of sending Avro messages to a Kafka topic
-  *
   * @author Mansur Ashraf
   * @since 12/12/13
   */
