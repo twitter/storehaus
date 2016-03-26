@@ -46,17 +46,8 @@ class KafkaStore[K, V](topic: String, props: Properties)
     * @param kv (key, value)
     * @return Future.unit
     */
-  override def put(kv: (K, V)): Future[Unit] = jFutureToTFutureConverter {
-    val (key, value) = kv
-    val f = producer.send(new ProducerRecord[K, V](topic, key, value))
-    new JFuture[Unit] {
-      override def isCancelled: Boolean = f.isCancelled
-      override def get(): Unit = f.get()
-      override def get(timeout: Long, unit: TimeUnit): Unit = f.get(timeout, unit)
-      override def cancel(mayInterruptIfRunning: Boolean): Boolean = f.cancel(mayInterruptIfRunning)
-      override def isDone: Boolean = f.isDone
-    }
-  }
+  override def put(kv: (K, V)): Future[Unit] =
+    putAndRetrieveMetadata(kv).map(_ => ())
   
   /**
     * Put a key/value pair in a Kafka topic and retrieve record metadata
