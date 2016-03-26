@@ -37,33 +37,23 @@ object MutableTTLCacheProperties extends Properties("MutableTTLCache") {
 
   def spinSleep(howLong: Long) {
     val finishTime = System.currentTimeMillis + howLong
-    while(System.currentTimeMillis < finishTime){}
+    while (System.currentTimeMillis < finishTime) {}
   }
 
-  property("If insert an item with a TTL of X, and wait X + delta then it cannot be there") = forAll { (ttl: PositiveTTLTime, items: List[Long])  =>
-      val cache = MutableCache.ttl[Long, Long](ttl.get.milliseconds, items.size + 2)
-      items.foreach{ item =>
-        cache += (item, item)
-      }
-      spinSleep(ttl.get + 10)
-      items.iterator.forall{ item =>
-        cache.get(item) == None
-      }
-  }
+  property("If insert an item with a TTL of X, and wait X + delta then it cannot be there") =
+    forAll { (ttl: PositiveTTLTime, items: List[Long])  =>
+      val cache = MutableCache.ttl[Long, Long](ttl.get.milliseconds, items.size)
+      items.foreach(item => cache += (item, item))
+      spinSleep(ttl.get + 20)
+      items.iterator.forall(item => cache.get(item).isEmpty)
+    }
 
-  property("if you put with TTL t, and wait 0 time, it should always (almost, except due to scheduling) be in there") = forAll { (ttl: NegativeTTLTime, items: List[Long])  =>
-      val cache = MutableCache.ttl[Long, Long](ttl.get.milliseconds, items.size + 2)
-      items.foreach{ item =>
-        cache += (item, item)
-      }
-      val sleepTime = ttl.get - 10
-      if(sleepTime > 0) spinSleep(10)
-      items.iterator.forall{ item =>
-        if(cache.get(item) != Some(item)) {
-          println(item)
-          println(cache.get(item))
-        }
-        cache.get(item) == Some(item)
-      }
-  }
+  property("if you put with TTL t, and wait 0 time, it should always " +
+      "(almost, except due to scheduling) be in there") =
+    forAll { (ttl: NegativeTTLTime, items: List[Long])  =>
+      val cache = MutableCache.ttl[Long, Long](ttl.get.milliseconds, items.size)
+      items.foreach(item => cache += (item, item))
+      spinSleep(20)
+      items.forall(item => cache.get(item).contains(item))
+    }
 }
