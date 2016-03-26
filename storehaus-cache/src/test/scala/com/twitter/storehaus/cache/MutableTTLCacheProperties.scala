@@ -54,6 +54,6 @@ object MutableTTLCacheProperties extends Properties("MutableTTLCache") {
       val cache = MutableCache.ttl[Long, Long](ttl.get.milliseconds, items.size)
       items.foreach(item => cache += (item, item))
       spinSleep(20)
-      items.forall(item => cache.get(item).contains(item))
+      items.forall(item => cache.get(item).isDefined)
     }
 }
