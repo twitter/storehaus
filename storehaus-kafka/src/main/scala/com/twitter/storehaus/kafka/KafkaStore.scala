@@ -21,7 +21,7 @@ import java.util.concurrent.{Future => JFuture, TimeUnit}
 
 import com.twitter.storehaus.WritableStore
 import com.twitter.util.{Time, Future}
-import org.apache.kafka.clients.producer.{ProducerRecord, KafkaProducer}
+import org.apache.kafka.clients.producer.{RecordMetadata, ProducerRecord, KafkaProducer}
 import org.apache.kafka.common.serialization.Serializer
 
 import scala.reflect.ClassTag
@@ -58,15 +58,15 @@ class KafkaStore[K, V](topic: String, props: Properties)
     }
   }
   
-  ///**
-  //  * Put a key/value pair in a Kafka topic
-  //  * @param kv (key, value)
-  //  * @return Future.unit
-  //  */
-  //override def put(kv: (K, V)): Future[RecordMetadata] = jFutureToTFutureConverter {
-  //  val (key, value) = kv
-  //  producer.send(new ProducerRecord[K, V](topic, key, value))
-  //}
+  /**
+    * Put a key/value pair in a Kafka topic and retrieve record metadata
+    * @param kv (key, value)
+    * @return Future[RecordMetadata]
+    */
+  def putAndRetrieveMetadata(kv: (K, V)): Future[RecordMetadata] = jFutureToTFutureConverter {
+    val (key, value) = kv
+    producer.send(new ProducerRecord[K, V](topic, key, value))
+  }
 
   /**
     * Close this store and release any resources.

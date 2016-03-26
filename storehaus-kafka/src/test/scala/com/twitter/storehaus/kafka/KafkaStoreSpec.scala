@@ -43,7 +43,7 @@ class KafkaStoreSpec extends WordSpec with BeforeAndAfterAll with Eventually {
   }
 
   "KafkaStore" should {
-    "put a value on a topic" in {
+    "put a value in a topic" in {
       val topic = "test-topic-" + ktu.random
       val store = KafkaStore[String, String, StringSerializer, StringSerializer](
         topic, Seq(ktu.brokerAddress))
@@ -55,8 +55,24 @@ class KafkaStoreSpec extends WordSpec with BeforeAndAfterAll with Eventually {
         records.head.value() === "testValue"
       }
     }
+    
+    "put a value in a topic and retrieve its metadata" in {
+      val topic = "test-topic-" + ktu.random
+      val store = KafkaStore[String, String, StringSerializer, StringSerializer](
+        topic, Seq(ktu.brokerAddress))
 
-    "put multiple values on a topic" in {
+      val recordMetadata = Await.result(store.putAndRetrieveMetadata(("testKey", "testValue")))
+      eventually(timeout(10 seconds), interval(1 second)) {
+        val records = getMessages(topic)
+        records.size === 1
+        records.head.value() === "testValue"
+        recordMetadata.topic() === topic
+        recordMetadata.offset() === 1L
+        recordMetadata.partition() === 0
+      }
+    }
+
+    "put multiple values in a topic" in {
       val multiputTopic = "multiput-test-topic-" + ktu.random
       val store = KafkaStore[String, String, StringSerializer, StringSerializer](
         multiputTopic, Seq(ktu.brokerAddress))
