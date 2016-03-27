@@ -96,6 +96,6 @@ class KafkaStoreSpec extends WordSpec with Matchers with BeforeAndAfterAll with 
   private def getMessages(topic: String): Seq[ConsumerRecord[String, String]] = {
     val consumer = new KafkaConsumer[String, String](ktu.consumerProps)
     consumer.subscribe(Seq(topic).asJava)
-    consumer.poll(1000).asScala.toSeq
+    consumer.poll(1000).asScala.toList
   }
 }

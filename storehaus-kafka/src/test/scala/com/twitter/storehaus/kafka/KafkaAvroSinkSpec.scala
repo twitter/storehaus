@@ -49,7 +49,6 @@ class KafkaAvroSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll wi
 
       implicit val dataTupleInj = SpecificAvroCodecs[DataTuple]
       val sink = KafkaAvroSink[DataTuple](topic, Seq(ktu.brokerAddress))
-        .filter { case (k, v) => v.getValue % 2 == 0 }
 
       val futures = (1 to 10)
         .map(i => ("key", new DataTuple(i.toLong, "key", 1L)))
@@ -62,10 +61,13 @@ class KafkaAvroSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll wi
           val consumer = new KafkaConsumer[String, DataTuple](
             ktu.consumerProps, implicitly[Deserializer[String]], implicitly[Deserializer[DataTuple]])
           consumer.subscribe(Seq(topic).asJava)
-          consumer.poll(1000).asScala.toSeq
+          consumer.poll(1000).asScala.toList
         }
-        records should have size 5
-        records.foreach(record => record.value().getValue % 2 shouldBe 0)
+        records should have size 10
+        records.zip(1L to 10L).foreach { case (record, expectedValue) =>
+          record.key() shouldBe "key"
+          record.value().getValue shouldBe expectedValue
+        }
       }
     }
   }
