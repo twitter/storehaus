@@ -19,14 +19,14 @@ package com.twitter.storehaus.kafka
 import org.apache.kafka.clients.consumer.{KafkaConsumer, ConsumerRecord}
 import org.apache.kafka.common.serialization.StringSerializer
 import org.scalatest.concurrent.Eventually
-import org.scalatest.{BeforeAndAfterAll, WordSpec}
+import org.scalatest.{Matchers, BeforeAndAfterAll, WordSpec}
 import com.twitter.util.{Future, Await}
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
-class KafkaStoreSpec extends WordSpec with BeforeAndAfterAll with Eventually {
+class KafkaStoreSpec extends WordSpec with Matchers with BeforeAndAfterAll with Eventually {
 
   private var ktu: KafkaTestUtils = _
 
@@ -51,8 +51,8 @@ class KafkaStoreSpec extends WordSpec with BeforeAndAfterAll with Eventually {
       Await.result(store.put(("testKey", "testValue")))
       eventually(timeout(10 seconds), interval(1 second)) {
         val records = getMessages(topic)
-        records.size === 1
-        records.head.value() === "testValue"
+        records should have size 1
+        records.head.value() shouldBe "testValue"
       }
     }
     
@@ -64,11 +64,11 @@ class KafkaStoreSpec extends WordSpec with BeforeAndAfterAll with Eventually {
       val recordMetadata = Await.result(store.putAndRetrieveMetadata(("testKey", "testValue")))
       eventually(timeout(10 seconds), interval(1 second)) {
         val records = getMessages(topic)
-        records.size === 1
-        records.head.value() === "testValue"
-        recordMetadata.topic() === topic
-        recordMetadata.offset() === 1L
-        recordMetadata.partition() === 0
+        records should have size 1
+        records.head.value() shouldBe "testValue"
+        recordMetadata.topic() shouldBe topic
+        recordMetadata.offset() shouldBe 0L
+        recordMetadata.partition() shouldBe 0
       }
     }
 
@@ -87,8 +87,8 @@ class KafkaStoreSpec extends WordSpec with BeforeAndAfterAll with Eventually {
       Await.result(Future.collect(multiputResponse.values.toList))
       eventually(timeout(10 seconds), interval(1 second)) {
         val records = getMessages(multiputTopic)
-        records.size === 3
-        records.map(_.value()) === map.values.toSeq
+        records should have size 3
+        records.map(_.value()) shouldBe map.values.toSeq
       }
     }
   }
@@ -96,6 +96,6 @@ class KafkaStoreSpec extends WordSpec with BeforeAndAfterAll with Eventually {
   private def getMessages(topic: String): Seq[ConsumerRecord[String, String]] = {
     val consumer = new KafkaConsumer[String, String](ktu.consumerProps)
     consumer.subscribe(Seq(topic).asJava)
-    consumer.poll(10000).asScala.toSeq
+    consumer.poll(1000).asScala.toSeq
   }
 }

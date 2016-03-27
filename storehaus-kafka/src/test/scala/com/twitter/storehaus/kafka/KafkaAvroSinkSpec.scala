@@ -20,14 +20,14 @@ import com.twitter.bijection.avro.SpecificAvroCodecs
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.serialization.Deserializer
 import org.scalatest.concurrent.Eventually
-import org.scalatest.{BeforeAndAfterAll, WordSpec}
+import org.scalatest.{Matchers, BeforeAndAfterAll, WordSpec}
 import com.twitter.util.{Future, Await}
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
-class KafkaAvroSinkSpec extends WordSpec with BeforeAndAfterAll with Eventually {
+class KafkaAvroSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll with Eventually {
 
   private var ktu: KafkaTestUtils = _
 
@@ -44,7 +44,7 @@ class KafkaAvroSinkSpec extends WordSpec with BeforeAndAfterAll with Eventually 
   }
 
   "KafkaAvroSink" should {
-    "put avro object on a topic" in {
+    "put avro objects in a topic" in {
       val topic = "avro-topic-" + ktu.random
 
       implicit val dataTupleInj = SpecificAvroCodecs[DataTuple]
@@ -62,10 +62,10 @@ class KafkaAvroSinkSpec extends WordSpec with BeforeAndAfterAll with Eventually 
           val consumer = new KafkaConsumer[String, DataTuple](
             ktu.consumerProps, implicitly[Deserializer[String]], implicitly[Deserializer[DataTuple]])
           consumer.subscribe(Seq(topic).asJava)
-          consumer.poll(10000).asScala.toSeq
+          consumer.poll(1000).asScala.toSeq
         }
-        records.size === 5
-        records.foreach(record => record.value().getValue % 2 === 0)
+        records should have size 5
+        records.foreach(record => record.value().getValue % 2 shouldBe 0)
       }
     }
   }

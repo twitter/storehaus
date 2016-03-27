@@ -46,7 +46,8 @@ object KafkaAvroSink {
   ): KafkaSink[String, V] = {
     implicit val inj = SpecificAvroCodecs[V]
     KafkaSink[Array[Byte], Array[Byte], ByteArraySerializer, ByteArraySerializer](
-      topic: String, brokers: Seq[String]).convert[String, V](utf8.toFunction)
+        topic, brokers)
+      .convert[String, V](utf8.toFunction)
   }
 
   /**
@@ -63,7 +64,8 @@ object KafkaAvroSink {
   ): KafkaSink[K, V] = {
     implicit val inj = SpecificAvroCodecs[V]
     KafkaSink[Array[Byte], Array[Byte], ByteArraySerializer, ByteArraySerializer](
-      topic: String, brokers: Seq[String]).convert[K, V](implicitly[Codec[K]].toFunction)
+        topic, brokers)
+      .convert[K, V](implicitly[Codec[K]].toFunction)
   }
 
   /**
