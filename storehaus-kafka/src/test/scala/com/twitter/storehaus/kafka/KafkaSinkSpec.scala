@@ -17,25 +17,29 @@
 package com.twitter.storehaus.kafka
 
 import com.twitter.util.{Await, Future}
-import org.apache.kafka.clients.consumer.{ConsumerRecord, KafkaConsumer}
-import org.apache.kafka.common.serialization.{ByteArraySerializer, Deserializer, StringSerializer}
+import org.apache.kafka.clients.consumer.KafkaConsumer
+import org.apache.kafka.common.serialization.{ByteArraySerializer, StringSerializer}
 import org.scalatest.{Matchers, WordSpec, BeforeAndAfterAll}
-import org.scalatest.concurrent.Eventually
 
 import scala.collection.JavaConverters._
-import scala.concurrent.duration._
-import scala.language.postfixOps
 
-class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll with Eventually {
+class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
 
   private var ktu: KafkaTestUtils = _
+  private var consumer: KafkaConsumer[String, String] = _
+  private val pollTimeoutMs = 20000
 
   override protected def beforeAll(): Unit = {
     ktu = new KafkaTestUtils
     ktu.setup()
+    consumer = new KafkaConsumer[String, String](ktu.consumerProps)
   }
 
   override protected def afterAll(): Unit = {
+    if (consumer != null) {
+      consumer.close()
+      consumer = null
+    }
     if (ktu != null) {
       ktu.tearDown()
       ktu = null
@@ -45,6 +49,8 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll with E
   "KafkaSink" should {
     "write messages to a kafka topic" in {
       val topic = "topic-" + ktu.random
+      consumer.subscribe(Seq(topic).asJava)
+      
       val sink = KafkaSink[String, String, StringSerializer, StringSerializer](
         topic, Seq(ktu.brokerAddress))
       
@@ -53,17 +59,17 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll with E
         .map(sink.write()(_))
 
       Await.result(Future.collect(futures))
-      eventually(timeout(10 seconds), interval(1 second)) {
-        val records = getMessages(topic)
-        records.size shouldBe 10
-        records.zip(1 to 10).foreach { case (record, expectedValue) =>
-          record.key() shouldBe "key"
-          record.value() shouldBe expectedValue.toString
-        }
+      val records = consumer.poll(pollTimeoutMs).asScala
+      records.size shouldBe 10
+      records.zip(1 to 10).foreach { case (record, expectedValue) =>
+        record.key() shouldBe "key"
+        record.value() shouldBe expectedValue.toString
       }
     }
     "write messages to a kafka topic after having been converted" in {
       val topic = "topic-" + ktu.random
+      consumer.subscribe(Seq(topic).asJava)
+      
       import com.twitter.bijection.StringCodec.utf8
       val sink = KafkaSink[Array[Byte], Array[Byte], ByteArraySerializer, ByteArraySerializer](
           topic, Seq(ktu.brokerAddress))
@@ -74,17 +80,17 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll with E
         .map(sink.write()(_))
 
       Await.result(Future.collect(futures))
-      eventually(timeout(10 seconds), interval(1 second)) {
-        val records = getMessages(topic)
-        records should have size 10
-        records.zip(1 to 10).foreach { case (record, expectedValue) =>
-          record.key() shouldBe "key"
-          record.value() shouldBe expectedValue.toString
-        }
+      val records = consumer.poll(pollTimeoutMs).asScala
+      records should have size 10
+      records.zip(1 to 10).foreach { case (record, expectedValue) =>
+        record.key() shouldBe "key"
+        record.value() shouldBe expectedValue.toString
       }
     }
     "write messages to a kafka topic after having been filtered" in {
       val topic = "topic-" + ktu.random
+      consumer.subscribe(Seq(topic).asJava)
+      
       val sink = KafkaSink[String, String, StringSerializer, StringSerializer](
           topic, Seq(ktu.brokerAddress))
         .filter { case (k , v) => v.toInt % 2 == 0 }
@@ -94,20 +100,12 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll with E
         .map(sink.write()(_))
 
       Await.result(Future.collect(futures))
-      eventually(timeout(10 seconds), interval(1 second)) {
-        val records = getMessages(topic)
-        records.size shouldBe 5
-        records.zip((1 to 10).filter(i => i % 2 == 0)).foreach { case (record, expectedValue) =>
-          record.key() shouldBe "key"
-          record.value() shouldBe expectedValue.toString
-        }
+      val records = consumer.poll(pollTimeoutMs).asScala
+      records.size shouldBe 5
+      records.zip((1 to 10).filter(i => i % 2 == 0)).foreach { case (record, expectedValue) =>
+        record.key() shouldBe "key"
+        record.value() shouldBe expectedValue.toString
       }
     }
-  }
-
-  private def getMessages(topic: String): Seq[ConsumerRecord[String, String]] = {
-    val consumer = new KafkaConsumer[String, String](ktu.consumerProps)
-    consumer.subscribe(Seq(topic).asJava)
-    consumer.poll(1000).asScala.toList
   }
 }

@@ -16,26 +16,30 @@
 
 package com.twitter.storehaus.kafka
 
-import org.apache.kafka.clients.consumer.{KafkaConsumer, ConsumerRecord}
+import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.serialization.StringSerializer
-import org.scalatest.concurrent.Eventually
 import org.scalatest.{Matchers, BeforeAndAfterAll, WordSpec}
 import com.twitter.util.{Future, Await}
 
 import scala.collection.JavaConverters._
-import scala.concurrent.duration._
-import scala.language.postfixOps
 
-class KafkaStoreSpec extends WordSpec with Matchers with BeforeAndAfterAll with Eventually {
+class KafkaStoreSpec extends WordSpec with Matchers with BeforeAndAfterAll {
 
   private var ktu: KafkaTestUtils = _
+  private var consumer: KafkaConsumer[String, String] = _
+  private val pollTimeoutMs = 20000
 
   override protected def beforeAll(): Unit = {
     ktu = new KafkaTestUtils
     ktu.setup()
+    consumer = new KafkaConsumer[String, String](ktu.consumerProps)
   }
 
   override protected def afterAll(): Unit = {
+    if (consumer != null) {
+      consumer.close()
+      consumer = null
+    }
     if (ktu != null) {
       ktu.tearDown()
       ktu = null
@@ -44,58 +48,51 @@ class KafkaStoreSpec extends WordSpec with Matchers with BeforeAndAfterAll with 
 
   "KafkaStore" should {
     "put a value in a topic" in {
-      val topic = "test-topic-" + ktu.random
+      val topic = "topic-" + ktu.random
+      consumer.subscribe(Seq(topic).asJava)
+      
       val store = KafkaStore[String, String, StringSerializer, StringSerializer](
         topic, Seq(ktu.brokerAddress))
 
       Await.result(store.put(("testKey", "testValue")))
-      eventually(timeout(10 seconds), interval(1 second)) {
-        val records = getMessages(topic)
-        records should have size 1
-        records.head.value() shouldBe "testValue"
-      }
+      val records = consumer.poll(pollTimeoutMs).asScala
+      records should have size 1
+      records.head.value() shouldBe "testValue"
     }
     
     "put a value in a topic and retrieve its metadata" in {
-      val topic = "test-topic-" + ktu.random
+      val topic = "topic-" + ktu.random
+      consumer.subscribe(Seq(topic).asJava)
+      
       val store = KafkaStore[String, String, StringSerializer, StringSerializer](
         topic, Seq(ktu.brokerAddress))
 
       val recordMetadata = Await.result(store.putAndRetrieveMetadata(("testKey", "testValue")))
-      eventually(timeout(10 seconds), interval(1 second)) {
-        val records = getMessages(topic)
-        records should have size 1
-        records.head.value() shouldBe "testValue"
-        recordMetadata.topic() shouldBe topic
-        recordMetadata.offset() shouldBe 0L
-        recordMetadata.partition() shouldBe 0
-      }
+      val records = consumer.poll(pollTimeoutMs).asScala
+      records should have size 1
+      records.head.value() shouldBe "testValue"
+      recordMetadata.topic() shouldBe topic
+      recordMetadata.offset() shouldBe 0L
+      recordMetadata.partition() shouldBe 0
     }
 
     "put multiple values in a topic" in {
-      val multiputTopic = "multiput-test-topic-" + ktu.random
+      val topic = "test-topic-" + ktu.random
+      consumer.subscribe(Seq(topic).asJava)
+      
       val store = KafkaStore[String, String, StringSerializer, StringSerializer](
-        multiputTopic, Seq(ktu.brokerAddress))
+        topic, Seq(ktu.brokerAddress))
 
       val map = Map(
-        "Key_1" -> "value_2",
-        "Key_2" -> "value_4",
-        "Key_3" -> "value_6"
+        "key1" -> "value2",
+        "key2" -> "value4",
+        "key3" -> "value6"
       )
 
-      val multiputResponse = store.multiPut(map)
-      Await.result(Future.collect(multiputResponse.values.toList))
-      eventually(timeout(10 seconds), interval(1 second)) {
-        val records = getMessages(multiputTopic)
-        records should have size 3
-        records.map(_.value()) shouldBe map.values.toSeq
-      }
+      Await.result(Future.collect(store.multiPut(map).values.toList))
+      val records = consumer.poll(pollTimeoutMs).asScala
+      records should have size 3
+      records.map(_.value()) shouldBe map.values.toSeq
     }
-  }
-
-  private def getMessages(topic: String): Seq[ConsumerRecord[String, String]] = {
-    val consumer = new KafkaConsumer[String, String](ktu.consumerProps)
-    consumer.subscribe(Seq(topic).asJava)
-    consumer.poll(1000).asScala.toList
   }
 }

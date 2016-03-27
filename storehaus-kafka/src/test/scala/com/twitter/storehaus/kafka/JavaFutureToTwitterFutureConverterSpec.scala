@@ -28,7 +28,7 @@ class JavaFutureToTwitterFutureConverterSpec extends WordSpec {
   }
 
   "JavaFutureToTwitterFutureConverter" should {
-    "do a proper round trip a java future to a twitter future" in {
+    "do a proper round trip between a java future to a twitter future" in {
       val jFuture = new FutureTask[Int](new Callable[Int] {
         override def call(): Int = 3
       })
