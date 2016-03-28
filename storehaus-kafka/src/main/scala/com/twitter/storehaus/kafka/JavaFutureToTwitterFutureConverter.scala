@@ -34,7 +34,13 @@ private[kafka] class JavaFutureToTwitterFutureConverter {
   
   private val WAIT_TIME_MS = 1000
   private val pollRun = new Runnable {
-    override def run(): Unit = loop(list.getAndSet(Nil))
+    override def run(): Unit =
+      try {
+        while (!Thread.currentThread().isInterrupted)
+          loop(list.getAndSet(Nil))
+      } catch {
+        case e: InterruptedException =>
+      }
     
     @tailrec
     def loop(links: List[Link[_]]): Unit = {
@@ -51,15 +57,23 @@ private[kafka] class JavaFutureToTwitterFutureConverter {
     thread.start()
   }
   
+  def stop(): Unit = {
+    list.get().foreach { l =>
+      l.promise.setException(new Exception("Promise not completed"))
+      l.future.cancel(true)
+    }
+    thread.interrupt()
+  }
+
   private def poll[T](link: Link[T]): Unit = {
     val tail = list.get()
     if (list.compareAndSet(tail, link :: tail)) ()
     else poll(link)
   }
   
-  case class Link[T](future: JFuture[T], p: Promise[T]) {
+  case class Link[T](future: JFuture[T], promise: Promise[T]) {
     def maybeUpdate: Boolean = future.isDone && {
-      p.update(Try(future.get()))
+      promise.update(Try(future.get()))
       true
     }
   }

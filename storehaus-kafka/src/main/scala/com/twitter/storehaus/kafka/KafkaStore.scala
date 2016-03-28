@@ -17,7 +17,6 @@
 package com.twitter.storehaus.kafka
 
 import java.util.Properties
-import java.util.concurrent.{Future => JFuture, TimeUnit}
 
 import com.twitter.storehaus.WritableStore
 import com.twitter.util.{Time, Future}
@@ -64,6 +63,7 @@ class KafkaStore[K, V](topic: String, props: Properties)
     * It is undefined what happens on put/multiGet after close
     */
   override def close(time: Time): Future[Unit] = Future {
+    jFutureToTFutureConverter.stop()
     producer.close()
   }
 }
