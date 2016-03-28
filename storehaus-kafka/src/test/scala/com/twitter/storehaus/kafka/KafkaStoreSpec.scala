@@ -100,7 +100,7 @@ class KafkaStoreSpec extends WordSpec with Matchers with BeforeAndAfterAll {
       consumer.subscribe(Seq(topic).asJava)
 
       val store = KafkaStore[String, String, StringSerializer, StringSerializer](
-        topic, Seq(ktu.brokerAddress))
+        topic, Seq(ktu.brokerAddress), 10000L)
 
       val f = store.put(("testKey", "testValue"))
       store.close()

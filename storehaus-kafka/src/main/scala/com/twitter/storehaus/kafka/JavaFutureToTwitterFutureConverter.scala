@@ -23,8 +23,12 @@ import com.twitter.util.{Future, Try, Promise}
 
 import scala.annotation.tailrec
 
-/** Utility class for converting Java futures to Twitter's */
-private[kafka] class JavaFutureToTwitterFutureConverter {
+/**
+  * Utility class for converting Java futures to Twitter's 
+  * @param waitTimeMs Time spent sleeping by the thread converting java futures to
+  *                   twitter futures when there are no futures to convert in ms
+  */
+private[kafka] class JavaFutureToTwitterFutureConverter(waitTimeMs: Long = 1000L) {
   
   def apply[T](javaFuture: JFuture[T]): Future[T] = {
     val promise = new Promise[T]()
@@ -32,7 +36,6 @@ private[kafka] class JavaFutureToTwitterFutureConverter {
     promise
   }
   
-  private val WAIT_TIME_MS = 1000
   private val pollRun = new Runnable {
     override def run(): Unit =
       try {
@@ -45,7 +48,7 @@ private[kafka] class JavaFutureToTwitterFutureConverter {
     @tailrec
     def loop(links: List[Link[_]]): Unit = {
       val notDone = links.filterNot(_.maybeUpdate)
-      if (links.isEmpty || notDone.nonEmpty) Thread.sleep(WAIT_TIME_MS)
+      if (links.isEmpty || notDone.nonEmpty) Thread.sleep(waitTimeMs)
       loop(list.getAndSet(notDone))
     }
   }
