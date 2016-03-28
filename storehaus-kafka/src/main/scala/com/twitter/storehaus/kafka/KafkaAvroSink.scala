@@ -23,8 +23,11 @@ import java.util.Properties
 
 import org.apache.kafka.common.serialization.ByteArraySerializer
 
+import scala.reflect.ClassTag
+
 /**
   * KafkaSink capable of sending Avro messages to a Kafka topic
+ *
   * @author Mansur Ashraf
   * @since 12/12/13
   */
@@ -35,12 +38,13 @@ object KafkaAvroSink {
   /**
     * Create a KafkaSink that can send messages of the form (String, SpecificRecord) to a Kafka
     * topic
+ *
     * @param topic Kafka topic
     * @param brokers Addresses of the Kafka brokers in the hostname:port format
     * @tparam V Type of the Avro record
     * @return KafkaSink[String, SpecificRecordBase]
     */
-  def apply[V <: SpecificRecordBase : Manifest](
+  def apply[V <: SpecificRecordBase : ClassTag](
     topic: String,
     brokers: Seq[String]
   ): KafkaSink[String, V] = {
@@ -52,13 +56,14 @@ object KafkaAvroSink {
 
   /**
     * Create KafkaSink that can send messages of the form (T, SpecificRecord) to a Kafka topic
+ *
     * @param topic Kafka topic
     * @param brokers Addresses of the Kafka brokers in the hostname:port format
     * @tparam V Type of Avro record
     * @tparam K key
     * @return KafkaSink[T, SpecificRecordBase]
     */
-  def apply[K: Codec, V <: SpecificRecordBase : Manifest](
+  def apply[K: Codec, V <: SpecificRecordBase : ClassTag](
     topic: String,
     brokers: Seq[String]
   ): KafkaSink[K, V] = {
@@ -70,6 +75,7 @@ object KafkaAvroSink {
 
   /**
     * Create a KafkaSink that can send messages of the form (T, SpecificRecord) to a Kafka topic
+ *
     * @param topic Kafka topic to produce the messages to
     * @param props Kafka producer properties
     *              { @see http://kafka.apache.org/documentation.html#producerconfigs }
@@ -77,7 +83,7 @@ object KafkaAvroSink {
     * @tparam K key
     * @return KafkaSink[T, SpecificRecordBase]
     */
-  def apply[K: Codec, V <: SpecificRecordBase : Manifest](
+  def apply[K: Codec, V <: SpecificRecordBase : ClassTag](
     topic: String,
     props: Properties
   ): KafkaSink[K, V] = {
