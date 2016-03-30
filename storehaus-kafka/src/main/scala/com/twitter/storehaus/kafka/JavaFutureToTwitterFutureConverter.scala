@@ -24,60 +24,80 @@ import com.twitter.util.{Future, Try, Promise}
 import scala.annotation.tailrec
 
 /**
-  * Utility class for converting Java futures to Twitter's 
-  * @param waitTimeMs Time spent sleeping by the thread converting java futures to
+  * Utility class for converting Java futures to Twitter's
+ *
+ * @param waitTimeMs Time spent sleeping by the thread converting java futures to
   *                   twitter futures when there are no futures to convert in ms
   */
 private[kafka] class JavaFutureToTwitterFutureConverter(waitTimeMs: Long = 1000L) {
-  
-  def apply[T](javaFuture: JFuture[T]): Future[T] = {
-    val promise = new Promise[T]()
-    poll(Link(javaFuture, promise))
-    promise
-  }
-  
-  private val pollRun = new Runnable {
-    override def run(): Unit =
-      try {
-        while (!Thread.currentThread().isInterrupted)
-          loop(list.getAndSet(Nil))
-      } catch {
-        case e: InterruptedException =>
-      }
-    
-    @tailrec
-    def loop(links: List[Link[_]]): Unit = {
-      val notDone = links.filterNot(_.maybeUpdate)
-      if (links.isEmpty || notDone.nonEmpty) Thread.sleep(waitTimeMs)
-      loop(list.getAndSet(notDone))
-    }
-  }
-  private val list = new AtomicReference[List[Link[_]]](Nil)
-  private val thread = new Thread(pollRun)
-  
-  def start(): Unit = {
-    thread.setDaemon(true)
-    thread.start()
-  }
-  
-  def stop(): Unit = {
-    list.get().foreach { l =>
-      l.promise.setException(new Exception("Promise not completed"))
-      l.future.cancel(true)
-    }
-    thread.interrupt()
-  }
 
-  private def poll[T](link: Link[T]): Unit = {
-    val tail = list.get()
-    if (list.compareAndSet(tail, link :: tail)) ()
-    else poll(link)
-  }
-  
   case class Link[T](future: JFuture[T], promise: Promise[T]) {
     def maybeUpdate: Boolean = future.isDone && {
       promise.update(Try(future.get()))
       true
     }
+
+    def cancel(): Unit = {
+      promise.setException(new Exception("Promise not completed"))
+      future.cancel(true)
+    }
+  }
+
+  sealed abstract class State
+  case object Closed extends State
+  case class Open(links: List[Link[_]]) extends State
+  val EmptyState: State = Open(Nil)
+
+  private val pollRun = new Runnable {
+    override def run(): Unit =
+      try {
+        if (!Thread.currentThread().isInterrupted) {
+        }
+      } catch {
+        case e: InterruptedException =>
+      }
+
+    @tailrec
+    def swapOpen(old: List[Link[_]]): (List[Link[_]], Boolean) = list.get match {
+      case Closed => (old, false)
+      case s@Open(links) =>
+        if (list.compareAndSet(s, Open(old))) (links, true)
+        else swapOpen(links)
+    }
+
+    //@tailrec
+    //def loop(links: List[Link[_]]): Unit = {
+    //  val notDone = links.filterNot(_.maybeUpdate)
+    //  if (links.isEmpty || notDone.nonEmpty) Thread.sleep(waitTimeMs)
+    //  loop(list.getAndSet(notDone))
+    //}
+  }
+  private val list = new AtomicReference[State](EmptyState)
+  private val thread = new Thread(pollRun)
+
+  def apply[T](javaFuture: JFuture[T]): Future[T] = {
+    val promise = new Promise[T]()
+    poll(Link(javaFuture, promise))
+    promise
+  }
+
+  def start(): Unit = {
+    thread.setDaemon(true)
+    thread.start()
+  }
+
+  def stop(): Unit = {
+    list.getAndSet(Closed) match {
+      case Closed => // already closed
+      case s@Open(links) => links.foreach(_.cancel())
+    }
+    thread.interrupt()
+  }
+
+  private def poll[T](link: Link[T]): Unit = list.get match {
+    case Closed => link.cancel()
+    case s@Open(tail) =>
+      if (list.compareAndSet(s, Open(link :: tail))) ()
+      else poll(link)
   }
 }
