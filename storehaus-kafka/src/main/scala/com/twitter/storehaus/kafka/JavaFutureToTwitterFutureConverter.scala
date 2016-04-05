@@ -70,8 +70,8 @@ private[kafka] class JavaFutureToTwitterFutureConverter(waitTimeMs: Long = 1000L
       case s@Open(links) =>
         val notDone = links.filterNot(_.maybeUpdate)
         if (links.isEmpty || notDone.nonEmpty) Thread.sleep(waitTimeMs)
-        val (items, open) = swapOpen(notDone)
-        if (open) loop(list.getAndSet(Open(items)))
+        loop(list.getAndSet(Open(notDone)))
+      case Closed =>
     }
   }
   private val list = new AtomicReference[State](EmptyState)

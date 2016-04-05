@@ -18,22 +18,36 @@ package com.twitter.storehaus.kafka
 
 import java.util.concurrent.{Callable, FutureTask}
 
-import org.scalatest.WordSpec
+import com.twitter.util.Await
+import org.scalatest.{Matchers, WordSpec}
 
-class JavaFutureToTwitterFutureConverterSpec extends WordSpec {
-  private val converter = {
-    val c = new JavaFutureToTwitterFutureConverter
-    c.start()
-    c
+class JavaFutureToTwitterFutureConverterSpec extends WordSpec with Matchers {
+  trait Fixtures {
+    val converter = {
+      val c = new JavaFutureToTwitterFutureConverter
+      c.start()
+      c
+    }
   }
 
   "JavaFutureToTwitterFutureConverter" should {
-    "do a proper round trip between a java future to a twitter future" in {
+    "do a proper round trip between a java future to a twitter future" in new Fixtures {
       val jFuture = new FutureTask[Int](new Callable[Int] {
         override def call(): Int = 3
       })
       val tFuture = converter(jFuture)
       tFuture.toJavaFuture === jFuture
+    }
+    "cancel the future when calling apply after stop" in new Fixtures {
+      val jFuture = new FutureTask[Int](new Callable[Int] {
+        override def call(): Int = 3
+      })
+      converter.stop()
+      val tFuture = converter(jFuture)
+      the [Exception] thrownBy {
+        Await.result(tFuture)
+      } should have message "Promise not completed"
+      jFuture.isCancelled shouldBe true
     }
   }
 }
