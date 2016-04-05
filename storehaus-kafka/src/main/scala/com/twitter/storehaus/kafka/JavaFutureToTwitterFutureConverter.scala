@@ -51,8 +51,8 @@ private[kafka] class JavaFutureToTwitterFutureConverter(waitTimeMs: Long = 1000L
   private val pollRun = new Runnable {
     override def run(): Unit =
       try {
-        if (!Thread.currentThread().isInterrupted) {
-        }
+        if (!Thread.currentThread().isInterrupted)
+          loop(list.getAndSet(EmptyState))
       } catch {
         case e: InterruptedException =>
       }
@@ -65,12 +65,14 @@ private[kafka] class JavaFutureToTwitterFutureConverter(waitTimeMs: Long = 1000L
         else swapOpen(links)
     }
 
-    //@tailrec
-    //def loop(links: List[Link[_]]): Unit = {
-    //  val notDone = links.filterNot(_.maybeUpdate)
-    //  if (links.isEmpty || notDone.nonEmpty) Thread.sleep(waitTimeMs)
-    //  loop(list.getAndSet(notDone))
-    //}
+    @tailrec
+    def loop(state: State): Unit = state match {
+      case s@Open(links) =>
+        val notDone = links.filterNot(_.maybeUpdate)
+        if (links.isEmpty || notDone.nonEmpty) Thread.sleep(waitTimeMs)
+        val (items, open) = swapOpen(notDone)
+        if (open) loop(list.getAndSet(Open(items)))
+    }
   }
   private val list = new AtomicReference[State](EmptyState)
   private val thread = new Thread(pollRun)
