@@ -58,10 +58,10 @@ private[kafka] class JavaFutureToTwitterFutureConverter(waitTimeMs: Long = 1000L
       }
 
     @tailrec
-    def swapOpen(old: List[Link[_]]): (List[Link[_]], Boolean) = list.get match {
-      case Closed => (old, false)
+    def swapOpen(old: List[Link[_]]): Option[List[Link[_]]] = list.get match {
+      case Closed => None
       case s@Open(links) =>
-        if (list.compareAndSet(s, Open(old))) (links, true)
+        if (list.compareAndSet(s, Open(old))) Some(links)
         else swapOpen(links)
     }
 
@@ -70,7 +70,10 @@ private[kafka] class JavaFutureToTwitterFutureConverter(waitTimeMs: Long = 1000L
       case s@Open(links) =>
         val notDone = links.filterNot(_.maybeUpdate)
         if (links.isEmpty || notDone.nonEmpty) Thread.sleep(waitTimeMs)
-        loop(list.getAndSet(Open(notDone)))
+        swapOpen(notDone) match {
+          case None => notDone.foreach(_.cancel())
+          case Some(next) => loop(Open(next))
+        }
       case Closed =>
     }
   }
@@ -93,7 +96,6 @@ private[kafka] class JavaFutureToTwitterFutureConverter(waitTimeMs: Long = 1000L
       case Closed => // already closed
       case s@Open(links) => links.foreach(_.cancel())
     }
-    thread.interrupt()
   }
 
   private def poll[T](link: Link[T]): Unit = list.get match {
