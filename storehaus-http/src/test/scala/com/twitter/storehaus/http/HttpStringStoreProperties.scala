@@ -18,6 +18,7 @@ package com.twitter.storehaus.http
 
 import java.util.concurrent.ConcurrentHashMap
 import java.nio.charset.Charset
+import com.twitter.finagle.http.compat.NettyAdaptor
 import org.jboss.netty.buffer.ChannelBuffers
 import org.jboss.netty.handler.codec.http.{ HttpRequest, HttpResponse, DefaultHttpResponse, HttpResponseStatus, HttpMethod, HttpHeaders }
 import com.twitter.util.{ Await, Future }
@@ -94,7 +95,7 @@ object HttpStringStoreProperties extends Properties("HttpStringStore") with Clos
     }
   }
 
-  val server = Http.serve("localhost:0", service)
+  val server = Http.serve("localhost:0", NettyAdaptor andThen service)
 
   val store = HttpStringStore(server.boundAddress.toString.substring(1)) // i dont know how else to convert boundAddress into something usable
 

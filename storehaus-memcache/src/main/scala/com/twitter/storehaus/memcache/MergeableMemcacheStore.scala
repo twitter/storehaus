@@ -18,7 +18,7 @@ package com.twitter.storehaus.memcache
 
 import com.twitter.algebird.Semigroup
 import com.twitter.bijection.Injection
-import com.twitter.finagle.memcachedx.Client
+import com.twitter.finagle.memcached.Client
 import com.twitter.finagle.netty3.{BufChannelBuffer, ChannelBufferBuf}
 import com.twitter.io.Buf
 import com.twitter.storehaus.ConvertedStore

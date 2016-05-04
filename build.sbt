@@ -116,9 +116,9 @@ def youngestForwardCompatible(subProj: String) =
 
 val algebirdVersion = "0.12.0"
 val bijectionVersion = "0.9.1"
-val utilVersion = "6.26.0"
+val utilVersion = "6.34.0"
 val scaldingVersion = "0.16.0-RC1"
-val finagleVersion = "6.27.0"
+val finagleVersion = "6.35.0"
 val scalatestVersion = "2.2.4"
 
 lazy val storehaus = Project(
@@ -179,7 +179,7 @@ lazy val storehausMemcache = module("memcache").settings(
     "com.twitter" %% "algebird-core" % algebirdVersion,
     "com.twitter" %% "bijection-core" % bijectionVersion,
     "com.twitter" %% "bijection-netty" % bijectionVersion,
-    "com.twitter" %% "finagle-memcachedx" % finagleVersion excludeAll(
+    "com.twitter" %% "finagle-memcached" % finagleVersion excludeAll(
       // we don't use this and its not on maven central.
       ExclusionRule("com.twitter.common.zookeeper"),
       ExclusionRule("com.twitter.common")
@@ -292,8 +292,8 @@ lazy val storehausCaliper = module("caliper").settings(
 
 lazy val storehausHttp = module("http").settings(
   libraryDependencies ++= Seq(
-    "com.twitter" %% "finagle-httpx" % finagleVersion,
-    "com.twitter" %% "finagle-httpx-compat" % finagleVersion,
+    "com.twitter" %% "finagle-http" % finagleVersion,
+    "com.twitter" %% "finagle-http-compat" % finagleVersion,
     "com.twitter" %% "bijection-netty" % bijectionVersion
   )
 ).dependsOn(storehausCore)

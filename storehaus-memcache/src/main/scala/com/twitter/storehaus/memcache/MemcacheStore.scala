@@ -21,11 +21,11 @@ import com.twitter.bijection.{ Bijection, Codec, Injection }
 import com.twitter.bijection.netty.Implicits._
 import com.twitter.conversions.time._
 import com.twitter.finagle.builder.ClientBuilder
-import com.twitter.finagle.memcachedx.KetamaClientBuilder
-import com.twitter.finagle.memcachedx.protocol.text.Memcached
+import com.twitter.finagle.memcached.KetamaClientBuilder
+import com.twitter.finagle.memcached.protocol.text.Memcached
 import com.twitter.finagle.netty3.{BufChannelBuffer, ChannelBufferBuf}
 import com.twitter.util.{ Duration, Future, Time }
-import com.twitter.finagle.memcachedx.{ GetResult, Client }
+import com.twitter.finagle.memcached.{ GetResult, Client }
 import com.twitter.storehaus.{ FutureOps, Store, WithPutTtl }
 import com.twitter.storehaus.algebra.MergeableStore
 import org.jboss.netty.buffer.ChannelBuffer
@@ -147,5 +147,5 @@ class MemcacheStore(val client: Client, val ttl: Duration, val flag: Int)
       case (key, None) => client.delete(key).unit
     }
 
-  override def close(t: Time) = Future(client.release)
+  override def close(t: Time) = Future(client.release())
 }
