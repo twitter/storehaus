@@ -52,7 +52,7 @@ class RedisStore(val client: Client, ttl: Option[Duration])
       // results are expected in the same order as keys
       // keys w/o mapped results are considered exceptional
       val keys = ks.toIndexedSeq.view
-      client.mGet(keys).map { result =>
+      client.mGet2(keys).map { result =>
         val zipped = keys.zip(result).map {
           case (k, v) => (k -> Future.value(v))
         }.toMap
@@ -75,5 +75,5 @@ class RedisStore(val client: Client, ttl: Option[Duration])
       case (key, None) => client.del(Seq(key)).unit
     }
 
-  override def close(t: Time) = client.quit.foreach { _ => client.release }
+  override def close(t: Time) = client.quit.foreach { _ => client.close() }
 }

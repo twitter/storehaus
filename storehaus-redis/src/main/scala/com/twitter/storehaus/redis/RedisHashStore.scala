@@ -58,7 +58,7 @@ class RedisHashStore(val client: Client, ttl: Option[Duration])
       case (key, None) => client.del(Seq(key)).unit
     }
 
-  override def close(t: Time) = client.quit.foreach { _ => client.release }
+  override def close(t: Time) = client.quit.foreach { _ => client.close() }
 }
 
 /*

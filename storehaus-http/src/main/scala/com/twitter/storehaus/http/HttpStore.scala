@@ -22,8 +22,8 @@ import org.jboss.netty.handler.codec.http.{ HttpRequest, HttpResponse, DefaultHt
 import com.twitter.util.Future
 import com.twitter.bijection.StringCodec
 import com.twitter.bijection.netty.ChannelBufferBijection
-import com.twitter.finagle.{ Service, Httpx }
-import com.twitter.finagle.httpx.compat.NettyClientAdaptor
+import com.twitter.finagle.{ Service, Http }
+import com.twitter.finagle.http.compat.NettyClientAdaptor
 import com.twitter.storehaus.{ Store, ConvertedStore }
 
 object HttpException {
@@ -34,7 +34,7 @@ object HttpException {
 case class HttpException(code: Int, reasonPhrase: String, content: String) extends Exception(reasonPhrase + Option(content).map("\n" + _ ).getOrElse(""))
 
 object HttpStore {
-  def apply(dest: String): HttpStore = new HttpStore(NettyClientAdaptor andThen Httpx.newService(dest))
+  def apply(dest: String): HttpStore = new HttpStore(NettyClientAdaptor andThen Http.newService(dest))
 }
 
 class HttpStore(val client: Service[HttpRequest, HttpResponse]) extends Store[String, ChannelBuffer] {
@@ -74,7 +74,7 @@ class HttpStore(val client: Service[HttpRequest, HttpResponse]) extends Store[St
 }
 
 object HttpStringStore {
-  def apply(dest: String): HttpStringStore = new HttpStringStore(NettyClientAdaptor andThen Httpx.newService(dest))
+  def apply(dest: String): HttpStringStore = new HttpStringStore(NettyClientAdaptor andThen Http.newService(dest))
 }
 
 class HttpStringStore(val client: Service[HttpRequest, HttpResponse])

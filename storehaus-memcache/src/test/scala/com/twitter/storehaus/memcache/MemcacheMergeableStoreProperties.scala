@@ -19,7 +19,7 @@ package com.twitter.storehaus.memcache
 import com.twitter.algebird.Semigroup
 import com.twitter.bijection.Injection
 import com.twitter.bijection.netty.ChannelBufferBijection
-import com.twitter.finagle.memcachedx.Client
+import com.twitter.finagle.memcached.Client
 import com.twitter.storehaus.testing.SelfAggregatingCloseableCleanup
 import com.twitter.storehaus.testing.generator.NonEmpty
 import com.twitter.util.Await
