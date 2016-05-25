@@ -19,8 +19,8 @@ package com.twitter.storehaus
 import com.twitter.util.Future
 
 /** A type to represent how Seq of futures are collected into a future of Seq[T] */
-trait FutureCollector[-T] extends java.io.Serializable {
-  def apply[T1<:T](in: Seq[Future[T1]]): Future[Seq[T1]]
+trait FutureCollector extends java.io.Serializable { self =>
+  def apply[T](in: Seq[Future[T]]): Future[Seq[T]]
 }
 
 /** Some factory methods and instances of FutureCollector that are used in storehaus */
@@ -28,15 +28,15 @@ object FutureCollector {
   /**
    * If any future fails, the remaining future fails.
    */
-  implicit def default[T] = new FutureCollector[T] {
-    override def apply[T1<:T](futureSeq: Seq[Future[T1]]) = Future.collect(futureSeq)
+  implicit def default = new FutureCollector {
+    override def apply[T](futureSeq: Seq[Future[T]]) = Future.collect(futureSeq)
   }
 
   /** All failing futures are filtered during collection.  */
-  def bestEffort[T] = new FutureCollector[T] {
-    override def apply[T1<:T](futureSeq: Seq[Future[T1]]) =
+  def bestEffort = new FutureCollector {
+    override def apply[T](futureSeq: Seq[Future[T]]) =
       Future.collect {
-        futureSeq.map { f: Future[T1] =>
+        futureSeq.map { f: Future[T] =>
           f.map { Some(_) }.handle { case x: Exception => None } // don't eat Error
         }
       }.map { _.flatten }

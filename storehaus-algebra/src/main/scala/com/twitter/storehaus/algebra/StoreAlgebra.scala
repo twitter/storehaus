@@ -35,7 +35,7 @@ object StoreAlgebra {
 }
 
 class AlgebraicStore[K, V](store: Store[K, V]) {
-  def toMergeable(implicit mon: Monoid[V], fc: FutureCollector[(K, Option[V])]): MergeableStore[K, V] =
+  def toMergeable(implicit mon: Monoid[V], fc: FutureCollector): MergeableStore[K, V] =
     MergeableStore.fromStore(store)
 
   @deprecated("Use com.twitter.storehaus.EnrichedStore#composeKeyMapping", "0.3.1")

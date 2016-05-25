@@ -44,14 +44,13 @@ class MergeableStoreViaSingleGetPut[-K, V: Semigroup](store: Store[K, V]) extend
     } yield vOpt
 }
 
-class MergeableStoreViaGetPut[-K, V: Semigroup](store: Store[K, V], fc: FutureCollector[(K, Option[V])] = FutureCollector.default[(K, Option[V])])
+class MergeableStoreViaGetPut[-K, V: Semigroup](store: Store[K, V], fc: FutureCollector = FutureCollector.default)
   extends MergeableStoreViaSingleGetPut[K, V](store) {
 
   override def multiGet[K1 <: K](ks: Set[K1]) = store.multiGet(ks)
   override def multiPut[K1 <: K](kvs: Map[K1, Option[V]]) = store.multiPut(kvs)
 
   override def multiMerge[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Option[V]]] = {
-    implicit val collector = fc
-    MergeableStore.multiMergeFromMultiSet(this, kvs)
+    MergeableStore.multiMergeFromMultiSet(this, kvs)(fc, semigroup)
   }
 }

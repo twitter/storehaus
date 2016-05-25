@@ -94,7 +94,7 @@ object FutureOps {
   }
 
   /** Use the given future collector to produce a single Future of Map from a Map with Future values */
-  def mapCollect[K, V](m: Map[K, Future[V]])(implicit fc: FutureCollector[(K, V)]): Future[Map[K, V]] =
+  def mapCollect[K, V](m: Map[K, Future[V]])(implicit fc: FutureCollector): Future[Map[K, V]] =
     fc(m.view.map { case (k, fv) => fv.map { v => (k, v) } }.toSeq).map { _.toMap }
 
   /** remove the outer wrapping of a Future and push it onto the values. */

@@ -32,7 +32,7 @@ class ReplicatedReadableStore[-K, +V](stores: Seq[ReadableStore[K, V]])(pred: Op
 /**
  * Replicates writes to all stores, and takes the first successful read.
  */
-class ReplicatedStore[-K, V](stores: Seq[Store[K, V]])(pred: Option[V] => Boolean)(implicit collect: FutureCollector[Unit])
+class ReplicatedStore[-K, V](stores: Seq[Store[K, V]])(pred: Option[V] => Boolean)(implicit collect: FutureCollector)
   extends ReplicatedReadableStore[K, V](stores)(pred)
   with Store[K, V] {
   override def put(kv: (K, Option[V])) =

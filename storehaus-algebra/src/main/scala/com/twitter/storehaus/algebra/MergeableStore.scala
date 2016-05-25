@@ -34,7 +34,7 @@ object MergeableStore {
     * store's multiGet and multiSet.
     */
   def multiMergeFromMultiSet[K, V](store: Store[K, V], kvs: Map[K, V])
-    (implicit collect: FutureCollector[(K, (Option[V], Option[V]))], sg: Semigroup[V]): Map[K, Future[Option[V]]] = {
+    (implicit collect: FutureCollector, sg: Semigroup[V]): Map[K, Future[Option[V]]] = {
     val keySet = kvs.keySet
     val collected: Future[Map[K, Future[Option[V]]]] =
       collect {
@@ -68,7 +68,7 @@ object MergeableStore {
    * Only safe if each key is owned by a single thread.
    */
   def fromStore[K,V](store: Store[K,V])(implicit sg: Semigroup[V],
-      fc: FutureCollector[(K, Option[V])]): MergeableStore[K,V] =
+      fc: FutureCollector): MergeableStore[K,V] =
     new MergeableStoreViaGetPut[K, V](store, fc)
 
   /** Create a mergeable by implementing merge with single get followed by put for each key. Also forces multiGet and
@@ -85,7 +85,7 @@ object MergeableStore {
    * Useful for sparse storage of counts, etc...
    */
   def fromStoreEmptyIsZero[K,V](store: Store[K,V])(implicit mon: Monoid[V],
-      fc: FutureCollector[(K, Option[V])]): MergeableStore[K,V] =
+      fc: FutureCollector): MergeableStore[K,V] =
     new MergeableMonoidStore[K, V](store, fc)
 
   /** Use a StatefulSummer to buffer results before calling merge.
