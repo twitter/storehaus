@@ -19,7 +19,7 @@ package com.twitter.storehaus
 import com.twitter.util.Future
 
 /** A type to represent how Seq of futures are collected into a future of Seq[T] */
-trait FutureCollector extends java.io.Serializable { self =>
+trait FutureCollector extends java.io.Serializable {
   def apply[T](in: Seq[Future[T]]): Future[Seq[T]]
 }
 
