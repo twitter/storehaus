@@ -21,6 +21,10 @@ import org.scalacheck.Gen.choose
 import org.scalacheck.Prop._
 import com.twitter.conversions.time._
 
+/**
+ * [pankajg] Commenting out flaky test https://github.com/twitter/storehaus/issues/291
+ */
+/*
 object MutableTTLCacheProperties extends Properties("MutableTTLCache") {
   case class PositiveTTLTime(get: Long)
   case class NegativeTTLTime(get: Long)
@@ -57,3 +61,4 @@ object MutableTTLCacheProperties extends Properties("MutableTTLCache") {
       items.forall(item => cache.get(item).isDefined)
     }
 }
+*/

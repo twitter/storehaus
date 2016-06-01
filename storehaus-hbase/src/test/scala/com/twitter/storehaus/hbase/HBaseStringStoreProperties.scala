@@ -26,6 +26,10 @@ import com.twitter.util.Await
  * @author Mansur Ashraf
  * @since 9/8/13
  */
+/**
+ * [pankajg] Commenting out flaky test https://github.com/twitter/storehaus/issues/294
+ */
+/*
 object HBaseStringStoreProperties extends Properties("HBaseStore")
 with DefaultHBaseCluster[Store[String, String]] {
   def validPairs: Gen[List[(String, Option[String])]] =
@@ -67,3 +71,4 @@ with DefaultHBaseCluster[Store[String, String]] {
   val store=HBaseStringStore(quorumNames, table, columnFamily, column, createTable,pool,conf,4)
   store.convert[Long,Long](_.toString)
 }
+*/
