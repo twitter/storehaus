@@ -98,18 +98,23 @@ object FutureOps {
     fc(m.view.map { case (k, fv) => fv.map { v => (k, v) } }.toSeq).map { _.toMap }
 
   /** remove the outer wrapping of a Future and push it onto the values. */
-  def liftValues[K, K1 <: K, V](ks: Set[K1], result: Future[Map[K, V]],
+  def liftValues[K, K1 <: K, V](
+    keys: Set[K1],
+    keyValuesFut: Future[Map[K, V]],
     missingfn: (K1) => Future[V] = missingValueFor _): Map[K1, Future[V]] =
-    ks.view.map { k1 =>
-      k1 -> result.flatMap { _.get(k1).map { Future.value(_) }.getOrElse(missingfn(k1)) }
-    }.toMap
+    CollectionOps.zipWith(keys) { key =>
+      keyValuesFut.flatMap { keyValues =>
+        val value: Option[V] = keyValues.get(key)
+        value.map { Future.value(_) }.getOrElse(missingfn(key))
+      }
+    }
 
   /** Push the outer future on a result into all the values
    * Useful for putting finagle memcache into the same API as storehaus.
    */
   def liftFutureValues[K, K1 <: K, V](ks: Set[K1], result: Future[Map[K, Future[V]]],
     missingfn: (K1) => Future[V] = missingValueFor _): Map[K1, Future[V]] =
-    ks.view.map { k1 =>
-      k1 -> result.flatMap { _.get(k1).getOrElse(missingfn(k1)) }
-    }.toMap
+    CollectionOps.zipWith(ks) { k1 =>
+      result.flatMap { _.get(k1).getOrElse(missingfn(k1)) }
+    }
 }

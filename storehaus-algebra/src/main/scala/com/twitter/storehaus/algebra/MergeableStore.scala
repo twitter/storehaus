@@ -18,7 +18,7 @@ package com.twitter.storehaus.algebra
 
 import com.twitter.algebird.{ Semigroup, Monoid, StatefulSummer }
 import com.twitter.bijection.ImplicitBijection
-import com.twitter.storehaus.{ CollectionOps, FutureCollector, Store }
+import com.twitter.storehaus.{FutureOps, CollectionOps, FutureCollector, Store}
 import com.twitter.util.Future
 
 /** Main trait to represent stores that are used for aggregation */
@@ -29,29 +29,40 @@ object MergeableStore {
   implicit def enrich[K, V](store: MergeableStore[K, V]): EnrichedMergeableStore[K, V] =
     new EnrichedMergeableStore(store)
 
-    /**
-    * Implements multiMerge functionality in terms of an underlying
-    * store's multiGet and multiSet.
-    */
-  def multiMergeFromMultiSet[K, V](store: Store[K, V], kvs: Map[K, V])
+  /**
+  * Implements multiMerge functionality in terms of an underlying
+  * store's multiGet and multiSet.
+  */
+  def multiMergeFromMultiSet[K, V](store: Store[K, V], kvs: Map[K, V],
+    missingfn: (K) => Future[Option[V]] = FutureOps.missingValueFor _)
     (implicit collect: FutureCollector, sg: Semigroup[V]): Map[K, Future[Option[V]]] = {
     val keySet = kvs.keySet
-    val collected: Future[Map[K, Future[Option[V]]]] =
-      collect {
-        store.multiGet(keySet).iterator.map {
-          case (k, futureOptV) =>
-            futureOptV.map { init =>
-              val incV = kvs(k)
-              val resV = init.map(Semigroup.plus(_, incV)).orElse(Some(incV))
-              k -> (init, resV)
-            }
-        }.toIndexedSeq
-      }.map { pairs: Seq[(K, (Option[V], Option[V]))] =>
+    val mGetResult: Seq[Future[(K, (Option[V], Option[V]))]] =
+      store.multiGet(keySet).iterator.map {
+        case (k, futureOptV) =>
+          futureOptV.map { init =>
+            val incV = kvs(k)
+            val resV = init.map(Semigroup.plus(_, incV)).orElse(Some(incV))
+            k -> (init, resV)
+          }
+      }.toIndexedSeq
+
+    val collectedMGetResult: Future[Seq[(K, (Option[V], Option[V]))]] = collect { mGetResult }
+
+    val mPutResultFut: Future[Map[K, Future[Option[V]]]] =
+      collectedMGetResult.map { pairs: Seq[(K, (Option[V], Option[V]))] =>
         val pairMap = pairs.toMap
-        store.multiPut(pairMap.mapValues(_._2))
-          .map { case (k, funit) => (k, funit.map { _ => pairMap(k)._1 }) }
+        val mPutResult: Map[K, Future[Unit]] = store.multiPut(pairMap.mapValues(_._2))
+        mPutResult.map { case (k, funit) =>
+          (k, funit.map { _ => pairMap(k)._1 })
+        }
       }
-    CollectionOps.zipWith(keySet) { k => collected.flatMap { _.apply(k) } }
+
+    /**
+     * Combine original keys with result after put. Some keys might have dropped,
+     * fill those using missingfn.
+     */
+    FutureOps.liftFutureValues(keySet, mPutResultFut, missingfn)
   }
 
   /** unpivot or uncurry this MergeableStore
