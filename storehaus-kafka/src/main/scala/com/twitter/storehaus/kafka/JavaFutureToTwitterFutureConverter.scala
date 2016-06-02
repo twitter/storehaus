@@ -25,8 +25,8 @@ import scala.annotation.tailrec
 
 /**
   * Utility class for converting Java futures to Twitter's
- *
- * @param waitTimeMs Time spent sleeping by the thread converting java futures to
+  *
+  * @param waitTimeMs Time spent sleeping by the thread converting java futures to
   *                   twitter futures when there are no futures to convert in ms
   */
 private[kafka] class JavaFutureToTwitterFutureConverter(waitTimeMs: Long = 1000L) {

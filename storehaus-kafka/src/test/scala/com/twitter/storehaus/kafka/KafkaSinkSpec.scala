@@ -27,7 +27,7 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
 
   private var ktu: KafkaTestUtils = _
   private var consumer: KafkaConsumer[String, String] = _
-  private val pollTimeoutMs = 20000
+  private val pollTimeoutMs = 60000
 
   override protected def beforeAll(): Unit = {
     ktu = new KafkaTestUtils
@@ -50,10 +50,10 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
     "write messages to a kafka topic" in {
       val topic = "topic-" + ktu.random
       consumer.subscribe(Seq(topic).asJava)
-      
+
       val sink = KafkaSink[String, String, StringSerializer, StringSerializer](
         topic, Seq(ktu.brokerAddress))
-      
+
       val futures = (1 to 10)
         .map(i => ("key", i.toString))
         .map(sink.write()(_))
@@ -69,7 +69,7 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
     "write messages to a kafka topic after having been converted" in {
       val topic = "topic-" + ktu.random
       consumer.subscribe(Seq(topic).asJava)
-      
+
       import com.twitter.bijection.StringCodec.utf8
       val sink = KafkaSink[Array[Byte], Array[Byte], ByteArraySerializer, ByteArraySerializer](
           topic, Seq(ktu.brokerAddress))
@@ -90,7 +90,7 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
     "write messages to a kafka topic after having been filtered" in {
       val topic = "topic-" + ktu.random
       consumer.subscribe(Seq(topic).asJava)
-      
+
       val sink = KafkaSink[String, String, StringSerializer, StringSerializer](
           topic, Seq(ktu.brokerAddress))
         .filter { case (k , v) => v.toInt % 2 == 0 }
