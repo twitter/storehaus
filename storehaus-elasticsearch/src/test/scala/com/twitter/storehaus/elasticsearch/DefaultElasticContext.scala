@@ -16,6 +16,8 @@
 
 package com.twitter.storehaus.elasticsearch
 
+import org.elasticsearch.common.logging.ESLoggerFactory
+import org.elasticsearch.common.logging.log4j.Log4jESLoggerFactory
 import org.elasticsearch.common.settings.ImmutableSettings
 import java.util.UUID
 import java.io.File
@@ -46,6 +48,7 @@ trait DefaultElasticContext {
     .put("index.number_of_replicas", 0)
 
   val client = {
+    ESLoggerFactory.setDefaultFactory(new Log4jESLoggerFactory)
     val node = nodeBuilder().local(true).data(true).settings(settings).node()
     node.client().admin().cluster().prepareHealth()
       .setWaitForYellowStatus().execute().actionGet()

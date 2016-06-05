@@ -261,7 +261,9 @@ lazy val storehausElastic = module("elasticsearch").settings(
     "org.elasticsearch" % "elasticsearch" % "0.90.9",
     "org.json4s" %% "json4s-native" % "3.2.10",
     "com.google.code.findbugs" % "jsr305" % "1.3.+",
-    "com.twitter" %% "bijection-json4s" % bijectionVersion
+    "com.twitter" %% "bijection-json4s" % bijectionVersion,
+    "org.slf4j" % "slf4j-api" % "1.7.21" % "test",
+    "org.slf4j" % "slf4j-log4j12" % "1.7.21" % "test"
   ),
   // we don't want various tests clobbering each others keys
   parallelExecution in Test := false
