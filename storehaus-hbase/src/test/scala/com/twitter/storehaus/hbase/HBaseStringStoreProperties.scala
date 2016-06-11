@@ -31,12 +31,14 @@ import com.twitter.util.Await
  */
 /*
 object HBaseStringStoreProperties extends Properties("HBaseStore")
-with DefaultHBaseCluster[Store[String, String]] {
+  with DefaultHBaseCluster[Store[String, String]] {
+
   def validPairs: Gen[List[(String, Option[String])]] =
     NonEmpty.Pairing.alphaStrs()
 
-  def baseTest[K: Arbitrary, V: Arbitrary : Equiv](store: Store[K, V], validPairs: Gen[List[(K, Option[V])]])
-                                                  (put: (Store[K, V], List[(K, Option[V])]) => Unit) =
+  def baseTest[K: Arbitrary, V: Arbitrary : Equiv](
+      store: Store[K, V], validPairs: Gen[List[(K, Option[V])]])(
+      put: (Store[K, V], List[(K, Option[V])]) => Unit) =
     forAll(validPairs) {
       (examples: List[(K, Option[V])]) =>
         put(store, examples)
@@ -47,28 +49,27 @@ with DefaultHBaseCluster[Store[String, String]] {
         }
     }
 
-  def putStoreTest[K: Arbitrary, V: Arbitrary : Equiv](store: Store[K, V], validPairs: Gen[List[(K, Option[V])]]) =
+  def putStoreTest[K: Arbitrary, V: Arbitrary : Equiv](
+      store: Store[K, V], validPairs: Gen[List[(K, Option[V])]]) =
     baseTest(store, validPairs) {
-      (s, pairs) =>
-        pairs.foreach {
-          case (k, v) => Await.result(s.put((k, v)))
-        }
+      (s, pairs) => pairs.foreach { case (k, v) => Await.result(s.put((k, v))) }
     }
 
-  def multiPutStoreTest[K: Arbitrary, V: Arbitrary : Equiv](store: Store[K, V], validPairs: Gen[List[(K, Option[V])]]) =
+  def multiPutStoreTest[K: Arbitrary, V: Arbitrary : Equiv](
+      store: Store[K, V], validPairs: Gen[List[(K, Option[V])]]) =
     baseTest(store, validPairs) {
-      (s, pairs) =>
-        Await.result(FutureOps.mapCollect(s.multiPut(pairs.toMap)))
+      (s, pairs) => Await.result(FutureOps.mapCollect(s.multiPut(pairs.toMap)))
     }
 
   def storeTest(store: Store[String, String]) =
     putStoreTest(store, validPairs) && multiPutStoreTest(store, validPairs)
 
   testingUtil.startMiniCluster()
-  val closeable =HBaseStringStore(quorumNames, table, columnFamily, column, createTable,pool,conf,4)
-  property("HBaseStore test") =storeTest(closeable)
+  val closeable =
+    HBaseStringStore(quorumNames, table, columnFamily, column, createTable, pool, conf, 4)
+  property("HBaseStore test") = storeTest(closeable)
 
-  val store=HBaseStringStore(quorumNames, table, columnFamily, column, createTable,pool,conf,4)
-  store.convert[Long,Long](_.toString)
+  val store = HBaseStringStore(quorumNames, table, columnFamily, column, createTable, pool, conf, 4)
+  store.convert[Long, Long](_.toString)
 }
 */
