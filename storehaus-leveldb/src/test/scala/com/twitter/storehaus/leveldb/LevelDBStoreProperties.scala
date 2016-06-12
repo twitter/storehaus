@@ -21,14 +21,13 @@ object LevelDBStoreProperties extends Properties("LevelDBStore") {
                     pairs: Gen[List[(Array[Byte], Option[Array[Byte]])]]) =
     forAll(pairs) { examples: List[(Array[Byte], Option[Array[Byte]])] =>
       examples.forall {
-        case (k, v) => {
+        case (k, v) =>
           Await.result(store.put(k, v))
           val found = Await.result(store.get(k))
           found match {
             case Some(a) => util.Arrays.equals(a, v.get)
             case None => found == v
           }
-        }
       }
     }
 

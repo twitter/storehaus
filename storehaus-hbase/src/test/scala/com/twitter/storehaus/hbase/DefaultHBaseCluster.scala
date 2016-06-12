@@ -34,4 +34,9 @@ trait DefaultHBaseCluster[C <: Closable] extends CloseableCleanup[C] {
   val testingUtil = new HBaseTestingUtility()
   val conf = testingUtil.getConfiguration
   val pool = new HTablePool(conf, 1)
+
+  override def cleanup(): Unit = {
+    super.cleanup()
+    testingUtil.shutdownMiniCluster()
+  }
 }

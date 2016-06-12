@@ -61,15 +61,10 @@ object HBaseStringStoreProperties extends Properties("HBaseStore")
       (s, pairs) => Await.result(FutureOps.mapCollect(s.multiPut(pairs.toMap)))
     }
 
-  def storeTest(store: Store[String, String]) =
-    putStoreTest(store, validPairs) && multiPutStoreTest(store, validPairs)
-
   testingUtil.startMiniCluster()
   val closeable =
     HBaseStringStore(quorumNames, table, columnFamily, column, createTable, pool, conf, 4)
-  property("HBaseStore test") = storeTest(closeable)
-
-  val store = HBaseStringStore(quorumNames, table, columnFamily, column, createTable, pool, conf, 4)
-  store.convert[Long, Long](_.toString)
+  property("HBaseStore[String, String] single") = putStoreTest(closeable, validPairs)
+  property("HBaseStore[String, String] multi") = multiPutStoreTest(closeable, validPairs)
 }
 */
