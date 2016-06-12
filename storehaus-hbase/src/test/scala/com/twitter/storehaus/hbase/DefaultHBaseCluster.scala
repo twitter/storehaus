@@ -27,6 +27,7 @@ import com.twitter.util.Closable
  */
 trait DefaultHBaseCluster[C <: Closable] extends CloseableCleanup[C] {
   val quorumNames = Seq("localhost:2181")
+  val table = "table"
   val columnFamily = "columnFamily"
   val column = "column"
   val createTable = true
