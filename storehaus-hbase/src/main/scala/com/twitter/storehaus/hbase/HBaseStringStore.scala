@@ -19,7 +19,6 @@ package com.twitter.storehaus.hbase
 import org.apache.hadoop.hbase.client._
 import com.twitter.storehaus.Store
 import com.twitter.util.{Future, Time}
-import com.twitter.bijection.Injection._
 import org.apache.hadoop.conf.Configuration
 
 /**
