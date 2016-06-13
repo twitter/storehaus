@@ -20,10 +20,8 @@ import org.apache.hadoop.hbase.client._
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hbase.{HColumnDescriptor, HTableDescriptor, HBaseConfiguration}
 import com.twitter.bijection.hbase.HBaseInjections.string2BytesInj
-import com.twitter.bijection.Conversion._
 import com.twitter.bijection.Injection
 import com.twitter.util.{FuturePool, Future}
-import scala.Some
 import java.util.concurrent.Executors
 
 /**
@@ -62,7 +60,7 @@ trait HBaseStore {
   def validateConfiguration() {
     import org.apache.commons.lang.StringUtils.isNotEmpty
 
-    require(!quorumNames.isEmpty, "Zookeeper quorums are required")
+    require(quorumNames.nonEmpty, "Zookeeper quorums are required")
     require(isNotEmpty(columnFamily), "column family is required")
     require(isNotEmpty(column), "column is required")
   }

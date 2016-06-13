@@ -27,17 +27,20 @@ import com.twitter.util.Closable
  */
 trait DefaultHBaseCluster[C <: Closable] extends CloseableCleanup[C] {
   val quorumNames = Seq("localhost:2181")
-  val table = "summing_bird"
-  val columnFamily = "sb"
-  val column = "aggregate"
+  val table = "table"
+  val columnFamily = "columnFamily"
+  val column = "column"
   val createTable = true
-  val testingUtil = new HBaseTestingUtility()
+  val testingUtil = {
+    val tu = new HBaseTestingUtility()
+    tu.startMiniCluster()
+    tu
+  }
   val conf = testingUtil.getConfiguration
   val pool = new HTablePool(conf, 1)
 
-  override def cleanup() = {
+  override def cleanup(): Unit = {
     super.cleanup()
-   /* testingUtil.shutdownMiniZKCluster()
-    testingUtil.shutdownMiniCluster()*/
+    testingUtil.shutdownMiniCluster()
   }
 }
