@@ -31,7 +31,7 @@ class BatchedReadableStore[K, V](
     override protected val self: ReadableStore[K, V],
     maxMultiGetSize: Int,
     maxConcurrentMultiGets: Int)
-    (implicit fc: FutureCollector[(K, V)]) extends ReadableStoreProxy[K, V] {
+    (implicit fc: FutureCollector) extends ReadableStoreProxy[K, V] {
 
   protected val connectionLock = new AsyncSemaphore(maxConcurrentMultiGets)
 

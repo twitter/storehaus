@@ -34,7 +34,7 @@ class BatchedStore[K, V](
     maxConcurrentMultiPuts: Int,
     maxMultiGetSize: Int,
     maxConcurrentMultiGets: Int)
-    (implicit fc: FutureCollector[(K, V)])
+    (implicit fc: FutureCollector)
       extends BatchedReadableStore[K, V](store, maxMultiGetSize, maxConcurrentMultiGets)
       with Store[K,V] {
   // do we need different knobs for gets and puts

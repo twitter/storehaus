@@ -78,7 +78,7 @@ object PivotOps {
 
   def multiPut[K, K1 <: K, OuterK, InnerK, V](store: Store[OuterK, Map[InnerK, V]], kvs: Map[K1, Option[V]])
     (split: K => (OuterK, InnerK))
-    (implicit collect: FutureCollector[InnerPair[OuterK, InnerK, V]]): Map[K1, Future[Unit]] = {
+    (implicit collect: FutureCollector): Map[K1, Future[Unit]] = {
     val pivoted = CollectionOps.pivotMap[K1, OuterK, InnerK, Option[V]](kvs)(split)
 
     // Input data merged with all relevant data from the underlying

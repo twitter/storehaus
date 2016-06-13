@@ -26,7 +26,9 @@ import com.twitter.util.Future
  * difference, but returning zero is assumed to make it less likely the user thinks the
  * key is absent (which this store can never confirm).
  */
-class MergeableMonoidStore[-K, V: Monoid](store: Store[K, V], fc: FutureCollector[(K, Option[V])] = FutureCollector.default[(K, Option[V])])
+class MergeableMonoidStore[-K, V: Monoid](
+  store: Store[K, V],
+  fc: FutureCollector = FutureCollector.default)
   extends MergeableStoreViaGetPut[K, V](store, fc) {
   override def semigroup: Semigroup[V] = implicitly[Monoid[V]]
 

@@ -20,7 +20,7 @@ import com.twitter.algebird.{ MapAlgebra, Semigroup, Monoid, SummingQueue }
 import com.twitter.algebird.bijection.AlgebirdBijections._
 import com.twitter.bijection.Injection
 import com.twitter.storehaus._
-import com.twitter.util.{Await, Future}
+import com.twitter.util.{Try, Await, Future}
 import org.scalacheck.{ Arbitrary, Properties }
 import org.scalacheck.Prop._
 import org.scalacheck.Properties
@@ -177,5 +177,46 @@ object MergeableStoreProperties extends Properties("MergeableStore") {
         ).getOrElse(true)
       case _ => true
     }
+  }
+
+  // Drops all puts, returns the specified result on get.
+  class MockStore[K, V](getResult: Future[Option[V]]) extends Store[K, V] {
+    override def get(k: K) = getResult
+    override def put(kv: (K, Option[V])) = Future.Unit
+  }
+
+  property("multiMergeFromMultiSet handles store failures correctly with bestEffort FutureCollector") = {
+    val intSg = implicitly[Semigroup[Int]]
+    val storeExceptionFut = Future.exception(new RuntimeException("Failure in store"))
+    val missingException = new RuntimeException("Missing value")
+    val missingExceptionFut = Future.exception(missingException)
+    val missingfn: Int => Future[Option[Int]] = _ => missingExceptionFut
+
+    forAll { (ins: Map[Int, Int]) =>
+      val result = MergeableStore.multiMergeFromMultiSet(
+        new MockStore[Int, Int](storeExceptionFut), ins, missingfn)(
+          FutureCollector.bestEffort, intSg)
+      result.values.forall { v =>
+        Await.result(v.liftToTry).throwable == missingException
+      }
+    }
+  }
+
+  property("multiMergeFromMultiSet returns previously stored value correctly with bestEffort FutureCollector") = {
+    val intSg = implicitly[Semigroup[Int]]
+    forAll { (ins: Map[Int, Int]) =>
+      val store = newStore[Int, Int]
+
+      /**
+       * We merge the entire input map twice into the store. It should return values
+       * stored the first time in the second call as old values.
+       */
+      MergeableStore.multiMergeFromMultiSet(store, ins)(FutureCollector.bestEffort, intSg)
+      val result = MergeableStore.multiMergeFromMultiSet(store, ins)(FutureCollector.bestEffort, intSg)
+      ins.forall { case (k, v) =>
+        Await.result(result(k)) == Some(v)
+      }
+    }
+
   }
 }

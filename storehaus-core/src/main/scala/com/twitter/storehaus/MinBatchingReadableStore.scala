@@ -29,7 +29,7 @@ import scala.collection.breakOut
 class MinBatchingReadableStore[K, V](
     override protected val self: ReadableStore[K, V],
     minMultiGetSize: Int)
-    (implicit fc: FutureCollector[(K, V)]) extends ReadableStoreProxy[K, V] {
+    (implicit fc: FutureCollector) extends ReadableStoreProxy[K, V] {
 
   private val empty = (0, Nil)
   /** Keep the size of pending gets, and the list of keys

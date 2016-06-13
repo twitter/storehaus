@@ -79,7 +79,7 @@ class ReadThroughStore[K, V](backingStore: ReadableStore[K, V], cache: Store[K, 
           FutureOps.mapCollect(backingStore.multiGet(remaining)).flatMap { storeResult =>
             // write fetched keys to cache, best effort
             mutex.acquire.flatMap { p =>
-              FutureOps.mapCollect(cache.multiPut(storeResult))(FutureCollector.bestEffort[(K1, Unit)])
+              FutureOps.mapCollect(cache.multiPut(storeResult))(FutureCollector.bestEffort)
                 .map { u => hits ++ storeResult }
                 .ensure { p.release }
             }

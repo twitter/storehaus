@@ -76,7 +76,7 @@ class WriteThroughStore[K, V](backingStore: Store[K, V], cache: Store[K, V], inv
             else { Map.empty }
           }
 
-        FutureOps.mapCollect(cache.multiPut(keysToUpdate))(FutureCollector.bestEffort[(K1, Unit)])
+        FutureOps.mapCollect(cache.multiPut(keysToUpdate))(FutureCollector.bestEffort)
           .map { f => storeResult }
         // return original writes made to backing store
         // once cache operations are complete

@@ -105,7 +105,7 @@ object ReadableStore {
    * A factory method for [[com.twitter.storehaus.ComposedStore]].
    * See also [[ReadableStore.convert]] if you need to change the value or key before the andThen
    */
-  def andThen[K, V, V2, V3 >: V](l: ReadableStore[K, V], r: ReadableStore[V3, V2])(implicit fc: FutureCollector[V3]): ReadableStore[K, V2] =
+  def andThen[K, V, V2, V3 >: V](l: ReadableStore[K, V], r: ReadableStore[V3, V2])(implicit fc: FutureCollector): ReadableStore[K, V2] =
     new ComposedStore[K, V, V2, V3](l, r)
 
   /** unpivot or uncurry a ReadableStore which has a value that is a Map.

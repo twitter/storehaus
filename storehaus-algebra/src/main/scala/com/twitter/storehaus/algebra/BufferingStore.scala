@@ -34,7 +34,7 @@ trait SummerConstructor[K] {
  */
 class BufferingMergeable[K, V](store: Mergeable[K, V], summerCons: SummerConstructor[K])
   extends Mergeable[K, V] {
-  protected implicit val collector = FutureCollector.bestEffort[Any]
+  protected implicit val collector = FutureCollector.bestEffort
   protected val summer: StatefulSummer[Map[K, PromiseLink[V]]] = summerCons(new PromiseLinkSemigroup(semigroup))
 
   override def semigroup = store.semigroup

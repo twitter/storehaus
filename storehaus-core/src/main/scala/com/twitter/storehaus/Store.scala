@@ -44,7 +44,7 @@ object Store {
    * the supplied predicate. Writes are routed to every store in the
    * supplied sequence.
    */
-  def select[K, V](stores: Seq[Store[K, V]])(pred: Option[V] => Boolean)(implicit collect: FutureCollector[Unit]): Store[K, V] =
+  def select[K, V](stores: Seq[Store[K, V]])(pred: Option[V] => Boolean)(implicit collect: FutureCollector): Store[K, V] =
     new ReplicatedStore(stores)(pred)
 
   /**
@@ -52,7 +52,7 @@ object Store {
    * and returns the first values that are not exceptions. Writes are
    * routed to every store in the supplied sequence.
    */
-  def first[K, V](stores: Seq[Store[K, V]])(implicit collect: FutureCollector[Unit]): Store[K, V] =
+  def first[K, V](stores: Seq[Store[K, V]])(implicit collect: FutureCollector): Store[K, V] =
     select(stores)(_ => true)
 
   /**
