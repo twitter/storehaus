@@ -27,7 +27,7 @@ class KafkaStoreSpec extends WordSpec with Matchers with BeforeAndAfterAll {
 
   private var ktu: KafkaTestUtils = _
   private var consumer: KafkaConsumer[String, String] = _
-  private val pollTimeoutMs = 20000
+  private val pollTimeoutMs = 60000
 
   override protected def beforeAll(): Unit = {
     ktu = new KafkaTestUtils
@@ -50,7 +50,7 @@ class KafkaStoreSpec extends WordSpec with Matchers with BeforeAndAfterAll {
     "put a value in a topic" in {
       val topic = "topic-" + ktu.random
       consumer.subscribe(Seq(topic).asJava)
-      
+
       val store = KafkaStore[String, String, StringSerializer, StringSerializer](
         topic, Seq(ktu.brokerAddress))
 
@@ -59,11 +59,11 @@ class KafkaStoreSpec extends WordSpec with Matchers with BeforeAndAfterAll {
       records should have size 1
       records.head.value() shouldBe "testValue"
     }
-    
+
     "put a value in a topic and retrieve its metadata" in {
       val topic = "topic-" + ktu.random
       consumer.subscribe(Seq(topic).asJava)
-      
+
       val store = KafkaStore[String, String, StringSerializer, StringSerializer](
         topic, Seq(ktu.brokerAddress))
 
@@ -79,7 +79,7 @@ class KafkaStoreSpec extends WordSpec with Matchers with BeforeAndAfterAll {
     "put multiple values in a topic" in {
       val topic = "test-topic-" + ktu.random
       consumer.subscribe(Seq(topic).asJava)
-      
+
       val store = KafkaStore[String, String, StringSerializer, StringSerializer](
         topic, Seq(ktu.brokerAddress))
 
