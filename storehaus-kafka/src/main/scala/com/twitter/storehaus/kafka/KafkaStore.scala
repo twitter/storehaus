@@ -19,8 +19,8 @@ package com.twitter.storehaus.kafka
 import java.util.Properties
 
 import com.twitter.storehaus.WritableStore
-import com.twitter.util.{Time, Future}
-import org.apache.kafka.clients.producer.{RecordMetadata, ProducerRecord, KafkaProducer}
+import com.twitter.util.{Promise, Time, Future}
+import org.apache.kafka.clients.producer.{Callback, RecordMetadata, ProducerRecord, KafkaProducer}
 import org.apache.kafka.common.serialization.Serializer
 
 import scala.reflect.ClassTag
@@ -34,11 +34,6 @@ class KafkaStore[K, V](topic: String, props: Properties, futureConvertWaitTimeMs
   extends WritableStore[K, V] with Serializable {
 
   private lazy val producer = new KafkaProducer[K, V](props)
-  private lazy val jFutureToTFutureConverter = {
-    val converter = new JavaFutureToTwitterFutureConverter(futureConvertWaitTimeMs)
-    converter.start()
-    converter
-  }
 
   /**
     * Put a key/value pair in a Kafka topic
@@ -47,15 +42,25 @@ class KafkaStore[K, V](topic: String, props: Properties, futureConvertWaitTimeMs
     */
   override def put(kv: (K, V)): Future[Unit] =
     putAndRetrieveMetadata(kv).map(_ => ())
-  
+
   /**
     * Put a key/value pair in a Kafka topic and retrieve record metadata
     * @param kv (key, value)
     * @return Future[RecordMetadata]
     */
-  def putAndRetrieveMetadata(kv: (K, V)): Future[RecordMetadata] = jFutureToTFutureConverter {
+  def putAndRetrieveMetadata(kv: (K, V)): Future[RecordMetadata] = {
+    val promise = new Promise[RecordMetadata]()
+    val callback = new Callback {
+      override def onCompletion(metadata: RecordMetadata, exception: Exception): Unit = {
+        if (exception != null)
+          promise.setException(exception)
+        else
+          promise.setValue(metadata)
+      }
+    }
     val (key, value) = kv
-    producer.send(new ProducerRecord[K, V](topic, key, value))
+    producer.send(new ProducerRecord[K, V](topic, key, value), callback)
+    promise
   }
 
   /**
@@ -63,7 +68,6 @@ class KafkaStore[K, V](topic: String, props: Properties, futureConvertWaitTimeMs
     * It is undefined what happens on put/multiGet after close
     */
   override def close(time: Time): Future[Unit] = Future {
-    jFutureToTFutureConverter.stop()
     producer.close()
   }
 }
