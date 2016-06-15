@@ -19,8 +19,8 @@ package com.twitter.storehaus.kafka
 import java.util.Properties
 
 import com.twitter.storehaus.WritableStore
-import com.twitter.util.{Time, Future}
-import org.apache.kafka.clients.producer.{RecordMetadata, ProducerRecord, KafkaProducer}
+import com.twitter.util.{Promise, Time, Future}
+import org.apache.kafka.clients.producer.{Callback, RecordMetadata, ProducerRecord, KafkaProducer}
 import org.apache.kafka.common.serialization.Serializer
 
 import scala.reflect.ClassTag
@@ -30,15 +30,10 @@ import scala.reflect.ClassTag
   * @author Mansur Ashraf
   * @since 11/22/13
   */
-class KafkaStore[K, V](topic: String, props: Properties, futureConvertWaitTimeMs: Long = 1000L)
+class KafkaStore[K, V](topic: String, props: Properties)
   extends WritableStore[K, V] with Serializable {
 
   private lazy val producer = new KafkaProducer[K, V](props)
-  private lazy val jFutureToTFutureConverter = {
-    val converter = new JavaFutureToTwitterFutureConverter(futureConvertWaitTimeMs)
-    converter.start()
-    converter
-  }
 
   /**
     * Put a key/value pair in a Kafka topic
@@ -47,15 +42,25 @@ class KafkaStore[K, V](topic: String, props: Properties, futureConvertWaitTimeMs
     */
   override def put(kv: (K, V)): Future[Unit] =
     putAndRetrieveMetadata(kv).map(_ => ())
-  
+
   /**
     * Put a key/value pair in a Kafka topic and retrieve record metadata
     * @param kv (key, value)
     * @return Future[RecordMetadata]
     */
-  def putAndRetrieveMetadata(kv: (K, V)): Future[RecordMetadata] = jFutureToTFutureConverter {
+  def putAndRetrieveMetadata(kv: (K, V)): Future[RecordMetadata] = {
+    val promise = new Promise[RecordMetadata]()
+    val callback = new Callback {
+      override def onCompletion(metadata: RecordMetadata, exception: Exception): Unit = {
+        if (exception != null)
+          promise.setException(exception)
+        else
+          promise.setValue(metadata)
+      }
+    }
     val (key, value) = kv
-    producer.send(new ProducerRecord[K, V](topic, key, value))
+    producer.send(new ProducerRecord[K, V](topic, key, value), callback)
+    promise
   }
 
   /**
@@ -63,7 +68,6 @@ class KafkaStore[K, V](topic: String, props: Properties, futureConvertWaitTimeMs
     * It is undefined what happens on put/multiGet after close
     */
   override def close(time: Time): Future[Unit] = Future {
-    jFutureToTFutureConverter.stop()
     producer.close()
   }
 }
@@ -75,35 +79,9 @@ object KafkaStore {
     * @param topic Kafka topic to produce the messages to
     * @param props Kafka producer properties
     *              { @see http://kafka.apache.org/documentation.html#producerconfigs }
-    * @param futureConvertWaitTimeMs Time spent sleeping by the thread converting java futures to
-    *                                twitter futures when there are no futures to convert in ms
-    * @return Kafka Store
-    */
-  def apply[K, V](topic: String, props: Properties, futureConvertWaitTimeMs: Long) =
-    new KafkaStore[K, V](topic, props, futureConvertWaitTimeMs)
-
-  /**
-    * Create a KafkaStore based on the given properties
-    * @param topic Kafka topic to produce the messages to
-    * @param props Kafka producer properties
-    *              { @see http://kafka.apache.org/documentation.html#producerconfigs }
     * @return Kafka Store
     */
   def apply[K, V](topic: String, props: Properties) = new KafkaStore[K, V](topic, props)
-
-  /**
-    * Create a KafkaStore
-    * @param topic Kafka topic to produce the messages to
-    * @param brokers Addresses of the Kafka brokers in the hostname:port format
-    * @param futureConvertWaitTimeMs Time spent sleeping by the thread converting java futures to
-    *                                twitter futures when there are no futures to convert in ms
-    * @return Kafka Store
-    */
-  def apply[K, V, KS <: Serializer[K] : ClassTag, VS <: Serializer[V] : ClassTag](
-    topic: String,
-    brokers: Seq[String],
-    futureConvertWaitTimeMs: Long
-  ) = new KafkaStore[K, V](topic, createProps[K, V, KS, VS](brokers), futureConvertWaitTimeMs)
 
   /**
     * Create a KafkaStore

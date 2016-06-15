@@ -95,18 +95,17 @@ class KafkaStoreSpec extends WordSpec with Matchers with BeforeAndAfterAll {
       records.map(_.value()) shouldBe map.values.toSeq
     }
 
-    "throw an ex when closing the store before all futures complete" in {
+    "set the ex in the future if a problem occurred" in {
       val topic = "topic-" + ktu.random
       consumer.subscribe(Seq(topic).asJava)
 
       val store = KafkaStore[String, String, StringSerializer, StringSerializer](
-        topic, Seq(ktu.brokerAddress), 10000L)
+        topic, Seq(ktu.brokerAddress))
 
-      val f = store.put(("testKey", "testValue"))
       store.close()
-      the [Exception] thrownBy {
-        Await.result(f)
-      } should have message "Promise not completed"
+      intercept[Exception] {
+        Await.result(store.put(("testKey", "testValue")))
+      }
     }
   }
 }
