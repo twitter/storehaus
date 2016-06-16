@@ -34,7 +34,7 @@ trait DefaultElasticContext {
   val homeDir = new File(tempFile.getParent + "/" + UUID.randomUUID().toString)
   val test_index = "test_index"
   val test_type = "test_type"
-  val DEFAULT_TIMEOUT = 10 * 1000
+  val DEFAULT_TIMEOUT = 30 * 1000
 
   homeDir.mkdir()
   homeDir.deleteOnExit()
@@ -57,9 +57,7 @@ trait DefaultElasticContext {
   private implicit val formats = native.Serialization.formats(NoTypeHints)
   val store = ElasticSearchCaseClassStore[Person](test_index, test_type, client)
 
-  def refreshIndex(): Unit = {
-    refresh(test_index)
-  }
+  def refreshIndex(): Unit = refresh(test_index)
 
   def refresh(indexes: String*): Unit = {
     val i = indexes.size match {
@@ -72,12 +70,11 @@ trait DefaultElasticContext {
 
   def block(duration: Long) = Thread.sleep(duration)
 
-  def blockAndRefreshIndex = {
+  def blockAndRefreshIndex(): Unit = {
     block(DEFAULT_TIMEOUT)
     refreshIndex()
   }
 }
 
-case class Person(fname: String, lname: String, age: Int)
-
+case class Person(firstName: String, lastName: String, age: Int)
 case class Book(name: String, authors: Array[String], published: Int)
