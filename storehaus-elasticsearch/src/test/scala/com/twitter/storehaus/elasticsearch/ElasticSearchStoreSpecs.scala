@@ -46,7 +46,7 @@ class ElasticSearchStoreSpecs extends WordSpec with Matchers
       val key = "put_key"
       store.put((key, Some(person)))
 
-      blockAndRefreshIndex
+      blockAndRefreshIndex()
 
       val result = Await.result(store.get(key))
       result should equal(Some(person))
@@ -56,7 +56,7 @@ class ElasticSearchStoreSpecs extends WordSpec with Matchers
       val key = "put_key"
       store.put((key, Some(person)))
 
-      blockAndRefreshIndex
+      blockAndRefreshIndex()
 
       val result = Await.result(store.get("missing_key"))
       result should equal(None)
@@ -67,7 +67,7 @@ class ElasticSearchStoreSpecs extends WordSpec with Matchers
       store.put(key, Some(person))
       store.put(key, Some(person.copy(age = 30)))
 
-      blockAndRefreshIndex
+      blockAndRefreshIndex()
 
       val result = Await.result(store.get(key))
       result should equal(Some(person.copy(age = 30)))
@@ -78,7 +78,7 @@ class ElasticSearchStoreSpecs extends WordSpec with Matchers
       store.put(key, Some(person))
       store.put(key, None)
 
-      blockAndRefreshIndex
+      blockAndRefreshIndex()
 
       val result = Await.result(store.get(key))
       result should equal (None)
@@ -90,7 +90,7 @@ class ElasticSearchStoreSpecs extends WordSpec with Matchers
 
       store.multiPut(persons)
 
-      blockAndRefreshIndex
+      blockAndRefreshIndex()
 
       val response = store.multiGet(persons.keySet)
       val result = Await.result(FutureOps.mapCollect(response))
@@ -103,7 +103,7 @@ class ElasticSearchStoreSpecs extends WordSpec with Matchers
 
       store.multiPut(persons)
 
-      blockAndRefreshIndex
+      blockAndRefreshIndex()
 
       val response = store.multiGet(Set[String]())
       val result = Await.result(FutureOps.mapCollect(response))
@@ -118,7 +118,7 @@ class ElasticSearchStoreSpecs extends WordSpec with Matchers
 
       store.multiPut(persons)
       store.multiPut(persons_updated)
-      blockAndRefreshIndex
+      blockAndRefreshIndex()
 
       val response = store.multiGet(persons_updated.keySet)
       val result = Await.result(FutureOps.mapCollect(response))
@@ -133,7 +133,7 @@ class ElasticSearchStoreSpecs extends WordSpec with Matchers
 
       store.multiPut(persons)
       store.multiPut(deleted_persons)
-      blockAndRefreshIndex
+      blockAndRefreshIndex()
 
       val response = store.multiGet(deleted_persons.keySet)
       val result = Await.result(FutureOps.mapCollect(response))
@@ -144,20 +144,26 @@ class ElasticSearchStoreSpecs extends WordSpec with Matchers
 
       val bookStore = ElasticSearchCaseClassStore[Book]("books", "programming", client)
       val books = Map(
-        "0735619670" -> Some(Book(name = "Code Complete", authors = Array("Steve McConnel"), published = 2004)),
-        "020161622X" -> Some(Book(name = "The Pragmatic Programmer", authors = Array("Andy Hunt", "Dave Thomas"), published = 1999)),
-        "0131103628" -> Some(Book(name = "C Programming Language", authors = Array("Dennis Ritchie", "Brian Kernighan"), published = 1988)),
-        "0262033844" -> Some(Book(name = "Introduction to Algorithms", authors = Array("Thomas Cormen", "Charlie Leiserson", "Ronald Rivest", "Clifford Stein"), published = 2009)),
-        "0321356683" -> Some(Book(name = "Effective Java", authors = Array("Josh Bloch"), published = 2008))
+        "0735619670" -> Some(Book(name = "Code Complete",
+          authors = Array("Steve McConnel"), published = 2004)),
+        "020161622X" -> Some(Book(name = "The Pragmatic Programmer",
+          authors = Array("Andy Hunt", "Dave Thomas"), published = 1999)),
+        "0131103628" -> Some(Book(name = "C Programming Language",
+          authors = Array("Dennis Ritchie", "Brian Kernighan"), published = 1988)),
+        "0262033844" -> Some(Book(name = "Introduction to Algorithms",
+          authors = Array("Thomas Cormen", "Charlie Leiserson", "Ronald Rivest", "Clifford Stein"),
+          published = 2009)),
+        "0321356683" -> Some(Book(name = "Effective Java",
+          authors = Array("Josh Bloch"), published = 2008))
       )
 
       bookStore.multiPut(books)
-      blockAndRefreshIndex
+      blockAndRefreshIndex()
 
       //search for a particular author
       val request1 = new SearchRequestBuilder(client).setQuery(termQuery("authors", "josh")).request()
       val response1 = Await.result(bookStore.queryable.get(request1))
-      response1 should not equal(None)
+      response1 should not equal None
       response1.get.head.name should equal("Effective Java")
 
 
@@ -172,7 +178,7 @@ class ElasticSearchStoreSpecs extends WordSpec with Matchers
         ).request()
 
       val response2 = Await.result(bookStore.queryable.get(request2))
-      response2 should not equal(None)
+      response2 should not equal None
       response2.get.size should equal(2)
     }
   }
