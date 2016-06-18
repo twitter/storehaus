@@ -34,11 +34,11 @@ import com.twitter.util.Duration
  */
 
 object TTLCache {
-  def apply[K, V](ttl: Duration, backingMap: Map[K, (Long, V)] = Map.empty[K, (Long, V)]) =
-    new TTLCache(ttl, backingMap)(() => System.currentTimeMillis)
+  def apply[K, V](ttl: Duration, backingCache: Cache[K, (Long, V)] = MapCache(Map.empty[K, (Long, V)]), clock: () => Long = () => System.currentTimeMillis) =
+    new TTLCache(ttl, backingCache)(clock)
 }
 
-class TTLCache[K, V](val ttl: Duration, cache: Map[K, (Long, V)])(val clock: () => Long) extends Cache[K, (Long, V)] {
+class TTLCache[K, V](val ttl: Duration, cache: Cache[K, (Long, V)])(val clock: () => Long) extends Cache[K, (Long, V)] {
   override def get(k: K) = cache.get(k)
   override def contains(k: K) = cache.contains(k)
   override def hit(k: K) = this

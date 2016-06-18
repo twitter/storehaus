@@ -20,13 +20,13 @@ import java.util.{ LinkedHashMap => JLinkedHashMap, Map => JMap }
 import com.twitter.util.Duration
 
 object MutableTTLCache {
-  def apply[K, V](ttl: Duration, capacity: Int) = {
+  def apply[K, V](ttl: Duration, capacity: Int, clock: () => Long = () => System.currentTimeMillis) = {
     val backingCache = JMapCache[K, (Long, V)](
       new JLinkedHashMap[K, (Long, V)](capacity + 1, 0.75f) {
         override protected def removeEldestEntry(eldest: JMap.Entry[K, (Long, V)]) =
           super.size > capacity
       })
-    new MutableTTLCache(ttl, backingCache)(() => System.currentTimeMillis)
+    new MutableTTLCache(ttl, backingCache)(clock)
   }
 }
 

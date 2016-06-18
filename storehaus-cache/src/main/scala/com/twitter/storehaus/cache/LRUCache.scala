@@ -33,25 +33,25 @@ import scala.collection.SortedMap
  */
 
 object LRUCache {
-  def apply[K, V](maxSize: Long, backingMap: Map[K, (Long, V)] = Map.empty[K, (Long, V)]) =
-    new LRUCache(maxSize, 0, backingMap, SortedMap.empty[Long, K])
+  def apply[K, V](maxSize: Long, backingCache: Cache[K, (Long, V)] = MapCache(Map.empty[K, (Long, V)])) =
+    new LRUCache(maxSize, 0, backingCache, SortedMap.empty[Long, K])
 }
 
-class LRUCache[K, V](maxSize: Long, idx: Long, map: Map[K, (Long, V)], ord: SortedMap[Long, K]) extends Cache[K, V] {
+class LRUCache[K, V](maxSize: Long, idx: Long, cache: Cache[K, (Long, V)], ord: SortedMap[Long, K]) extends Cache[K, V] {
   // Scala's SortedMap requires an ordering on pairs. To guarantee
   // sorting on index only, LRUCache defines an implicit ordering on K
   // that treats all K as equal.
   protected implicit val kOrd = new Ordering[K] { def compare(l: K, r: K) = 0 }
 
-  override def get(k: K): Option[V] = map.get(k).map { _._2 }
+  override def get(k: K): Option[V] = cache.get(k).map { _._2 }
 
-  override def contains(k: K): Boolean = map.contains(k)
+  override def contains(k: K): Boolean = cache.contains(k)
 
   override def hit(k: K): Cache[K, V] =
-    map.get(k).map {
+    cache.get(k).map {
       case (oldIdx, v) =>
         val newIdx = idx + 1
-        val newMap = map + (k -> (newIdx, v))
+        val newMap = cache + (k -> (newIdx, v))
         val newOrd = ord - oldIdx + (newIdx -> k)
         new LRUCache(maxSize, newIdx, newMap, newOrd)
     }.getOrElse(this)
@@ -62,11 +62,11 @@ class LRUCache[K, V](maxSize: Long, idx: Long, map: Map[K, (Long, V)], ord: Sort
     val (evictedKeys, newMap, newOrd) =
       if (ord.size >= maxSize) {
         val (idxToEvict, keyToEvict) =
-          map.get(key).map { case (idx, _) => (idx, key) }
+          cache.get(key).map { case (idx, _) => (idx, key) }
             .getOrElse(ord.min)
-        (Set(keyToEvict), map - keyToEvict, ord - idxToEvict)
+        (Set(keyToEvict), cache - keyToEvict, ord - idxToEvict)
       } else
-        (Set.empty[K], map, ord)
+        (Set.empty[K], cache, ord)
 
     (evictedKeys, new LRUCache(maxSize, newIdx,
       newMap + (key -> (newIdx, value)),
@@ -74,9 +74,9 @@ class LRUCache[K, V](maxSize: Long, idx: Long, map: Map[K, (Long, V)], ord: Sort
   }
 
   override def evict(k: K): (Option[V], Cache[K, V]) =
-    map.get(k).map {
+    cache.get(k).map {
       case (oldIdx, v) =>
-        (Some(v), new LRUCache(maxSize, idx + 1, map - k, ord - oldIdx))
+        (Some(v), new LRUCache(maxSize, idx + 1, cache - k, ord - oldIdx))
     }.getOrElse((None, this))
 
   override def toString = {
@@ -84,7 +84,7 @@ class LRUCache[K, V](maxSize: Long, idx: Long, map: Map[K, (Long, V)], ord: Sort
     "LRUCache(" + pairStrings.toList.mkString(", ") + ")"
   }
 
-  override def empty = new LRUCache(maxSize, 0, map.empty, ord.empty)
-  override def iterator = map.iterator.map { case (k, (_, v)) => k -> v }
-  override def toMap = map.mapValues { _._2 }
+  override def empty = new LRUCache(maxSize, 0, cache.empty, ord.empty)
+  override def iterator = cache.iterator.map { case (k, (_, v)) => k -> v }
+  override def toMap = cache.toMap.mapValues { _._2 }
 }

@@ -30,14 +30,14 @@ object Cache {
   def fromMap[K, V](m: Map[K, V]) = MapCache(m)
 
   /* Returns an LRUCache configured with the supplied maxSize. */
-  def lru[K, V](maxSize: Long) = LRUCache(maxSize, Map.empty[K, (Long, V)])
+  def lru[K, V](maxSize: Long) = LRUCache(maxSize, MapCache(Map.empty[K, (Long, V)]))
 
   /* Returns an immutable TTLCache configured with the supplied ttl in
    * milliseconds. */
   @deprecated("Use com.twitter.storehaus.cache.Cache#ttl", "0.6.1")
-  def ttl[K, V](ttlInMillis: Long) = TTLCache(Duration.fromMilliseconds(ttlInMillis), Map.empty[K, (Long, V)])
+  def ttl[K, V](ttlInMillis: Long) = TTLCache(Duration.fromMilliseconds(ttlInMillis), MapCache(Map.empty[K, (Long, V)]))
 
-  def ttl[K, V](ttl: Duration) = TTLCache(ttl, Map.empty[K, (Long, V)])
+  def ttl[K, V](ttl: Duration) = TTLCache(ttl, MapCache(Map.empty[K, (Long, V)]))
 
   def toMutable[K, V](cache: Cache[K, V])(exhaustFn: Set[K] => Unit): MutableCache[K, V] =
     new MutableFromImmutableCache(cache)(exhaustFn)
