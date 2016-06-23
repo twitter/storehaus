@@ -50,12 +50,9 @@ class MutableTTLCache[K, V](val ttl: Duration, protected val backingCache: Mutab
     this
   }
 
-  def hit(k: K) = {
-    backingCache.get(k).map{case (ts, v) =>
-      this += ((k, v))
-      v
-    }
-  }
+  // hit(k) should not update the the underlying entry since we want to honor the ttl and
+  // when at capacity remove the entry that is closest to expiring.
+  def hit(k: K) = get(k)
 
   /* Returns an option of the (potentially) evicted value. */
   def evict(k: K) = {

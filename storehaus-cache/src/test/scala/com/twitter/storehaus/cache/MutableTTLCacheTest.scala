@@ -40,4 +40,16 @@ class MutableTTLCacheTest extends WordSpec with Matchers {
     Thread.sleep(ttl.inMilliseconds)
     cache.get("a") should equal(None)
   }
+
+  "TTL-ness is honored in getOrElseUpdate" in {
+    val ttl: Duration = Duration.fromMilliseconds(500)
+    val cache = MutableTTLCache[String, Int](ttl = ttl, capacity = 100)
+    cache.getOrElseUpdate("a", 1) mustEqual 1
+    cache.get("a") must beSome[Int](1)
+    Thread.sleep(200)
+    cache.getOrElseUpdate("a", 2) mustEqual 1
+    Thread.sleep(300)
+    cache.getOrElseUpdate("a", 3) mustEqual 3
+    cache.get("a") must beSome[Int](3)
+  }
 }
