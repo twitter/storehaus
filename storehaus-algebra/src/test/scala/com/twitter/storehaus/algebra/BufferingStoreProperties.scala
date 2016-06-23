@@ -17,7 +17,7 @@
 package com.twitter.storehaus.algebra
 
 import com.twitter.algebird.{SummingQueue, Semigroup, Monoid}
-import com.twitter.storehaus.{ StoreProperties, JMapStore }
+import com.twitter.storehaus.StoreProperties
 import org.scalacheck.Properties
 
 object BufferingStoreProperties extends Properties("BufferingStore") {
@@ -27,10 +27,10 @@ object BufferingStoreProperties extends Properties("BufferingStore") {
 
   property("BufferingStore [Map[Int,String]] obeys the store properties") =
     sparseStoreTest { opt: Option[Map[Int, String]] =>
-        opt.filter(Monoid.isNonZero(_)).orElse(Some(Monoid.zero[Map[Int,String]]))
+        opt.filter(Monoid.isNonZero(_)).orElse(Some(Monoid.zero[Map[Int, String]]))
       } {
       newSparseStore[String, Map[Int, String]].withSummer(new SummerConstructor[String] {
-        def apply[V](sg: Semigroup[V]) = {
+        def apply[V](sg: Semigroup[V]): SummingQueue[Map[String, V]] = {
           implicit val semi = sg
           SummingQueue[Map[String, V]](10)
         }
@@ -38,10 +38,10 @@ object BufferingStoreProperties extends Properties("BufferingStore") {
     }
   property("BufferingStore [Map[Int,Int]] obeys the store properties") =
     sparseStoreTest { opt: Option[Map[Int, Int]] =>
-        opt.filter(Monoid.isNonZero(_)).orElse(Some(Monoid.zero[Map[Int,Int]]))
+        opt.filter(Monoid.isNonZero(_)).orElse(Some(Monoid.zero[Map[Int, Int]]))
       } {
       newSparseStore[String, Map[Int, Int]].withSummer(new SummerConstructor[String] {
-        def apply[V](sg: Semigroup[V]) = {
+        def apply[V](sg: Semigroup[V]): SummingQueue[Map[String, V]] = {
           implicit val semi = sg
           SummingQueue[Map[String, V]](10)
         }

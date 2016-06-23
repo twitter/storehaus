@@ -43,14 +43,14 @@ class TimestampStrategy(minBucketMs: Long,
   protected def toBoundary(time: Long): Long =
     (time / minBucketMs) * minBucketMs
 
-  def query(thisquery: TimeRange) = {
+  def query(thisquery: TimeRange): Set[BucketTime] = {
     // find the minimal covering set of [start,end]
     @tailrec
     def queryRec(q: TimeRange, acc: Set[BucketTime]): Set[BucketTime] = {
-      if(q.start >= q.end) acc
+      if (q.start >= q.end) acc
       else {
-        val (bucketSize, idx) = buckets.dropWhile { case (bucketSize, _) =>
-          (q.start % bucketSize == 0) && (q.start + bucketSize <= q.end)
+        val (bucketSize, idx) = buckets.dropWhile { case (size, _) =>
+          (q.start % size == 0) && (q.start + size <= q.end)
         }.head
         queryRec(TimeRange(q.start + bucketSize, q.end),
           acc + BucketTime(idx, q.start/bucketSize))
@@ -60,6 +60,6 @@ class TimestampStrategy(minBucketMs: Long,
     queryRec(thisquery, Set[BucketTime]())
   }
 
-  def index(ts: Long) =
+  def index(ts: Long): Set[BucketTime] =
     buckets.map { case (bucketSize, idx) => BucketTime(idx, ts/bucketSize) }.toSet
 }

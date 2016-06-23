@@ -19,7 +19,8 @@ package com.twitter.storehaus.algebra
 import com.twitter.algebird.Monoid
 import com.twitter.bijection.Injection
 import com.twitter.storehaus.{ FutureCollector, Store }
-import com.twitter.util.Future
+
+import scala.language.implicitConversions
 
 /**
   * Algebraic Enrichments on Store.
@@ -42,7 +43,8 @@ class AlgebraicStore[K, V](store: Store[K, V]) {
   def composeKeyMapping[K1](fn: K1 => K): Store[K1, V] = StoreAlgebra.convert(store)(fn)
 
   @deprecated("Use com.twitter.storehaus.EnrichedStore#mapValues", "0.3.1")
-  def mapValues[V1](implicit inj: Injection[V1, V]): Store[K, V1] = StoreAlgebra.convert(store)(identity[K])
+  def mapValues[V1](implicit inj: Injection[V1, V]): Store[K, V1] =
+    StoreAlgebra.convert(store)(identity[K])
 
   @deprecated("Use com.twitter.storehaus.EnrichedStore#convert", "0.3.1")
   def convert[K1, V1](fn: K1 => K)(implicit inj: Injection[V1, V]): Store[K1, V1] =

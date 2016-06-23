@@ -16,17 +16,17 @@
 
 package com.twitter.storehaus.algebra
 
-import com.twitter.util.{ Await, Future }
+import com.twitter.util.Await
 import com.twitter.storehaus.ReadableStore
-import org.scalacheck.{ Arbitrary, Properties }
-import org.scalacheck.Gen.choose
+import org.scalacheck.{Prop, Arbitrary, Properties}
 import org.scalacheck.Prop._
 
 object ReadableStoreAlgebraProperties extends Properties("ReadableStoreAlgebra") {
     /**
     * get returns none when not in either store
     */
-  def getLaws[K: Arbitrary, V1: Arbitrary, V2: Arbitrary](fnA: Map[K, V1] => ReadableStore[K, V1], fnB: Map[K, V2] => ReadableStore[K, V2]) =
+  def getLaws[K: Arbitrary, V1: Arbitrary, V2: Arbitrary](
+      fnA: Map[K, V1] => ReadableStore[K, V1], fnB: Map[K, V2] => ReadableStore[K, V2]): Prop =
     forAll { (mA: Map[K, V1], mB: Map[K, V2], others: Set[K]) =>
       val keysA = mA.keySet
       val keysB = mB.keySet
@@ -41,12 +41,12 @@ object ReadableStoreAlgebraProperties extends Properties("ReadableStoreAlgebra")
           case (Some(l), Some(r)) => combinedRes == Some(Left((l, r)))
           case (Some(l), None) => combinedRes == Some(Right(Left(l)))
           case (None, Some(r)) => combinedRes == Some(Right(Right(r)))
-          case (None, None) => combinedRes == None
+          case (None, None) => combinedRes.isEmpty
         }
       }
     }
 
   property("Parallel store matches normal queries") =
-    getLaws[Int, String, Long](ReadableStore.fromMap(_), ReadableStore.fromMap(_))
+    getLaws[Int, String, Long](ReadableStore.fromMap, ReadableStore.fromMap)
 
 }

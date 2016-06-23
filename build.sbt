@@ -48,7 +48,9 @@ val ignoredABIProblems = {
     exclude[MissingClassProblem]("com.twitter.storehaus.kafka" +
       ".JavaFutureToTwitterFutureConverter$State$"),
     exclude[MissingMethodProblem]("com.twitter.storehaus.kafka.KafkaStore.this"),
-    exclude[MissingMethodProblem]("com.twitter.storehaus.kafka.KafkaStore.apply")
+    exclude[MissingMethodProblem]("com.twitter.storehaus.kafka.KafkaStore.apply"),
+    exclude[IncompatibleResultTypeProblem]("com.twitter.storehaus.algebra.ReadableStoreSemigroup" +
+      ".plus")
   )
 }
 

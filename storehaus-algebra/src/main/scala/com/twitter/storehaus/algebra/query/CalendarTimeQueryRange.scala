@@ -16,7 +16,8 @@
 
 package com.twitter.storehaus.algebra.query
 
-import com.twitter.scalding.{RichDate, DateRange, Duration, AbsoluteDuration, Years, Months, Weeks, Days, Hours, Minutes}
+import com.twitter.scalding.{RichDate, DateRange, Duration, AbsoluteDuration, Years,
+  Months, Days, Hours, Minutes}
 import java.util.TimeZone
 import scala.annotation.tailrec
 
@@ -24,57 +25,66 @@ case class CalendarBucket(typeIndx: Int, startTime: Long)
 
 /** A query strategy for time with named buckets.
  */
-class CalendarTimeStrategy(strategyTimezone: TimeZone = TimeZone.getTimeZone("UTC")) extends QueryStrategy[DateRange, Long, CalendarBucket] {
+class CalendarTimeStrategy(strategyTimezone: TimeZone = TimeZone.getTimeZone("UTC"))
+    extends QueryStrategy[DateRange, Long, CalendarBucket] {
 
   private val allBuckets = {
     implicit val tz = strategyTimezone
     List(Years(1), Months(1), Days(1), Hours(1), Minutes(1))
   }
 
-  def bucketLength(bucket: CalendarBucket) = {
+  def bucketLength(bucket: CalendarBucket): Long = {
     val endTime = indexToDuration(bucket.typeIndx).addTo(RichDate(bucket.startTime)).timestamp
     endTime - bucket.startTime
   }
 
   protected def indexToDuration(indx: Int) = allBuckets(indx)
-  protected def durationToName(x: Duration): String = x.getClass.getName.split('.').reverse.head
+  protected def durationToName(x: Duration): String = x.getClass.getName.split('.').last
 
-  private def tsToBuckets(msSinceEpoch: Long) =  {
+  private def tsToBuckets(msSinceEpoch: Long) = {
     val richDate = RichDate(msSinceEpoch)
     allBuckets.zipWithIndex.map { case (duration, indx) =>
       CalendarBucket(indx, duration.floorOf(richDate).timestamp)
     }.toSet
   }
 
-  private def len(dr: DateRange) = AbsoluteDuration.fromMillisecs(dr.end.timestamp - dr.start.timestamp + 1L)
+  private def len(dr: DateRange) =
+    AbsoluteDuration.fromMillisecs(dr.end.timestamp - dr.start.timestamp + 1L)
 
   private def outsideRange(filterDR: DateRange, child: DateRange) =
-    (child.start >= filterDR.end || child.end <= filterDR.start)
+    child.start >= filterDR.end || child.end <= filterDR.start
 
-  def query(dr: DateRange): Set[CalendarBucket] = extract(dr, Set(dr), 0, allBuckets, Set[CalendarBucket]())
+  def query(dr: DateRange): Set[CalendarBucket] =
+    extract(dr, Set(dr), 0, allBuckets, Set[CalendarBucket]())
 
   @tailrec
-  private def extract(filterDr: DateRange, drSet: Set[DateRange], curIndx: Int, remainingDurations: List[Duration], acc: Set[CalendarBucket]): Set[CalendarBucket] = {
+  private def extract(
+    filterDr: DateRange,
+    drSet: Set[DateRange],
+    curIndx: Int,
+    remainingDurations: List[Duration],
+    acc: Set[CalendarBucket]
+  ): Set[CalendarBucket] = {
     remainingDurations match {
       case Nil => acc
       case head :: tail =>
-      // expand the DR
-        val expandedOut = drSet.map{ dr =>
-                            DateRange(head.floorOf(dr.start), head.floorOf(dr.end) + head)
-                                .each(head)
-                                .filter(!outsideRange(filterDr, _))
-                                .filter(len(_).toMillisecs > 1L)
-                                .toSet
-                            }.foldLeft(Set[DateRange]()){_ ++ _}
+        // expand the DR
+        val expandedOut = drSet.map { dr =>
+          DateRange(head.floorOf(dr.start), head.floorOf(dr.end) + head)
+            .each(head)
+            .filter(!outsideRange(filterDr, _))
+            .filter(len(_).toMillisecs > 1L)
+            .toSet
+        }.foldLeft(Set[DateRange]())(_ ++ _)
         // Things which only partially fit in this time range
         val others = expandedOut.filter(!filterDr.contains(_))
         // Things which fit fully in this time range
         val fullyInRange = expandedOut
-                              .filter(filterDr.contains(_))
-                              .map(x => CalendarBucket(curIndx, x.start.timestamp))
+          .filter(filterDr.contains)
+          .map(x => CalendarBucket(curIndx, x.start.timestamp))
         extract(filterDr, others, curIndx + 1, tail, acc ++ fullyInRange)
     }
   }
 
-  def index(ts: Long):Set[CalendarBucket] = tsToBuckets(ts)
+  def index(ts: Long): Set[CalendarBucket] = tsToBuckets(ts)
 }
