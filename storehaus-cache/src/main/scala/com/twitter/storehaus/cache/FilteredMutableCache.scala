@@ -20,19 +20,20 @@ package com.twitter.storehaus.cache
   * MutableCache that applies a filter to each value.
   */
 
-class FilteredMutableCache[K, V](cache: MutableCache[K, V])(pred: ((K, V)) => Boolean) extends MutableCache[K, V] {
-  override def get(k: K) = cache.get(k).filter(pred(k, _))
-  override def contains(k: K) = get(k).isDefined
-  override def +=(kv: (K, V)) = {
+class FilteredMutableCache[K, V](cache: MutableCache[K, V])(pred: ((K, V)) => Boolean)
+    extends MutableCache[K, V] {
+  override def get(k: K): Option[V] = cache.get(k).filter(v => pred((k, v)))
+  override def contains(k: K): Boolean = get(k).isDefined
+  override def +=(kv: (K, V)): this.type = {
     if (pred(kv)) cache += kv
     this
   }
-  override def hit(k: K) = cache.hit(k) match {
-    case opt@Some(v) => if (pred(k, v)) opt else { cache.evict(k); None }
+  override def hit(k: K): Option[V] = cache.hit(k) match {
+    case opt@Some(v) => if (pred((k, v))) opt else { cache.evict(k); None }
     case None => None
   }
-  override def evict(k: K) = cache.evict(k)
-  override def empty = new FilteredMutableCache(cache.empty)(pred)
-  override def clear = { cache.clear; this }
-  override def iterator = cache.iterator.filter(pred)
+  override def evict(k: K): Option[V] = cache.evict(k)
+  override def empty: FilteredMutableCache[K, V] = new FilteredMutableCache(cache.empty)(pred)
+  override def clear: this.type = { cache.clear; this }
+  override def iterator: Iterator[(K, V)] = cache.iterator.filter(pred)
 }

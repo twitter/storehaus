@@ -27,17 +27,18 @@ object Cache {
    * Generate a Cache from the supplied Map. (Caveat emptor: this
    * will never evict keys!)
    */
-  def fromMap[K, V](m: Map[K, V]) = MapCache(m)
+  def fromMap[K, V](m: Map[K, V]): MapCache[K, V] = MapCache(m)
 
   /* Returns an LRUCache configured with the supplied maxSize. */
-  def lru[K, V](maxSize: Long) = LRUCache(maxSize, Map.empty[K, (Long, V)])
+  def lru[K, V](maxSize: Long): LRUCache[K, V] = LRUCache(maxSize, Map.empty[K, (Long, V)])
 
   /* Returns an immutable TTLCache configured with the supplied ttl in
    * milliseconds. */
   @deprecated("Use com.twitter.storehaus.cache.Cache#ttl", "0.6.1")
-  def ttl[K, V](ttlInMillis: Long) = TTLCache(Duration.fromMilliseconds(ttlInMillis), Map.empty[K, (Long, V)])
+  def ttl[K, V](ttlInMillis: Long): TTLCache[K, V] =
+    TTLCache(Duration.fromMilliseconds(ttlInMillis), Map.empty[K, (Long, V)])
 
-  def ttl[K, V](ttl: Duration) = TTLCache(ttl, Map.empty[K, (Long, V)])
+  def ttl[K, V](ttl: Duration): TTLCache[K, V] = TTLCache(ttl, Map.empty[K, (Long, V)])
 
   def toMutable[K, V](cache: Cache[K, V])(exhaustFn: Set[K] => Unit): MutableCache[K, V] =
     new MutableFromImmutableCache(cache)(exhaustFn)
@@ -111,10 +112,9 @@ trait Cache[K, V] {
    * missing, the cache adds fn(k) to itself.
    */
   def touch(k: K, v: => V): Cache[K, V] =
-    if (contains(k))
-      hit(k)
-    else
-      this + (k -> v)
+    if (contains(k)) hit(k)
+    else this + (k -> v)
 
-  def toMutable(exhaustFn: Set[K] => Unit = _ => ()): MutableCache[K, V] = Cache.toMutable(this)(exhaustFn)
+  def toMutable(exhaustFn: Set[K] => Unit = _ => ()): MutableCache[K, V] =
+    Cache.toMutable(this)(exhaustFn)
 }

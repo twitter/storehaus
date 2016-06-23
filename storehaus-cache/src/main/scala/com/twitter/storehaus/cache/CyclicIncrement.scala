@@ -48,9 +48,9 @@ object CyclicIncrementProvider {
       zero, currentSide, currentSideCount, maxCurrentSideVal, nextSideCount, maxNextSideVal)
 }
 
-// Algorithm: we start on a side. We hand out values. Once we've handed out at least 1 value, we begin to give
-// out values of side.nextSide. Once all of the increments of the previous side have been culled, we now switch.
-// side.nextSide becomes the current side. Then we repeat the algorithm.
+// Algorithm: we start on a side. We hand out values. Once we've handed out at least 1 value, we
+// begin to give out values of side.nextSide. Once all of the increments of the previous side have
+// been culled, we now switch side.nextSide becomes the current side. Then we repeat the algorithm.
 class CyclicIncrementProvider[@specialized(Int, Long) K: Successible]
   (zero: K,
    currentSide: Side,
@@ -60,23 +60,25 @@ class CyclicIncrementProvider[@specialized(Int, Long) K: Successible]
    maxNextSideVal: K) extends IdProvider[CyclicIncrement[K]] {
 
   implicit val ord = implicitly[Successible[K]].partialOrdering
-  private def next(v: K) =
-    Successible.next(v).getOrElse(throw new IllegalStateException("Hit maximum value for increment"))
+  private def next(v: K) = Successible.next(v)
+    .getOrElse(throw new IllegalStateException("Hit maximum value for increment"))
 
-  override def tick =
+  override def tick: (CyclicIncrement[K], CyclicIncrementProvider[K]) =
     if (nextSideCount > 0 || currentSideCount > 0) {
       // We hand one out of the next time
       val nextVal = next(maxNextSideVal)
       (currentSide.nextSide.makeCyclicIncrement(nextVal),
-       CyclicIncrementProvider(zero, currentSide, currentSideCount, maxCurrentSideVal, nextSideCount + 1, nextVal))
+       CyclicIncrementProvider(
+         zero, currentSide, currentSideCount, maxCurrentSideVal, nextSideCount + 1, nextVal))
     } else {
       // We hand out one of the current time
       val nextVal = next(maxCurrentSideVal)
       (currentSide.makeCyclicIncrement(nextVal),
-       CyclicIncrementProvider(zero, currentSide, currentSideCount + 1, nextVal, nextSideCount, maxNextSideVal))
+       CyclicIncrementProvider(
+         zero, currentSide, currentSideCount + 1, nextVal, nextSideCount, maxNextSideVal))
     }
 
-  override def cull(cyclicIncrement: CyclicIncrement[K]) =
+  override def cull(cyclicIncrement: CyclicIncrement[K]): CyclicIncrementProvider[K] =
     if (cyclicIncrement.side == currentSide) {
       val nextCurrentSidecount = currentSideCount - 1
       if (nextCurrentSidecount == 0) {
@@ -92,49 +94,57 @@ class CyclicIncrementProvider[@specialized(Int, Long) K: Successible]
       throw new IllegalStateException("Shouldn't be culling a value of given type")
     }
 
-    override def toString =
+    override def toString: String =
       ("CyclicIncrementProvider: zero:%d currentSide:%s currentSideCount:%d " +
        "maxCurrentSideVal:%d nextSideCount:%d maxNextSideVal:%d")
-        .format(zero, currentSide, currentSideCount, maxCurrentSideVal, nextSideCount, maxNextSideVal)
+        .format(
+          zero, currentSide, currentSideCount, maxCurrentSideVal, nextSideCount, maxNextSideVal)
 
-    override def empty = CyclicIncrementProvider(zero)
+    override def empty: CyclicIncrementProvider[K] = CyclicIncrementProvider(zero)
 }
 
 object CyclicIncrement {
-  implicit def ordering[K](implicit ordering: Ordering[K]): Ordering[CyclicIncrement[K]] = Ordering.by { _.value }
+  implicit def ordering[K](implicit ordering: Ordering[K]): Ordering[CyclicIncrement[K]] =
+    Ordering.by { _.value }
 }
 
 sealed trait CyclicIncrement[@specialized(Int, Long) K] {
   def value: K
   def side: Side
-  override def toString = side + ":" + value
+  override def toString: String = side + ":" + value
 }
 
-case class SideACyclicIncrement[@specialized(Int, Long) K](override val value: K) extends CyclicIncrement[K] {
-  override def side = SideA
+case class SideACyclicIncrement[@specialized(Int, Long) K](override val value: K)
+    extends CyclicIncrement[K] {
+  override def side: Side = SideA
 }
-case class SideBCyclicIncrement[@specialized(Int, Long) K](override val value: K) extends CyclicIncrement[K] {
-  override def side = SideB
+case class SideBCyclicIncrement[@specialized(Int, Long) K](override val value: K)
+    extends CyclicIncrement[K] {
+  override def side: Side = SideB
 }
-case class SideCCyclicIncrement[@specialized(Int, Long) K](override val value: K) extends CyclicIncrement[K] {
-  override def side = SideC
+case class SideCCyclicIncrement[@specialized(Int, Long) K](override val value: K)
+    extends CyclicIncrement[K] {
+  override def side: Side = SideC
 }
 sealed trait Side {
   def nextSide: Side
   def makeCyclicIncrement[@specialized(Int, Long) K](value: K): CyclicIncrement[K]
 
-  override def toString = getClass.getSimpleName
-  def offset(that:Side) = if (this == that) 0 else if (nextSide == that) -1 else 1
+  override def toString: String = getClass.getSimpleName
+  def offset(that: Side): Int = if (this == that) 0 else if (nextSide == that) -1 else 1
 }
 object SideA extends Side {
-  override def nextSide = SideB
-  override def makeCyclicIncrement[@specialized(Int, Long) K](value: K) = SideACyclicIncrement(value)
+  override def nextSide: Side = SideB
+  override def makeCyclicIncrement[@specialized(Int, Long) K](value: K): SideACyclicIncrement[K] =
+    SideACyclicIncrement(value)
 }
 object SideB extends Side {
-  override def nextSide = SideC
-  override def makeCyclicIncrement[@specialized(Int, Long) K](value: K) = SideBCyclicIncrement(value)
+  override def nextSide: Side = SideC
+  override def makeCyclicIncrement[@specialized(Int, Long) K](value: K): SideBCyclicIncrement[K] =
+    SideBCyclicIncrement(value)
 }
 object SideC extends Side {
-  override def nextSide = SideA
-  override def makeCyclicIncrement[@specialized(Int, Long) K](value: K) = SideCCyclicIncrement(value)
+  override def nextSide: Side = SideA
+  override def makeCyclicIncrement[@specialized(Int, Long) K](value: K): SideCCyclicIncrement[K] =
+    SideCCyclicIncrement(value)
 }

@@ -34,25 +34,29 @@ import com.twitter.util.Duration
  */
 
 object TTLCache {
-  def apply[K, V](ttl: Duration, backingMap: Map[K, (Long, V)] = Map.empty[K, (Long, V)]) =
+  def apply[K, V](
+    ttl: Duration,
+    backingMap: Map[K, (Long, V)] = Map.empty[K, (Long, V)]
+  ): TTLCache[K, V] =
     new TTLCache(ttl, backingMap)(() => System.currentTimeMillis)
 }
 
-class TTLCache[K, V](val ttl: Duration, cache: Map[K, (Long, V)])(val clock: () => Long) extends Cache[K, (Long, V)] {
-  override def get(k: K) = cache.get(k)
-  override def contains(k: K) = cache.contains(k)
-  override def hit(k: K) = this
+class TTLCache[K, V](val ttl: Duration, cache: Map[K, (Long, V)])(val clock: () => Long)
+    extends Cache[K, (Long, V)] {
+  override def get(k: K): Option[(Long, V)] = cache.get(k)
+  override def contains(k: K): Boolean = cache.contains(k)
+  override def hit(k: K): TTLCache[K, V] = this
 
-  override def put(kv: (K, (Long, V))) = putWithTime(kv, clock())
+  override def put(kv: (K, (Long, V))): (Set[K], TTLCache[K, V]) = putWithTime(kv, clock())
 
   override def evict(k: K): (Option[(Long, V)], Cache[K, (Long, V)]) =
     cache.get(k).map { pair: (Long, V) =>
       (Some(pair), new TTLCache(ttl, cache - k)(clock))
     }.getOrElse((None, this))
 
-  override def empty = new TTLCache(ttl, cache.empty)(clock)
-  override def iterator = cache.iterator
-  override def toMap = cache.toMap
+  override def empty: TTLCache[K, V] = new TTLCache(ttl, cache.empty)(clock)
+  override def iterator: Iterator[(K, (Long, V))] = cache.iterator
+  override def toMap: Map[K, (Long, V)] = cache.toMap
 
   protected def toRemove(currentMillis: Long): Set[K] =
     toMap.collect {
@@ -84,7 +88,7 @@ class TTLCache[K, V](val ttl: Duration, cache: Map[K, (Long, V)])(val clock: () 
   /* Returns the set of entries from the cache with expiration dates
    * older than the value produced by the supplied clock at call-time
    * and a new cache with these entries evicted. */
-  def removeExpired: (Set[K], TTLCache[K,V]) = {
+  def removeExpired(): (Set[K], TTLCache[K, V]) = {
     val killKeys = toRemove(clock())
     val newCache = cache -- killKeys
     (killKeys, new TTLCache(ttl, newCache)(clock))
