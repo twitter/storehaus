@@ -17,13 +17,18 @@
 package com.twitter.storehaus.algebra
 
 import com.twitter.storehaus.{Store, EagerWriteThroughCacheStore }
-import com.twitter.storehaus.cache.MutableCache
 import com.twitter.util.Future
-import com.twitter.storehaus.cache.{MutableCache, HeavyHittersPercent, WriteOperationUpdateFrequency, RollOverFrequencyMS, HHFilteredCache}
+import com.twitter.storehaus.cache.{MutableCache, HeavyHittersPercent,
+  WriteOperationUpdateFrequency, RollOverFrequencyMS, HHFilteredCache}
 
 object HHFilteredStore {
-  def buildStore[K, V](store: Store[K, V], cache: MutableCache[K, Future[Option[V]]], hhPct: HeavyHittersPercent,
-                          writeUpdateFreq: WriteOperationUpdateFrequency, rolloverFreq: RollOverFrequencyMS): Store[K, V] = {
+  def buildStore[K, V](
+    store: Store[K, V],
+    cache: MutableCache[K, Future[Option[V]]],
+    hhPct: HeavyHittersPercent,
+    writeUpdateFreq: WriteOperationUpdateFrequency,
+    rolloverFreq: RollOverFrequencyMS
+  ): Store[K, V] = {
     val filteredCacheStore = new HHFilteredCache(cache, hhPct, writeUpdateFreq, rolloverFreq)
     new EagerWriteThroughCacheStore[K, V](store, filteredCacheStore)
   }

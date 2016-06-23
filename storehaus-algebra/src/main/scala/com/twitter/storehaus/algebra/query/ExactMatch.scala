@@ -19,7 +19,7 @@ package com.twitter.storehaus.algebra.query
 /**
  * Use this with cross to create an exact match sub-portion of your query
  */
-class ExactMatch[T] extends AbstractQueryStrategy[T,T,T] {
-  def query(q: T) = Set(q)
-  def index(key: T) = Set(key)
+class ExactMatch[T] extends AbstractQueryStrategy[T, T, T] {
+  def query(q: T): Set[T] = Set(q)
+  def index(key: T): Set[T] = Set(key)
 }

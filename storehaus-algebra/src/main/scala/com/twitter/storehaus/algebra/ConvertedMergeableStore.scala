@@ -32,7 +32,8 @@ import Conversion.asMethod
   */
 class ConvertedMergeableStore[K1, -K2, V1, V2](store: MergeableStore[K1, V1])(kfn: K2 => K1)
   (implicit bij: ImplicitBijection[V2, V1])
-  extends com.twitter.storehaus.ConvertedStore[K1, K2, V1, V2](store)(kfn)(Injection.fromBijection(bij.bijection))
+  extends com.twitter.storehaus.ConvertedStore[K1, K2, V1, V2](store)(kfn)(
+    Injection.fromBijection(bij.bijection))
   with MergeableStore[K2, V2] {
   import com.twitter.algebird.bijection.AlgebirdBijections._
 
@@ -50,5 +51,5 @@ class ConvertedMergeableStore[K1, -K2, V1, V2](store: MergeableStore[K1, V1])(kf
     kvs.keySet.map { k3 => (k3, res(kfn(k3)).map(_.as[Option[V2]])) }(breakOut)
   }
 
-  override def close(t: Time) = store.close(t)
+  override def close(t: Time): Future[Unit] = store.close(t)
 }

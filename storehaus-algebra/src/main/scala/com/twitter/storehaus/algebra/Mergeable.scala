@@ -32,10 +32,11 @@ trait Mergeable[-K, V] extends Closable {
    */
   def merge(kv: (K, V)): Future[Option[V]] = multiMerge(Map(kv)).apply(kv._1)
   /** merge a set of keys. */
-  def multiMerge[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Option[V]]] = kvs.map { kv => (kv._1, merge(kv)) }
+  def multiMerge[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Option[V]]] =
+    kvs.map { kv => (kv._1, merge(kv)) }
 
   /** Close this store and release any resources.
    * It is undefined what happens if you merge after close
    */
-  override def close(time: Time) = Future.Unit
+  override def close(time: Time): Future[Unit] = Future.Unit
 }

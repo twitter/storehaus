@@ -20,6 +20,6 @@ package com.twitter.storehaus.algebra.query
  * This is for rollups: None means total sum, Some(q) is exact match
  */
 class OptionQuery[T] extends AbstractQueryStrategy[Option[T], T, Option[T]] {
-  def query(q: Option[T]) = Set(q)
-  def index(key: T) = Set(Some(key), None)
+  def query(q: Option[T]): Set[Option[T]] = Set(q)
+  def index(key: T): Set[Option[T]] = Set(Some(key), None)
 }

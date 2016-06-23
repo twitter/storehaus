@@ -1,18 +1,19 @@
 /*
-Copyright 2012 Twitter, Inc.
+ * Copyright 2012 Twitter Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
 package com.twitter.storehaus.algebra
 
 import com.twitter.algebird._
@@ -35,9 +36,10 @@ class PromiseLinkSemigroup[V](sg: Semigroup[V]) extends Semigroup[PromiseLink[V]
  * for TunnelMonoid for general motivation. NOTE: the Promise will be fulfilled with
  * the value just before the PromiseLink is calculated.
  */
-class PromiseLinkMonoid[V](monoid: Monoid[V]) extends PromiseLinkSemigroup[V](monoid) with Monoid[PromiseLink[V]] {
-  def zero = PromiseLink(new Promise[Option[V]], monoid.zero)
-  override def isNonZero(v: PromiseLink[V]) = monoid.isNonZero(v.value)
+class PromiseLinkMonoid[V](monoid: Monoid[V])
+    extends PromiseLinkSemigroup[V](monoid) with Monoid[PromiseLink[V]] {
+  def zero: PromiseLink[V] = PromiseLink(new Promise[Option[V]], monoid.zero)
+  override def isNonZero(v: PromiseLink[V]): Boolean = monoid.isNonZero(v.value)
 }
 
 /**
@@ -54,7 +56,7 @@ case class PromiseLink[V](promise: Promise[Option[V]], value: V) {
   /** Returns none if this was already set, else this plus the init
    */
   def apply(start: Option[V])(implicit semigroup: Semigroup[V]): Option[V] = {
-    if(completeIfEmpty(Return(start))) {
+    if (completeIfEmpty(Return(start))) {
       Some(start.map(semigroup.plus(_, value)).getOrElse(value))
     }
     else None
@@ -70,5 +72,5 @@ object PromiseLink {
   implicit def monoid[V](implicit innerMonoid: Monoid[V]): PromiseLinkMonoid[V] =
     new PromiseLinkMonoid[V](innerMonoid)
 
-  def apply[V](value:V): PromiseLink[V] = PromiseLink[V](new Promise[Option[V]], value)
+  def apply[V](value: V): PromiseLink[V] = PromiseLink[V](new Promise[Option[V]], value)
 }
