@@ -24,21 +24,21 @@ package com.twitter.storehaus.cache
  */
 
 object MapCache {
-  def empty[K, V] = MapCache(Map.empty[K, V])
-  def apply[K, V](m: Map[K, V]) = new MapCache(m)
+  def empty[K, V]: MapCache[K, V] = MapCache(Map.empty[K, V])
+  def apply[K, V](m: Map[K, V]): MapCache[K, V] = new MapCache(m)
 }
 
 class MapCache[K, V](m: Map[K, V]) extends Cache[K, V] {
-  override def get(k: K) = m.get(k)
-  override def contains(k: K) = m.contains(k)
-  override def hit(k: K) = this
-  override def put(kv: (K, V)) = (Set.empty[K], new MapCache(m + kv))
-  override def evict(k: K) =
+  override def get(k: K): Option[V] = m.get(k)
+  override def contains(k: K): Boolean = m.contains(k)
+  override def hit(k: K): MapCache[K, V] = this
+  override def put(kv: (K, V)): (Set[K], MapCache[K, V]) = (Set.empty[K], new MapCache(m + kv))
+  override def evict(k: K): (Option[V], MapCache[K, V]) =
     m.get(k).map { v => (Some(v), new MapCache(m - k)) }
       .getOrElse((None, this))
-  override def toString = m.toString
-  override def toMap = m
-  override def iterator = m.iterator
-  override def empty = new MapCache(Map.empty)
-  override def seed(newPairs: Map[K, V]) = new MapCache(newPairs)
+  override def toString: String = m.toString
+  override def toMap: Map[K, V] = m
+  override def iterator: Iterator[(K, V)] = m.iterator
+  override def empty: MapCache[K, V] = new MapCache(Map.empty[K, V])
+  override def seed(newPairs: Map[K, V]): MapCache[K, V] = new MapCache(newPairs)
 }
