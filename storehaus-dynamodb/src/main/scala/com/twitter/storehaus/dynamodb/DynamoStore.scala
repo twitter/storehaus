@@ -49,8 +49,8 @@ object DynamoStore {
     endpoint: Regions): DynamoStore = {
 
     val auth = new BasicAWSCredentials(awsAccessKey, awsSecretKey)
-    var client = new AmazonDynamoDBClient(auth)
-    client.setRegion(Region.getRegion(endpoint));
+    val client = new AmazonDynamoDBClient(auth)
+    client.setRegion(Region.getRegion(endpoint))
     new DynamoStore(client, tableName, primaryKeyColumn, valueColumn,
       numberWorkerThreads)
   }
@@ -58,30 +58,25 @@ object DynamoStore {
 
 class DynamoStore(val client: AmazonDynamoDB, val tableName: String,
   val primaryKeyColumn: String, val valueColumn: String, numberWorkerThreads: Int)
-  extends Store[String, AttributeValue]
-{
+  extends Store[String, AttributeValue] {
 
   val apiRequestFuturePool = FuturePool(Executors.newFixedThreadPool(numberWorkerThreads))
 
   override def put(kv: (String, Option[AttributeValue])): Future[Unit] = {
     kv match {
-      case (key, Some(value)) => {
-        //write the new entry to AWS
+      case (key, Some(value)) =>
+        // write the new entry to AWS
         val attributes = Map(
           primaryKeyColumn -> key.as[AttributeValue],
           valueColumn -> value
         ).as[JMap[String, AttributeValue]]
         val putRequest = new PutItemRequest(tableName, attributes)
-
         apiRequestFuturePool(client.putItem(putRequest))
-      }
-
-      case (key, None) => {
-        val attributes = Map(primaryKeyColumn -> key.as[AttributeValue]).as[JMap[String, AttributeValue]]
+      case (key, None) =>
+        val attributes =
+          Map(primaryKeyColumn -> key.as[AttributeValue]).as[JMap[String, AttributeValue]]
         val deleteRequest = new DeleteItemRequest(tableName, attributes)
-
         apiRequestFuturePool(client.deleteItem(deleteRequest))
-      }
     }
   }
 
