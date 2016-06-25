@@ -1,17 +1,17 @@
 /*
- * Copyright 2014 Twitter inc.
+ * Copyright 2014 Twitter Inc.
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package com.twitter.storehaus.elasticsearch
@@ -64,8 +64,8 @@ class ElasticSearchStoreSpecs extends WordSpec with Matchers
 
     "Update a value" in {
       val key = "update_key"
-      store.put(key, Some(person))
-      store.put(key, Some(person.copy(age = 30)))
+      store.put((key, Some(person)))
+      store.put((key, Some(person.copy(age = 30))))
 
       blockAndRefreshIndex()
 
@@ -75,8 +75,8 @@ class ElasticSearchStoreSpecs extends WordSpec with Matchers
 
     "Delete a value" in new DefaultElasticContext {
       val key = "delete_key"
-      store.put(key, Some(person))
-      store.put(key, None)
+      store.put((key, Some(person)))
+      store.put((key, None))
 
       blockAndRefreshIndex()
 
@@ -107,7 +107,7 @@ class ElasticSearchStoreSpecs extends WordSpec with Matchers
 
       val response = store.multiGet(Set[String]())
       val result = Await.result(FutureOps.mapCollect(response))
-      result should equal(Map[String,Future[Option[String]]]())
+      result should equal(Map[String, Future[Option[String]]]())
     }
 
     "Update multiple values" in {
@@ -160,15 +160,15 @@ class ElasticSearchStoreSpecs extends WordSpec with Matchers
       bookStore.multiPut(books)
       blockAndRefreshIndex()
 
-      //search for a particular author
-      val request1 = new SearchRequestBuilder(client).setQuery(termQuery("authors", "josh")).request()
+      // search for a particular author
+      val request1 =
+        new SearchRequestBuilder(client).setQuery(termQuery("authors", "josh")).request()
       val response1 = Await.result(bookStore.queryable.get(request1))
       response1 should not equal None
       response1.get.head.name should equal("Effective Java")
 
 
-      //find all the books published after 2001 where author is not Josh Bloch
-
+      // find all the books published after 2001 where author is not Josh Bloch
       val request2 = new SearchRequestBuilder(client)
         .setQuery(
           boolQuery().mustNot(termQuery("authors", "josh"))

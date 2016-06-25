@@ -1,17 +1,17 @@
 /*
- * Copyright 2014 Twitter inc.
+ * Copyright 2014 Twitter Inc.
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package com.twitter.storehaus.elasticsearch
@@ -33,15 +33,13 @@ import scala.collection.breakOut
  */
 
 object ElasticSearchStringStore {
-
-  def apply(index: String,
-            tipe: String,
-            client: Client):ElasticSearchStringStore = new ElasticSearchStringStore(index, tipe, client)
+  def apply(index: String, tipe: String, client: Client): ElasticSearchStringStore =
+    new ElasticSearchStringStore(index, tipe, client)
 }
 
-class ElasticSearchStringStore(private val index: String,
-                               private val tipe: String, //tipe -> type since type is a reserved keyword
-                               private val client: Client) extends Store[String, String] with QueryableStore[SearchRequest, String] {
+class ElasticSearchStringStore(
+  private val index: String, private val tipe: String, private val client: Client
+) extends Store[String, String] with QueryableStore[SearchRequest, String] {
 
   private lazy val futurePool = FuturePool.unboundedPool
   private[this] lazy val mutex = new AsyncMutex
@@ -50,9 +48,7 @@ class ElasticSearchStringStore(private val index: String,
     * Prefer multiGet if you are getting more than one key at a time
     */
   override def get(k: String): Future[Option[String]] = futurePool {
-    Option {
-      client.prepareGet(index, tipe, k).execute().actionGet().getSourceAsString
-    }
+    Option { client.prepareGet(index, tipe, k).execute().actionGet().getSourceAsString }
   }
 
   /** Get a set of keys from the store.
@@ -70,10 +66,12 @@ class ElasticSearchStringStore(private val index: String,
         val response = request.execute().actionGet()
 
         response.iterator().asScala
-          .filter(r=>Option(r.getResponse)!=None)
-          .map {r => r.getResponse.getId -> Option(r.getResponse.getSourceAsString)}.toMap
+          .flatMap(r => r.getResponse match {
+            case null => Iterator.empty
+            case resp => Iterator.single(resp.getId -> Option(resp.getSourceAsString))
+          }).toMap
       }
-      FutureOps.liftValues(ks, f,k=>Future(None))
+      FutureOps.liftValues(ks, f, k => Future(None))
     }
   }
 
@@ -91,7 +89,7 @@ class ElasticSearchStringStore(private val index: String,
           client.bulk(bulkRequest).actionGet()
         } ensure p.release()
     }
-    kvs.map{case (k,_)=>k->f.unit}(breakOut)
+    kvs.map {case (k, _) => k -> f.unit }(breakOut)
   }
 
   /**
@@ -120,18 +118,17 @@ class ElasticSearchStringStore(private val index: String,
   }
 
 
-  def queryable: ReadableStore[SearchRequest, Seq[String]] = new ReadableStore[SearchRequest, Seq[String]] {
-    /** get a single key from the store.
-      * Prefer multiGet if you are getting more than one key at a time
-      */
-    override def get(k: SearchRequest): Future[Option[Seq[String]]] = futurePool {
-      //Force to use the index and Type this store is configured for.
-      val updatedQuery = k.indices(Array(index): _*).types(Array(tipe): _*)
-      val searchHits = client.search(updatedQuery).actionGet().getHits
-      searchHits.totalHits() match {
-        case 0 => None
-        case _ => Some(searchHits.hits().toList.map(_.getSourceAsString))
+  def queryable: ReadableStore[SearchRequest, Seq[String]] =
+    new ReadableStore[SearchRequest, Seq[String]] {
+      /** get a single key from the store. */
+      override def get(k: SearchRequest): Future[Option[Seq[String]]] = futurePool {
+        // Force to use the index and Type this store is configured for.
+        val updatedQuery = k.indices(Array(index): _*).types(Array(tipe): _*)
+        val searchHits = client.search(updatedQuery).actionGet().getHits
+        searchHits.totalHits() match {
+          case 0 => None
+          case _ => Some(searchHits.hits().toList.map(_.getSourceAsString))
+        }
       }
-    }
   }
 }
