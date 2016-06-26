@@ -22,27 +22,31 @@ import com.twitter.bijection.netty.ChannelBufferBijection
 import com.twitter.finagle.memcached.Client
 import com.twitter.storehaus.testing.SelfAggregatingCloseableCleanup
 import com.twitter.storehaus.testing.generator.NonEmpty
-import com.twitter.util.Await
+import com.twitter.util.{Future, Await}
 
 import org.jboss.netty.buffer.ChannelBuffer
-import org.scalacheck.Gen
-import org.scalacheck.Properties
+import org.scalacheck.{Prop, Gen, Properties}
 import org.scalacheck.Prop.forAll
 
 /** Unit test using Long values */
 object MergeableMemcacheStoreProperties extends Properties("MergeableMemcacheStore")
   with SelfAggregatingCloseableCleanup[MergeableMemcacheStore[String, Long]] {
 
-  def put(s: MergeableMemcacheStore[String, Long], pairs: List[(String, Option[Long])]) = {
+  def put(s: MergeableMemcacheStore[String, Long], pairs: List[(String, Option[Long])]): Unit = {
     pairs.foreach { case (k, v) =>
       Await.result(s.put((k, v)))
     }
   }
 
-  def merge(s: MergeableMemcacheStore[String, Long], kvs: Map[String, Long]) = s.multiMerge(kvs)
+  def merge(
+    s: MergeableMemcacheStore[String, Long],
+    kvs: Map[String, Long]
+  ): Map[String, Future[Option[Long]]] =
+    s.multiMerge(kvs)
 
   def putAndGetStoreTest(store: MergeableMemcacheStore[String, Long],
-      pairs: Gen[List[(String, Option[Long])]] = NonEmpty.Pairing.alphaStrNumerics[Long](10)) =
+    pairs: Gen[List[(String, Option[Long])]] = NonEmpty.Pairing.alphaStrNumerics[Long](10)
+  ): Prop =
     forAll(pairs) { (examples: List[(String, Option[Long])]) =>
       put(store, examples)
       examples.toMap.forall { case (k, optV) =>
@@ -52,11 +56,12 @@ object MergeableMemcacheStoreProperties extends Properties("MergeableMemcacheSto
     }
 
   def mergeStoreTest(store: MergeableMemcacheStore[String, Long],
-      pairs: Gen[List[(String, Option[Long])]] = NonEmpty.Pairing.alphaStrNumerics[Long](10)) =
+      pairs: Gen[List[(String, Option[Long])]] = NonEmpty.Pairing.alphaStrNumerics[Long](10)
+  ): Prop =
     forAll(pairs) { (examples: List[(String, Option[Long])]) =>
       put(store, examples)
       // increment values
-      merge(store, examples.map { case (k, v) => (k, 1l) }.toMap).forall { case (k, futureOptV) =>
+      merge(store, examples.map { case (k, v) => (k, 1L) }.toMap).forall { case (k, futureOptV) =>
         val foundOptV = Await.result(futureOptV)
         // verify old values are returned
         compareValues(k, examples.toMap.get(k).get, foundOptV)
@@ -64,17 +69,21 @@ object MergeableMemcacheStoreProperties extends Properties("MergeableMemcacheSto
       // now verify incremented values are returned
       examples.toMap.forall { case (k, optV) =>
         val foundOptV = Await.result(store.get(k))
-        compareValues(k, optV.map { _ + 1l }.orElse(Some(1l)), foundOptV)
+        compareValues(k, optV.map { _ + 1L }.orElse(Some(1L)), foundOptV)
       }
     }
 
-  def compareValues(k: String, expectedOptV: Option[Long], foundOptV: Option[Long]) = {
+  def compareValues(k: String, expectedOptV: Option[Long], foundOptV: Option[Long]): Boolean = {
     val isMatch = expectedOptV match {
-      case Some(value) => !foundOptV.isEmpty && foundOptV.get == value
+      case Some(value) => foundOptV.nonEmpty && foundOptV.get == value
       case None => foundOptV.isEmpty
     }
-    if (!isMatch)
-      println("FAILURE: Key \"" + k + "\" - expected value " + expectedOptV + ", but found " + foundOptV)
+    if (!isMatch) {
+      // scalastyle:off
+      println("FAILURE: Key \"" + k + "\" - expected value " +
+        expectedOptV + ", but found " + foundOptV)
+      // scalastyle:on
+    }
     isMatch
   }
 
