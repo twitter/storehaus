@@ -50,7 +50,8 @@ val ignoredABIProblems = {
     exclude[MissingMethodProblem]("com.twitter.storehaus.kafka.KafkaStore.this"),
     exclude[MissingMethodProblem]("com.twitter.storehaus.kafka.KafkaStore.apply"),
     exclude[IncompatibleResultTypeProblem]("com.twitter.storehaus.algebra.ReadableStoreSemigroup" +
-      ".plus")
+      ".plus"),
+    exclude[IncompatibleResultTypeProblem]("com.twitter.storehaus.mongodb.MongoStore.getValue")
   )
 }
 

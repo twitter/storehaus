@@ -1,24 +1,25 @@
 /*
- * Copyright 2014 Twitter inc.
+ * Copyright 2014 Twitter Inc.
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
+
 package com.twitter.storehaus.mongodb
 
 import java.util.concurrent.Executors
 
 import com.twitter.storehaus.Store
-import com.twitter.util.{ Future, FuturePool }
+import com.twitter.util._
 
 import com.mongodb.casbah.Imports._
 
@@ -70,13 +71,15 @@ class MongoStore[K: MongoValue, V: MongoValue: Manifest] (
   protected val db = client(dbName)
   protected val col = db(colName)
   // make sure we build an index
-  col.ensureIndex(MongoDBObject(keyName -> 1), MongoDBObject("name" -> (keyName + "Idx"), "background" -> backgroundIndex))
+  col.createIndex(MongoDBObject(keyName -> 1),
+    MongoDBObject("name" -> (keyName + "Idx"), "background" -> backgroundIndex))
   protected val futurePool = FuturePool(Executors.newFixedThreadPool(threadNumber))
 
   override def put(kv: (K, Option[V])): Future[Unit] = {
     kv match {
       case (key, Some(value)) => futurePool {
-        col.update(MongoDBObject(keyName -> key), MongoDBObject(keyName -> key, valueName -> value), upsert = true)
+        col.update(MongoDBObject(keyName -> key),
+          MongoDBObject(keyName -> key, valueName -> value), upsert = true)
       }
       case (key, None) => futurePool {
         col.remove(MongoDBObject(keyName -> key))
@@ -85,32 +88,31 @@ class MongoStore[K: MongoValue, V: MongoValue: Manifest] (
   }
 
   override def get(key: K): Future[Option[V]] = futurePool {
-    col.findOne(MongoDBObject(keyName -> key)).flatMap { valueObject => {
-        getValue(valueObject)
-      }
+    col.findOne(MongoDBObject(keyName -> key)) match {
+      case None => Future.None
+      case Some(v) => Future.const(getValue(v))
     }
-  }
+  }.flatten
 
-  protected def getValue(valueObject: MongoDBObject): Option[V] = {
+  protected def getValue(valueObject: MongoDBObject): Try[Option[V]] =
     valueObject.getAs[V](valueName) match {
-      case None => {
-        if (valueObject.get(valueName) == None) None
-        else throw new ClassCastException("Cannot convert %s to %s".format(valueObject.get(valueName).getClass(), manifest[V]))
-      }
-      case Some(value) => {
-        if (getManifest().isInstance(value)) Some(value)
-        else throw new ClassCastException("Cannot convert %s to %s".format(value.getClass(), manifest[V]))
-      }
+      case None =>
+        if (valueObject.get(valueName).isEmpty) Return(None)
+        else Throw(
+          new ClassCastException(s"Cannot convert ${valueObject.get(valueName)} to ${manifest[V]}"))
+      case Some(value) =>
+        if (getManifest.isInstance(value)) Return(Some(value))
+        else Throw(new ClassCastException(
+          s"Cannot convert $value of type ${value.getClass} to ${manifest[V]}"))
     }
-  }
 
-  protected def getManifest() = {
+  protected def getManifest: Class[_] = {
     manifest[V] match {
       case Manifest.Int => classOf[java.lang.Integer]
       case Manifest.Long => classOf[java.lang.Long]
       case Manifest.Double => classOf[java.lang.Double]
       case Manifest.Boolean => classOf[java.lang.Boolean]
-      case m => m.erasure
+      case m => m.runtimeClass
     }
   }
 }
