@@ -51,7 +51,14 @@ val ignoredABIProblems = {
     exclude[MissingMethodProblem]("com.twitter.storehaus.kafka.KafkaStore.apply"),
     exclude[IncompatibleResultTypeProblem]("com.twitter.storehaus.algebra.ReadableStoreSemigroup" +
       ".plus"),
-    exclude[IncompatibleResultTypeProblem]("com.twitter.storehaus.mongodb.MongoStore.getValue")
+    exclude[IncompatibleResultTypeProblem]("com.twitter.storehaus.mongodb.MongoStore.getValue"),
+    exclude[MissingMethodProblem]("com.twitter.storehaus.asynchbase.AsyncHBaseByteArrayStore" +
+      ".futurePool"),
+    exclude[MissingMethodProblem]("com.twitter.storehaus.asynchbase.AsyncHBaseLongStore" +
+      ".futurePool"),
+    exclude[MissingMethodProblem]("com.twitter.storehaus.asynchbase.AsyncHBaseStringStore" +
+      ".futurePool"),
+    exclude[MissingMethodProblem]("com.twitter.storehaus.asynchbase.AsyncHBaseStore.futurePool")
   )
 }
 
