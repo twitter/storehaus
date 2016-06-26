@@ -17,7 +17,6 @@
 package com.twitter.storehaus.memcache
 
 import com.twitter.algebird.Semigroup
-import com.twitter.bijection.NumericInjections
 import com.twitter.bijection.twitter_util.UtilBijections
 import com.twitter.util.{Duration, Future}
 import com.twitter.finagle.memcached.Client
@@ -46,7 +45,8 @@ object MemcacheLongStore {
   private[memcache] implicit val LongBuf: Injection[Long, Buf] =
     Injection.connect[Long, String, Array[Byte], Buf]
 
-  def apply(client: Client, ttl: Duration = MemcacheStore.DEFAULT_TTL, flag: Int = MemcacheStore.DEFAULT_FLAG) =
+  def apply(client: Client, ttl: Duration = MemcacheStore.DEFAULT_TTL,
+      flag: Int = MemcacheStore.DEFAULT_FLAG): MemcacheLongStore =
     new MemcacheLongStore(MemcacheStore(client, ttl, flag))
 }
 import MemcacheLongStore._
@@ -56,10 +56,10 @@ class MemcacheLongStore(underlying: MemcacheStore)
   extends ConvertedStore[String, String, ChannelBuffer, Long](underlying)(identity)
   with MergeableStore[String, Long] {
 
-  def semigroup = implicitly[Semigroup[Long]]
+  def semigroup: Semigroup[Long] = implicitly[Semigroup[Long]]
 
   /** Merges a key by incrementing by a Long value. */
-  override def merge(kv: (String, Long)) = {
+  override def merge(kv: (String, Long)): Future[Option[Long]] = {
     val (k, v) = kv
     underlying.client.incr(k, v).flatMap {
       case Some(res) => Future.value(Some(res - v)) // value before
@@ -67,7 +67,7 @@ class MemcacheLongStore(underlying: MemcacheStore)
         underlying
           .client
           .add(k, v.as[Buf])
-          .flatMap { b => if(b) Future.value(None) else merge(kv) }
+          .flatMap { b => if (b) Future.value(None) else merge(kv) }
     }
   }
 }
