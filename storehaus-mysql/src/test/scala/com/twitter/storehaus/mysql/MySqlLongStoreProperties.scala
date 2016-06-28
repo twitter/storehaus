@@ -16,36 +16,35 @@
 
 package com.twitter.storehaus.mysql
 
-import java.util.logging.Level
-
 import com.twitter.finagle.exp.Mysql
 import com.twitter.finagle.exp.mysql.Client
 import com.twitter.storehaus.testing.SelfAggregatingCloseableCleanup
 import com.twitter.storehaus.testing.generator.NonEmpty
-import com.twitter.util.Await
+import com.twitter.util.{Future, Await}
 
-import org.scalacheck.Arbitrary
-import org.scalacheck.Gen
-import org.scalacheck.Properties
+import org.scalacheck.{Prop, Gen, Properties}
 import org.scalacheck.Prop.forAll
 
 object MySqlLongStoreProperties extends Properties("MySqlLongStore")
   with SelfAggregatingCloseableCleanup[MySqlLongStore] {
 
-  def put(s: MySqlLongStore, pairs: List[(MySqlValue, Option[Long])]) = {
+  def put(s: MySqlLongStore, pairs: List[(MySqlValue, Option[Long])]): Unit = {
     pairs.foreach { case (k, v) =>
       Await.result(s.put((k, v)))
     }
   }
 
-  def merge(s: MySqlLongStore, kvs: Map[MySqlValue, Long]) = s.multiMerge(kvs)
+  def merge(s: MySqlLongStore, kvs: Map[MySqlValue, Long]): Map[MySqlValue, Future[Option[Long]]] =
+    s.multiMerge(kvs)
 
-  def putAndGetStoreTest(store: MySqlLongStore,
-      pairs: Gen[List[(String, Option[Long])]] = NonEmpty.Pairing.alphaStrNumerics[Long](10)) =
+  def putAndGetStoreTest(
+    store: MySqlLongStore,
+    pairs: Gen[List[(String, Option[Long])]] = NonEmpty.Pairing.alphaStrNumerics[Long](10)
+  ): Prop =
     forAll(pairs) { (examples: List[(String, Option[Long])]) =>
       val kvs = examples.map { case (k, v) =>
         // lowercase the keys because mysql queries are case-insensitive
-        (MySqlStringInjection.invert(k.toLowerCase).get, v)
+        (String2MySqlValueInjection(k.toLowerCase), v)
       }
       put(store, kvs)
       kvs.toMap.forall { case (k, optV) =>
@@ -54,16 +53,18 @@ object MySqlLongStoreProperties extends Properties("MySqlLongStore")
       }
     }
 
-  def multiMergeStoreTest(store: MySqlLongStore,
-      pairs: Gen[List[(String, Option[Long])]] = NonEmpty.Pairing.alphaStrNumerics[Long](10)) =
+  def multiMergeStoreTest(
+    store: MySqlLongStore,
+    pairs: Gen[List[(String, Option[Long])]] = NonEmpty.Pairing.alphaStrNumerics[Long](10)
+  ): Prop =
     forAll(pairs) { (examples: List[(String, Option[Long])]) =>
       val kvs = examples.map { case (k, v) =>
         // lowercase the keys because mysql queries are case-insensitive
-        (MySqlStringInjection.invert(k.toLowerCase).get, v)
+        (String2MySqlValueInjection(k.toLowerCase), v)
       }
       put(store, kvs)
       // increment values
-      merge(store, kvs.map { case (k, v) => (k, 1l) }.toMap).forall { case (k, futureOptV) =>
+      merge(store, kvs.map { case (k, v) => (k, 1L) }.toMap).forall { case (k, futureOptV) =>
         val foundOptV = Await.result(futureOptV)
         // verify old values are returned
         compareValues(k, kvs.toMap.get(k).get, foundOptV)
@@ -71,17 +72,22 @@ object MySqlLongStoreProperties extends Properties("MySqlLongStore")
       // now verify incremented values are returned
       kvs.toMap.forall { case (k, optV) =>
         val foundOptV = Await.result(store.get(k))
-        compareValues(k, optV.map { _ + 1l }.orElse(Some(1l)), foundOptV)
+        compareValues(k, optV.map { _ + 1L }.orElse(Some(1L)), foundOptV)
       }
     }
 
-  def compareValues(k: MySqlValue, expectedOptV: Option[Long], foundOptV: Option[Long]) = {
+  def compareValues(k: MySqlValue, expectedOptV: Option[Long], foundOptV: Option[Long]): Boolean = {
     val isMatch = expectedOptV match {
-      case Some(value) => !foundOptV.isEmpty && foundOptV.get == value
+      case Some(value) => foundOptV.isDefined && foundOptV.get == value
       case None => foundOptV.isEmpty
     }
-    if (!isMatch)
-      println("FAILURE: Key \"" + MySqlStringInjection(k) + "\" - expected value " + expectedOptV + ", but found " + foundOptV)
+    if (!isMatch) {
+      // scalastyle:off
+      println(
+        s"""FAILURE: Key "${String2MySqlValueInjection.invert(k)}" - """" +
+          s"expected value $expectedOptV, but found $foundOptV")
+      // scalastyle:on
+    }
     isMatch
   }
 
@@ -89,23 +95,25 @@ object MySqlLongStoreProperties extends Properties("MySqlLongStore")
     withStore(putAndGetStoreTest(_), "text", "bigint")
 
   property("MySqlLongStore multiMerge") =
-    withStore(multiMergeStoreTest(_), "text", "bigint", true)
+    withStore(multiMergeStoreTest(_), "text", "bigint", merge = true)
 
-  private def withStore[T](f: MySqlLongStore => T, kColType: String, vColType: String, merge: Boolean = false): T = {
+  private def withStore[T](f: MySqlLongStore => T, kColType: String, vColType: String,
+      merge: Boolean = false): T = {
     val client = Mysql.client
       .withCredentials("storehaususer", "test1234")
       .withDatabase("storehaus_test")
       .newRichClient("127.0.0.1:3306")
     // these should match mysql setup used in .travis.yml
 
-    val tableName = "storehaus-mysql-long-"+kColType+"-"+vColType + ( if (merge) { "-merge" } else { "" } )
-    val schema = "CREATE TEMPORARY TABLE IF NOT EXISTS `"+tableName+"` (`key` "+kColType+" DEFAULT NULL, `value` "+vColType+" DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8;"
+    val tableName = s"storehaus-mysql-long-$kColType-$vColType${if (merge) "-merge" else ""}"
+    val schema = s"CREATE TEMPORARY TABLE IF NOT EXISTS `$tableName` (`key` $kColType DEFAULT " +
+      s"NULL, `value` $vColType DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8;"
     Await.result(client.query(schema))
 
     f(newStore(client, tableName))
   }
 
-  def newStore(client: Client, tableName: String) =
+  def newStore(client: Client, tableName: String): MySqlLongStore =
     aggregateCloseable(MySqlLongStore(MySqlStore(client, tableName, "key", "value")))
 
 }
