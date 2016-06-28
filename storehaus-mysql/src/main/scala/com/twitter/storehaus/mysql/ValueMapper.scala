@@ -16,8 +16,6 @@
 
 package com.twitter.storehaus.mysql
 
-import java.lang.UnsupportedOperationException
-
 import com.twitter.bijection.Injection
 import com.twitter.finagle.exp.mysql.{
   EmptyValue,
@@ -41,7 +39,8 @@ import scala.util.Try
 object ValueMapper {
 
   // for finagle Value mappings, see:
-  // https://github.com/twitter/finagle/blob/master/finagle-mysql/src/main/scala/com/twitter/finagle/mysql/Value.scala
+  // https://github.com/twitter/finagle/blob/master/finagle-mysql/src/main/scala/com/twitter/
+  // finagle/mysql/Value.scala
 
   // currently supported types and corresponding finagle types:
   // INTEGER, INT, MEDIUMINT  => IntValue
@@ -55,19 +54,20 @@ object ValueMapper {
     v match {
       case IntValue(d) => Some(ChannelBuffers.copiedBuffer(d.toString, UTF_8))
       case LongValue(d) => Some(ChannelBuffers.copiedBuffer(d.toString, UTF_8))
-      case RawValue(_,_, true, d) => Some(ChannelBuffers.copiedBuffer(d)) // from byte array
+      case RawValue(_, _, true, d) => Some(ChannelBuffers.copiedBuffer(d)) // from byte array
       case RawValue(_, _, false, d) => Some(ChannelBuffers.copiedBuffer(new String(d), UTF_8))
       case ShortValue(d) => Some(ChannelBuffers.copiedBuffer(d.toString, UTF_8))
       case StringValue(d) => Some(ChannelBuffers.copiedBuffer(d, UTF_8))
       case EmptyValue => Some(ChannelBuffers.EMPTY_BUFFER)
       case NullValue => None
       // all other types are currently unsupported
-      case _ => throw new UnsupportedOperationException(v.getClass.getName + " is currently not supported.")
+      case other => throw new UnsupportedOperationException(
+        s"${v.getClass.getName} with value $other is currently not supported.")
     }
   }
 
-  def toString(v: Value): Option[String] = {
-    v match {
+  def toString(value: Value): Option[String] = {
+    value match {
       case IntValue(v) => Some(v.toString)
       case LongValue(v) => Some(v.toString)
       case RawValue(_, _, _, v) => Some(new String(v)) // from byte array
@@ -78,7 +78,8 @@ object ValueMapper {
       case EmptyValue => Some("")
       case NullValue => None
       // all other types are currently unsupported
-      case _ => throw new UnsupportedOperationException(v.getClass.getName + " is currently not supported.")
+      case other => throw new UnsupportedOperationException(
+        s"${value.getClass.getName} with value $other is currently not supported.")
     }
   }
 
@@ -89,9 +90,10 @@ object ValueMapper {
 
 /** Factory for [[com.twitter.storehaus.mysql.MySqlValue]] instances. */
 object MySqlValue {
-  def apply(v: Any) = v match {
+  def apply(v: Any): MySqlValue = v match {
     case v: Value => new MySqlValue(v)
-    case v: String => new MySqlValue(RawValue(Type.String, Charset.Utf8_general_ci, false, v.getBytes))
+    case v: String =>
+      new MySqlValue(RawValue(Type.String, Charset.Utf8_general_ci, isBinary = false, v.getBytes))
     case v: Int => new MySqlValue(IntValue(v))
     case v: Long => new MySqlValue(LongValue(v))
     case v: Short => new MySqlValue(ShortValue(v))
@@ -101,7 +103,8 @@ object MySqlValue {
       v.readBytes(bytes)
       v.resetReaderIndex()
       new MySqlValue(RawValue(Type.Blob, Charset.Binary, isBinary = true, bytes))
-    case _ => throw new UnsupportedOperationException(v.getClass.getName + " is currently not supported.")
+    case other => throw new UnsupportedOperationException(
+      s"${v.getClass.getName} with value $other is currently not supported.")
   }
 }
 
@@ -114,7 +117,7 @@ object MySqlValue {
  * without having to worry about the underlying finagle type.
  */
 class MySqlValue(val v: Value) {
-  override def equals(o: Any) = o match {
+  override def equals(o: Any): Boolean = o match {
     // we consider two values to be equal if their underlying string representation are equal
     case o: MySqlValue => ValueMapper.toString(o.v) == ValueMapper.toString(this.v)
     case _ => false
@@ -131,8 +134,10 @@ class MySqlValue(val v: Value) {
  */
 @deprecated("Use String2MySqlValueInjection", "0.10.0")
 object MySqlStringInjection extends Injection[MySqlValue, String] {
-  def apply(a: MySqlValue): String = ValueMapper.toString(a.v).getOrElse("") // should this be null: String instead?
-  override def invert(b: String) = Try(MySqlValue(RawValue(Type.String, Charset.Utf8_general_ci, false, b.getBytes)))
+  // should this be null: String instead?
+  def apply(a: MySqlValue): String = ValueMapper.toString(a.v).getOrElse("")
+  override def invert(b: String): Try[MySqlValue] =
+    Try(MySqlValue(RawValue(Type.String, Charset.Utf8_general_ci, isBinary = false, b.getBytes)))
 }
 
 object String2MySqlValueInjection extends Injection[String, MySqlValue] {
@@ -147,16 +152,19 @@ object String2MySqlValueInjection extends Injection[String, MySqlValue] {
  */
 @deprecated("Use ChannelBuffer2MySqlValueInjection", "0.10.0")
 object MySqlCbInjection extends Injection[MySqlValue, ChannelBuffer] {
-  def apply(a: MySqlValue): ChannelBuffer = ValueMapper.toChannelBuffer(a.v).getOrElse(ChannelBuffers.EMPTY_BUFFER)
-  override def invert(b: ChannelBuffer) = Try(MySqlValue((Type.String, Charset.Utf8_general_ci, false, b.toString(UTF_8))))
+  def apply(a: MySqlValue): ChannelBuffer =
+    ValueMapper.toChannelBuffer(a.v).getOrElse(ChannelBuffers.EMPTY_BUFFER)
+  override def invert(b: ChannelBuffer): Try[MySqlValue] =
+    Try(MySqlValue((Type.String, Charset.Utf8_general_ci, false, b.toString(UTF_8))))
 }
 
 object ChannelBuffer2MySqlValueInjection extends Injection[ChannelBuffer, MySqlValue] {
   def apply(c: ChannelBuffer): MySqlValue = MySqlValue(c)
-  override def invert(m: MySqlValue): Try[ChannelBuffer] = Try { ValueMapper.toChannelBuffer(m.v).get }
+  override def invert(m: MySqlValue): Try[ChannelBuffer] =
+    Try { ValueMapper.toChannelBuffer(m.v).get }
 }
 
 object LongMySqlInjection extends Injection[Long, MySqlValue] {
   def apply(a: Long): MySqlValue = MySqlValue(a)
-  override def invert(b: MySqlValue) = Try(ValueMapper.toLong(b.v).get)
+  override def invert(b: MySqlValue): Try[Long] = Try(ValueMapper.toLong(b.v).get)
 }
