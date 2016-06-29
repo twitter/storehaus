@@ -46,8 +46,7 @@ object NonEmpty {
       opt <- NonEmpty.alphaStrOpt
     } yield (str, opt)
 
-    /** Generator for pairings of non-empty byte arrays and non-empty byte
-      arrays options*/
+    /** Generator for pairings of non-empty byte arrays and non-empty byte arrays options */
     def byteArrayPair: Gen[(Array[Byte], Option[Array[Byte]])] = for {
       array <- NonEmpty.byteArray
       opt <- NonEmpty.byteArrayOpt
@@ -66,19 +65,19 @@ object NonEmpty {
     } yield (num, opt)
 
     /** Generator for non-empty lists of (String, Option[String])'s */
-    def alphaStrs(n: Int = 10) =
+    def alphaStrs(n: Int = 10): Gen[List[(String, Option[String])]] =
       Gen.listOfN(n, alphaStrPair)
 
     /** Generator for non-empty lists of (Array[Byte], Option[Array[Byte]])'s */
-    def byteArrays(n: Int = 10) =
+    def byteArrays(n: Int = 10): Gen[List[(Array[Byte], Option[Array[Byte]])]] =
       Gen.listOfN(n, byteArrayPair)
 
     /** Generator for non-empty lists of (String, Option[T])'s */
-    def alphaStrNumerics[T : Numeric : Choose](n: Int = 10) =
+    def alphaStrNumerics[T : Numeric : Choose](n: Int = 10): Gen[List[(String, Option[T])]] =
       Gen.listOfN(n, alphaStrPosNumericPair[T])
 
     /** Genrator for non-empty lists of numerics (T, Option[T])'s */
-    def numerics[T : Numeric : Choose](n: Int = 10) =
+    def numerics[T : Numeric : Choose](n: Int = 10): Gen[List[(T, Option[T])]] =
       Gen.listOfN(n, numericPair[T])
   }
 }
