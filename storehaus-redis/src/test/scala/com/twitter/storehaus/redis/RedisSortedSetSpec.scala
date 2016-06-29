@@ -1,20 +1,19 @@
 package com.twitter.storehaus.redis
 
-import com.twitter.bijection.{ Bijection, Injection }
+import com.twitter.bijection.Bijection
 import com.twitter.finagle.redis.util.{ CBToString, StringToChannelBuffer }
 import com.twitter.storehaus.algebra.MergeableStore
 import com.twitter.storehaus.testing.CloseableCleanup
 import com.twitter.util.{ Await, Future }
 import org.jboss.netty.buffer.ChannelBuffer
 import org.scalatest.{Matchers, WordSpec}
-import scala.util.Try
 
 class RedisSortedSetSpec extends WordSpec with Matchers
   with CloseableCleanup[RedisSortedSetStore]
   with DefaultRedisClient {
   import com.twitter.bijection.Bijection._
 
-  implicit def strToCb =
+  implicit def strToCb: Bijection[String, ChannelBuffer] =
     Bijection.build(StringToChannelBuffer(_: String))(
       CBToString(_: ChannelBuffer))
 
@@ -26,29 +25,30 @@ class RedisSortedSetSpec extends WordSpec with Matchers
 
   val members: MergeableStore[(String, String), Double] =
     closeable.members.convert {
-      case (s,m) => (StringToChannelBuffer(s),
-                     StringToChannelBuffer(m))
+      case (s, m) => (StringToChannelBuffer(s), StringToChannelBuffer(m))
     }
 
   val commits = Seq(("sritchie", 137.0), ("softprops", 73.0),
                     ("rubanm", 32.0), ("johnynek", 17.0))
 
+  // scalastyle:off
   object ::> {
-    def unapply(xs: scala.collection.TraversableLike[_,_]) =
-      if (xs.isEmpty) None else Some(xs.init, xs.last)
+    // scalastyle:on
+    def unapply(xs: scala.collection.TraversableLike[_, _]): Option[(_, _)] =
+      if (xs.isEmpty) None else Some((xs.init, xs.last))
   }
 
   "RedisSortedSet" should {
     "support Store operations" in {
       Await.result(for {
-        put     <- sets.put(("commits", Some(commits)))
+        put <- sets.put(("commits", Some(commits)))
         commits <- sets.get("commits")
       } yield commits) should be(Some(commits.sortWith(_._2 < _._2)))
     }
 
     "support merge operations" in {
       val merged = Await.result(for {
-        _       <- sets.merge(("commits", Seq(("sritchie", 1.0))))
+        _ <- sets.merge(("commits", Seq(("sritchie", 1.0))))
         commits <- sets.get("commits")
       } yield commits)
       (for (_ ::> last <- merged) yield last) should be(Some(
@@ -56,7 +56,7 @@ class RedisSortedSetSpec extends WordSpec with Matchers
     }
     "support delete operation" in {
       Await.result(for {
-        _       <- sets.put(("commits", None))
+        _ <- sets.put(("commits", None))
         commits <- sets.get("commits")
       } yield commits) should be(None)
     }
@@ -64,9 +64,7 @@ class RedisSortedSetSpec extends WordSpec with Matchers
 
   "RedisSortedSet#members" should {
 
-    val putting =
-        commits.map { case (m,d) => (("commits", m), Some(d)) }
-              .toMap
+    val putting = commits.map { case (m, d) => (("commits", m), Some(d)) }.toMap
     "support Store operations" in {
       // TODO(doug) Future.collect should really work with all iterables
       Await.result(Future.collect(members.multiPut(putting).values.toSeq))
@@ -78,7 +76,7 @@ class RedisSortedSetSpec extends WordSpec with Matchers
     "support merge operations" in {
       val who = ("commits", "sritchie")
       Await.result(for {
-        _     <- members.merge((who, 1.0))
+        _ <- members.merge((who, 1.0))
         score <- members.get(who)
       } yield score) should be(Some(138.0))
     }

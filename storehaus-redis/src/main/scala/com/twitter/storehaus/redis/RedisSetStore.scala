@@ -27,9 +27,10 @@ import org.jboss.netty.buffer.ChannelBuffer
  */
 
 object RedisSetStore {
-  def apply(client: Client, ttl: Option[Duration] = RedisStore.Default.TTL) =
+  def apply(client: Client, ttl: Option[Duration] = RedisStore.Default.TTL): RedisSetStore =
     new RedisSetStore(client, ttl)
-  def members(client: Client, ttl: Option[Duration] = RedisStore.Default.TTL) =
+  def members(
+      client: Client, ttl: Option[Duration] = RedisStore.Default.TTL): RedisSetMembershipStore =
     new RedisSetMembershipStore(RedisSetStore(client, ttl))
 }
 
@@ -41,7 +42,7 @@ class RedisSetStore(val client: Client, ttl: Option[Duration])
 
   override def get(k: ChannelBuffer): Future[Option[Set[ChannelBuffer]]] =
     client.sMembers(k).map {
-      case e if(e.isEmpty) => None
+      case e if e.isEmpty => None
       case s => Some(s)
     }
 
@@ -67,7 +68,7 @@ class RedisSetStore(val client: Client, ttl: Option[Duration])
   protected [redis] def delete(k: ChannelBuffer, v: List[ChannelBuffer]) =
     client.sRem(k, v).unit
 
-  override def close(t: Time) = client.quit.foreach { _ => client.close() }
+  override def close(t: Time): Future[Unit] = client.quit.foreach { _ => client.close() }
 }
 
 /**
@@ -93,7 +94,8 @@ class RedisSetMembershipStore(store: RedisSetStore)
       case (key, None) => store.delete(key._1, List(key._2))
     }
 
-  override def multiPut[K1 <: (ChannelBuffer, ChannelBuffer)](kv: Map[K1, Option[Unit]]): Map[K1, Future[Unit]]  = {
+  override def multiPut[K1 <: (ChannelBuffer, ChannelBuffer)](
+      kv: Map[K1, Option[Unit]]): Map[K1, Future[Unit]] = {
     // we are exploiting redis's built-in support for bulk updates and removals
     // by partioning deletions and updates into 2 maps indexed by the first
     // component of the composite key, the key of the set
@@ -104,19 +106,19 @@ class RedisSetMembershipStore(store: RedisSetStore)
       case ((deleting, storing), (key, None)) =>
         (deleting.updated(key._1, key :: deleting(key._1)), storing)
     }
-    del.map {
+    del.flatMap {
       case (k, members) =>
         val value = store.delete(k, members.map(_._2))
         members.map(_ -> value)
-    }.flatten ++ persist.map {
+    } ++ persist.flatMap {
       case (k, members) =>
         val value = store.set(k, members.map(_._2))
         members.map(_ -> value)
-    }.flatten toMap
+    }
   }
 
   /** Calling close on this store will also close it's underlying
    *  RedisSetStore
    */
-  override def close(t: Time) = store.close(t)
+  override def close(t: Time): Future[Unit] = store.close(t)
 }
