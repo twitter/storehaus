@@ -40,9 +40,7 @@ object SearchingReadableStoreProperties extends Properties("SearchingReadableSto
    * Creates a ReadableStore that delegates to underlying store and
    * records accesses.
    */
-  // scalastyle:off
   def accessRecordingStore[K, V](underlying: ReadableStore[K, V]) =
-  // scalastyle:on
     new ReadableStore[K, V] {
       var accesses = 0
 

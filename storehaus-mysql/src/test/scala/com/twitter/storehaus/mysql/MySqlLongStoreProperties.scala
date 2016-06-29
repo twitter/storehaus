@@ -82,11 +82,9 @@ object MySqlLongStoreProperties extends Properties("MySqlLongStore")
       case None => foundOptV.isEmpty
     }
     if (!isMatch) {
-      // scalastyle:off
       println(
         s"""FAILURE: Key "${String2MySqlValueInjection.invert(k)}" - """" +
           s"expected value $expectedOptV, but found $foundOptV")
-      // scalastyle:on
     }
     isMatch
   }

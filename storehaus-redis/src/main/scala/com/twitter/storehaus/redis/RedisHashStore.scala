@@ -16,11 +16,10 @@
 
 package com.twitter.storehaus.redis
 
-import com.twitter.algebird.Monoid
 import com.twitter.util.{ Duration, Future, Time }
 import com.twitter.finagle.redis.Client
 import com.twitter.storehaus.{ Store, UnpivotedStore }
-import org.jboss.netty.buffer.{ ChannelBuffer, ChannelBuffers }
+import org.jboss.netty.buffer.ChannelBuffer
 
 /**
  *
@@ -29,13 +28,13 @@ import org.jboss.netty.buffer.{ ChannelBuffer, ChannelBuffers }
 
 object RedisHashStore {
 
-  def apply(client: Client, ttl: Option[Duration] = RedisStore.Default.TTL) =
+  def apply(client: Client, ttl: Option[Duration] = RedisStore.Default.TTL): RedisHashStore =
     new RedisHashStore(client, ttl)
 
-  def unpivoted(client: Client, ttl: Option[Duration] = RedisStore.Default.TTL) =
+  def unpivoted(
+      client: Client, ttl: Option[Duration] = RedisStore.Default.TTL): UnpivotedRedisHashStore =
     new UnpivotedRedisHashStore(apply(client, ttl))
 }
-import RedisHashStore._
 
 /**
  * A Store in which keys map to Maps of secondary keys and values backed
@@ -45,7 +44,10 @@ class RedisHashStore(val client: Client, ttl: Option[Duration])
   extends Store[ChannelBuffer, Map[ChannelBuffer, ChannelBuffer]] {
 
   override def get(k: ChannelBuffer): Future[Option[Map[ChannelBuffer, ChannelBuffer]]] =
-    client.hGetAll(k).map({ case e if (e.isEmpty) => None case xs => Some(Map(xs:_*)) })
+    client.hGetAll(k).map {
+      case e if e.isEmpty => None
+      case xs => Some(Map(xs: _*))
+    }
 
   protected def set(k: ChannelBuffer, v: Map[ChannelBuffer, ChannelBuffer]) = {
     ttl.map(exp => client.expire(k, exp.inSeconds))
@@ -58,7 +60,7 @@ class RedisHashStore(val client: Client, ttl: Option[Duration])
       case (key, None) => client.del(Seq(key)).unit
     }
 
-  override def close(t: Time) = client.quit.foreach { _ => client.close() }
+  override def close(t: Time): Future[Unit] = client.quit.foreach { _ => client.close() }
 }
 
 /*
@@ -66,4 +68,5 @@ class RedisHashStore(val client: Client, ttl: Option[Duration])
  *  the value of associated with FieldKey within the redis hash
  */
 class UnpivotedRedisHashStore(hstore: RedisHashStore)
-  extends UnpivotedStore[(ChannelBuffer, ChannelBuffer), ChannelBuffer, ChannelBuffer, ChannelBuffer](hstore)(identity)
+  extends UnpivotedStore[(ChannelBuffer, ChannelBuffer),
+    ChannelBuffer, ChannelBuffer, ChannelBuffer](hstore)(identity)

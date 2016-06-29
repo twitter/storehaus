@@ -19,12 +19,11 @@ package com.twitter.storehaus.redis
 import com.twitter.bijection.Injection
 import com.twitter.finagle.redis.util.{ CBToString, StringToChannelBuffer }
 import com.twitter.storehaus.{ FutureOps, Store }
-import com.twitter.storehaus.algebra.ConvertedStore
 import com.twitter.storehaus.testing.CloseableCleanup
 import com.twitter.storehaus.testing.generator.NonEmpty
 import com.twitter.util.Await
 import org.jboss.netty.buffer.ChannelBuffer
-import org.scalacheck.{ Arbitrary, Gen, Properties }
+import org.scalacheck.{Prop, Arbitrary, Gen, Properties}
 import org.scalacheck.Prop._
 import scala.util.Try
 
@@ -35,8 +34,9 @@ object RedisStoreProperties extends Properties("RedisStore")
   def validPairs: Gen[List[(String, Option[String])]] =
     NonEmpty.Pairing.alphaStrs()
 
-  def baseTest[K : Arbitrary, V: Arbitrary: Equiv](store: Store[K, V], validPairs: Gen[List[(K, Option[V])]])
-    (put: (Store[K, V], List[(K, Option[V])]) => Unit) =
+  def baseTest[K : Arbitrary, V: Arbitrary: Equiv](
+      store: Store[K, V], validPairs: Gen[List[(K, Option[V])]])
+      (put: (Store[K, V], List[(K, Option[V])]) => Unit): Prop =
     forAll(validPairs) { (examples: List[(K, Option[V])]) =>
       put(store, examples)
       examples.toMap.forall { case (k, optV) =>
@@ -45,20 +45,22 @@ object RedisStoreProperties extends Properties("RedisStore")
       }
     }
 
-  def putStoreTest[K: Arbitrary, V: Arbitrary: Equiv](store: Store[K, V],validPairs: Gen[List[(K, Option[V])]]) =
+  def putStoreTest[K: Arbitrary, V: Arbitrary: Equiv](
+      store: Store[K, V], validPairs: Gen[List[(K, Option[V])]]): Prop =
     baseTest(store, validPairs) { (s, pairs) =>
       pairs.foreach { case (k, v) => Await.result(s.put((k, v))) }
     }
 
-  def multiPutStoreTest[K: Arbitrary, V: Arbitrary: Equiv](store: Store[K, V], validPairs: Gen[List[(K, Option[V])]]) =
+  def multiPutStoreTest[K: Arbitrary, V: Arbitrary: Equiv](
+      store: Store[K, V], validPairs: Gen[List[(K, Option[V])]]): Prop =
     baseTest(store, validPairs) { (s, pairs) =>
       Await.result(FutureOps.mapCollect(s.multiPut(pairs.toMap)))
     }
 
-  def storeTest(store: Store[String, String]) =
+  def storeTest(store: Store[String, String]): Prop =
     putStoreTest(store, validPairs) && multiPutStoreTest(store, validPairs)
 
-  implicit def strToCb =
+  implicit def strToCb: Injection[String, ChannelBuffer] =
     Injection.build(StringToChannelBuffer(_: String))(
       (b: ChannelBuffer) => Try(CBToString(b)))
 
