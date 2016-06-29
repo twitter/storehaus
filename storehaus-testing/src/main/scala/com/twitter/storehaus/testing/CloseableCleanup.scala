@@ -21,5 +21,5 @@ import com.twitter.util.Closable
 /** Cleanup for Closeable types */
 trait CloseableCleanup[C <: Closable] extends Cleanup {
   def closeable: C
-  def cleanup() = closeable.close()
+  def cleanup(): Unit = closeable.close()
 }
