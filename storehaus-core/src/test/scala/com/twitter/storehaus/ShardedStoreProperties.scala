@@ -25,14 +25,15 @@ object ShardedStoreProperties extends Properties("ShardedStore") {
 
   def moddiv(v: Int, by: Int): (Int, Int) = {
     val cmod = v % by
-    val mod = if(cmod < 0) cmod + by else cmod
+    val mod = if (cmod < 0) cmod + by else cmod
     (mod, v/by)
   }
 
   implicit val strArb: Arbitrary[String] = Arbitrary { Gen.alphaStr }
   property("ShardedStore test") = {
     val SHARDS = 10
-    implicit val arbpair: Arbitrary[(Int,Int)] = Arbitrary { Arbitrary.arbitrary[Int].map { moddiv(_, SHARDS) } }
+    implicit val arbpair: Arbitrary[(Int, Int)] =
+      Arbitrary { Arbitrary.arbitrary[Int].map { moddiv(_, SHARDS) } }
     storeTest {
       ShardedStore.fromMap((0 until SHARDS).map { _ -> new JMapStore[Int, String] }.toMap)
     }

@@ -35,7 +35,8 @@ import com.twitter.util.Future
  *
  * @author Ruban Monu
  */
-class WriteThroughStore[K, V](backingStore: Store[K, V], cache: Store[K, V], invalidate: Boolean = true)
+class WriteThroughStore[K, V](
+  backingStore: Store[K, V], cache: Store[K, V], invalidate: Boolean = true)
   extends ReadThroughStore[K, V](backingStore, cache) with Store[K, V] {
 
   override def put(kv: (K, Option[V])): Future[Unit] = mutex.acquire.flatMap { p =>
@@ -60,8 +61,8 @@ class WriteThroughStore[K, V](backingStore: Store[K, V], cache: Store[K, V], inv
     val f : Future[Map[K1, Either[Unit, Exception]]] = mutex.acquire.flatMap { p =>
       // write keys to backing store first
       val storeResults : Map[K1, Future[Either[Unit, Exception]]] =
-        backingStore.multiPut(kvs).map { case (k, f) =>
-          (k, f.map { u: Unit => Left(u) }.rescue { case x: Exception => Future.value(Right(x)) })
+        backingStore.multiPut(kvs).map { case (k, fut) =>
+          (k, fut.map { u: Unit => Left(u) }.rescue { case x: Exception => Future.value(Right(x)) })
         }
 
       // perform cache operations based on how writes to backing store go
@@ -70,7 +71,7 @@ class WriteThroughStore[K, V](backingStore: Store[K, V], cache: Store[K, V], inv
         val succeededKeys = storeResult.filter { _._2.isLeft }.keySet
 
         // write updated keys to cache, best effort
-        val keysToUpdate = kvs.filterKeys { succeededKeys.contains(_) } ++ {
+        val keysToUpdate = kvs.filterKeys(succeededKeys.contains) ++ {
             // optionally invalidate cached copy when write to backing store fails
             if (invalidate) { failedKeys.map { k => (k, None) }.toMap }
             else { Map.empty }
@@ -87,12 +88,10 @@ class WriteThroughStore[K, V](backingStore: Store[K, V], cache: Store[K, V], inv
 
     // throw original exception for any writes that failed
     FutureOps.liftValues(kvs.keySet, f, { (k: K1) => Future.None })
-      .map { case kv : (K1, Future[Either[Unit, Exception]]) =>
-        val transform = kv._2.map { v =>
-          v match {
-            case Left(optv) => optv
-            case Right(x) => throw x
-          }
+      .map { case kv: (K1, Future[Either[Unit, Exception]]) =>
+        val transform = kv._2.map {
+          case Left(optv) => optv
+          case Right(x) => throw x
         }
         (kv._1, transform)
       }

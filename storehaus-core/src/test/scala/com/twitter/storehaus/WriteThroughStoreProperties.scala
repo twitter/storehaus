@@ -23,14 +23,14 @@ object WriteThroughStoreProperties extends Properties("WriteThroughStoreProperti
 
   property("WriteThroughStore with invalidation obeys the Store laws") =
     storeTest {
-      new WriteThroughStore(new ConcurrentHashMapStore[String,Int],
-        new ConcurrentHashMapStore[String,Int], true)
+      new WriteThroughStore(new ConcurrentHashMapStore[String, Int],
+        new ConcurrentHashMapStore[String, Int], true)
     }
 
   property("WriteThroughStore with no invalidation obeys the Store laws") =
     storeTest {
-      new WriteThroughStore(new ConcurrentHashMapStore[String,Int],
-        new ConcurrentHashMapStore[String,Int], false)
+      new WriteThroughStore(new ConcurrentHashMapStore[String, Int],
+        new ConcurrentHashMapStore[String, Int], false)
     }
 
   property("WriteThroughStore should ignore on the cache-store") =

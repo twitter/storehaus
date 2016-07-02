@@ -16,10 +16,13 @@
 
 package com.twitter.storehaus
 
+import java.util.{ Map => JMap }
+
 import com.twitter.bijection.Injection
 import com.twitter.storehaus.cache.MutableCache
-import com.twitter.util.{ Duration, Future, Timer }
-import java.util.{ Map => JMap }
+import com.twitter.util.{ Duration, Timer }
+
+import scala.language.implicitConversions
 
 /** Factory methods and some combinators on Stores */
 object Store {
@@ -36,7 +39,7 @@ object Store {
 
   /** Generates a store from the supplied
     * [[com.twitter.storehaus.cache.MutableCache]] */
-  def fromCache[K, V](cache: MutableCache[K, V]) = new CacheStore(cache)
+  def fromCache[K, V](cache: MutableCache[K, V]): CacheStore[K, V] = new CacheStore(cache)
 
   /**
    * Returns a new Store[K, V] that queries all of the stores and
@@ -44,7 +47,8 @@ object Store {
    * the supplied predicate. Writes are routed to every store in the
    * supplied sequence.
    */
-  def select[K, V](stores: Seq[Store[K, V]])(pred: Option[V] => Boolean)(implicit collect: FutureCollector): Store[K, V] =
+  def select[K, V](stores: Seq[Store[K, V]])(pred: Option[V] => Boolean)
+      (implicit collect: FutureCollector): Store[K, V] =
     new ReplicatedStore(stores)(pred)
 
   /**
@@ -73,7 +77,8 @@ object Store {
     (split: K => (OuterK, InnerK)): Store[K, V] =
     new UnpivotedStore(store)(split)
 
-  def convert[K1, K2, V1, V2](store: Store[K1, V1])(kfn: K2 => K1)(implicit inj: Injection[V2, V1]): Store[K2, V2] =
+  def convert[K1, K2, V1, V2](store: Store[K1, V1])(kfn: K2 => K1)
+      (implicit inj: Injection[V2, V1]): Store[K2, V2] =
     new ConvertedStore(store)(kfn)(inj)
 
   /**
@@ -83,7 +88,8 @@ object Store {
    * read result satisfying the given predicate after all read
    * attempts, a NotFoundException will be thrown.
    */
-  def withRetry[K, V](store: Store[K, V], backoffs: Iterable[Duration])(pred: Option[V] => Boolean)(implicit timer: Timer): Store[K, V] =
+  def withRetry[K, V](store: Store[K, V], backoffs: Iterable[Duration])(pred: Option[V] => Boolean)
+      (implicit timer: Timer): Store[K, V] =
     new RetryingStore(store, backoffs)(pred)
 }
 

@@ -29,7 +29,8 @@ object SearchingReadableStoreProperties extends Properties("SearchingReadableSto
     */
   property("ReadableStore.find works as expected") =
     forAll { (m1: Map[String, Int], m2: Map[String, Int]) =>
-      val store = ReadableStore.find(Seq(ReadableStore.fromMap(m1), ReadableStore.fromMap(m2)))(_.isDefined)
+      val store =
+        ReadableStore.find(Seq(ReadableStore.fromMap(m1), ReadableStore.fromMap(m2)))(_.isDefined)
       val leftGet = store.multiGet(m1.keySet).mapValues(Await.result(_))
       val rightGet = store.multiGet(m2.keySet).mapValues(Await.result(_))
       leftGet == m1.mapValues(Some(_)) && rightGet.forall { case (k, v) => v == (m2 ++ m1).get(k) }
@@ -39,19 +40,22 @@ object SearchingReadableStoreProperties extends Properties("SearchingReadableSto
    * Creates a ReadableStore that delegates to underlying store and
    * records accesses.
    */
-  def accessRecordingStore[K, V](underlying: ReadableStore[K, V]) = new ReadableStore[K, V] {
-    var accesses = 0
+  // scalastyle:off
+  def accessRecordingStore[K, V](underlying: ReadableStore[K, V]) =
+  // scalastyle:on
+    new ReadableStore[K, V] {
+      var accesses = 0
 
-    override def get(k: K): Future[Option[V]] = {
-      this.synchronized { accesses += 1 }
-      underlying.get(k)
-    }
+      override def get(k: K): Future[Option[V]] = {
+        this.synchronized { accesses += 1 }
+        underlying.get(k)
+      }
 
-    override def multiGet[K1 <: K](ks: Set[K1]): Map[K1, Future[Option[V]]] = {
-      this.synchronized { accesses += 1 }
-      underlying.multiGet(ks)
+      override def multiGet[K1 <: K](ks: Set[K1]): Map[K1, Future[Option[V]]] = {
+        this.synchronized { accesses += 1 }
+        underlying.multiGet(ks)
+      }
     }
-  }
 
   property("ReadableStore.find does not call the second store if value found in first") =
     forAll { (m: Map[String, Int]) =>

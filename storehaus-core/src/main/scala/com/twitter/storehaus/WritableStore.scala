@@ -35,7 +35,7 @@ trait WritableStore[-K, -V] extends Closable {
   /** Close this store and release any resources.
    * It is undefined what happens on get/multiGet after close
    */
-  override def close(time: Time) = Future.Unit
+  override def close(time: Time): Future[Unit] = Future.Unit
 }
 
 /**

@@ -19,6 +19,8 @@ package com.twitter.storehaus
 import com.twitter.storehaus.cache.{ Cache, MutableCache }
 import com.twitter.util.{ Closable, Duration, Future, Time, Timer }
 
+import scala.language.implicitConversions
+
 /** Holds various factory and transformation functions for ReadableStore instances */
 object ReadableStore {
   /** Adds enrichment methods to ReadableStore
@@ -44,7 +46,8 @@ object ReadableStore {
    * and returns the first values that are not exceptions and that
    * pass the supplied predicate.
    */
-  def select[K, V](stores: Seq[ReadableStore[K, V]])(pred: Option[V] => Boolean): ReadableStore[K, V] =
+  def select[K, V](
+      stores: Seq[ReadableStore[K, V]])(pred: Option[V] => Boolean): ReadableStore[K, V] =
     new ReplicatedReadableStore(stores)(pred)
 
   /**
@@ -52,7 +55,8 @@ object ReadableStore {
    * supplied Seq[ReadableStore[K, V]] in order and returns the first
    * successful value that passes the supplied predicate.
    */
-  def find[K, V](stores: Seq[ReadableStore[K, V]])(pred: Option[V] => Boolean): ReadableStore[K, V] =
+  def find[K, V](
+      stores: Seq[ReadableStore[K, V]])(pred: Option[V] => Boolean): ReadableStore[K, V] =
     new SearchingReadableStore(stores)(pred)
 
   /**
@@ -74,13 +78,15 @@ object ReadableStore {
   def fromMap[K, V](m: Map[K, V]): ReadableStore[K, V] = new MapStore(m)
 
   /** Factory method to create a ReadableStore from an IndexedSeq. */
-  def fromIndexedSeq[T](iseq: IndexedSeq[T]): ReadableStore[Int, T] = new IndexedSeqReadableStore(iseq)
+  def fromIndexedSeq[T](iseq: IndexedSeq[T]): ReadableStore[Int, T] =
+    new IndexedSeqReadableStore(iseq)
 
   /**
    * Treat a Function1 like a ReadableStore
    */
   def fromFn[K, V](getfn: (K) => Option[V]): ReadableStore[K, V] = new AbstractReadableStore[K, V] {
-    override def get(k: K) = // I know Future(getfn(k)) looks similar, we've seen some high costs with that
+    // I know Future(getfn(k)) looks similar, we've seen some high costs with that
+    override def get(k: K) =
       try { Future.value(getfn(k)) }
       catch { case e: Throwable => Future.exception(e) }
   }
@@ -88,24 +94,27 @@ object ReadableStore {
   /**
    * Treat a function returning a Future[Option[V]] as the get method of a ReadableStore
    */
-  def fromFnFuture[K, V](getfn: (K) => Future[Option[V]]): ReadableStore[K, V] = new AbstractReadableStore[K, V] {
-    override def get(k: K) = getfn(k)
-  }
+  def fromFnFuture[K, V](getfn: (K) => Future[Option[V]]): ReadableStore[K, V] =
+    new AbstractReadableStore[K, V] {
+      override def get(k: K) = getfn(k)
+    }
 
   /** Treat a PartialFunction like a ReadableStore
    */
-  def fromPartial[K, V](getfn: PartialFunction[K, V]): ReadableStore[K, V] = new AbstractReadableStore[K, V] {
-    override def get(k: K) = if (getfn.isDefinedAt(k)) {
-      try { Future.value(Some(getfn(k))) }
-      catch { case e: Throwable => Future.exception(e) }
-    } else Future.None
-  }
+  def fromPartial[K, V](getfn: PartialFunction[K, V]): ReadableStore[K, V] =
+    new AbstractReadableStore[K, V] {
+      override def get(k: K) = if (getfn.isDefinedAt(k)) {
+        try { Future.value(Some(getfn(k))) }
+        catch { case e: Throwable => Future.exception(e) }
+      } else Future.None
+    }
 
   /** Do a "join" on two stores: look up from the first, and use that value as the key in the next
    * A factory method for [[com.twitter.storehaus.ComposedStore]].
    * See also [[ReadableStore.convert]] if you need to change the value or key before the andThen
    */
-  def andThen[K, V, V2, V3 >: V](l: ReadableStore[K, V], r: ReadableStore[V3, V2])(implicit fc: FutureCollector): ReadableStore[K, V2] =
+  def andThen[K, V, V2, V3 >: V](l: ReadableStore[K, V], r: ReadableStore[V3, V2])
+      (implicit fc: FutureCollector): ReadableStore[K, V2] =
     new ComposedStore[K, V, V2, V3](l, r)
 
   /** unpivot or uncurry a ReadableStore which has a value that is a Map.
@@ -119,17 +128,20 @@ object ReadableStore {
   /** Lazily change the key and value for a store.
    * This does not change the representation, only alters before going in or out of the store.
    */
-  def convert[K1, K2, V1, V2](store: ReadableStore[K1, V1])(kfn: K2 => K1)(vfn: V1 => Future[V2]): ReadableStore[K2, V2] =
+  def convert[K1, K2, V1, V2](
+      store: ReadableStore[K1, V1])(kfn: K2 => K1)(vfn: V1 => Future[V2]): ReadableStore[K2, V2] =
     new ConvertedReadableStore(store)(kfn)(vfn)
 
-  /* Returns a new ReadableStore that caches reads from the underlying
+  /** Returns a new ReadableStore that caches reads from the underlying
    * store using the supplied mutable cache.  */
-  def withCache[K, V](store: ReadableStore[K, V], cache: MutableCache[K, Future[Option[V]]]): ReadableStore[K, V] =
+  def withCache[K, V](
+      store: ReadableStore[K, V], cache: MutableCache[K, Future[Option[V]]]): ReadableStore[K, V] =
     new CachedReadableStore(store, cache)
 
-  /* Returns a new ReadableStore that caches reads from the underlying
+  /** Returns a new ReadableStore that caches reads from the underlying
    * store using the supplied immutable cache.  */
-  def withCache[K, V](store: ReadableStore[K, V], cache: Cache[K, Future[Option[V]]]): ReadableStore[K, V] =
+  def withCache[K, V](
+      store: ReadableStore[K, V], cache: Cache[K, Future[Option[V]]]): ReadableStore[K, V] =
     new CachedReadableStore(store, cache.toMutable())
 
   /**
@@ -139,7 +151,9 @@ object ReadableStore {
    * not read result satisfying the given predicate after all read
    * attempts, a NotFoundException will be thrown.
    */
-  def withRetry[K, V](store: ReadableStore[K, V], backoffs: Iterable[Duration])(pred: Option[V] => Boolean)(implicit timer: Timer): ReadableStore[K, V] =
+  def withRetry[K, V](
+    store: ReadableStore[K, V], backoffs: Iterable[Duration]
+  )(pred: Option[V] => Boolean)(implicit timer: Timer): ReadableStore[K, V] =
     new RetryingReadableStore(store, backoffs)(pred)
 }
 
@@ -147,7 +161,8 @@ object ReadableStore {
  * Here you see the tri-state logic:
  * <ul>
  *   <li>Future(Some(v)) - The store has the item</li>
- *   <li>Future(None) - The store definitely DOES NOT have the item (not the same as no answer).</li>
+ *   <li>Future(None) -
+ *    The store definitely DOES NOT have the item (not the same as no answer).</li>
  *   <li>Future.exception - Some kind of unexpected failure (including non-answer).</li>
  * </ul>
  */
@@ -168,7 +183,7 @@ trait ReadableStore[-K, +V] extends Closable { self =>
   /** Close this store and release any resources.
    * It is undefined what happens on get/multiGet after close
    */
-  override def close(time: Time) = Future.Unit
+  override def close(time: Time): Future[Unit] = Future.Unit
 }
 
 /** Abstract extension of the defined trait to minimize trait bloat.
