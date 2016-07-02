@@ -31,14 +31,15 @@ object PivotOps {
     * contain None as the value or 2) in combination with the paired
     * outerK don't pass the input filter.
     */
-  def multiGetFiltered[OuterK, InnerK, V](store: ReadableStore[OuterK, Map[InnerK, V]], ks: Set[OuterK])
+  def multiGetFiltered[OuterK, InnerK, V](
+    store: ReadableStore[OuterK, Map[InnerK, V]], ks: Set[OuterK])
     (pred: (OuterK, InnerK) => Boolean)
       : Map[OuterK, Future[Option[List[(InnerK, V)]]]] =
     store.multiGet(ks)
       .map { case (outerK, futureOptV) =>
         outerK -> futureOptV.map { optV =>
           optV.map { _.filterKeys { pred(outerK, _) }.toList }
-            .filter { !_.isEmpty }
+            .filter(_.nonEmpty)
         }
       }
 
@@ -50,11 +51,11 @@ object PivotOps {
     pivoted.mapValues { m =>
       Future.value {
         Some(m.collect { case (innerK, Some(v)) => innerK -> v }.toList)
-          .filter { !_.isEmpty }
+          .filter(_.nonEmpty)
       }
     }
 
-  type InnerPair[OuterK, InnerK, V] = (OuterK, Option[Map[InnerK,V]])
+  type InnerPair[OuterK, InnerK, V] = (OuterK, Option[Map[InnerK, V]])
 
   /**
     * Really belongs in Algebird, but recoding this explicitly keeps the dependency out.
@@ -71,12 +72,13 @@ object PivotOps {
           case (None, None) => None
           case (None, Some(v)) => Some(v)
           case (Some(v), None) => Some(v)
-          case (Some(l), Some(r)) => Some(l ++ r)
+          case (Some(left), Some(right)) => Some(left ++ right)
         }
         m + (k -> newV)
     }
 
-  def multiPut[K, K1 <: K, OuterK, InnerK, V](store: Store[OuterK, Map[InnerK, V]], kvs: Map[K1, Option[V]])
+  def multiPut[K, K1 <: K, OuterK, InnerK, V](
+    store: Store[OuterK, Map[InnerK, V]], kvs: Map[K1, Option[V]])
     (split: K => (OuterK, InnerK))
     (implicit collect: FutureCollector): Map[K1, Future[Unit]] = {
     val pivoted = CollectionOps.pivotMap[K1, OuterK, InnerK, Option[V]](kvs)(split)
@@ -94,7 +96,7 @@ object PivotOps {
     // Result of a multiPut of all affected pairs in the underlying
     // store.
     val submitted: Future[Map[OuterK, Future[Unit]]] =
-      FutureOps.mapCollect(mergedResult)(collect).map { store.multiPut(_) }
+      FutureOps.mapCollect(mergedResult)(collect).map(store.multiPut)
 
     // The final flatMap returns a map of K to the future responsible
     // for writing K's value into the underlying store. Due to
@@ -105,6 +107,6 @@ object PivotOps {
         (1 to pivoted(outerK).size).map { _ =>
           k -> submitted.flatMap { _.apply(outerK) }
         }
-    }.toMap
+    }
   }
 }

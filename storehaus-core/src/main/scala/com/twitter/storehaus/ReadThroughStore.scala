@@ -60,8 +60,8 @@ class ReadThroughStore[K, V](backingStore: ReadableStore[K, V], cache: Store[K, 
   override def multiGet[K1 <: K](ks: Set[K1]): Map[K1, Future[Option[V]]] = {
     // attempt to read from cache first
     val cacheResults : Map[K1, Future[Either[Option[V], Exception]]] =
-      cache.multiGet(ks).map { case (k, f) =>
-        (k, f.map { optv => Left(optv) } rescue { case x: Exception => Future.value(Right(x)) })
+      cache.multiGet(ks).map { case (k, fut) =>
+        (k, fut.map { optv => Left(optv) } rescue { case x: Exception => Future.value(Right(x)) })
       }
 
     // attempt to read all failed keys and cache misses from backing store
@@ -69,7 +69,7 @@ class ReadThroughStore[K, V](backingStore: ReadableStore[K, V], cache: Store[K, 
       FutureOps.mapCollect(cacheResults).flatMap { cacheResult =>
         val failedKeys = cacheResult.filter { _._2.isRight }.keySet
         val responses = cacheResult.filter { _._2.isLeft }.map { case (k, r) => (k, r.left.get) }
-        val hits = responses.filter { !_._2.isEmpty }
+        val hits = responses.filter(_._2.isDefined)
         val missedKeys = responses.filter { _._2.isEmpty }.keySet
 
         val remaining = missedKeys ++ failedKeys

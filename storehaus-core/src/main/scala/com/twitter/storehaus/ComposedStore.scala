@@ -18,19 +18,20 @@ package com.twitter.storehaus
 
 import com.twitter.util.{Future, Time}
 
-/** A store that is made from looking up values in the first store, then using that as the key in the second
- * When used with [[com.twitter.storehaus.ConvertedStore]] you can do some powerful sequential processing
- * of stores
+/** A store that is made from looking up values in the first store, then using that as the key
+ * in the second.
+ * When used with [[com.twitter.storehaus.ConvertedStore]] you can do some powerful
+ * sequential processing of stores
  */
-class ComposedStore[-K, V, V2, V3 >: V](l: ReadableStore[K, V], r: ReadableStore[V3, V2])(implicit fc: FutureCollector)
-  extends AbstractReadableStore[K, V2] {
-  override def get(k: K) =
+class ComposedStore[-K, V, V2, V3 >: V](l: ReadableStore[K, V], r: ReadableStore[V3, V2])(
+    implicit fc: FutureCollector) extends AbstractReadableStore[K, V2] {
+  override def get(k: K): Future[Option[V2]] =
     for (
       optV <- l.get(k);
       v2 <- optV.map { v => r.get(v) }.getOrElse(Future.None)
     ) yield v2
 
-  override def multiGet[K1 <: K](ks: Set[K1]) = {
+  override def multiGet[K1 <: K](ks: Set[K1]): Map[K1, Future[Option[V2]]] = {
     val mapFV: Map[K1, Future[Option[V]]] = l.multiGet(ks)
     val fkVals: Future[Map[K1, Option[V]]] = FutureOps.mapCollect(mapFV)
 
@@ -41,5 +42,5 @@ class ComposedStore[-K, V, V2, V3 >: V](l: ReadableStore[K, V], r: ReadableStore
     }
     FutureOps.liftFutureValues(ks, fmapf)
   }
-  override def close(time: Time) = Future.join(l.close(time), r.close(time)).unit
+  override def close(time: Time): Future[Unit] = Future.join(l.close(time), r.close(time)).unit
 }

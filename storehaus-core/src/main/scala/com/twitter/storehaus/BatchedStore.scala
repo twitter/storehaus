@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus
 
-import com.twitter.util.{ Future }
+import com.twitter.util.Future
 import com.twitter.concurrent.AsyncSemaphore
 
 /**
@@ -36,7 +36,7 @@ class BatchedStore[K, V](
     maxConcurrentMultiGets: Int)
     (implicit fc: FutureCollector)
       extends BatchedReadableStore[K, V](store, maxMultiGetSize, maxConcurrentMultiGets)
-      with Store[K,V] {
+      with Store[K, V] {
   // do we need different knobs for gets and puts
   // or should we use the same max size and max concurrent for both?
   protected val writeConnectionLock = new AsyncSemaphore(maxConcurrentMultiPuts)

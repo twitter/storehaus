@@ -20,7 +20,10 @@ import com.twitter.storehaus.cache.MutableCache
 import com.twitter.util.{ Future, Return }
 import scala.collection.breakOut
 
-class CachedReadableStore[K, V](store: ReadableStore[K, V], cache: MutableCache[K, Future[Option[V]]]) extends ReadableStore[K, V] {
+class CachedReadableStore[K, V](
+  store: ReadableStore[K, V],
+  cache: MutableCache[K, Future[Option[V]]]
+) extends ReadableStore[K, V] {
   val filteredCache = cache.filter {
     _._2.poll match {
       case None | Some(Return(_)) => true
@@ -33,7 +36,7 @@ class CachedReadableStore[K, V](store: ReadableStore[K, V], cache: MutableCache[
     * value. Otherwise (in a missing cache value or failed future),
     * refresh the cache from the store.
     */
-  override def get(k: K) = filteredCache.getOrElseUpdate(k, store.get(k))
+  override def get(k: K): Future[Option[V]] = filteredCache.getOrElseUpdate(k, store.get(k))
 
   override def multiGet[K1 <: K](keys: Set[K1]): Map[K1, Future[Option[V]]] = {
     val present: Map[K1, Future[Option[V]]] =

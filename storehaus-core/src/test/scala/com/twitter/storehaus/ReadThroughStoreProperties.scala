@@ -17,14 +17,13 @@
 package com.twitter.storehaus
 
 import org.scalacheck.Properties
-import org.scalacheck.Prop._
 
 object ReadThroughStoreProperties extends Properties("ReadThroughStoreProperties") {
   import ReadableStoreProperties.readableStoreLaws
 
   property("ReadThroughStore obeys the ReadableStore laws") =
     readableStoreLaws[String, Int] { m =>
-      new ReadThroughStore(ReadableStore.fromMap(m), new ConcurrentHashMapStore[String,Int])
+      new ReadThroughStore(ReadableStore.fromMap(m), new ConcurrentHashMapStore[String, Int])
     }
 
   property("ReadThroughStore should ignore exceptions on the cache-store") =

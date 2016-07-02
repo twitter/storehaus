@@ -25,26 +25,27 @@ import com.twitter.util.{Future, Time}
  * @author Sam Ritchie
  */
 
-class UnpivotedStore[-K, OuterK, InnerK, V](store: Store[OuterK, Map[InnerK, V]])(split: K => (OuterK, InnerK))
-    extends UnpivotedReadableStore[K, OuterK, InnerK, V](store)(split)
+class UnpivotedStore[-K, OuterK, InnerK, V](
+  store: Store[OuterK, Map[InnerK, V]])(split: K => (OuterK, InnerK))
+  extends UnpivotedReadableStore[K, OuterK, InnerK, V](store)(split)
   with Store[K, V] {
 
-  override def put(pair: (K, Option[V])) = {
+  override def put(pair: (K, Option[V])): Future[Unit] = {
     val (k, optV) = pair
     val (outerK, innerK) = split(k)
     store.get(outerK).map { mOpt: Option[Map[InnerK, V]] =>
       val optPair: Option[(InnerK, V)] = optV.map { innerK -> _ }
       (mOpt, optPair) match {
-        case (Some(m), Some(pair)) => Some(m + pair)
+        case (Some(m), Some(p)) => Some(m + p)
         case (Some(m), None) => Some(m - innerK)
-        case (None, Some(pair)) => Some(Map(pair))
+        case (None, Some(p)) => Some(Map(p))
         case (None, None) => None
       }
     }.foreach { newMap => store.put(outerK -> newMap) }.unit
   }
 
-  override def multiPut[K1 <: K](kvs: Map[K1, Option[V]]) =
+  override def multiPut[K1 <: K](kvs: Map[K1, Option[V]]): Map[K1, Future[Unit]] =
     PivotOps.multiPut(store, kvs)(split)(FutureCollector.default)
 
-  override def close(time: Time) = store.close(time)
+  override def close(time: Time): Future[Unit] = store.close(time)
 }

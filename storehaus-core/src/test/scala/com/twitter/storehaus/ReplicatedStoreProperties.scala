@@ -23,6 +23,6 @@ import org.scalacheck.Gen
 
 object ReplicatedStoreProperties extends Properties("ReplicatedStore") {
   implicit val strArb: Arbitrary[String] = Arbitrary { Gen.alphaStr }
-  property("ReplicatedStore test") =
-    StoreProperties.storeTest(Store.first(Stream.continually(new JMapStore[String, Int]).take(100).toSeq))
+  property("ReplicatedStore test") = StoreProperties.storeTest(
+    Store.first(Stream.continually(new JMapStore[String, Int]).take(100).toSeq))
 }

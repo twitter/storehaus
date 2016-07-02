@@ -33,7 +33,8 @@ import com.twitter.storehaus.cache.{ Cache, MutableCache }
   * TODO: in scala 2.10 this should be a value class
   */
 class EnrichedReadableStore[-K, +V](store: ReadableStore[K, V]) {
-  def andThen[V2, K1 >: V](other: ReadableStore[K1, V2])(implicit fc: FutureCollector): ReadableStore[K, V2] =
+  def andThen[V2, K1 >: V](other: ReadableStore[K1, V2])(
+      implicit fc: FutureCollector): ReadableStore[K, V2] =
     new ComposedStore[K, V, V2, K1](store, other)
 
   def unpivot[CombinedK, InnerK, InnerV](split: CombinedK => (K, InnerK))
@@ -58,14 +59,15 @@ class EnrichedReadableStore[-K, +V](store: ReadableStore[K, V]) {
    * throws, it will be caught in the Future.
    */
   def mapValues[V1](fn: V => V1): ReadableStore[K, V1] =
-    flatMapValues(fn.andThen { Future.value(_) })
+    flatMapValues(fn.andThen { Future.value })
 
   def convert[K1, V1](kfn: K1 => K)(vfn: V => Future[V1]): ReadableStore[K1, V1] =
     ReadableStore.convert(store)(kfn)(vfn)
 
   /* Returns a new ReadableStore that caches reads from the underlying
    * store using the supplied mutable cache.  */
-  def withCache[K1 <: K, V1 >: V](cache: MutableCache[K1, Future[Option[V1]]]): ReadableStore[K1, V1] =
+  def withCache[K1 <: K, V1 >: V](
+      cache: MutableCache[K1, Future[Option[V1]]]): ReadableStore[K1, V1] =
     new CachedReadableStore(store, cache)
 
   /* Returns a new ReadableStore that caches reads from the underlying
