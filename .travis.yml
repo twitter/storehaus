@@ -11,4 +11,7 @@ services:
   - redis-server
   - memcache
   - mongodb
-script: umask 0022 && sbt ++$TRAVIS_SCALA_VERSION test
+script:
+  - umask 0022 && sbt ++$TRAVIS_SCALA_VERSION scalastyle
+  - umask 0022 && sbt ++$TRAVIS_SCALA_VERSION test:scalastyle
+  - umask 0022 && sbt ++$TRAVIS_SCALA_VERSION test
