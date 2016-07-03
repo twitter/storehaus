@@ -48,6 +48,9 @@ val sharedSettings = extraSettings ++ ciSettings ++ Seq(
     "-Yresolve-term-conflict:package"
   ),
 
+  // add linter for common scala issues: https://github.com/HairyFotr/linter
+  addCompilerPlugin("org.psywerx.hairyfotr" %% "linter" % "0.1.14"),
+
   // Publishing options:
 
   releaseCrossBuild := true,
