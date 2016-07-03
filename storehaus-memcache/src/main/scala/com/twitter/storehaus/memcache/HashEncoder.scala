@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus.memcache
 
-import com.twitter.bijection.{ Base64String, Bijection, Codec, Injection }
+import com.twitter.bijection.{ Base64String, Bijection, Codec }
 import com.twitter.util.Encoder
 
 /**
@@ -41,7 +41,7 @@ object HashEncoder {
   // http://docs.oracle.com/javase/1.4.2/docs/guide/security/CryptoSpec.html#AppA
   val DEFAULT_HASH_FUNC = "SHA-256"
 
-  def apply(hashFunc: String = DEFAULT_HASH_FUNC) = new HashEncoder(hashFunc)
+  def apply(hashFunc: String = DEFAULT_HASH_FUNC): HashEncoder = new HashEncoder(hashFunc)
 
   /**
    * Returns a function that encodes a key to a hashed, base64-encoded
@@ -50,6 +50,7 @@ object HashEncoder {
   def keyEncoder[T](namespace: String, hashFunc: String = DEFAULT_HASH_FUNC)
     (implicit inj: Codec[T]): T => String = { key: T =>
     def concat(bytes: Array[Byte]): Array[Byte] = namespace.getBytes ++ bytes
-    (inj andThen (concat _) andThen HashEncoder() andThen Bijection.connect[Array[Byte], Base64String])(key).str
+    (inj andThen concat _ andThen HashEncoder() andThen
+      Bijection.connect[Array[Byte], Base64String])(key).str
   }
 }

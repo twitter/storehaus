@@ -29,7 +29,7 @@ trait IdProvider[@specialized(Int, Long) T] extends Clock[T, IdProvider[T]] {
   def cull(oldId: T): IdProvider[T]
 }
 
-case class LongClock(v:Long = 0) extends Clock[Long, LongClock] {
-  def tick = (v, LongClock(v + 1))
-  def empty = LongClock()
+case class LongClock(v: Long = 0) extends Clock[Long, LongClock] {
+  def tick: (Long, LongClock) = (v, LongClock(v + 1))
+  def empty: LongClock = LongClock()
 }

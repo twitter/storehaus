@@ -16,11 +16,9 @@
 
 package com.twitter.storehaus.cache
 
-import com.twitter.util.{ Future, Time }
-
 /** Proxy for Mergeables. Methods not overrided in extensions will be forwared to Proxied
  *  self member */
-trait MutableCacheProxy[K, V] extends MutableCache[K, V] with CacheProxied[MutableCache[K,V]] {
+trait MutableCacheProxy[K, V] extends MutableCache[K, V] with CacheProxied[MutableCache[K, V]] {
   override def get(k: K): Option[V] = self.get(k)
 
   override def +=(kv: (K, V)): this.type = {
@@ -55,6 +53,6 @@ trait MutableCacheProxy[K, V] extends MutableCache[K, V] with CacheProxied[Mutab
     this
   }
 
-  override def getOrElseUpdate(k: K, v: => V): V = self.getOrElseUpdate(k , v)
+  override def getOrElseUpdate(k: K, v: => V): V = self.getOrElseUpdate(k, v)
   override def filter(pred: ((K, V)) => Boolean): MutableCache[K, V] = self.filter(pred)
 }

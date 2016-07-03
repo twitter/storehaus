@@ -16,8 +16,6 @@
 
 package com.twitter.storehaus.redis
 
-import com.twitter.algebird.Monoid
-import com.twitter.conversions.time._
 import com.twitter.util.{ Duration, Future, Time }
 import com.twitter.finagle.redis.Client
 import com.twitter.storehaus.{ FutureOps, MissingValueException, Store, WithPutTtl }
@@ -34,27 +32,28 @@ object RedisStore {
     val TTL: Option[Duration] = None
   }
 
-  def apply(client: Client, ttl: Option[Duration] = Default.TTL) =
+  def apply(client: Client, ttl: Option[Duration] = Default.TTL): RedisStore =
     new RedisStore(client, ttl)
 }
 
 class RedisStore(val client: Client, ttl: Option[Duration])
   extends Store[ChannelBuffer, ChannelBuffer]
-  with WithPutTtl[ChannelBuffer, ChannelBuffer, RedisStore]
-{
-  override def withPutTtl(ttl: Duration) = new RedisStore(client, Some(ttl))
+  with WithPutTtl[ChannelBuffer, ChannelBuffer, RedisStore] {
+
+  override def withPutTtl(ttl: Duration): RedisStore = new RedisStore(client, Some(ttl))
 
   override def get(k: ChannelBuffer): Future[Option[ChannelBuffer]] =
     client.get(k)
 
-  override def multiGet[K1 <: ChannelBuffer](ks: Set[K1]): Map[K1, Future[Option[ChannelBuffer]]] = {
+  override def multiGet[K1 <: ChannelBuffer](
+      ks: Set[K1]): Map[K1, Future[Option[ChannelBuffer]]] = {
     val redisResult: Future[Map[ChannelBuffer, Future[Option[ChannelBuffer]]]] = {
       // results are expected in the same order as keys
       // keys w/o mapped results are considered exceptional
       val keys = ks.toIndexedSeq.view
       client.mGet2(keys).map { result =>
         val zipped = keys.zip(result).map {
-          case (k, v) => (k -> Future.value(v))
+          case (k, v) => k -> Future.value(v)
         }.toMap
         zipped ++ keys.filterNot(zipped.isDefinedAt).map { k =>
           k -> Future.exception(new MissingValueException(k))
@@ -75,5 +74,5 @@ class RedisStore(val client: Client, ttl: Option[Duration])
       case (key, None) => client.del(Seq(key)).unit
     }
 
-  override def close(t: Time) = client.quit.foreach { _ => client.close() }
+  override def close(t: Time): Future[Unit] = client.quit.foreach { _ => client.close() }
 }

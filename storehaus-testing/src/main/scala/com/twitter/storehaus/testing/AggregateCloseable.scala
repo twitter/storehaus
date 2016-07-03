@@ -16,25 +16,28 @@
 
 package com.twitter.storehaus.testing
 
-import scala.collection.mutable.{ HashSet, SynchronizedSet }
+import java.util.concurrent.ConcurrentHashMap
+
 import com.twitter.util.{Closable, Future, Time}
+
+import scala.collection.JavaConverters._
 
 /** Represents an Closeable `view` of an aggregation of Closeables */
 trait AggregateCloseable[C <: Closable] extends Closable {
-  private val closables =
-    new HashSet[C] with SynchronizedSet[C]
+  private val closables = new ConcurrentHashMap[C, Unit]
 
-  def aggregateCloseable(c: C) = {
-    closables += c
+  def aggregateCloseable(c: C): C = {
+    closables.put(c, ())
     c
   }
 
-  final def close(t: Time) = Future.collect(closables.map(_.close).toSeq).unit
+  final def close(t: Time): Future[Unit] =
+    Future.collect(closables.keys().asScala.map(_.close).toSeq).unit
 }
 
 /** An AggregatedCloseable that cleans up after itself */
 trait SelfAggregatingCloseableCleanup[C <: Closable]
   extends AggregateCloseable[C]
   with CloseableCleanup[AggregateCloseable[C]] {
-  final def closeable = this
+  final def closeable: SelfAggregatingCloseableCleanup[C] = this
 }

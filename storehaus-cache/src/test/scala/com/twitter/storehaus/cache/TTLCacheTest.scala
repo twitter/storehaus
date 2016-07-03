@@ -27,7 +27,7 @@ class TTLCacheTest extends WordSpec with Matchers {
     val abCache = cache.putClocked("a" -> 1)._2.putClocked("b" -> 2)._2
     abCache.toNonExpiredMap should equal(Map("a" -> 1, "b" -> 2))
     Thread.sleep(ttlMS)
-    (abCache.putClocked("c" -> 3)._2).toNonExpiredMap should equal(Map("c" -> 3))
+    abCache.putClocked("c" -> 3)._2.toNonExpiredMap should equal(Map("c" -> 3))
   }
 
   "TTLCache does not return an expired value" in {

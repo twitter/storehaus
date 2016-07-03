@@ -19,7 +19,8 @@ package com.twitter.storehaus.cache
 import org.scalatest.{Matchers, WordSpec}
 
 class HHFilteredCacheTest extends WordSpec with Matchers {
-  def checkCache[K, V](pairs: Seq[(K, V)], m: Map[K, V])(implicit cache: MutableCache[K, V]) = {
+  def checkCache[K, V](pairs: Seq[(K, V)], m: Map[K, V])(
+      implicit cache: MutableCache[K, V]): Unit = {
     pairs.foldLeft(cache)(_ += _)
     val res = cache.iterator.toMap
     cache.clear
@@ -27,9 +28,12 @@ class HHFilteredCacheTest extends WordSpec with Matchers {
   }
 
   "HHFilteredCache works properly" in {
-    val backingCache = MutableCache.fromJMap[String, Int](new java.util.LinkedHashMap[String, Int])
+    val backingCache =
+      MutableCache.fromJMap[String, Int](new java.util.LinkedHashMap[String, Int])
 
-    implicit val cache = new HHFilteredCache[String, Int](backingCache, HeavyHittersPercent(0.5f), WriteOperationUpdateFrequency(1), RollOverFrequencyMS(10000000L))
+    implicit val cache = new HHFilteredCache[String, Int](
+      backingCache, HeavyHittersPercent(0.5f), WriteOperationUpdateFrequency(1),
+      RollOverFrequencyMS(10000000L))
 
     checkCache(
       Seq("a" -> 1, "b" -> 2),

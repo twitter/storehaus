@@ -28,12 +28,12 @@ object FutureCollector {
   /**
    * If any future fails, the remaining future fails.
    */
-  implicit def default = new FutureCollector {
+  implicit def default: FutureCollector = new FutureCollector {
     override def apply[T](futureSeq: Seq[Future[T]]) = Future.collect(futureSeq)
   }
 
   /** All failing futures are filtered during collection.  */
-  def bestEffort = new FutureCollector {
+  def bestEffort: FutureCollector = new FutureCollector {
     override def apply[T](futureSeq: Seq[Future[T]]) =
       Future.collect {
         futureSeq.map { f: Future[T] =>

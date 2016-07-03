@@ -25,10 +25,11 @@ import com.twitter.util.{Future, Time}
  * @author Sam Ritchie
  */
 
-class UnpivotedReadableStore[-K, OuterK, InnerK, +V](store: ReadableStore[OuterK, Map[InnerK, V]])(split: K => (OuterK, InnerK))
+class UnpivotedReadableStore[-K, OuterK, InnerK, +V](
+  store: ReadableStore[OuterK, Map[InnerK, V]])(split: K => (OuterK, InnerK))
   extends ReadableStore[K, V] {
 
-  override def get(k: K) = {
+  override def get(k: K): Future[Option[V]] = {
     val (outerK, innerK) = split(k)
     store.get(outerK).map { _.flatMap { _.get(innerK) } }
   }
@@ -36,9 +37,9 @@ class UnpivotedReadableStore[-K, OuterK, InnerK, +V](store: ReadableStore[OuterK
   private def pivot(pairs: Iterable[K]): Map[OuterK, Iterable[InnerK]] =
     pairs.map { k =>
       val (k1, k2) = split(k)
-      (k1 -> List(k2))
+      k1 -> List(k2)
     }.groupBy { _._1 }
-      .mapValues { _.map { case (_, k2s) => k2s }.flatten }
+      .mapValues { _.flatMap { case (_, k2s) => k2s } }
 
   override def multiGet[T <: K](ks: Set[T]): Map[T, Future[Option[V]]] = {
     val ret: Map[OuterK, Future[Option[Map[InnerK, V]]]] = store.multiGet(pivot(ks).keySet)
@@ -49,5 +50,5 @@ class UnpivotedReadableStore[-K, OuterK, InnerK, +V](store: ReadableStore[OuterK
       }
     }.toMap
   }
-  override def close(time: Time) = store.close(time)
+  override def close(time: Time): Future[Unit] = store.close(time)
 }

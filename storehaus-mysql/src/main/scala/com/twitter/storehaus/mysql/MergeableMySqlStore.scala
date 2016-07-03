@@ -18,11 +18,10 @@ package com.twitter.storehaus.mysql
 
 import com.twitter.algebird.Semigroup
 import com.twitter.bijection.Injection
-import com.twitter.finagle.exp.mysql.Client
 import com.twitter.storehaus.algebra.MergeableStore
 import com.twitter.storehaus.ConvertedStore
 import com.twitter.storehaus.FutureOps
-import com.twitter.util.{ Future, Throw }
+import com.twitter.util.Future
 
 /**
   * @author Ruban Monu
@@ -44,8 +43,8 @@ class MergeableMySqlStore[V](underlying: MySqlStore)(implicit inj: Injection[V, 
   override def multiMerge[K1 <: MySqlValue](kvs: Map[K1, V]): Map[K1, Future[Option[V]]] = {
     val mergeResult : Future[Map[K1, Option[V]]] = underlying.startTransaction.flatMap { u: Unit =>
       FutureOps.mapCollect(multiGet(kvs.keySet)).flatMap { result: Map[K1, Option[V]] =>
-        val existingKeys = result.filter { !_._2.isEmpty }.keySet
-        val newKeys = result.filter { _._2.isEmpty }.keySet
+        val existingKeys = result.filter(_._2.isDefined).keySet
+        val newKeys = result.filter(_._2.isEmpty).keySet
 
         // handle inserts for new keys
         val insertF = newKeys.isEmpty match {
@@ -54,7 +53,8 @@ class MergeableMySqlStore[V](underlying: MySqlStore)(implicit inj: Injection[V, 
             val insertKvs = newKeys.map { k => k -> kvs.get(k).get }
             insertKvs.isEmpty match {
               case true => Future.Unit
-              case false => underlying.executeMultiInsert(insertKvs.toMap.mapValues { v => inj(v) })
+              case false =>
+                underlying.executeMultiInsert(insertKvs.toMap.mapValues { v => inj(v) })
             }
         }
 

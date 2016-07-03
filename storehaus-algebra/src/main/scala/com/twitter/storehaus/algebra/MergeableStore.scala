@@ -16,10 +16,12 @@
 
 package com.twitter.storehaus.algebra
 
-import com.twitter.algebird.{ Semigroup, Monoid, StatefulSummer }
+import com.twitter.algebird.{Semigroup, Monoid}
 import com.twitter.bijection.ImplicitBijection
-import com.twitter.storehaus.{FutureOps, CollectionOps, FutureCollector, Store}
+import com.twitter.storehaus.{FutureOps, FutureCollector, Store}
 import com.twitter.util.Future
+
+import scala.language.implicitConversions
 
 /** Main trait to represent stores that are used for aggregation */
 trait MergeableStore[-K, V] extends Store[K, V] with Mergeable[K, V]
@@ -43,7 +45,7 @@ object MergeableStore {
           futureOptV.map { init =>
             val incV = kvs(k)
             val resV = init.map(Semigroup.plus(_, incV)).orElse(Some(incV))
-            k -> (init, resV)
+            k -> ((init, resV))
           }
       }.toIndexedSeq
 
@@ -78,16 +80,17 @@ object MergeableStore {
   /** Create a mergeable by implementing merge with get followed by put.
    * Only safe if each key is owned by a single thread.
    */
-  def fromStore[K,V](store: Store[K,V])(implicit sg: Semigroup[V],
-      fc: FutureCollector): MergeableStore[K,V] =
+  def fromStore[K, V](store: Store[K, V])(implicit sg: Semigroup[V],
+      fc: FutureCollector): MergeableStore[K, V] =
     new MergeableStoreViaGetPut[K, V](store, fc)
 
-  /** Create a mergeable by implementing merge with single get followed by put for each key. Also forces multiGet and
-    * multiPut to use the store's default implementation of a single get and put.
-    * The merge is only safe if each key is owned by a single thread. Useful in certain cases where multiGets and
-    * multiPuts may result in higher error rates or lower throughput.
-    */
-  def fromStoreNoMulti[K,V](store: Store[K,V])(implicit sg: Semigroup[V]): MergeableStore[K,V] =
+  /** Create a mergeable by implementing merge with single get followed by put for each key.
+   * Also forces multiGet and multiPut to use the store's default implementation of a single
+   * get and put.
+   * The merge is only safe if each key is owned by a single thread. Useful in certain cases
+   * where multiGets and multiPuts may result in higher error rates or lower throughput.
+   */
+  def fromStoreNoMulti[K, V](store: Store[K, V])(implicit sg: Semigroup[V]): MergeableStore[K, V] =
     new MergeableStoreViaSingleGetPut[K, V](store)
 
   /** Create a mergeable by implementing merge with get followed by put.
@@ -95,20 +98,23 @@ object MergeableStore {
    * This deletes zeros on put, but returns zero on empty (never returns None).
    * Useful for sparse storage of counts, etc...
    */
-  def fromStoreEmptyIsZero[K,V](store: Store[K,V])(implicit mon: Monoid[V],
-      fc: FutureCollector): MergeableStore[K,V] =
+  def fromStoreEmptyIsZero[K, V](store: Store[K, V])(implicit mon: Monoid[V],
+      fc: FutureCollector): MergeableStore[K, V] =
     new MergeableMonoidStore[K, V](store, fc)
 
   /** Use a StatefulSummer to buffer results before calling merge.
    * Useful when merging to a remote store, of if you have some very hot keys
    */
-  def withSummer[K, V](store: MergeableStore[K, V])(summerCons: SummerConstructor[K]): MergeableStore[K, V] =
-    new BufferingStore(store, summerCons)
+  def withSummer[K, V](
+    store: MergeableStore[K, V])(
+    summerCons: SummerConstructor[K]
+  ): MergeableStore[K, V] = new BufferingStore(store, summerCons)
 
   /** Convert the key and value type of this mergeable.
    * Note this just bijects the Monoid, so the underlying monoid action is unchanged. For instance
-   * if you did a Bijection from Long to (Int,Int), the underlying monoid would still be long, not the
-   * default (Int,Int) monoid which works differently. Use of this probably requires careful design.
+   * if you did a Bijection from Long to (Int,Int), the underlying monoid would still be long,
+   * not the default (Int,Int) monoid which works differently. Use of this probably requires
+   * careful design.
    */
   def convert[K1, K2, V1, V2](store: MergeableStore[K1, V1])(kfn: K2 => K1)
     (implicit bij: ImplicitBijection[V2, V1]): MergeableStore[K2, V2] =

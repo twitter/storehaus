@@ -19,10 +19,6 @@ package com.twitter.storehaus.mysql
 import com.twitter.algebird.Semigroup
 import com.twitter.bijection.Injection
 import com.twitter.finagle.exp.mysql.Client
-import com.twitter.storehaus.ConvertedStore
-import com.twitter.storehaus.algebra.MergeableStore
-
-import org.jboss.netty.buffer.ChannelBuffer
 
 /**
   * @author Ruban Monu
@@ -31,13 +27,12 @@ import org.jboss.netty.buffer.ChannelBuffer
 /** Factory for [[com.twitter.storehaus.mysql.MySqlLongStore]] instances. */
 object MySqlLongStore {
 
-  def apply(underlying: MySqlStore) =
+  def apply(underlying: MySqlStore): MySqlLongStore =
     new MySqlLongStore(underlying)(LongMySqlInjection)
 
-  def apply(client: Client, table: String, kCol: String, vCol: String) =
+  def apply(client: Client, table: String, kCol: String, vCol: String): MySqlLongStore =
     new MySqlLongStore(MySqlStore(client, table, kCol, vCol))(LongMySqlInjection)
 }
-import MySqlLongStore._
 
 /** MySQL store for Long values */
 class MySqlLongStore(underlying: MySqlStore)(inj: Injection[Long, MySqlValue])

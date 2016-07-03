@@ -17,20 +17,21 @@
 package com.twitter.storehaus.cache
 
 import scala.collection.mutable.{ Map => MutableMap }
-import java.util.{ Map => JMap, LinkedHashMap => JLinkedHashMap }
+import java.util.{ Map => JMap }
 import com.twitter.util.Duration
 
 object MutableCache {
-  def fromMap[K, V](m: MutableMap[K, V]) = MutableMapCache[K, V](m)
+  def fromMap[K, V](m: MutableMap[K, V]): MutableMapCache[K, V] = MutableMapCache[K, V](m)
 
   /**
     * Creates a mutable cache from a supplier of a java Map. The
     * supplier is necessary because java maps don't provide a way of
     * returning an empty version of a specific map.
     */
-  def fromJMap[K, V](fn: => JMap[K, V]) = JMapCache[K, V](fn)
+  def fromJMap[K, V](fn: => JMap[K, V]): JMapCache[K, V] = JMapCache[K, V](fn)
 
-  def ttl[K, V](ttl: Duration, capacity: Int) = MutableTTLCache[K, V](ttl, capacity)
+  def ttl[K, V](ttl: Duration, capacity: Int): MutableTTLCache[K, V] =
+    MutableTTLCache[K, V](ttl, capacity)
 }
 
 trait MutableCache[K, V] {

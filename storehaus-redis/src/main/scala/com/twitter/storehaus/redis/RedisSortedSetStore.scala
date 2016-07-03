@@ -19,12 +19,11 @@ package com.twitter.storehaus.redis
 import com.twitter.algebird.Semigroup
 import com.twitter.util.{Future, Time}
 import com.twitter.finagle.redis.Client
-import com.twitter.storehaus.Store
 import com.twitter.storehaus.algebra.MergeableStore
 import org.jboss.netty.buffer.ChannelBuffer
 
 object RedisSortedSetStore {
-  def apply(client: Client) =
+  def apply(client: Client): RedisSortedSetStore =
     new RedisSortedSetStore(client)
 }
 
@@ -34,7 +33,8 @@ object RedisSortedSetStore {
  */
 class RedisSortedSetStore(client: Client)
   extends MergeableStore[ChannelBuffer, Seq[(ChannelBuffer, Double)]] {
-  def semigroup = implicitly[Semigroup[Seq[(ChannelBuffer, Double)]]]
+  def semigroup: Semigroup[Seq[(ChannelBuffer, Double)]] =
+    implicitly[Semigroup[Seq[(ChannelBuffer, Double)]]]
 
   /** Returns the whole set as a tuple of seq of (member, score).
    *  An empty set is represented as None. */
@@ -58,12 +58,14 @@ class RedisSortedSetStore(client: Client)
     }
 
   /** Performs a zIncrBy operation on a set for a seq of members */
-  override def merge(kv: (ChannelBuffer, Seq[(ChannelBuffer, Double)])): Future[Option[Seq[(ChannelBuffer, Double)]]] =
+  override def merge(
+    kv: (ChannelBuffer, Seq[(ChannelBuffer, Double)])
+  ): Future[Option[Seq[(ChannelBuffer, Double)]]] =
     Future.collect(kv._2.map {
       case (member, by) =>
           client.zIncrBy(kv._1, by, member)
             .map {
-              case Some(res) => member -> (res - by) //get the value before
+              case Some(res) => member -> (res - by) // get the value before
               case None => member -> 0.0
             }
     }).map(Some(_))
@@ -76,7 +78,7 @@ class RedisSortedSetStore(client: Client)
   def members(set: ChannelBuffer): MergeableStore[ChannelBuffer, Double] =
     new RedisSortedSetMembershipView(client, set)
 
-  override def close(t: Time) = client.quit.foreach { _ => client.close() }
+  override def close(t: Time): Future[Unit] = client.quit.foreach { _ => client.close() }
 }
 
 /** An unpivoted-like member-oriented view of a redis sorted set bound to a specific
@@ -91,18 +93,18 @@ class RedisSortedSetStore(client: Client)
 class RedisSortedSetMembershipView(client: Client, set: ChannelBuffer)
   extends MergeableStore[ChannelBuffer, Double] {
   private lazy val underlying = new RedisSortedSetMembershipStore(client)
-  def semigroup = implicitly[Semigroup[Double]]
+  def semigroup: Semigroup[Double] = implicitly[Semigroup[Double]]
 
   override def get(k: ChannelBuffer): Future[Option[Double]] =
     underlying.get((set, k))
 
   override def put(kv: (ChannelBuffer, Option[Double])): Future[Unit] =
-    underlying.put(((set,kv._1), kv._2))
+    underlying.put(((set, kv._1), kv._2))
 
   override def merge(kv: (ChannelBuffer, Double)): Future[Option[Double]] =
-    underlying.merge((set, kv._1), kv._2)
+    underlying.merge(((set, kv._1), kv._2))
 
-  override def close(t: Time) = client.quit.foreach { _ => client.close() }
+  override def close(t: Time): Future[Unit] = client.quit.foreach { _ => client.close() }
 }
 
 /** An unpivoted-like member-oriented view of redis sorted sets.
@@ -115,7 +117,7 @@ class RedisSortedSetMembershipView(client: Client, set: ChannelBuffer)
  */
 class RedisSortedSetMembershipStore(client: Client)
   extends MergeableStore[(ChannelBuffer, ChannelBuffer), Double] {
-  def semigroup = implicitly[Semigroup[Double]]
+  def semigroup: Semigroup[Double] = implicitly[Semigroup[Double]]
 
   /** @return a member's score or None if the member is not in the set */
   override def get(k: (ChannelBuffer, ChannelBuffer)): Future[Option[Double]] =
@@ -132,8 +134,9 @@ class RedisSortedSetMembershipStore(client: Client)
     *
     *  ( general enough to go into PivotOpts )
     */
-   def multiPutPartitioned[OutterK, InnerK, K1 <: (OutterK, InnerK), V, IndexK](kv: Map[K1, Option[V]])(by: K1 => IndexK):
-    (Map[IndexK, List[(K1, Option[V])]], Map[IndexK, List[(K1, Option[V])]]) = {
+   def multiPutPartitioned[OutterK, InnerK, K1 <: (OutterK, InnerK), V, IndexK](
+      kv: Map[K1, Option[V]])(by: K1 => IndexK)
+   : (Map[IndexK, List[(K1, Option[V])]], Map[IndexK, List[(K1, Option[V])]]) = {
       def emptyMap = Map.empty[IndexK, List[(K1, Option[V])]].withDefaultValue(Nil)
       ((emptyMap, emptyMap) /: kv) {
         case ((deleting, storing), (key, value @ Some(_))) =>
@@ -147,23 +150,25 @@ class RedisSortedSetMembershipStore(client: Client)
 
   /** Adds or removes members from sets with an initial scoring. A score of None indicates the
    *  member should be removed from the set */
-  override def multiPut[K1 <: (ChannelBuffer, ChannelBuffer)](kv: Map[K1, Option[Double]]): Map[K1, Future[Unit]]  = {
+  override def multiPut[K1 <: (ChannelBuffer, ChannelBuffer)](
+      kv: Map[K1, Option[Double]]): Map[K1, Future[Unit]] = {
     // we are exploiting redis's built-in support for removals (zRem)
     // by partioning deletions and updates into 2 maps indexed by the first
     // component of the composite key, the key of the set
-    val (del, persist) = multiPutPartitioned[ChannelBuffer, ChannelBuffer, K1, Double, ChannelBuffer](kv)(_._1)
-    (del.map {
+    val (del, persist) =
+      multiPutPartitioned[ChannelBuffer, ChannelBuffer, K1, Double, ChannelBuffer](kv)(_._1)
+    del.flatMap {
       case (k, members) =>
         val value = client.zRem(k, members.map(_._1._2))
       members.map(_._1 -> value.unit)
-    }.flatten ++ persist.map {
+    } ++ persist.flatMap {
       case (k, members) =>
         members.map {
           case (k1, score) =>
             // a per-InnerK operation
-            (k1 -> client.zAdd(k, score.get, k1._2).unit)
+            k1 -> client.zAdd(k, score.get, k1._2).unit
         }
-    }.flatten).toMap
+    }
   }
 
   /** Performs a zIncrBy operation on a set for a given member */
@@ -172,5 +177,5 @@ class RedisSortedSetMembershipStore(client: Client)
       _.map { res => res - kv._2 }
     }
 
-  override def close(t: Time) = client.quit.foreach { _ => client.close() }
+  override def close(t: Time): Future[Unit] = client.quit.foreach { _ => client.close() }
 }

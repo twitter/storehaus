@@ -86,10 +86,11 @@ object TunableReplicatedStoreProperties extends Properties("TunableReplicatedSto
     }
   }
 
-  property("TunableReplicatedStore, readConsistency=Quorum, writeConsistency=Quorum, readRepair=true, writeRollback=true") = {
+  property("TunableReplicatedStore, readConsistency=Quorum, writeConsistency=Quorum, " +
+    "readRepair=true, writeRollback=true") = {
     storeTest {
       TunableReplicatedStore.fromSeq((0 until REPLICAS).map { _ => new JMapStore[Int, String] },
-        ConsistencyLevel.All, ConsistencyLevel.All, true, true)
+        ConsistencyLevel.All, ConsistencyLevel.All, readRepair = true, writeRollback = true)
     }
   }
 

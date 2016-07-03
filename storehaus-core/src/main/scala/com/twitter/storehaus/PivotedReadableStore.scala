@@ -19,8 +19,6 @@ package com.twitter.storehaus
 import com.twitter.bijection.Injection
 import com.twitter.util.{ Future, Time }
 
-import scala.util.{ Failure, Success }
-
 /**
  * ReadableStore enrichment for ReadableStore[OuterK, ReadableStore[InnerK, V]]
  * on top of a ReadableStore[K, V]
@@ -29,21 +27,24 @@ import scala.util.{ Failure, Success }
  */
 object PivotedReadableStore {
 
-  def fromMap[K, OuterK, InnerK, V](m: Map[K, V])(implicit inj: Injection[(OuterK, InnerK), K]) =
+  def fromMap[K, OuterK, InnerK, V](m: Map[K, V])(
+      implicit inj: Injection[(OuterK, InnerK), K]): PivotedReadableStore[K, OuterK, InnerK, V] =
     new PivotedReadableStore[K, OuterK, InnerK, V](ReadableStore.fromMap(m))(inj)
 
-  def fromReadableStore[K, OuterK, InnerK, V](store: ReadableStore[K, V])(implicit inj: Injection[(OuterK, InnerK), K]) =
+  def fromReadableStore[K, OuterK, InnerK, V](store: ReadableStore[K, V])(
+      implicit inj: Injection[(OuterK, InnerK), K]): PivotedReadableStore[K, OuterK, InnerK, V] =
     new PivotedReadableStore[K, OuterK, InnerK, V](store)(inj)
 }
 
-class PivotedReadableStore[K, -OuterK, InnerK, +V](store: ReadableStore[K, V])(implicit inj: Injection[(OuterK, InnerK), K])
-    extends ReadableStore[OuterK, ReadableStore[InnerK, V]] {
+class PivotedReadableStore[K, -OuterK, InnerK, +V](store: ReadableStore[K, V])(
+  implicit inj: Injection[(OuterK, InnerK), K])
+  extends ReadableStore[OuterK, ReadableStore[InnerK, V]] {
 
   override def get(outerK: OuterK) : Future[Option[ReadableStore[InnerK, V]]] =
     Future.value(Some(new ReadableStore[InnerK, V]() {
       override def get(innerK: InnerK) = store.get(inj((outerK, innerK)))
     }))
 
-  override def close(time: Time) = store.close(time)
+  override def close(time: Time): Future[Unit] = store.close(time)
 }
 

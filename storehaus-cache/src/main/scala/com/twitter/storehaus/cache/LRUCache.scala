@@ -33,11 +33,14 @@ import scala.collection.SortedMap
  */
 
 object LRUCache {
-  def apply[K, V](maxSize: Long, backingMap: Map[K, (Long, V)] = Map.empty[K, (Long, V)]) =
-    new LRUCache(maxSize, 0, backingMap, SortedMap.empty[Long, K])
+  def apply[K, V](
+    maxSize: Long,
+    backingMap: Map[K, (Long, V)] = Map.empty[K, (Long, V)]
+  ): LRUCache[K, V] = new LRUCache(maxSize, 0, backingMap, SortedMap.empty[Long, K])
 }
 
-class LRUCache[K, V](maxSize: Long, idx: Long, map: Map[K, (Long, V)], ord: SortedMap[Long, K]) extends Cache[K, V] {
+class LRUCache[K, V](maxSize: Long, idx: Long, map: Map[K, (Long, V)], ord: SortedMap[Long, K])
+    extends Cache[K, V] {
   // Scala's SortedMap requires an ordering on pairs. To guarantee
   // sorting on index only, LRUCache defines an implicit ordering on K
   // that treats all K as equal.
@@ -51,25 +54,26 @@ class LRUCache[K, V](maxSize: Long, idx: Long, map: Map[K, (Long, V)], ord: Sort
     map.get(k).map {
       case (oldIdx, v) =>
         val newIdx = idx + 1
-        val newMap = map + (k -> (newIdx, v))
+        val newMap = map + (k -> ((newIdx, v)))
         val newOrd = ord - oldIdx + (newIdx -> k)
         new LRUCache(maxSize, newIdx, newMap, newOrd)
     }.getOrElse(this)
 
-  override def put(kv: (K, V)) = {
+  override def put(kv: (K, V)): (Set[K], LRUCache[K, V]) = {
     val (key, value) = kv
     val newIdx = idx + 1
     val (evictedKeys, newMap, newOrd) =
       if (ord.size >= maxSize) {
         val (idxToEvict, keyToEvict) =
-          map.get(key).map { case (idx, _) => (idx, key) }
+          map.get(key).map { case (i, _) => (i, key) }
             .getOrElse(ord.min)
         (Set(keyToEvict), map - keyToEvict, ord - idxToEvict)
-      } else
+      } else {
         (Set.empty[K], map, ord)
+      }
 
     (evictedKeys, new LRUCache(maxSize, newIdx,
-      newMap + (key -> (newIdx, value)),
+      newMap + (key -> ((newIdx, value))),
       newOrd + (newIdx -> key)))
   }
 
@@ -79,12 +83,12 @@ class LRUCache[K, V](maxSize: Long, idx: Long, map: Map[K, (Long, V)], ord: Sort
         (Some(v), new LRUCache(maxSize, idx + 1, map - k, ord - oldIdx))
     }.getOrElse((None, this))
 
-  override def toString = {
+  override def toString: String = {
     val pairStrings = iterator.map { case (k, v) => k + " -> " + v }
     "LRUCache(" + pairStrings.toList.mkString(", ") + ")"
   }
 
-  override def empty = new LRUCache(maxSize, 0, map.empty, ord.empty)
-  override def iterator = map.iterator.map { case (k, (_, v)) => k -> v }
-  override def toMap = map.mapValues { _._2 }
+  override def empty: LRUCache[K, V] = new LRUCache(maxSize, 0, map.empty, ord.empty)
+  override def iterator: Iterator[(K, V)] = map.iterator.map { case (k, (_, v)) => k -> v }
+  override def toMap: Map[K, V] = map.mapValues { _._2 }
 }

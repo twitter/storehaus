@@ -26,10 +26,11 @@ object RetryingStoreProperties extends Properties("RetryingStore") {
 
   implicit val timer: Timer = new JavaTimer(true)
 
-  property("RetryingStore obeys the Store laws, assuming the underlying Store always returns results before timeout") =
+  property("RetryingStore obeys the Store laws, assuming the underlying Store " +
+      "always returns results before timeout") =
     storeTest[String, Int] {
       Store.withRetry[String, Int](
-        store = new ConcurrentHashMapStore[String,Int](),
+        store = new ConcurrentHashMapStore[String, Int](),
         backoffs = for (i <- 0 until 3) yield 1.milliseconds
       )(_ => true)
     }

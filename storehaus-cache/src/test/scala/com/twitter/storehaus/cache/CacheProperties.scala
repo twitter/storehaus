@@ -16,11 +16,9 @@
 
 package com.twitter.storehaus.cache
 
-import org.scalacheck.{ Arbitrary, Properties }
-import org.scalacheck.Gen.choose
+import org.scalacheck.{Prop, Arbitrary, Properties}
 import org.scalacheck.Prop._
 import com.twitter.conversions.time._
-
 
 object CacheProperties extends Properties("Cache") {
   /**
@@ -28,7 +26,7 @@ object CacheProperties extends Properties("Cache") {
     * added is equivalent to the union of evicted keys and keys
     * present in the final cache.
     */
-  def unionLaw[K: Arbitrary, V: Arbitrary](cache: Cache[K, V]) =
+  def unionLaw[K: Arbitrary, V: Arbitrary](cache: Cache[K, V]): Prop =
     forAll { (pairs: List[(K, V)]) =>
       val (evictedSet, newCache) =
         pairs.foldLeft(Set.empty[K], cache) { (acc, pair) =>
@@ -43,7 +41,7 @@ object CacheProperties extends Properties("Cache") {
     * Once a pair is placed into an immutable cache, it'll always be
     * evicted immediately or available via get.
     */
-  def presentLaw[K: Arbitrary, V: Arbitrary](cache: Cache[K, V]) =
+  def presentLaw[K: Arbitrary, V: Arbitrary](cache: Cache[K, V]): Prop =
     forAll { (pairs: List[(K, V)]) =>
       pairs.forall { case pair@(k, v) =>
         val (evictedKeys, newCache) = cache.put(pair)
@@ -51,10 +49,10 @@ object CacheProperties extends Properties("Cache") {
       }
     }
 
-  def cacheLaws[K: Arbitrary, V: Arbitrary](cache: Cache[K, V]) =
+  def cacheLaws[K: Arbitrary, V: Arbitrary](cache: Cache[K, V]): Prop =
     unionLaw(cache) && presentLaw(cache)
 
-  property("MapCache obeys the cache laws") = cacheLaws(MapCache.empty[String,Int])
+  property("MapCache obeys the cache laws") = cacheLaws(MapCache.empty[String, Int])
 
   property("MapCache never evicts") =
     forAll { pairs: List[(Int, String)] =>
@@ -62,7 +60,7 @@ object CacheProperties extends Properties("Cache") {
         .toMap == pairs.toMap
     }
 
-  property("LRUCache obeys the cache laws") = cacheLaws(LRUCache[String,Int](10))
-  property("LIRSCache obeys the cache laws") = cacheLaws(LIRSCache[String,Int](10, .8))
+  property("LRUCache obeys the cache laws") = cacheLaws(LRUCache[String, Int](10))
+  property("LIRSCache obeys the cache laws") = cacheLaws(LIRSCache[String, Int](10, .8))
   property("TTLCache obeys the cache laws") = cacheLaws(TTLCache[String, Int](10.milliseconds))
 }

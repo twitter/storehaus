@@ -18,16 +18,15 @@ package com.twitter.storehaus.memcache
 
 import com.twitter.algebird.Semigroup
 import com.twitter.bijection.Injection
-import com.twitter.finagle.memcached.Client
+import com.twitter.finagle.memcached.{CasResult, Client}
 import com.twitter.finagle.netty3.{BufChannelBuffer, ChannelBufferBuf}
-import com.twitter.io.Buf
 import com.twitter.storehaus.ConvertedStore
 import com.twitter.storehaus.algebra.MergeableStore
-import com.twitter.util.{ Duration, Future }
+import com.twitter.util.{Duration, Future}
 
 import org.jboss.netty.buffer.ChannelBuffer
 
-import scala.util.{ Failure, Success, Try }
+import scala.util.{ Failure, Success }
 
 /** Factory for [[com.twitter.storehaus.memcache.MergeableMemcacheStore]] instances. */
 object MergeableMemcacheStore {
@@ -42,10 +41,16 @@ object MergeableMemcacheStore {
    * writes to the same key and is useful when one thread/node does not
    * own a key space.
    */
-  def apply[K, V](client: Client, ttl: Duration = MemcacheStore.DEFAULT_TTL, flag: Int = MemcacheStore.DEFAULT_FLAG,
-      maxRetries: Int = MAX_RETRIES)
-      (kfn: K => String)(implicit inj: Injection[V, ChannelBuffer], semigroup: Semigroup[V]) =
-    new MergeableMemcacheStore[K, V](MemcacheStore(client, ttl, flag), maxRetries)(kfn)(inj, semigroup)
+  def apply[K, V](
+    client: Client,
+    ttl: Duration = MemcacheStore.DEFAULT_TTL,
+    flag: Int = MemcacheStore.DEFAULT_FLAG,
+    maxRetries: Int = MAX_RETRIES)
+    (kfn: K => String)(
+    implicit inj: Injection[V, ChannelBuffer], semigroup: Semigroup[V]
+  ): MergeableMemcacheStore[K, V] =
+    new MergeableMemcacheStore[K, V](
+      MemcacheStore(client, ttl, flag), maxRetries)(kfn)(inj, semigroup)
 }
 
 /** Returned when merge fails after a certain number of retries */
@@ -66,12 +71,13 @@ class MergeableMemcacheStore[K, V](underlying: MemcacheStore, maxRetries: Int)(k
   with MergeableStore[K, V] {
 
   // NOTE: we might want exponential backoff if there are a lot of retries.
-  // use a timer to wait a random interval between [0,t), then [0,2t), then [0,4t), then [0,16t), etc...
+  // use a timer to wait a random interval between [0,t), then [0,2t), then [0,4t),
+  // then [0,16t), etc...
 
   // retryable merge
   protected def doMerge(kv: (K, V), currentRetry: Int) : Future[Option[V]] = {
     val key = kfn(kv._1)
-    (currentRetry > maxRetries) match {
+    currentRetry > maxRetries match {
       case false => // use 'gets' api to obtain casunique token
         underlying.client.gets(key).flatMap {
           case Some((cbValue, casunique)) =>
@@ -79,17 +85,15 @@ class MergeableMemcacheStore[K, V](underlying: MemcacheStore, maxRetries: Int)(k
               case Success(v) => // attempt cas
                 val resV = semigroup.plus(v, kv._2)
                 val buf = ChannelBufferBuf.Owned(inj.apply(resV))
-                underlying.client.cas(
+                underlying.client.checkAndSet(
                   key,
                   underlying.flag,
                   underlying.ttl.fromNow,
                   buf,
                   casunique
-                ).flatMap { success =>
-                  success.booleanValue match {
-                    case true => Future.value(Some(v))
-                    case false => doMerge(kv, currentRetry + 1) // retry
-                  }
+                ).flatMap {
+                  case CasResult.Stored => Future.value(Some(v))
+                  case _ => doMerge(kv, currentRetry + 1) // retry
                 }
               case Failure(ex) => Future.exception(ex)
             }

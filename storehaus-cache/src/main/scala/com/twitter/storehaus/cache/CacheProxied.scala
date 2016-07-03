@@ -15,11 +15,12 @@
  */
 package com.twitter.storehaus.cache
 
-/** Defines the base of a proxy for a given type.
- *  A instance of Proxied for type T is intended to use the `self`
- *  member to forward all methods of an new instance of type T to.
- *  This allows for extensions of type T which can inherit a proxied
- *  instance's behavior without needing to override every method of type T.
+/**
+ * Defines the base of a proxy for a given type.
+ * A instance of Proxied for type T is intended to use the `self`
+ * member to forward all methods of an new instance of type T to.
+ * This allows for extensions of type T which can inherit a proxied
+ * instance's behavior without needing to override every method of type T.
  *
  *  {{{
  *

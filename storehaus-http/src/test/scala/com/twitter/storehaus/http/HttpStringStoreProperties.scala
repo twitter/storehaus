@@ -20,21 +20,24 @@ import java.util.concurrent.ConcurrentHashMap
 import java.nio.charset.Charset
 import com.twitter.finagle.http.compat.NettyAdaptor
 import org.jboss.netty.buffer.ChannelBuffers
-import org.jboss.netty.handler.codec.http.{ HttpRequest, HttpResponse, DefaultHttpResponse, HttpResponseStatus, HttpMethod, HttpHeaders }
+import org.jboss.netty.handler.codec.http.{ HttpRequest, HttpResponse, DefaultHttpResponse,
+  HttpResponseStatus, HttpMethod, HttpHeaders }
 import com.twitter.util.{ Await, Future }
 import com.twitter.finagle.{ Service, Http, ListeningServer }
 import com.twitter.storehaus.{ FutureOps, Store }
 import com.twitter.storehaus.testing.CloseableCleanup
 import com.twitter.storehaus.testing.generator.NonEmpty
-import org.scalacheck.{ Arbitrary, Gen, Properties }
+import org.scalacheck.{Prop, Arbitrary, Gen, Properties}
 import org.scalacheck.Prop._
 
-object HttpStringStoreProperties extends Properties("HttpStringStore") with CloseableCleanup[ListeningServer] {
+object HttpStringStoreProperties
+    extends Properties("HttpStringStore") with CloseableCleanup[ListeningServer] {
   def validPairs: Gen[List[(String, Option[String])]] =
     NonEmpty.Pairing.alphaStrs().map(_.map{ case (k, v) => ("/" + k, v) })
 
-  def baseTest[K: Arbitrary, V: Arbitrary : Equiv](store: Store[K, V], validPairs: Gen[List[(K, Option[V])]])
-                                                  (put: (Store[K, V], List[(K, Option[V])]) => Unit) =
+  def baseTest[K: Arbitrary, V: Arbitrary : Equiv](
+      store: Store[K, V], validPairs: Gen[List[(K, Option[V])]])
+      (put: (Store[K, V], List[(K, Option[V])]) => Unit): Prop =
     forAll(validPairs) { (examples: List[(K, Option[V])]) =>
       put(store, examples)
       examples.toMap.forall { case (k, optV) =>
@@ -43,7 +46,8 @@ object HttpStringStoreProperties extends Properties("HttpStringStore") with Clos
       }
     }
 
-  def putStoreTest[K: Arbitrary, V: Arbitrary : Equiv](store: Store[K, V], validPairs: Gen[List[(K, Option[V])]]) =
+  def putStoreTest[K: Arbitrary, V: Arbitrary : Equiv](
+      store: Store[K, V], validPairs: Gen[List[(K, Option[V])]]): Prop =
     baseTest(store, validPairs) { (s, pairs) =>
       pairs.foreach {
         case (k, v) =>
@@ -51,12 +55,13 @@ object HttpStringStoreProperties extends Properties("HttpStringStore") with Clos
       }
     }
 
-  def multiPutStoreTest[K: Arbitrary, V: Arbitrary : Equiv](store: Store[K, V], validPairs: Gen[List[(K, Option[V])]]) =
-    baseTest(store, validPairs) { (s, pairs) => 
+  def multiPutStoreTest[K: Arbitrary, V: Arbitrary : Equiv](
+      store: Store[K, V], validPairs: Gen[List[(K, Option[V])]]): Prop =
+    baseTest(store, validPairs) { (s, pairs) =>
       Await.result(FutureOps.mapCollect(s.multiPut(pairs.toMap)))
     }
 
-  def storeTest(store: Store[String, String]) =
+  def storeTest(store: Store[String, String]): Prop =
     putStoreTest(store, validPairs) && multiPutStoreTest(store, validPairs)
 
   val service = new Service[HttpRequest, HttpResponse] {
@@ -73,20 +78,24 @@ object HttpStringStoreProperties extends Properties("HttpStringStore") with Clos
             resp.headers.set(HttpHeaders.Names.CONTENT_LENGTH, content.readableBytes.toString)
             resp
           }.getOrElse {
-            val resp = new DefaultHttpResponse(request.getProtocolVersion, HttpResponseStatus.NOT_FOUND)
+            val resp =
+              new DefaultHttpResponse(request.getProtocolVersion, HttpResponseStatus.NOT_FOUND)
             resp.headers.set(HttpHeaders.Names.CONTENT_LENGTH, "0")
             resp
           }
         case HttpMethod.DELETE =>
           map.remove(request.getUri)
-          val resp = new DefaultHttpResponse(request.getProtocolVersion, HttpResponseStatus.NO_CONTENT)
+          val resp =
+            new DefaultHttpResponse(request.getProtocolVersion, HttpResponseStatus.NO_CONTENT)
           resp.headers.set(HttpHeaders.Names.CONTENT_LENGTH, "0")
           resp
         case HttpMethod.PUT =>
           val maybeOldV = Option(map.put(request.getUri, request.getContent.toString(utf8)))
-          val resp = new DefaultHttpResponse(request.getProtocolVersion, maybeOldV.map(_ => HttpResponseStatus.OK).getOrElse(HttpResponseStatus.CREATED))
+          val resp = new DefaultHttpResponse(request.getProtocolVersion,
+            maybeOldV.map(_ => HttpResponseStatus.OK).getOrElse(HttpResponseStatus.CREATED))
           resp.setContent(request.getContent)
-          resp.headers.set(HttpHeaders.Names.CONTENT_LENGTH, request.getContent.readableBytes.toString)
+          resp.headers.set(HttpHeaders.Names.CONTENT_LENGTH,
+            request.getContent.readableBytes.toString)
           resp
         case _ =>
           new DefaultHttpResponse(request.getProtocolVersion, HttpResponseStatus.METHOD_NOT_ALLOWED)
@@ -97,14 +106,14 @@ object HttpStringStoreProperties extends Properties("HttpStringStore") with Clos
 
   val server = Http.serve("localhost:0", NettyAdaptor andThen service)
 
-  val store = HttpStringStore(server.boundAddress.toString.substring(1)) // i dont know how else to convert boundAddress into something usable
+  // i dont know how else to convert boundAddress into something usable
+  val store = HttpStringStore(server.boundAddress.toString.substring(1))
 
   property("HttpStringStore test") = storeTest(store)
 
-  override def closeable = server
+  override def closeable: ListeningServer = server
 
-  override def cleanup() = {
-    println("closing server")
+  override def cleanup(): Unit = {
     super.cleanup()
   }
 }

@@ -22,48 +22,51 @@ import org.hbase.async.HBaseClient
 
 /**
  * @author Mansur Ashraf
- * @since 9/29/13
+ * @since 9/8/13
  */
-object AsyncHBaseStringStore {
-  def apply(quorumNames: Seq[String],
-            table: String,
-            columnFamily: String,
-            column: String,
-            threads: Int = 4): AsyncHBaseStringStore = {
-    val store = new AsyncHBaseStringStore(quorumNames, table, columnFamily, column,
+object AsyncHBaseByteArrayStore {
+  def apply(
+    quorumNames: Seq[String],
+    table: String,
+    columnFamily: String,
+    column: String,
+    threads: Int = 4
+  ): AsyncHBaseByteArrayStore = {
+    val store = new AsyncHBaseByteArrayStore(quorumNames, table, columnFamily, column,
       new HBaseClient(quorumNames.mkString(",")), threads)
     store.validateConfiguration()
     store
   }
+
 }
 
-class AsyncHBaseStringStore(
+class AsyncHBaseByteArrayStore(
   protected val quorumNames: Seq[String],
   protected val table: String,
   protected val columnFamily: String,
   protected val column: String,
   protected val client: HBaseClient,
-  protected val threads: Int) extends Store[String, String] with AsyncHBaseStore {
+  protected val threads: Int) extends Store[Array[Byte], Array[Byte]] with AsyncHBaseStore {
 
-  import com.twitter.bijection.hbase.HBaseInjections.string2BytesInj
   /** get a single key from the store.
     * Prefer multiGet if you are getting more than one key at a time
     */
-  override def get(k: String): Future[Option[String]] =
-    getValue(k)(string2BytesInj, string2BytesInj)
+  override def get(k: Array[Byte]): Future[Option[Array[Byte]]] = {
+    getValue(k)
+  }
 
   /**
    * replace a value
    * Delete is the same as put((k,None))
    */
-  override def put(kv: (String, Option[String])): Future[Unit] =
-    putValue(kv)(string2BytesInj, string2BytesInj)
+  override def put(kv: (Array[Byte], Option[Array[Byte]])): Future[Unit] = {
+    putValue(kv)
+  }
 
   /** Close this store and release any resources.
     * It is undefined what happens on get/multiGet after close
     */
   override def close(t: Time): Future[Unit] = futurePool {
-    client.shutdown()
+    client.shutdown().join()
   }
 }
-

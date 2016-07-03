@@ -17,9 +17,8 @@
 package com.twitter.storehaus
 
 import org.scalacheck.Properties
-import org.scalacheck.Prop._
 
-import com.twitter.util.{JavaTimer, Duration, Try}
+import com.twitter.util.{JavaTimer, Duration}
 import java.util.concurrent.TimeUnit.MILLISECONDS
 
 object BatchedReadableStoreProperties extends Properties("BatchedReadableStoreProperties") {

@@ -18,13 +18,12 @@ package com.twitter.storehaus
 
 import com.twitter.util.{ Await, Future }
 
-import org.scalacheck.{ Arbitrary, Properties }
-import org.scalacheck.Gen.choose
+import org.scalacheck.{Prop, Arbitrary, Properties}
 import org.scalacheck.Prop._
 
 object StoreProperties extends Properties("Store") {
   def baseTest[K: Arbitrary, V: Arbitrary: Equiv](storeIn: => Store[K, V])
-  (put: (Store[K, V], List[(K, Option[V])]) => Map[K, Option[V]]) = {
+  (put: (Store[K, V], List[(K, Option[V])]) => Map[K, Option[V]]): Prop = {
     forAll { (examples: List[(K, Option[V])]) =>
       lazy val store = storeIn
       put(store, examples).forall { case (k, optV) =>
@@ -33,22 +32,23 @@ object StoreProperties extends Properties("Store") {
     }
   }
 
-  def putStoreTest[K: Arbitrary, V: Arbitrary: Equiv](store: => Store[K, V]) =
+  def putStoreTest[K: Arbitrary, V: Arbitrary: Equiv](store: => Store[K, V]): Prop =
     baseTest(store) { (s, pairs) =>
       Await.result(pairs.foldLeft(Future.Unit) { (fOld, p) => fOld.flatMap { _ => s.put(p) } })
       pairs.toMap
     }
 
-  def multiPutStoreTest[K: Arbitrary, V: Arbitrary: Equiv](store: => Store[K, V]) =
+  def multiPutStoreTest[K: Arbitrary, V: Arbitrary: Equiv](store: => Store[K, V]): Prop =
     baseTest(store) { (s, pairs) =>
       Await.result(FutureOps.mapCollect(s.multiPut(pairs.toMap)))
       pairs.toMap
     }
 
-  def storeTest[K: Arbitrary, V: Arbitrary: Equiv](store: => Store[K, V]) =
+  def storeTest[K: Arbitrary, V: Arbitrary: Equiv](store: => Store[K, V]): Prop =
     putStoreTest(store) && multiPutStoreTest(store)
 
-  def sparseStoreTest[K: Arbitrary, V: Arbitrary: Equiv](norm: Option[V] => Option[V])(store: => Store[K, V]) =
+  def sparseStoreTest[K: Arbitrary, V: Arbitrary: Equiv](
+      norm: Option[V] => Option[V])(store: => Store[K, V]): Prop =
     baseTest(store) { (s, pairs) =>
       Await.result(pairs.foldLeft(Future.Unit) { (fOld, p) => fOld.flatMap { _ => s.put(p) } })
       pairs.toMap.mapValues(norm)
@@ -58,7 +58,7 @@ object StoreProperties extends Properties("Store") {
     }
 
   property("ConcurrentHashMapStore test") =
-    storeTest(new ConcurrentHashMapStore[String,Int]())
+    storeTest(new ConcurrentHashMapStore[String, Int]())
 
   property("Or works as expected") = forAll { (m1: Map[String, Int], m2: Map[String, Int]) =>
     val orRO = ReadableStore.first(Seq(ReadableStore.fromMap(m1), ReadableStore.fromMap(m2)))

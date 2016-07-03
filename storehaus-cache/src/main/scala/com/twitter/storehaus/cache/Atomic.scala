@@ -22,7 +22,7 @@ import scala.annotation.tailrec
 // Thanks to http://blog.scala4java.com/2012/03/atomic-update-of-atomicreference.html
 
 object Atomic {
-  def apply[T <: AnyRef](obj: T) = new Atomic(obj)
+  def apply[T <: AnyRef](obj: T): Atomic[T] = new Atomic(obj)
 }
 
 class Atomic[T <: AnyRef](obj: T) {
@@ -47,5 +47,5 @@ class Atomic[T <: AnyRef](obj: T) {
     if (atomic.compareAndSet(oldValue, withEffect._2)) withEffect else effect(f)
   }
 
-  def get() = atomic.get()
+  def get(): T = atomic.get()
 }
