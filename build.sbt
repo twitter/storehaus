@@ -115,7 +115,7 @@ val unreleasedModules = Set[String]()
 def youngestForwardCompatible(subProj: String) =
   Some(subProj)
     .filterNot(unreleasedModules.contains)
-    .map { s => "com.twitter" % ("storehaus-" + s + "_2.10") % "0.12.0" }
+    .map { s => "com.twitter" %% s"storehaus-$s" % "0.15.0-RC1" }
 
 val algebirdVersion = "0.12.0"
 val bijectionVersion = "0.9.1"
