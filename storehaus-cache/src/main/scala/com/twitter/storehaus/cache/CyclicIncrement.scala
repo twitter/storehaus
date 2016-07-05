@@ -118,15 +118,15 @@ sealed trait CyclicIncrement[@specialized(Int, Long) K] {
 
 case class SideACyclicIncrement[@specialized(Int, Long) K](override val value: K)
     extends CyclicIncrement[K] {
-  override def side: Side = SideA
+  override def side = SideA
 }
 case class SideBCyclicIncrement[@specialized(Int, Long) K](override val value: K)
     extends CyclicIncrement[K] {
-  override def side: Side = SideB
+  override def side = SideB
 }
 case class SideCCyclicIncrement[@specialized(Int, Long) K](override val value: K)
     extends CyclicIncrement[K] {
-  override def side: Side = SideC
+  override def side = SideC
 }
 sealed trait Side {
   def nextSide: Side

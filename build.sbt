@@ -1,5 +1,6 @@
 import ReleaseTransformations._
 import com.typesafe.tools.mima.plugin.MimaKeys.previousArtifact
+import com.typesafe.tools.mima.plugin.MimaKeys.binaryIssueFilters
 import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
 import sbtassembly.Plugin._
 import spray.boilerplate.BoilerplatePlugin.Boilerplate
@@ -27,6 +28,29 @@ val testCleanup = Seq(
     c.getMethod("cleanup").invoke(c.getField("MODULE$").get(c))
   }
 )
+
+val ignoredABIProblems = {
+  import com.typesafe.tools.mima.core._
+  import com.typesafe.tools.mima.core.ProblemFilters._
+  Seq(
+    exclude[MissingClassProblem]("com.twitter.storehaus.kafka" +
+      ".JavaFutureToTwitterFutureConverter$Link"),
+    exclude[MissingClassProblem]("com.twitter.storehaus.kafka" +
+      ".JavaFutureToTwitterFutureConverter$Link$"),
+    exclude[MissingClassProblem]("com.twitter.storehaus.kafka.JavaFutureToTwitterFutureConverter$"),
+    exclude[MissingClassProblem]("com.twitter.storehaus.kafka.JavaFutureToTwitterFutureConverter"),
+    exclude[MissingClassProblem]("com.twitter.storehaus.kafka" +
+      ".JavaFutureToTwitterFutureConverter$Open"),
+    exclude[MissingClassProblem]("com.twitter.storehaus.kafka" +
+      ".JavaFutureToTwitterFutureConverter$Open$"),
+    exclude[MissingClassProblem]("com.twitter.storehaus.kafka" +
+      ".JavaFutureToTwitterFutureConverter$State"),
+    exclude[MissingClassProblem]("com.twitter.storehaus.kafka" +
+      ".JavaFutureToTwitterFutureConverter$State$"),
+    exclude[MissingMethodProblem]("com.twitter.storehaus.kafka.KafkaStore.this"),
+    exclude[MissingMethodProblem]("com.twitter.storehaus.kafka.KafkaStore.apply")
+  )
+}
 
 val sharedSettings = extraSettings ++ ciSettings ++ Seq(
   organization := "com.twitter",
@@ -153,7 +177,9 @@ def module(name: String) = {
   val id = "storehaus-%s".format(name)
   Project(id = id, base = file(id), settings = sharedSettings ++ testCleanup ++ Seq(
     Keys.name := id,
-    previousArtifact := youngestForwardCompatible(name))
+    previousArtifact := youngestForwardCompatible(name),
+    binaryIssueFilters ++= ignoredABIProblems
+  )
   ).dependsOn(storehausTesting % "test->test")
 }
 
