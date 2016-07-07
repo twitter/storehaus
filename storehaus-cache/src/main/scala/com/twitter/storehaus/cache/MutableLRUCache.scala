@@ -16,7 +16,6 @@
 
 package com.twitter.storehaus.cache
 
-import scala.collection.mutable.{ Map => MutableMap }
 import java.util.{ LinkedHashMap => JLinkedHashMap, Map => JMap }
 
 /**
@@ -27,7 +26,7 @@ import java.util.{ LinkedHashMap => JLinkedHashMap, Map => JMap }
   */
 
 object MutableLRUCache {
-  def apply[K, V](capacity: Int) = new MutableLRUCache[K, V](capacity)
+  def apply[K, V](capacity: Int): MutableLRUCache[K, V] = new MutableLRUCache[K, V](capacity)
 }
 
 class MutableLRUCache[K, V](capacity: Int) extends JMapCache[K, V](() => {
@@ -38,10 +37,10 @@ class MutableLRUCache[K, V](capacity: Int) extends JMapCache[K, V](() => {
     }
   }
   ) {
-  override def hit(k: K) = {
+  override def hit(k: K): Option[V] = {
     get(k).map { v =>
       evict(k)
-      this += (k, v)
+      this += ((k, v))
       v
     }
   }

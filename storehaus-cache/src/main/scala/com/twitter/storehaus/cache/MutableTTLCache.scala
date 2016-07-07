@@ -20,7 +20,7 @@ import java.util.{ LinkedHashMap => JLinkedHashMap, Map => JMap }
 import com.twitter.util.Duration
 
 object MutableTTLCache {
-  def apply[K, V](ttl: Duration, capacity: Int) = {
+  def apply[K, V](ttl: Duration, capacity: Int): MutableTTLCache[K, V] = {
     val backingCache = JMapCache[K, (Long, V)](
       new JLinkedHashMap[K, (Long, V)](capacity + 1, 0.75f) {
         override protected def removeEldestEntry(eldest: JMap.Entry[K, (Long, V)]) =
@@ -30,27 +30,31 @@ object MutableTTLCache {
   }
 }
 
-class MutableTTLCache[K, V](val ttl: Duration, protected val backingCache: MutableCache[K, (Long, V)])(val clock: () => Long) extends MutableCache[K, V] {
+class MutableTTLCache[K, V](
+  val ttl: Duration,
+  protected val backingCache: MutableCache[K, (Long, V)])(
+  val clock: () => Long
+) extends MutableCache[K, V] {
   private[this] val putsSincePrune = new java.util.concurrent.atomic.AtomicInteger(1)
 
-  def get(k: K) = {
+  def get(k: K): Option[V] = {
     // Only query the clock if the backing cache returns
     // something
-    backingCache.get(k).filter {kv =>
+    backingCache.get(k).filter { kv =>
       val clockVal = clock()
       kv._1 > clockVal
     }.map(_._2)
   }
 
   def +=(kv: (K, V)): this.type = {
-    if(putsSincePrune.getAndIncrement % 1000 == 0) {
-      removeExpired
+    if (putsSincePrune.getAndIncrement % 1000 == 0) {
+      removeExpired()
     }
-    backingCache += (kv._1, (clock() + ttl.inMilliseconds, kv._2))
+    backingCache += (kv._1 -> ((clock() + ttl.inMilliseconds, kv._2)))
     this
   }
 
-  def hit(k: K) = {
+  def hit(k: K): Option[V] = {
     backingCache.get(k).map{case (ts, v) =>
       this += ((k, v))
       v
@@ -58,24 +62,22 @@ class MutableTTLCache[K, V](val ttl: Duration, protected val backingCache: Mutab
   }
 
   /* Returns an option of the (potentially) evicted value. */
-  def evict(k: K) = {
+  def evict(k: K): Option[V] = {
     backingCache.evict(k).map(_._2)
   }
 
-  def clear = {
+  def clear: this.type = {
     backingCache.clear
     this
   }
 
-  override def contains(k: K) = get(k).isDefined
-  override def empty = new MutableTTLCache(ttl, backingCache.empty)(clock)
-  override def iterator = {
+  override def contains(k: K): Boolean = get(k).isDefined
+  override def empty: MutableTTLCache[K, V] = new MutableTTLCache(ttl, backingCache.empty)(clock)
+  override def iterator: Iterator[(K, V)] = {
     val iteratorStartTime = clock()
     backingCache.iterator.flatMap{case (k, (ts, v)) =>
-      if(ts >= iteratorStartTime)
-        Some((k, v))
-      else
-        None
+      if (ts >= iteratorStartTime) Some((k, v))
+      else None
     }.toList.iterator
   }
 
@@ -88,8 +90,8 @@ class MutableTTLCache[K, V](val ttl: Duration, protected val backingCache: Mutab
     backingCache.iterator.filter(_._2._1 < pruneTime).map(_._1).toSet
   }
 
-  def removeExpired = {
+  def removeExpired(): Unit = {
     val killKeys = toRemove
-    killKeys.foreach(backingCache.evict(_))
+    killKeys.foreach(backingCache.evict)
   }
 }

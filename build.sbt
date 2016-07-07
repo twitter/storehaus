@@ -1,5 +1,6 @@
 import ReleaseTransformations._
 import com.typesafe.tools.mima.plugin.MimaKeys.previousArtifact
+import com.typesafe.tools.mima.plugin.MimaKeys.binaryIssueFilters
 import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
 import sbtassembly.Plugin._
 import spray.boilerplate.BoilerplatePlugin.Boilerplate
@@ -28,6 +29,29 @@ val testCleanup = Seq(
   }
 )
 
+val ignoredABIProblems = {
+  import com.typesafe.tools.mima.core._
+  import com.typesafe.tools.mima.core.ProblemFilters._
+  Seq(
+    exclude[MissingClassProblem]("com.twitter.storehaus.kafka" +
+      ".JavaFutureToTwitterFutureConverter$Link"),
+    exclude[MissingClassProblem]("com.twitter.storehaus.kafka" +
+      ".JavaFutureToTwitterFutureConverter$Link$"),
+    exclude[MissingClassProblem]("com.twitter.storehaus.kafka.JavaFutureToTwitterFutureConverter$"),
+    exclude[MissingClassProblem]("com.twitter.storehaus.kafka.JavaFutureToTwitterFutureConverter"),
+    exclude[MissingClassProblem]("com.twitter.storehaus.kafka" +
+      ".JavaFutureToTwitterFutureConverter$Open"),
+    exclude[MissingClassProblem]("com.twitter.storehaus.kafka" +
+      ".JavaFutureToTwitterFutureConverter$Open$"),
+    exclude[MissingClassProblem]("com.twitter.storehaus.kafka" +
+      ".JavaFutureToTwitterFutureConverter$State"),
+    exclude[MissingClassProblem]("com.twitter.storehaus.kafka" +
+      ".JavaFutureToTwitterFutureConverter$State$"),
+    exclude[MissingMethodProblem]("com.twitter.storehaus.kafka.KafkaStore.this"),
+    exclude[MissingMethodProblem]("com.twitter.storehaus.kafka.KafkaStore.apply")
+  )
+}
+
 val sharedSettings = extraSettings ++ ciSettings ++ Seq(
   organization := "com.twitter",
   scalaVersion := "2.11.7",
@@ -38,7 +62,10 @@ val sharedSettings = extraSettings ++ ciSettings ++ Seq(
   resolvers ++= Seq(
     Opts.resolver.sonatypeSnapshots,
     Opts.resolver.sonatypeReleases,
-    "Conjars Repository" at "http://conjars.org/repo"
+    "Conjars Repository" at "http://conjars.org/repo",
+    // this repo is needed to retrieve the excluded dependencies from storehaus-memcache
+    // during mima checks
+    "Twitter Maven" at "http://maven.twttr.com"
   ),
   parallelExecution in Test := true,
   scalacOptions ++= Seq(
@@ -47,6 +74,9 @@ val sharedSettings = extraSettings ++ ciSettings ++ Seq(
     "-Xlint",
     "-Yresolve-term-conflict:package"
   ),
+
+  // add linter for common scala issues: https://github.com/HairyFotr/linter
+  addCompilerPlugin("org.psywerx.hairyfotr" %% "linter" % "0.1.14"),
 
   // Publishing options:
 
@@ -112,7 +142,7 @@ val unreleasedModules = Set[String]()
 def youngestForwardCompatible(subProj: String) =
   Some(subProj)
     .filterNot(unreleasedModules.contains)
-    .map { s => "com.twitter" % ("storehaus-" + s + "_2.10") % "0.12.0" }
+    .map { s => "com.twitter" %% s"storehaus-$s" % "0.15.0-RC1" }
 
 val algebirdVersion = "0.12.0"
 val bijectionVersion = "0.9.1"
@@ -150,7 +180,9 @@ def module(name: String) = {
   val id = "storehaus-%s".format(name)
   Project(id = id, base = file(id), settings = sharedSettings ++ testCleanup ++ Seq(
     Keys.name := id,
-    previousArtifact := youngestForwardCompatible(name))
+    previousArtifact := youngestForwardCompatible(name),
+    binaryIssueFilters ++= ignoredABIProblems
+  )
   ).dependsOn(storehausTesting % "test->test")
 }
 

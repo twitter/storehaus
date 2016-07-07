@@ -16,31 +16,34 @@
 
 package com.twitter.storehaus.cache
 
-import com.twitter.algebird.{ Semigroup, Monoid, Group, CMSHash, CMSHasherImplicits}
-import com.twitter.util.Future
-
+import com.twitter.algebird.{CMSHash, CMSHasherImplicits}
 
 // The update frequency is how often we should update the mutable CMS
 case class WriteOperationUpdateFrequency(toInt: Int)
 object WriteOperationUpdateFrequency {
-  def default = WriteOperationUpdateFrequency(100) // update 1% of the time
+  // update 1% of the time
+  def default: WriteOperationUpdateFrequency = WriteOperationUpdateFrequency(100)
 }
 
 // This is how often in MS to roll over the CMS
 case class RollOverFrequencyMS(toLong: Long)
 
 object RollOverFrequencyMS {
-  def default = RollOverFrequencyMS(3600 * 1000L) // 1 Hour
+  def default: RollOverFrequencyMS = RollOverFrequencyMS(3600 * 1000L) // 1 Hour
 }
 
 // The heavy hitters percent is used to control above what % of items we should send to the backing
 // aggregator
 case class HeavyHittersPercent(toFloat: Float)
 object HeavyHittersPercent {
-  def default = HeavyHittersPercent(0.001f) // 0.1% of the time
+  def default: HeavyHittersPercent = HeavyHittersPercent(0.001f) // 0.1% of the time
 }
 
-sealed class ApproxHHTracker[K](hhPct: HeavyHittersPercent, updateFreq: WriteOperationUpdateFrequency, roFreq: RollOverFrequencyMS) {
+sealed class ApproxHHTracker[K](
+  hhPct: HeavyHittersPercent,
+  updateFreq: WriteOperationUpdateFrequency,
+  roFreq: RollOverFrequencyMS
+) {
   import CMSHasherImplicits._
 
   private[this] final val WIDTH = 1000
@@ -50,7 +53,6 @@ sealed class ApproxHHTracker[K](hhPct: HeavyHittersPercent, updateFreq: WriteOpe
   private[this] final var hhMinReq = 0L
   private[this] final val hhPercent = hhPct.toFloat
   private[this] final val updateOpsFrequency = updateFreq.toInt
-  private[this] final val rollOverFrequency = roFreq.toLong
   private[this] var countsTable = Array.fill(WIDTH * DEPTH)(0L)
   private[this] var nextRollOver: Long = System.currentTimeMillis + roFreq.toLong
   private[this] final val updateOps = new java.util.concurrent.atomic.AtomicInteger(0)
@@ -58,7 +60,7 @@ sealed class ApproxHHTracker[K](hhPct: HeavyHittersPercent, updateFreq: WriteOpe
   private[this] final val hashes: IndexedSeq[CMSHash[Long]] = {
     val r = new scala.util.Random(5)
     (0 until DEPTH).map { _ => CMSHash[Long](r.nextInt, 0, WIDTH) }
-  }.toIndexedSeq
+  }
 
   @inline
   private[this] final def frequencyEst(item : Long): Long = {
@@ -95,21 +97,21 @@ sealed class ApproxHHTracker[K](hhPct: HeavyHittersPercent, updateFreq: WriteOpe
   @inline
   private[this] final def updateHH(item : K, itemHashCode: Int) {
     @inline
-    def pruneHH {
+    def pruneHH(): Unit = {
       val iter = hh.values.iterator
       while(iter.hasNext) {
         val n = iter.next
         if(n < hhMinReq) {
-          iter.remove
+          iter.remove()
         }
       }
     }
 
-    if(hh.containsKey(item)) {
+    if (hh.containsKey(item)) {
       val v = hh.get(item)
-      val newItemCount =  v + 1L
+      val newItemCount = v + 1L
       if (newItemCount < hhMinReq) {
-        pruneHH
+        pruneHH()
       } else {
         hh.put(item, newItemCount)
       }
@@ -123,8 +125,8 @@ sealed class ApproxHHTracker[K](hhPct: HeavyHittersPercent, updateFreq: WriteOpe
 
   // We include the ability to reset the CMS so we can age our counters
   // over time
-  private[this] def resetCMS {
-    hh.clear
+  private[this] def resetCMS(): Unit = {
+    hh.clear()
     totalCount = 0L
     hhMinReq = 0L
     countsTable = Array.fill(WIDTH * DEPTH)(0L)
@@ -137,12 +139,12 @@ sealed class ApproxHHTracker[K](hhPct: HeavyHittersPercent, updateFreq: WriteOpe
   final def getFilterFunc: K => Boolean = {
       val opsCntr = updateOps.incrementAndGet
 
-    if(opsCntr < 100 || opsCntr % updateOpsFrequency == 0) {
+    if (opsCntr < 100 || opsCntr % updateOpsFrequency == 0) {
       hh.synchronized {
-        if(System.currentTimeMillis > nextRollOver) {
-          resetCMS
+        if (System.currentTimeMillis > nextRollOver) {
+          resetCMS()
         }
-        {k: K =>
+        { k: K =>
           updateItem(k)
           hh.containsKey(k)
         }
@@ -154,26 +156,27 @@ sealed class ApproxHHTracker[K](hhPct: HeavyHittersPercent, updateFreq: WriteOpe
     }
   }
 
-  final def clear {
+  final def clear() {
     hh.synchronized {
-      resetCMS
+      resetCMS()
     }
   }
 
   final def query(t: K): Boolean = hh.containsKey(t)
 }
 
-/*
-  This is a store for using the CMS code above to only store/read values which are heavy hitters in the CMS
-*/
-class HHFilteredCache[K, V](val self: MutableCache[K, V],
-                            hhPercent: HeavyHittersPercent = HeavyHittersPercent.default,
-                            writeUpdateFreq: WriteOperationUpdateFrequency = WriteOperationUpdateFrequency.default,
-                            rolloverFreq: RollOverFrequencyMS = RollOverFrequencyMS.default) extends MutableCacheProxy[K, V] {
+// This is a store for using the CMS code above to only store/read values which are heavy hitters
+// in the CMS
+class HHFilteredCache[K, V](
+  val self: MutableCache[K, V],
+  hhPercent: HeavyHittersPercent = HeavyHittersPercent.default,
+  writeUpdateFreq: WriteOperationUpdateFrequency = WriteOperationUpdateFrequency.default,
+  rolloverFreq: RollOverFrequencyMS = RollOverFrequencyMS.default
+) extends MutableCacheProxy[K, V] {
   private[this] val approxTracker = new ApproxHHTracker[K](hhPercent, writeUpdateFreq, rolloverFreq)
 
-  override def +=(kv: (K, V)): this.type  =
-    if(approxTracker.getFilterFunc(kv._1)) {
+  override def +=(kv: (K, V)): this.type =
+    if (approxTracker.getFilterFunc(kv._1)) {
       self += kv
       this
     } else {
@@ -186,8 +189,8 @@ class HHFilteredCache[K, V](val self: MutableCache[K, V],
     this
   }
 
-  override def hit(k: K): Option[V]  =
-    if(approxTracker.getFilterFunc(k)) {
+  override def hit(k: K): Option[V] =
+    if (approxTracker.getFilterFunc(k)) {
       self.hit(k)
     } else {
       None
@@ -195,7 +198,7 @@ class HHFilteredCache[K, V](val self: MutableCache[K, V],
 
   override def clear: this.type = {
     self.clear
-    approxTracker.clear
+    approxTracker.clear()
     this
   }
 
@@ -203,7 +206,7 @@ class HHFilteredCache[K, V](val self: MutableCache[K, V],
     self.iterator.filter{kv => approxTracker.query(kv._1)}
   }
 
-  override def contains(k: K): Boolean = if(approxTracker.query(k)) self.contains(k) else false
-  override def get(k: K): Option[V] = if(approxTracker.query(k)) self.get(k) else None
+  override def contains(k: K): Boolean = if (approxTracker.query(k)) self.contains(k) else false
+  override def get(k: K): Option[V] = if (approxTracker.query(k)) self.get(k) else None
 
 }

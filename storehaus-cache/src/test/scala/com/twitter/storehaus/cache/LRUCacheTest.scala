@@ -19,7 +19,7 @@ package com.twitter.storehaus.cache
 import org.scalatest.{Matchers, WordSpec}
 
 class LRUCacheTest extends WordSpec with Matchers {
-  def checkCache[K, V](pairs: Seq[(K, V)], m: Map[K, V])(implicit cache: Cache[K, V]) =
+  def checkCache[K, V](pairs: Seq[(K, V)], m: Map[K, V])(implicit cache: Cache[K, V]): Unit =
     pairs.foldLeft(cache)(_ + _).toMap should equal(m)
 
   "LRUCache works properly with threshold 2" in {

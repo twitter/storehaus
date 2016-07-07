@@ -41,19 +41,18 @@ object MutableTTLCacheProperties extends Properties("MutableTTLCache") {
   }
 
   property("If insert an item with a TTL of X, and wait X + delta then it cannot be there") =
-    forAll { (ttl: PositiveTTLTime, items: List[Long])  =>
+    forAll { (ttl: PositiveTTLTime, items: List[Long]) =>
       val cache = MutableCache.ttl[Long, Long](ttl.get.milliseconds, items.size)
-      items.foreach(item => cache += (item, item))
+      items.foreach(item => cache += ((item, item)))
       spinSleep(ttl.get + 40)
       items.iterator.forall(item => cache.get(item).isEmpty)
     }
 
   property("if you put with TTL t, and wait 0 time, it should always " +
       "(almost, except due to scheduling) be in there") =
-    forAll { (ttl: NegativeTTLTime, items: List[Long])  =>
+    forAll { (ttl: NegativeTTLTime, items: List[Long]) =>
       val cache = MutableCache.ttl[Long, Long](ttl.get.milliseconds, items.size)
-      items.foreach(item => cache += (item, item))
+      items.foreach(item => cache += ((item, item)))
       items.forall(item => cache.get(item).isDefined)
-
     }
 }

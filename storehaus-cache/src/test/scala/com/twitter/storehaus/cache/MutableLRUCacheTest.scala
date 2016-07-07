@@ -19,9 +19,9 @@ package com.twitter.storehaus.cache
 import org.scalatest.{Matchers, WordSpec}
 
 class MutableLRUCacheTest extends WordSpec with Matchers {
-  def freshCache = MutableLRUCache[String, Int](2)
+  def freshCache: MutableLRUCache[String, Int] = MutableLRUCache[String, Int](2)
 
-  def checkCache(pairs: Seq[(String, Int)], results: Seq[Boolean]) = {
+  def checkCache(pairs: Seq[(String, Int)], results: Seq[Boolean]): Unit = {
     val cache = freshCache
     pairs.foreach(cache += _)
     pairs.map { case (k, _) => cache.contains(k) } should equal(results)
