@@ -16,8 +16,6 @@
 
 package com.twitter.storehaus.algebra
 
-import java.util.concurrent.atomic.AtomicLong
-import java.util.{ Map => JMap, HashMap => JHashMap }
 import java.util.concurrent.{ ConcurrentHashMap => JConcurrentHashMap }
 
 import com.twitter.algebird.Semigroup
@@ -53,12 +51,10 @@ class MergeableJMapStore[K, V](implicit override val semigroup: Semigroup[V])
   override def put(kv: (K, Option[V])): Future[Unit] = {
     Future.value {
       kv match {
-        case (key, Some(value)) => {
+        case (key, Some(value)) =>
           dataContainer.put(key, value)
-        }
-        case (key, None) => {
+        case (key, None) =>
           dataContainer.remove(key)
-        }
       }
     }
   }
@@ -67,11 +63,12 @@ class MergeableJMapStore[K, V](implicit override val semigroup: Semigroup[V])
     Future.value {
       this.synchronized {
         Option(dataContainer.get(kv._1)) match {
-          case start@Some(value) => {
+          case start@Some(value) =>
             dataContainer.put(kv._1, Semigroup.plus(value, kv._2))
             start
-          }
-          case None => this.put(kv._1, Some(kv._2)); None
+          case None =>
+            this.put((kv._1, Some(kv._2)))
+            None
         }
       }
     }

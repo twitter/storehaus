@@ -26,17 +26,18 @@ import com.twitter.util.Future
  * in the store
  */
 
-class MergeableStoreViaSingleGetPut[-K, V: Semigroup](store: Store[K, V]) extends MergeableStore[K, V] {
+class MergeableStoreViaSingleGetPut[-K, V: Semigroup](store: Store[K, V])
+    extends MergeableStore[K, V] {
   override def semigroup: Semigroup[V] = implicitly[Semigroup[V]]
 
-  override def get(k: K) = store.get(k)
-  override def put(kv: (K, Option[V])) = store.put(kv)
+  override def get(k: K): Future[Option[V]] = store.get(k)
+  override def put(kv: (K, Option[V])): Future[Unit] = store.put(kv)
 
   /**
    * sets to .plus(get(kv._1).get.getOrElse(monoid.zero), kv._2)
    * but maybe more efficient implementations
    */
-  override def merge(kv: (K, V)) =
+  override def merge(kv: (K, V)): Future[Option[V]] =
     for {
       vOpt <- get(kv._1)
       newVOpt = vOpt.map(Semigroup.plus(_, kv._2)).orElse(Some(kv._2))
@@ -44,11 +45,14 @@ class MergeableStoreViaSingleGetPut[-K, V: Semigroup](store: Store[K, V]) extend
     } yield vOpt
 }
 
-class MergeableStoreViaGetPut[-K, V: Semigroup](store: Store[K, V], fc: FutureCollector = FutureCollector.default)
-  extends MergeableStoreViaSingleGetPut[K, V](store) {
+class MergeableStoreViaGetPut[-K, V: Semigroup](
+  store: Store[K, V],
+  fc: FutureCollector = FutureCollector.default
+) extends MergeableStoreViaSingleGetPut[K, V](store) {
 
-  override def multiGet[K1 <: K](ks: Set[K1]) = store.multiGet(ks)
-  override def multiPut[K1 <: K](kvs: Map[K1, Option[V]]) = store.multiPut(kvs)
+  override def multiGet[K1 <: K](ks: Set[K1]): Map[K1, Future[Option[V]]] = store.multiGet(ks)
+  override def multiPut[K1 <: K](kvs: Map[K1, Option[V]]): Map[K1, Future[Unit]] =
+    store.multiPut(kvs)
 
   override def multiMerge[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Option[V]]] = {
     MergeableStore.multiMergeFromMultiSet(this, kvs)(fc, semigroup)

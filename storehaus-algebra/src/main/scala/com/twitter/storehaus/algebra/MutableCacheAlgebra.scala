@@ -16,9 +16,10 @@
 
 package com.twitter.storehaus.algebra
 
-import com.twitter.algebird.Semigroup
 import com.twitter.bijection.Injection
 import com.twitter.storehaus.cache._
+
+import scala.language.implicitConversions
 
 /**
   * Enrichments and modifications to instances of MutableCache. Use
@@ -42,18 +43,18 @@ class AlgebraicMutableCache[K, V](cache: MutableCache[K, V]) {
     new MutableCache[K, U] {
       override def get(k: K) = for {
         v <- cache.get(k)
-        (_, u) <- injection.invert(k, v).toOption
+        (_, u) <- injection.invert((k, v)).toOption
       } yield u
 
       override def +=(ku: (K, U)) = { cache += injection(ku); this }
 
       override def hit(k: K) =
         cache.hit(k)
-          .flatMap(injection.invert(k, _).toOption).map(_._2)
+          .flatMap(v => injection.invert((k, v)).toOption).map(_._2)
 
       override def evict(k: K) = for {
         evictedV <- cache.evict(k)
-        (_, evictedU) <- injection.invert(k, evictedV).toOption
+        (_, evictedU) <- injection.invert((k, evictedV)).toOption
       } yield evictedU
 
       override def empty = new AlgebraicMutableCache(cache.empty).inject(injection)

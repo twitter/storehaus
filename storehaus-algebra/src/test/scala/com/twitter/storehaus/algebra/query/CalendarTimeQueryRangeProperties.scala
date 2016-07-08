@@ -16,27 +16,27 @@
 
 package com.twitter.storehaus.algebra.query
 
-
-import org.scalacheck.{ Gen, Arbitrary, Properties }
+import org.scalacheck.{ Gen, Arbitrary }
 import org.scalacheck.Prop._
 import org.scalacheck.Properties
 import com.twitter.scalding._
-import scala.collection.breakOut
 
 object CalendarTimeQueryRangeProperties extends Properties("CalendarTimeStrategy") {
-  def exclusiveUpperLen(dr: DateRange) = AbsoluteDuration.fromMillisecs(dr.end.timestamp - dr.start.timestamp )
+  def exclusiveUpperLen(dr: DateRange): AbsoluteDuration =
+    AbsoluteDuration.fromMillisecs(dr.end.timestamp - dr.start.timestamp )
 
-  def floor(ts:Long, floorSize: Long = 1000L * 60) = (ts / floorSize) * floorSize
+  def floor(ts: Long, floorSize: Long = 1000L * 60): Long = (ts / floorSize) * floorSize
 
   val TOP_DATE_SPAN = 1000L * 3600 * 24 * 365 * 80
-  implicit val arbDR:Arbitrary[DateRange] = Arbitrary(for {
+  implicit val arbDR: Arbitrary[DateRange] =
+    Arbitrary(for {
       start <- Gen.choose(0, TOP_DATE_SPAN)
       endDelta <- Gen.choose(0, TOP_DATE_SPAN/2)
     } yield {
       val startTS = floor(start)
       val endTS = startTS + floor(endDelta)
       DateRange(RichDate(startTS), RichDate(endTS))
-      })
+    })
 
   property("Index timerange must have an entry in the query") = forAll { dr: DateRange =>
     val strategy = new CalendarTimeStrategy
@@ -49,7 +49,7 @@ object CalendarTimeQueryRangeProperties extends Properties("CalendarTimeStrategy
     val strategy = new CalendarTimeStrategy
     val timeLen = exclusiveUpperLen(dr).toMillisecs
     val buckets = strategy.query(dr)
-    val reSummed = buckets.toList.map(strategy.bucketLength(_)).foldLeft(0L){_ + _}
+    val reSummed = buckets.toList.map(strategy.bucketLength).sum
     reSummed == timeLen
   }
 }

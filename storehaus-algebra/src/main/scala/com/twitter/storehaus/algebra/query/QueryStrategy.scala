@@ -20,7 +20,6 @@ import com.twitter.storehaus.{ AbstractReadableStore, FutureOps, ReadableStore }
 import com.twitter.storehaus.algebra.MergeableStore
 
 import com.twitter.algebird.{Semigroup, Monoid}
-import com.twitter.algebird.MapAlgebra
 import com.twitter.algebird.util.UtilAlgebras._
 import com.twitter.util.Future
 
@@ -37,25 +36,26 @@ trait QueryStrategy[-Q, -L, X] extends Serializable { self =>
   /** Used in your summingbird job to flatmap your keys, increment all these X with the value */
   def index(key: L): Set[X]
 
-  def withOption: QueryStrategy[Option[Q],L,Option[X]] = new AbstractQueryStrategy[Option[Q], L, Option[X]] {
-    def query(q: Option[Q]) = q match {
-      case Some(innerQ) => self.query(innerQ).map(Some(_))
-      case None => Set(None)
-    }
+  def withOption: QueryStrategy[Option[Q], L, Option[X]] =
+    new AbstractQueryStrategy[Option[Q], L, Option[X]] {
+      def query(q: Option[Q]) = q match {
+        case Some(innerQ) => self.query(innerQ).map(Some(_))
+        case None => Set(None)
+      }
 
-    def index(key: L) = self.index(key).map(Some(_)).toSet + None
-  }
+      def index(key: L) = self.index(key).map[Option[X], Set[Option[X]]](Some(_)) + None
+    }
 
   /** Create new strategy on a this and a second query strategy */
   def cross[Q2, L2, X2](qs2: QueryStrategy[Q2, L2, X2]): QueryStrategy[(Q, Q2), (L, L2), (X, X2)] =
-    new AbstractQueryStrategy[(Q, Q2), (L,L2), (X,X2)] {
+    new AbstractQueryStrategy[(Q, Q2), (L, L2), (X, X2)] {
       def query(q: (Q, Q2)) =
-        for(x1 <- self.query(q._1); x2 <- qs2.query(q._2))
-          yield (x1,x2)
+        for (x1 <- self.query(q._1); x2 <- qs2.query(q._2))
+          yield (x1, x2)
 
       def index(key: (L, L2)) =
-        for(x1 <- self.index(key._1); x2 <- qs2.index(key._2))
-          yield (x1,x2)
+        for (x1 <- self.index(key._1); x2 <- qs2.index(key._2))
+          yield (x1, x2)
     }
 }
 
@@ -64,8 +64,8 @@ abstract class AbstractQueryStrategy[Q, L, X] extends QueryStrategy[Q, L, X]
 
 /** Factory methods and combinators on QueryStrategies */
 object QueryStrategy extends Serializable {
-  protected def multiSum[Q, K, V:Monoid](set: Set[Q], expand: (Q) => Set[K],
-    resolve: (Set[K]) => Map[K, V]): Map[Q,V] = {
+  protected def multiSum[Q, K, V: Monoid](set: Set[Q], expand: (Q) => Set[K],
+    resolve: (Set[K]) => Map[K, V]): Map[Q, V] = {
       // Recall which keys are needed by each query:
       val queryMap = set.map { q => (q, expand(q)) }.toMap
       // These are the unique keys to hit:
@@ -75,21 +75,26 @@ object QueryStrategy extends Serializable {
       queryMap.map { case (q, xs) => (q, sumValues(xs, m)) }
     }
 
-  protected def sumValues[K, V:Monoid](ks: Set[K], m: Map[K,V]): V =
-    Monoid.sum(ks.flatMap { m.get(_) })
+  protected def sumValues[K, V: Monoid](ks: Set[K], m: Map[K, V]): V =
+    Monoid.sum(ks.flatMap(m.get))
 
-  /** Given a QueryStrategry and a ReadableStore which has been indexed correctly, give a ReadableStore on Queries
+  /**
+   * Given a QueryStrategry and a ReadableStore which has been indexed correctly,
+   * give a ReadableStore on Queries
    */
-  def query[Q,L,X,V:Semigroup](qs: QueryStrategy[Q, L, X], rs: ReadableStore[X, V]): ReadableStore[Q, V] =
+  def query[Q, L, X, V : Semigroup](
+    qs: QueryStrategy[Q, L, X],
+    rs: ReadableStore[X, V]
+  ): ReadableStore[Q, V] =
     new AbstractReadableStore[Q, V] {
       override def get(q: Q): Future[Option[V]] = {
         val m = rs.multiGet(qs.query(q))
         // Drop the keys and sum it all up
-        Monoid.sum(m.map { _._2 })
+        Monoid.sum(m.values)
       }
 
       override def multiGet[Q1 <: Q](qset: Set[Q1]): Map[Q1, Future[Option[V]]] =
-        multiSum(qset, qs.query _, rs.multiGet[X] _)
+        multiSum(qset, qs.query, rs.multiGet[X])
     }
 
   // TODO: Think about whether we need to return some sort of Sink
@@ -97,10 +102,11 @@ object QueryStrategy extends Serializable {
   /** Given a query strategry and a MergeableStore, return a function that accepts pairs of (L,V)
    * and merges them into the store so they can be queried with this strategy.
    */
-  def index[Q, L, X, V](qs: QueryStrategy[Q, L, X], ms: MergeableStore[X, V]): (TraversableOnce[(L, V)] => Future[Unit]) = { ts =>
+  def index[Q, L, X, V](qs: QueryStrategy[Q, L, X], ms: MergeableStore[X, V]
+  ): (TraversableOnce[(L, V)] => Future[Unit]) = { ts =>
     implicit val sg: Semigroup[V] = ms.semigroup
     val summed: Map[X, V] = Monoid.sum {
-      ts.flatMap { case (l,v) => qs.index(l).map { x => Map(x -> v) } }
+      ts.flatMap { case (l, v) => qs.index(l).map { x => Map(x -> v) } }
     }
     FutureOps.mapCollect(ms.multiMerge(summed)).unit
   }

@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2013 Twitter Inc.
  *
@@ -17,9 +16,8 @@
 
 package com.twitter.storehaus.algebra.reporting
 
-import com.twitter.util.{ Await, Future }
-import org.scalacheck.{ Arbitrary, Properties }
-import org.scalacheck.Gen.choose
+import com.twitter.util.Future
+import org.scalacheck.Properties
 import org.scalacheck.Prop._
 
 import com.twitter.storehaus.algebra._
@@ -29,9 +27,12 @@ object ReportingMergeableStoreProperties extends Properties("ReportingMergeableS
 
 
 
-  class DummyReporter[K, V](val self: Mergeable[K, V]) extends MergeableProxy[K, V] with MergeableReporter[Mergeable[K, V], K, V] {
-    def traceMerge(kv: (K, V), request: Future[Option[V]]) = request.unit
-    def traceMultiMerge[K1 <: K](kvs: Map[K1, V], request: Map[K1, Future[Option[V]]]) = request.mapValues(_.unit)
+  class DummyReporter[K, V](val self: Mergeable[K, V])
+      extends MergeableProxy[K, V] with MergeableReporter[Mergeable[K, V], K, V] {
+    def traceMerge(kv: (K, V), request: Future[Option[V]]): Future[Unit] = request.unit
+    def traceMultiMerge[K1 <: K](
+        kvs: Map[K1, V], request: Map[K1, Future[Option[V]]]): Map[K1, Future[Unit]] =
+      request.mapValues(_.unit)
   }
 
   property("Mergable stat store obeys the mergeable store proporites") =
@@ -39,60 +40,61 @@ object ReportingMergeableStoreProperties extends Properties("ReportingMergeableS
       val store = newStore[Int, Int]
       new MergeableStoreProxy[Int, Int] with MergeableReporter[Mergeable[Int, Int], Int, Int] {
         val self = store
-        def traceMerge(kv: (Int, Int), request: Future[Option[Int]]) = request.unit
-        def traceMultiMerge[K1 <: Int](kvs: Map[K1, Int], request: Map[K1, Future[Option[Int]]]) = request.mapValues(_.unit)
+        def traceMerge(kv: (Int, Int), request: Future[Option[Int]]): Future[Unit] = request.unit
+        def traceMultiMerge[K1 <: Int](
+            kvs: Map[K1, Int], request: Map[K1, Future[Option[Int]]]): Map[K1, Future[Unit]] =
+          request.mapValues(_.unit)
       }
     }
 
-  property("merge Some/None count matches") = forAll { (base: Map[Int, Int], merge: Map[Int, Int]) =>
-        var mergeWithSomeCount = 0
-        var mergeWithNoneCount = 0
-        val baseStore = MergeableStore.fromStore(newStore[Int, Int])
-        baseStore.multiMerge(base)
+  property("merge Some/None count matches") =
+    forAll { (base: Map[Int, Int], merge: Map[Int, Int]) =>
+      var mergeWithSomeCount = 0
+      var mergeWithNoneCount = 0
+      val baseStore = MergeableStore.fromStore(newStore[Int, Int])
+      baseStore.multiMerge(base)
 
-        val wrappedStore = new DummyReporter[Int, Int](baseStore) {
-          override def traceMerge(kv: (Int, Int), request: Future[Option[Int]]) = {
-            request.map { optV =>
-              optV match {
-                case Some(_) => mergeWithSomeCount += 1
-                case None => mergeWithNoneCount += 1
-                }
+      val wrappedStore = new DummyReporter[Int, Int](baseStore) {
+        override def traceMerge(kv: (Int, Int), request: Future[Option[Int]]) = {
+          request.map {
+            case Some(_) => mergeWithSomeCount += 1
+            case None => mergeWithNoneCount += 1
+          }.unit
+        }
+      }
+
+      merge.map(kv => wrappedStore.merge((kv._1, kv._2)))
+
+      val existsBeforeList = merge.keySet.toList.map(k => base.get(k))
+
+      existsBeforeList.collect{case Some(_) => 1}.size == mergeWithSomeCount &&
+        existsBeforeList.collect{case None => 1}.size == mergeWithNoneCount
+    }
+
+  property("multiMerge Some/None count matches") =
+    forAll { (base: Map[Int, Int], merge: Map[Int, Int]) =>
+      var mergeWithSomeCount = 0
+      var mergeWithNoneCount = 0
+      val baseStore = MergeableStore.fromStore(newStore[Int, Int])
+      baseStore.multiMerge(base)
+
+      val wrappedStore = new DummyReporter[Int, Int](baseStore) {
+        override def traceMultiMerge[K1 <: Int](
+          kvs: Map[K1, Int], request: Map[K1, Future[Option[Int]]]) = {
+          request.mapValues{optV =>
+            optV.map {
+              case Some(_) => mergeWithSomeCount += 1
+              case None => mergeWithNoneCount += 1
             }.unit
           }
         }
+      }
 
-        merge.map(kv => wrappedStore.merge((kv._1, kv._2)))
+      wrappedStore.multiMerge(merge)
 
-        val existsBeforeList = merge.keySet.toList.map(k => base.get(k))
+      val existsBeforeList = merge.keySet.toList.map(k => base.get(k))
 
-        existsBeforeList.collect{case Some(_) => 1}.size == mergeWithSomeCount &&
-          existsBeforeList.collect{case None => 1}.size == mergeWithNoneCount
-  }
-
-  property("multiMerge Some/None count matches") = forAll { (base: Map[Int, Int], merge: Map[Int, Int]) =>
-        var mergeWithSomeCount = 0
-        var mergeWithNoneCount = 0
-        val baseStore = MergeableStore.fromStore(newStore[Int, Int])
-        baseStore.multiMerge(base)
-
-        val wrappedStore = new DummyReporter[Int, Int](baseStore) {
-          override def traceMultiMerge[K1 <: Int](kvs: Map[K1, Int], request: Map[K1, Future[Option[Int]]]) = {
-            request.mapValues{optV =>
-              optV.map{ v =>
-                v match {
-                  case Some(_) => mergeWithSomeCount += 1
-                  case None => mergeWithNoneCount += 1
-                }
-              }.unit
-            }
-          }
-        }
-
-        wrappedStore.multiMerge(merge)
-
-        val existsBeforeList = merge.keySet.toList.map(k => base.get(k))
-
-        existsBeforeList.collect{case Some(_) => 1}.size == mergeWithSomeCount &&
-          existsBeforeList.collect{case None => 1}.size == mergeWithNoneCount
-  }
+      existsBeforeList.collect{case Some(_) => 1}.size == mergeWithSomeCount &&
+        existsBeforeList.collect{case None => 1}.size == mergeWithNoneCount
+    }
 }

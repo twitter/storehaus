@@ -41,15 +41,16 @@ class MergeableMonoidStore[-K, V: Monoid](
     }
 
   override def get(k: K): Future[Some[V]] =
-    store.get(k).map(orElse(_))
+    store.get(k).map(orElse)
 
-  override def multiGet[K1 <: K](ks: Set[K1]) =
+  override def multiGet[K1 <: K](ks: Set[K1]): Map[K1, Future[Option[V]]] =
     store.multiGet(ks).mapValues { futv => futv.map(_.orElse(default)) }
 
-  override def put(kv: (K, Option[V])) = {
+  override def put(kv: (K, Option[V])): Future[Unit] = {
     val (k, optV) = kv
     store.put((k, optV.filter(Monoid.isNonZero(_))))
   }
-  override def multiPut[K1 <: K](kvs: Map[K1, Option[V]]) =
+
+  override def multiPut[K1 <: K](kvs: Map[K1, Option[V]]): Map[K1, Future[Unit]] =
     store.multiPut(kvs.mapValues(_.filter(v => Monoid.isNonZero(v))))
 }
