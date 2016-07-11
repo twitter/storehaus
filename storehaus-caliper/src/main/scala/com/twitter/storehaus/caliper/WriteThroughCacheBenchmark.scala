@@ -6,10 +6,11 @@ import com.twitter.bijection._
 import com.twitter.storehaus._
 import com.twitter.conversions.time._
 import com.twitter.algebird._
-import java.nio.ByteBuffer
+import com.twitter.storehaus.cache._
+
 import scala.math.pow
 import com.twitter.storehaus.algebra._
-import com.twitter.util.{Await, Future}
+import com.twitter.util.{Duration, Await, Future}
 
 class DelayedStore[K, V](val self: Store[K, V])(implicit timer: com.twitter.util.Timer) extends StoreProxy[K, V] {
   override def put(kv: (K, Option[V])): Future[Unit] = {
@@ -62,7 +63,13 @@ class WriteThroughCacheBenchmark extends SimpleBenchmark {
     inputData = inputIntermediate.map(s => MapAlgebra.sumByKey(s)).toSeq
 
     val delayedStore = new DelayedStore(new ConcurrentHashMapStore[Long, HLL])
-    store = (new WriteThroughStore(delayedStore, new HHFilteredStore(new ConcurrentHashMapStore[Long, HLL]), true)).toMergeable
+    val hhStore = HHFilteredStore.buildStore[Long, HLL](
+      new ConcurrentHashMapStore[Long, HLL],
+      MutableCache.ttl(Duration.fromSeconds(10000), numElements),
+      HeavyHittersPercent(0.5f),
+      WriteOperationUpdateFrequency(1),
+      RollOverFrequencyMS(10000000L))
+    store = new WriteThroughStore(delayedStore, hhStore).toMergeable
     noCacheStore = delayedStore.toMergeable
   }
 
