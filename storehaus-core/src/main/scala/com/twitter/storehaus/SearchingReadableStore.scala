@@ -29,9 +29,10 @@ import com.twitter.util.Future
   * different times).
   */
 
-class SearchingReadableStore[-K, +V](stores: Seq[ReadableStore[K, V]])(pred: Option[V] => Boolean) extends ReadableStore[K, V] {
-  override def get(k: K) = FutureOps.find(stores.toStream.map(_.get(k)))(pred)
-  override def multiGet[K1 <: K](ks: Set[K1]) = {
+class SearchingReadableStore[-K, +V](stores: Seq[ReadableStore[K, V]])(pred: Option[V] => Boolean)
+    extends ReadableStore[K, V] {
+  override def get(k: K): Future[Option[V]] = FutureOps.find(stores.toStream.map(_.get(k)))(pred)
+  override def multiGet[K1 <: K](ks: Set[K1]): Map[K1, Future[Option[V]]] = {
     val tail = stores.tail
     stores.head.multiGet(ks).map { case (k, v) =>
         k -> FutureOps.find(v #:: tail.toStream.map { _.get(k) })(pred)

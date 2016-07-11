@@ -28,13 +28,15 @@ object CollectionOps {
    * PivotEncoder to Map[InnerK, V] (vs Iterable[(InnerK, V)], as
    * com.twitter.bijection.Pivot would provide).
    */
-  def pivotMap[K, OuterK, InnerK, V](pairs: Map[K, V])(split: K => (OuterK, InnerK)): Map[OuterK, Map[InnerK, V]] =
-    pairs.toList.map {
+  def pivotMap[K, OuterK, InnerK, V](pairs: Map[K, V])(
+      split: K => (OuterK, InnerK)): Map[OuterK, Map[InnerK, V]] =
+    pairs.iterator.map {
       case (k, v) =>
         val (outerK, innerK) = split(k)
-        (outerK -> (innerK -> v))
+        outerK -> (innerK -> v)
     }
-      .groupBy { _._1 }
+      .toList
+      .groupBy(_._1)
       .map { case (k, v) => k -> v.map { _._2 }.toMap }(breakOut)
 
   /** create a Map from a Set of keys and a lookup function */

@@ -17,11 +17,10 @@
 package com.twitter.storehaus
 
 import org.scalacheck.Properties
-import org.scalacheck.Prop._
 
 object BatchedStoreProperties extends Properties("BatchedStoreProperties") {
   import StoreProperties.storeTest
 
   property("BatchedStore obeys the Store laws") =
-    storeTest[String, Int] (new BatchedStore(new ConcurrentHashMapStore[String,Int](), 3, 3, 3, 3))
+    storeTest[String, Int](new BatchedStore(new ConcurrentHashMapStore[String, Int](), 3, 3, 3, 3))
 }

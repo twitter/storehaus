@@ -20,7 +20,7 @@ import com.twitter.util.Future
 
 /** Simple wrapper on IndexedSeq[V] to make it accessible as a ReadableStore */
 class IndexedSeqReadableStore[+V](iseq: IndexedSeq[V]) extends ReadableStore[Int, V] {
-  override def get(idx: Int) = if (idx >= 0 && idx < iseq.size) {
-    Future.value(Some(iseq(idx)))
-  } else Future.None
+  override def get(idx: Int): Future[Option[V]] =
+    if (idx >= 0 && idx < iseq.size) Future.value(Some(iseq(idx)))
+    else Future.None
 }

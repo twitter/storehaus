@@ -17,10 +17,8 @@
 package com.twitter.storehaus
 
 import com.twitter.util.Future
-import com.twitter.storehaus.cache.{ Cache, MapCache, MutableCache }
-import org.scalacheck.{ Arbitrary, Properties }
-import org.scalacheck.Gen.choose
-import org.scalacheck.Prop._
+import com.twitter.storehaus.cache.{ MapCache, MutableCache }
+import org.scalacheck.Properties
 import scala.collection.mutable.{ Map => MutableMap }
 
 object CachedReadableStoreProperties extends Properties("CachedReadableStoreProperties") {
@@ -34,7 +32,8 @@ object CachedReadableStoreProperties extends Properties("CachedReadableStoreProp
 
   property("CachedReadableStore with full beginning cache obeys the ReadableStore laws") =
     readableStoreLaws[String, Int] { m =>
-      val cache = MutableCache.fromMap((MutableMap.empty ++ m).map { case (k, v) => k -> Future.value(Option(v)) })
+      val cache = MutableCache.fromMap((MutableMap.empty ++ m)
+        .map { case (k, v) => k -> Future.value(Option(v)) })
       new CachedReadableStore(ReadableStore.empty, cache)
     }
 }

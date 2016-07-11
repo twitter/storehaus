@@ -23,5 +23,5 @@ import com.twitter.util.Future
  */
 
 object EmptyReadableStore extends AbstractReadableStore[Any, Nothing] {
-  override def get(k: Any) = com.twitter.util.Future.None
+  override def get(k: Any): Future[Option[Nothing]] = com.twitter.util.Future.None
 }

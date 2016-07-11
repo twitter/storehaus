@@ -26,12 +26,12 @@ import com.twitter.util.{Future, Time}
  * flexibility of accepting a V1 => Future[V2], though in practice
  * Future.value/exception will generally be used.
  */
-class ConvertedReadableStore[K1, -K2, V1, +V2](rs: ReadableStore[K1, V1])(kfn: K2 => K1)(vfn: V1 => Future[V2])
-  extends AbstractReadableStore[K2, V2] {
-  override def get(k2: K2) = FutureOps.flatMapValue(rs.get(kfn(k2)))(vfn)
-  override def multiGet[K3 <: K2](s: Set[K3]) = {
+class ConvertedReadableStore[K1, -K2, V1, +V2](rs: ReadableStore[K1, V1])(kfn: K2 => K1)(
+    vfn: V1 => Future[V2]) extends AbstractReadableStore[K2, V2] {
+  override def get(k2: K2): Future[Option[V2]] = FutureOps.flatMapValue(rs.get(kfn(k2)))(vfn)
+  override def multiGet[K3 <: K2](s: Set[K3]): Map[K3, Future[Option[V2]]] = {
     val k1ToV2 = rs.multiGet(s.map(kfn)).mapValues(FutureOps.flatMapValue(_)(vfn))
     s.map { k3 => (k3, k1ToV2(kfn(k3))) }.toMap
   }
-  override def close(time: Time) = rs.close(time)
+  override def close(time: Time): Future[Unit] = rs.close(time)
 }

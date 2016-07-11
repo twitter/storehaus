@@ -28,17 +28,18 @@ object FutureCollector {
   /**
    * If any future fails, the remaining future fails.
    */
-  implicit def default = new FutureCollector {
-    override def apply[T](futureSeq: Seq[Future[T]]) = Future.collect(futureSeq)
+  implicit def default: FutureCollector = new FutureCollector {
+    override def apply[T](futureSeq: Seq[Future[T]]): Future[Seq[T]] =
+      Future.collect(futureSeq)
   }
 
   /** All failing futures are filtered during collection.  */
-  def bestEffort = new FutureCollector {
-    override def apply[T](futureSeq: Seq[Future[T]]) =
+  def bestEffort: FutureCollector = new FutureCollector {
+    override def apply[T](futureSeq: Seq[Future[T]]): Future[Seq[T]] =
       Future.collect {
         futureSeq.map { f: Future[T] =>
-          f.map { Some(_) }.handle { case x: Exception => None } // don't eat Error
+          f.map(Some(_)).handle { case x: Exception => None } // don't eat Error
         }
-      }.map { _.flatten }
+      }.map(_.flatten)
   }
 }

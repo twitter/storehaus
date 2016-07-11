@@ -16,14 +16,14 @@
 
 package com.twitter.storehaus
 
-import com.twitter.util.{ Future }
+import com.twitter.util.Future
 import com.twitter.concurrent.AsyncSemaphore
 
 /**
  * Ever wished you could do a multiGet for 10,000 keys, but spread out over several multiGets?
  * Use the BatchedReadableStore.
  *
- * @param store the store to fetch values from
+ * @param self the store to fetch values from
  * @param maxMultiGetSize a multiGet to `store` will fetch values for at most `maxMultiGetSize` keys
  * @param maxConcurrentMultiGets the maximum number of multigets to concurrently issue
  */

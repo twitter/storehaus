@@ -30,13 +30,13 @@ object PivotedReadableStoreProperties extends Properties("PivotedReadableStore")
   // (prefix, num) => "prefix/num"
   implicit object PivotInjection extends Injection[(String, Int), String] {
     def apply(pair: (String, Int)): String = pair._1 + "/" + pair._2.toString
-    override def invert(s: String) = {
+    override def invert(s: String): Try[(String, Int)] = {
       val parts = s.split('/')
       Try((parts(0), parts(1).toInt))
     }
   }
 
-  def getStoreTest(store: PivotedReadableStore[String, String, Int, String]) = {
+  def getStoreTest(store: PivotedReadableStore[String, String, Int, String]): Boolean = {
     val innerStore1 = Await.result(store.get("prefix1")).get
     val innerStore2 = Await.result(store.get("prefix2")).get
     (0 until 100).toList.forall { case n =>
@@ -45,7 +45,7 @@ object PivotedReadableStoreProperties extends Properties("PivotedReadableStore")
     }
   }
 
-  def multiGetStoreTest(store: PivotedReadableStore[String, String, Int, String]) = {
+  def multiGetStoreTest(store: PivotedReadableStore[String, String, Int, String]): Boolean = {
     val innerStores = store.multiGet(Set("prefix1", "prefix2"))
     val innerStore1 = Await.result(innerStores.get("prefix1").get).get
     val innerStore2 = Await.result(innerStores.get("prefix2").get).get

@@ -31,7 +31,9 @@ import com.twitter.bijection.Injection
   * TODO: in scala 2.10 this should be a value class
   */
 class EnrichedStore[-K, V](store: Store[K, V]) {
-  def unpivot[CombinedK, InnerK, InnerV](split: CombinedK => (K, InnerK))(implicit ev: V <:< Map[InnerK, InnerV]): Store[CombinedK, InnerV] =
+  def unpivot[CombinedK, InnerK, InnerV](
+      split: CombinedK => (K, InnerK))(
+      implicit ev: V <:< Map[InnerK, InnerV]): Store[CombinedK, InnerV] =
     Store.unpivot(store.asInstanceOf[Store[K, Map[InnerK, InnerV]]])(split)
 
   def convert[K2, V2](kfn: K2 => K)(implicit inj: Injection[V2, V]): Store[K2, V2] =

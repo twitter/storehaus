@@ -58,7 +58,7 @@ class MinBatchingReadableStore[K, V](
    * be careful to note this is not self.multiGet, which would directly
    * issue the query and be what we have if we don't override the Proxy
    */
-  override def get(k: K) = multiGet(Set(k)).apply(k)
+  override def get(k: K): Future[Option[V]] = multiGet(Set(k)).apply(k)
 
   override def multiGet[K1 <: K](keys: Set[K1]): Map[K1, Future[Option[V]]] = {
     val res: Map[K1, Promise[Option[V]]] =
