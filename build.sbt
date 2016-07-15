@@ -139,7 +139,7 @@ val sharedSettings = extraSettings ++ ciSettings ++ Seq(
   * This returns the youngest jar we released that is compatible with
   * the current.
   */
-val unreleasedModules = Set[String]()
+val unreleasedModules = Set[String]("caliper")
 
 def youngestForwardCompatible(subProj: String) =
   Some(subProj)
@@ -157,7 +157,7 @@ lazy val storehaus = Project(
   id = "storehaus",
   base = file("."),
   settings = sharedSettings ++ DocGen.publishSettings
-  ).settings(
+).settings(
   test := { },
   publish := { }, // skip publishing for this root project.
   publishLocal := { }
@@ -175,7 +175,8 @@ lazy val storehaus = Project(
   storehausMongoDB,
   storehausElastic,
   storehausHttp,
-  storehausTesting
+  storehausTesting,
+  storehausCaliper
 )
 
 def module(name: String) = {
@@ -323,7 +324,14 @@ lazy val storehausCaliper = module("caliper").settings(
     "com.twitter" %% "bijection-core" % bijectionVersion,
     "com.twitter" %% "algebird-core" % algebirdVersion
   ),
-  javaOptions in run <++= (fullClasspath in Runtime) map { cp => Seq("-cp", sbt.Attributed.data(cp).mkString(":")) }
+  javaOptions in run <++=
+    (fullClasspath in Runtime) map { cp => Seq("-cp", sbt.Attributed.data(cp).mkString(":")) }
+).settings(
+  Seq(
+    publish := {},
+    publishLocal := {},
+    publishArtifact := false
+  )
 ).dependsOn(storehausCore, storehausAlgebra, storehausCache)
 
 lazy val storehausHttp = module("http").settings(
