@@ -1,17 +1,17 @@
 /*
- * Copyright 2014 Twitter inc.
+ * Copyright 2014 Twitter Inc.
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package com.twitter.storehaus.kafka
@@ -52,10 +52,8 @@ class KafkaStore[K, V](topic: String, props: Properties)
     val promise = new Promise[RecordMetadata]()
     val callback = new Callback {
       override def onCompletion(metadata: RecordMetadata, exception: Exception): Unit = {
-        if (exception != null)
-          promise.setException(exception)
-        else
-          promise.setValue(metadata)
+        if (exception != null) promise.setException(exception)
+        else promise.setValue(metadata)
       }
     }
     val (key, value) = kv
@@ -81,7 +79,8 @@ object KafkaStore {
     *              { @see http://kafka.apache.org/documentation.html#producerconfigs }
     * @return Kafka Store
     */
-  def apply[K, V](topic: String, props: Properties) = new KafkaStore[K, V](topic, props)
+  def apply[K, V](topic: String, props: Properties): KafkaStore[K, V] =
+    new KafkaStore[K, V](topic, props)
 
   /**
     * Create a KafkaStore
@@ -92,7 +91,7 @@ object KafkaStore {
   def apply[K, V, KS <: Serializer[K] : ClassTag, VS <: Serializer[V] : ClassTag](
     topic: String,
     brokers: Seq[String]
-  ) = new KafkaStore[K, V](topic, createProps[K, V, KS, VS](brokers))
+  ): KafkaStore[K, V] = new KafkaStore[K, V](topic, createProps[K, V, KS, VS](brokers))
 
 
   private def createProps[K, V, KS <: Serializer[K] : ClassTag, VS <: Serializer[V] : ClassTag](

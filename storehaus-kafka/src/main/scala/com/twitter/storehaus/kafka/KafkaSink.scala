@@ -1,17 +1,17 @@
 /*
- * Copyright 2014 Twitter inc.
+ * Copyright 2014 Twitter Inc.
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package com.twitter.storehaus.kafka
@@ -27,7 +27,8 @@ import java.util.Properties
   * @author Mansur Ashraf
   * @since 11/22/13
   */
-@deprecated("use com.twitter.storehaus.kafka.KafkaStore with com.twitter.summingbird.storm.WritableStoreSink","0.9.0")
+@deprecated("use com.twitter.storehaus.kafka.KafkaStore with " +
+  "com.twitter.summingbird.storm.WritableStoreSink", "0.9.0")
 class KafkaSink[K, V](dispatcher: Dispatcher[K, V]) extends Serializable {
   /**
     * Function that satisfies Storm#Sink
@@ -43,7 +44,7 @@ class KafkaSink[K, V](dispatcher: Dispatcher[K, V]) extends Serializable {
     * @tparam V1 new sink Value
     * @return KafkaSink[K1, V1]
     */
-  def convert[K1, V1](kfn: K1 => K)(implicit inj: Injection[V1, V]) = {
+  def convert[K1, V1](kfn: K1 => K)(implicit inj: Injection[V1, V]): KafkaSink[K1, V1] = {
     val fn: Dispatcher[K1, V1] = {
       kv: (K1, V1) => dispatcher(compose(kfn, inj)(kv))
     }
@@ -55,7 +56,7 @@ class KafkaSink[K, V](dispatcher: Dispatcher[K, V]) extends Serializable {
     * @param fn predicate
     * @return KafkaSink
     */
-  def filter(fn: ((K, V)) => Boolean) = {
+  def filter(fn: ((K, V)) => Boolean): KafkaSink[K, V] = {
     val f: Dispatcher[K, V] = {
       kv: (K, V) =>
         if (fn(kv)) dispatcher(kv)
