@@ -1,3 +1,19 @@
+/*
+ * Copyright 2015 Twitter Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.twitter.storehaus.leveldb
 
 import java.io.File
@@ -7,7 +23,7 @@ import com.twitter.storehaus.Store
 import com.twitter.storehaus.testing.generator.NonEmpty
 import com.twitter.util.{Future, Await}
 import org.iq80.leveldb.Options
-import org.scalacheck.{Gen, Properties}
+import org.scalacheck.{Prop, Gen, Properties}
 import org.scalacheck.Prop.forAll
 
 import scala.util.Random
@@ -18,11 +34,11 @@ import scala.util.Random
 object LevelDBStoreProperties extends Properties("LevelDBStore") {
 
   def putAndGetTest(store: Store[Array[Byte], Array[Byte]],
-                    pairs: Gen[List[(Array[Byte], Option[Array[Byte]])]]) =
+      pairs: Gen[List[(Array[Byte], Option[Array[Byte]])]]): Prop =
     forAll(pairs) { examples: List[(Array[Byte], Option[Array[Byte]])] =>
       examples.forall {
         case (k, v) =>
-          Await.result(store.put(k, v))
+          Await.result(store.put((k, v)))
           val found = Await.result(store.get(k))
           found match {
             case Some(a) => util.Arrays.equals(a, v.get)
@@ -32,7 +48,7 @@ object LevelDBStoreProperties extends Properties("LevelDBStore") {
     }
 
   def multiPutAndGetTest(store: Store[Array[Byte], Array[Byte]],
-                         pairs: Gen[List[(Array[Byte], Option[Array[Byte]])]]) =
+      pairs: Gen[List[(Array[Byte], Option[Array[Byte]])]]): Prop =
     forAll(pairs) { examples: List[(Array[Byte], Option[Array[Byte]])] =>
       val examplesMap = examples.toMap
       Await.result(Future.collect(store.multiPut(examplesMap).values.toList))
@@ -45,8 +61,8 @@ object LevelDBStoreProperties extends Properties("LevelDBStore") {
       stringifiedResults == stringifiedExamples
     }
 
-  private def stringifyMap(map: Map[Array[Byte], Option[Array[Byte]]])
-      :Map[String, Option[String]] = {
+  private def stringifyMap(
+      map: Map[Array[Byte], Option[Array[Byte]]]): Map[String, Option[String]] = {
     map.map {
       case (k, Some(v)) => (new String(k, "UTF-8"),
         Some(new String(v, "UTF-8")))
