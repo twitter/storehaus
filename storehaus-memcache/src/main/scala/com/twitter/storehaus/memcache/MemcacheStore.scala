@@ -17,7 +17,7 @@
 package com.twitter.storehaus.memcache
 
 import com.twitter.algebird.Semigroup
-import com.twitter.bijection.{ Bijection, Codec, Injection }
+import com.twitter.bijection.{ Codec, Injection }
 import com.twitter.bijection.netty.Implicits._
 import com.twitter.conversions.time._
 import com.twitter.finagle.builder.ClientBuilder
@@ -25,7 +25,7 @@ import com.twitter.finagle.memcached.KetamaClientBuilder
 import com.twitter.finagle.memcached.protocol.text.Memcached
 import com.twitter.finagle.netty3.{BufChannelBuffer, ChannelBufferBuf}
 import com.twitter.util.{ Duration, Future, Time }
-import com.twitter.finagle.memcached.{ GetResult, Client }
+import com.twitter.finagle.memcached.Client
 import com.twitter.storehaus.{ FutureOps, Store, WithPutTtl }
 import com.twitter.storehaus.algebra.MergeableStore
 import org.jboss.netty.buffer.ChannelBuffer
@@ -54,7 +54,8 @@ object MemcacheStore {
   val DEFAULT_TIMEOUT = 1.seconds
   val DEFAULT_RETRIES = 2
 
-  def apply(client: Client, ttl: Duration = DEFAULT_TTL, flag: Int = DEFAULT_FLAG) =
+  def apply(
+      client: Client, ttl: Duration = DEFAULT_TTL, flag: Int = DEFAULT_FLAG): MemcacheStore =
     new MemcacheStore(client, ttl, flag)
 
   def defaultClient(
@@ -116,9 +117,9 @@ object MemcacheStore {
 
 class MemcacheStore(val client: Client, val ttl: Duration, val flag: Int)
   extends Store[String, ChannelBuffer]
-  with WithPutTtl[String, ChannelBuffer, MemcacheStore]
-{
-  override def withPutTtl(ttl: Duration) = new MemcacheStore(client, ttl, flag)
+  with WithPutTtl[String, ChannelBuffer, MemcacheStore] {
+
+  override def withPutTtl(ttl: Duration): MemcacheStore = new MemcacheStore(client, ttl, flag)
 
   override def get(k: String): Future[Option[ChannelBuffer]] =
     client.get(k).flatMap {
@@ -147,5 +148,5 @@ class MemcacheStore(val client: Client, val ttl: Duration, val flag: Int)
       case (key, None) => client.delete(key).unit
     }
 
-  override def close(t: Time) = Future(client.release())
+  override def close(t: Time): Future[Unit] = Future(client.release())
 }
