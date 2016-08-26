@@ -1,23 +1,24 @@
 /*
- * Copyright 2014 Twitter inc.
+ * Copyright 2014 Twitter Inc.
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
+
 package com.twitter.storehaus.mongodb
 
 import com.twitter.storehaus.testing.generator.NonEmpty
 import com.twitter.storehaus.Store
-import com.twitter.util.{ Await, Future }
+import com.twitter.util.Await
 
 import org.scalacheck._
 import org.scalacheck.Prop._
@@ -30,15 +31,14 @@ import com.mongodb.casbah.Imports._
 
 object MongoStoreProperties extends Properties("MongoStore") {
 
-  def putAndGetStoreTest[K, V](store: Store[K, V], pairs: Gen[List[(K, Option[V])]]) = 
-    forAll(pairs) { 
+  def putAndGetStoreTest[K, V](store: Store[K, V], pairs: Gen[List[(K, Option[V])]]): Prop =
+    forAll(pairs) {
       (examples: List[(K, Option[V])]) => {
         examples.forall {
-          case (k, v) => {
+          case (k, v) =>
             Await.result(store.put((k, v)))
             val found = Await.result(store.get(k))
             found == v
-          }
         }
       }
     }
