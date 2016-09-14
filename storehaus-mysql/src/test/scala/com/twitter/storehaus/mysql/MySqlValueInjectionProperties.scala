@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus.mysql
 
-import java.util.Arrays
+import java.util
 
 import org.jboss.netty.buffer.{ChannelBuffers, ChannelBuffer}
 import org.scalacheck.{Gen, Arbitrary, Properties}
@@ -45,7 +45,7 @@ object MySqlValueInjectionProperties extends Properties("MySqlValue Injections")
       val inverted = injection.invert(injection(c)).toOption
       inverted.exists { invertedBuf =>
         val invertedBytes = bytesFromChannelBuffer(invertedBuf)
-        Arrays.equals(invertedBytes, bytes)
+        util.Arrays.equals(invertedBytes, bytes)
       }
     }
   }
