@@ -1,17 +1,17 @@
 /*
- * Copyright 2014 Twitter inc.
+ * Copyright 2013 Twitter Inc.
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package com.twitter.storehaus.hbase
@@ -41,14 +41,14 @@ trait HBaseStore {
   protected val futurePool = FuturePool(Executors.newFixedThreadPool(threads))
 
   def getHBaseAdmin: HBaseAdmin = {
-    if (conf.get("hbase.zookeeper.quorum") == null) {
+    Option(conf.get("hbase.zookeeper.quorum")).foreach { _ =>
       conf.set("hbase.zookeeper.quorum", quorumNames.mkString(","))
     }
     val hbaseConf = HBaseConfiguration.create(conf)
     new HBaseAdmin(hbaseConf)
   }
 
-  def createTableIfRequired() {
+  def createTableIfRequired(): Unit = {
     val hbaseAdmin = getHBaseAdmin
     if (createTable && !hbaseAdmin.tableExists(table)) {
       val tableDescriptor = new HTableDescriptor(table)
@@ -57,7 +57,7 @@ trait HBaseStore {
     }
   }
 
-  def validateConfiguration() {
+  def validateConfiguration(): Unit = {
     import org.apache.commons.lang.StringUtils.isNotEmpty
 
     require(quorumNames.nonEmpty, "Zookeeper quorums are required")
@@ -65,7 +65,10 @@ trait HBaseStore {
     require(isNotEmpty(column), "column is required")
   }
 
-  def getValue[K, V](key: K)(implicit keyInj: Injection[K, Array[Byte]], valueInj: Injection[V, Array[Byte]]): Future[Option[V]] = {
+  def getValue[K, V](key: K)(
+    implicit keyInj: Injection[K, Array[Byte]],
+    valueInj: Injection[V, Array[Byte]]
+  ): Future[Option[V]] = {
     val tbl = pool.getTable(table)
     futurePool {
       val g = new Get(keyInj(key))
@@ -79,7 +82,10 @@ trait HBaseStore {
     } ensure tbl.close
   }
 
-  def putValue[K, V](kv: (K, Option[V]))(implicit keyInj: Injection[K, Array[Byte]], valueInj: Injection[V, Array[Byte]]): Future[Unit] = {
+  def putValue[K, V](kv: (K, Option[V]))(
+    implicit keyInj: Injection[K, Array[Byte]],
+    valueInj: Injection[V, Array[Byte]]
+  ): Future[Unit] = {
     val tbl = pool.getTable(table)
     kv match {
       case (k, Some(v)) => futurePool {
