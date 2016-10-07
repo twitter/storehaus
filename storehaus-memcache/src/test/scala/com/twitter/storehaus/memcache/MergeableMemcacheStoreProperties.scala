@@ -79,10 +79,8 @@ object MergeableMemcacheStoreProperties extends Properties("MergeableMemcacheSto
       case None => foundOptV.isEmpty
     }
     if (!isMatch) {
-      // scalastyle:off
       println("FAILURE: Key \"" + k + "\" - expected value " +
         expectedOptV + ", but found " + foundOptV)
-      // scalastyle:on
     }
     isMatch
   }

@@ -17,7 +17,7 @@
 package com.twitter.storehaus.redis
 
 import com.twitter.algebird.Semigroup
-import com.twitter.bijection.{ Injection, NumericInjections }
+import com.twitter.bijection.Injection
 import com.twitter.bijection.netty.Implicits._
 import com.twitter.finagle.redis.Client
 import com.twitter.storehaus.ConvertedStore
@@ -38,7 +38,7 @@ object RedisLongStore {
   private [redis] implicit val LongInjection =
     Injection.connect[Long, String, Array[Byte], ChannelBuffer]
 
-  def apply(client: Client, ttl: Option[Duration] = RedisStore.Default.TTL) =
+  def apply(client: Client, ttl: Option[Duration] = RedisStore.Default.TTL): RedisLongStore =
     new RedisLongStore(RedisStore(client, ttl))
 }
 import RedisLongStore._

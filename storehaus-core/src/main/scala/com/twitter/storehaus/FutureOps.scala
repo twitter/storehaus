@@ -37,10 +37,8 @@ class RetriesExhaustedException[K](val key: K)
  * These should arguably exist in util-core.
  */
 object FutureOps {
-  // scalastyle:off
   def missingValueFor[K](k: K) = Future.exception(new MissingValueException(k))
   def retriesExhaustedFor[K](k: K) = Future.exception(new RetriesExhaustedException(k))
-  // scalastyle:on
 
   /** Kleisli operator for Future[Option[_]] Monad.  I knew it would come to this. */
   def combineFOFn[A, B, C](

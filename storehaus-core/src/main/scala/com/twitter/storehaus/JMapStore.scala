@@ -29,10 +29,8 @@ class JMapStore[K, V] extends Store[K, V] {
   protected val jstore: JMap[K, Option[V]] = new JHashMap[K, Option[V]]()
   protected def storeGet(k: K): Option[V] = {
     val stored = jstore.get(k)
-    // scalastyle:off
     if (stored != null) stored
     else None
-    // scalastyle:on
   }
   override def get(k: K): Future[Option[V]] = Future.value(storeGet(k))
   override def put(kv: (K, Option[V])): Future[Unit] = {
