@@ -312,12 +312,12 @@ lazy val storehausElastic = module("elasticsearch").settings(
   parallelExecution in Test := false
 ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
-val storehausTesting = Project(
+lazy val storehausTesting = Project(
   id = "storehaus-testing",
   base = file("storehaus-testing"),
   settings = sharedSettings ++ Seq(
     name := "storehaus-testing",
-    previousArtifact := youngestForwardCompatible("testing"),
+    previousArtifact := None,
     libraryDependencies ++= Seq(
       "org.scalacheck" %% "scalacheck" % "1.12.2" withSources(),
       withCross("com.twitter" %% "util-core" % utilVersion)

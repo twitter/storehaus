@@ -16,21 +16,28 @@
 
 package com.twitter.storehaus.testing
 
-import scala.collection.mutable.{ HashSet, SynchronizedSet }
-import scala.util.control.Exception.allCatch
+import java.util.Collections
+import java.util.concurrent.ConcurrentHashMap
+
+import scala.collection.JavaConverters._
+import scala.util.Try
 
 trait Cleanup {
-  Cleanup.instances += this
+  Cleanup.instances.add(this)
   def cleanup(): Unit
 }
 
-/** object resolved dynamically by sbt during test cleanup  */
+/** object resolved dynamically by sbt during test cleanup */
 object Cleanup {
-  private val instances = new HashSet[Cleanup] with SynchronizedSet[Cleanup]
+  private val instances =
+    Collections.newSetFromMap(new ConcurrentHashMap[Cleanup, java.lang.Boolean]())
   /** Clean up all instances capturing ( and logging ) errors */
   def cleanup() {
-    instances.map(c => allCatch.either(c.cleanup()).left.map((c, _))).map(_.fold({
-      case (closeable, error) => println("failed to cleanup %s: %s".format(closeable, error.getMessage))
-    }, identity))
+    instances.asScala
+        .foreach { c =>
+          Try(c.cleanup()).recover {
+            case error => println(s"failed to cleanup $c: ${error.getMessage}")
+          }
+        }
   }
 }
