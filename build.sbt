@@ -175,6 +175,7 @@ lazy val storehaus = Project(
   storehausAlgebra,
   storehausMemcache,
   storehausMySQL,
+  storehausPostgres,
   storehausRedis,
   storehausHBase,
   storehausDynamoDB,
@@ -232,6 +233,14 @@ lazy val storehausMemcache = module("memcache").settings(
 
 lazy val storehausMySQL = module("mysql").settings(
   libraryDependencies += "com.twitter" %% "finagle-mysql" % finagleVersion
+).dependsOn(storehausAlgebra % "test->test;compile->compile")
+
+lazy val storehausPostgres = module("postgresql").settings(
+  libraryDependencies ++= Seq(
+    "com.github.finagle" %% "roc-core"  % "0.0.5",
+    "com.github.finagle" %% "roc-types" % "0.0.5"
+  ),
+  testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "3")
 ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
 lazy val storehausRedis = module("redis").settings(
