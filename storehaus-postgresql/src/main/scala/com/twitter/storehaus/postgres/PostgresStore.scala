@@ -4,6 +4,8 @@ import com.twitter.storehaus.Store
 import com.twitter.util.{Future, Time}
 import roc.postgresql.{Client, Element, Request, Result}
 
+import scala.util.{Failure, Success}
+
 /**
   * Key value storage with PostgreSQL (>9.5) as backend
   *
@@ -11,17 +13,30 @@ import roc.postgresql.{Client, Element, Request, Result}
   */
 object PostgresStore {
 
-  def apply[K: Show : Read, V: Show : Read](client: Client, table: String, kCol: String, vCol: String) =
+  def apply[K, V]
+  (client: Client, table: String, kCol: String, vCol: String)
+  (implicit kInj: PostgresValueConverter[K], vInj: PostgresValueConverter[V]) =
     new PostgresStore[K, V](client, table, kCol, vCol)
 }
 
-class PostgresStore[K: Show : Read, V: Show : Read]
+class PostgresStore[K, V]
 (protected[postgres] val client: Client, table: String, kCol: String, vCol: String)
+(implicit kInj: PostgresValueConverter[K], vInj: PostgresValueConverter[V])
   extends Store[K, V] {
 
   implicit def toPostgresValue(e: Element): PostgresValue = RocPostgresValue(e)
 
-  private val EMPTY_STRING = ""
+  private val toV: PostgresValue => V = vInj.invert(_) match {
+    case Success(v) => v
+    case Failure(e) => throw IllegalConversionException(e.getMessage)
+  }
+
+  private val toK: PostgresValue => K = kInj.invert(_) match {
+    case Success(k) => k
+    case Failure(e) => throw IllegalConversionException(e.getMessage)
+  }
+
+  protected val EMPTY_STRING = ""
 
   protected val SELECT_SQL_PREFIX =
     s"SELECT $kCol, $vCol FROM $table WHERE $kCol"
@@ -32,7 +47,7 @@ class PostgresStore[K: Show : Read, V: Show : Read]
   override def get(key: K): Future[Option[V]] = {
     val result = run(selectSQL(List(key)))
     result.map {
-      _.headOption.map(col => Read[V].read(col.get(Symbol(vCol))))
+      _.headOption.map(col => toV(col.get(Symbol(vCol))))
     }
   }
 
@@ -42,18 +57,18 @@ class PostgresStore[K: Show : Read, V: Show : Read]
     } else {
       val result = run(selectSQL(ks.toList))
       val reqMap = result.map {
-        _.map(row => Read[K].read(row.get(Symbol(kCol))) -> Read[V].read(row.get(Symbol(vCol)))).toMap
+        _.map(row => toK(row.get(Symbol(kCol))) -> toV(row.get(Symbol(vCol)))).toMap
       }
-      ks.foldLeft(Map.empty[K1, Future[Option[V]]]) { (acc, key) =>
-        acc + (key -> reqMap.map(_.get(key)))
-      }
+      ks.iterator.map { key =>
+        (key, reqMap.map(_.get(key)))
+      }.toMap
     }
   }
 
   private def selectSQL[K1 <: K](ks: List[K1]): String = ks match {
     case Nil => EMPTY_STRING
-    case x :: Nil => SELECT_SQL_PREFIX + s" = ${Show[K].show(x)}"
-    case res => SELECT_SQL_PREFIX + " IN " + res.map(Show[K].show).mkString("(", ", ", ")")
+    case x :: Nil => SELECT_SQL_PREFIX + s" = ${toEscString(x)} LIMIT 1"
+    case res => SELECT_SQL_PREFIX + " IN " + res.map(toEscString).mkString("(", ", ", ")")
   }
 
   override def put(kv: (K, Option[V])): Future[Unit] = {
@@ -61,7 +76,6 @@ class PostgresStore[K: Show : Read, V: Show : Read]
       case (key, Some(value)) => upsertSQL(List((key, value)))
       case (key, None) => deleteSQL(List(key))
     }
-    println(sql)
     run(sql).unit
   }
 
@@ -69,7 +83,7 @@ class PostgresStore[K: Show : Read, V: Show : Read]
     // 'upsert' is available since PostgreSQL 9.5
     // https://wiki.postgresql.org/wiki/UPSERT
     val valueStmt = values.map {
-      case (key, value) => s"(${Show[K].show(key)}, ${Show[V].show(value)})"
+      case (key, value) => s"(${toEscString(key)}, ${toEscString(value)})"
     }.mkString(", ")
     if (values.nonEmpty) {
       s"""INSERT INTO $table($kCol, $vCol) VALUES $valueStmt
@@ -83,8 +97,8 @@ class PostgresStore[K: Show : Read, V: Show : Read]
   private def deleteSQL(keys: List[K]): String = {
     keys match {
       case Nil => EMPTY_STRING
-      case x :: Nil => DELETE_SQL_PREFIX + s" = ${Show[K].show(x)};"
-      case _ => DELETE_SQL_PREFIX + s" IN ${keys.map(Show[K].show).mkString("(", ", ", ")")};"
+      case x :: Nil => DELETE_SQL_PREFIX + s" = ${toEscString(x)};"
+      case _ => DELETE_SQL_PREFIX + s" IN ${keys.map(toEscString).mkString("(", ", ", ")")};"
     }
   }
 
@@ -95,15 +109,13 @@ class PostgresStore[K: Show : Read, V: Show : Read]
         |END;
         |""".stripMargin
 
-  private def run(sql: String): Future[Result] =
-    client.query(Request(sql))
+  private def run(sql: String): Future[Result] = client.query(Request(sql))
 
   override def multiPut[K1 <: K](kvs: Map[K1, Option[V]]): Map[K1, Future[Unit]] = {
     if (kvs.isEmpty) {
       Map.empty
     } else {
       val sql = doMultiPut(kvs)
-      println(sql)
       val result = run(sql).unit
       kvs.mapValues(_ => result)
     }
@@ -115,9 +127,7 @@ class PostgresStore[K: Show : Read, V: Show : Read]
     multiPutSQL(toUpsert, toDelete.toList)
   }
 
-  override def close(t: Time): Future[Unit] = {
-    client.close(t)
-  }
+  override def close(t: Time): Future[Unit] = client.close(t)
 
 }
 

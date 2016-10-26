@@ -156,11 +156,12 @@ object PostgresStoreProperties extends Properties("PostgresStore") {
   property("Postgres text->bool multiget") =
     withStore(multiPutAndMultiGetStoreTest[String, Boolean], "text", "bool", multiGet = true)
 
-  private def withStore[K: Show : Read, V: Show : Read](
+  private def withStore[K, V](
                                                          f: PostgresStore[K, V] => Prop,
                                                          kColType: String,
                                                          vColType: String,
-                                                         multiGet: Boolean = false): Prop = {
+                                                         multiGet: Boolean = false)
+                             (implicit kInj: PostgresValueConverter[K], vInj: PostgresValueConverter[V]): Prop = {
     val client = Postgresql.client
       .withUserAndPasswd("test", "test")
       .withDatabase("test")
@@ -177,7 +178,9 @@ object PostgresStoreProperties extends Properties("PostgresStore") {
 
   private def escapeName(name: String): String = name.replaceAll("\\s", "")
 
-  def newStore[K: Show : Read, V: Show : Read](client: Client, tableName: String): PostgresStore[K, V] =
+  def newStore[K, V]
+  (client: Client, tableName: String)
+  (implicit kInj: PostgresValueConverter[K], vInj: PostgresValueConverter[V]): PostgresStore[K, V] =
     PostgresStore[K, V](client, tableName, "key", "value")
 }
 

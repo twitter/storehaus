@@ -238,7 +238,8 @@ lazy val storehausMySQL = module("mysql").settings(
 lazy val storehausPostgres = module("postgresql").settings(
   libraryDependencies ++= Seq(
     "com.github.finagle" %% "roc-core"  % "0.0.5",
-    "com.github.finagle" %% "roc-types" % "0.0.5"
+    "com.github.finagle" %% "roc-types" % "0.0.5",
+    "com.chuusai"        %% "shapeless" % "2.3.2"
   ),
   testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "3")
 ).dependsOn(storehausAlgebra % "test->test;compile->compile")

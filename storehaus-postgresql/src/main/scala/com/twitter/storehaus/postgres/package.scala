@@ -1,60 +1,69 @@
 package com.twitter.storehaus
 
+import com.twitter.bijection.Injection
 import roc.postgresql.ElementDecoder
 import roc.types.failures.NullDecodedFailure
+
+
+import scala.util.Try
 
 /**
   * Created by ponkin on 10/24/16.
   */
 package object postgres {
 
+  type PostgresValueConverter[A] = Injection[A, PostgresValue]
+
   import roc.types.decoders._
 
-  // Read instances
+  trait OneWayInjection[T] extends Injection[T, PostgresValue] {
+    override def apply(t: T): PostgresValue =
+      throw IllegalConversionException(s"Can`t convert ${t.getClass.getCanonicalName} to PostgresValue")
+  }
 
-  implicit val boolRead = new Read[Boolean] {
-    override def read(v: PostgresValue): Boolean = v match {
-      case RocPostgresValue(e) => e.as[Boolean]
+  implicit val boolInjection= new OneWayInjection[Boolean] {
+    override def invert(b: PostgresValue): Try[Boolean] = b match {
+      case RocPostgresValue(element) => Try(element.as[Boolean])
     }
   }
 
-  implicit val doubleRead = new Read[Double] {
-    override def read(v: PostgresValue): Double = v match {
-      case RocPostgresValue(e) => e.as[Double]
+  implicit val doubleInjection = new OneWayInjection[Double] {
+    override def invert(b: PostgresValue): Try[Double] = b match {
+      case RocPostgresValue(element) => Try(element.as[Double])
     }
   }
 
-  implicit val floatRead = new Read[Float] {
-    override def read(v: PostgresValue): Float = v match {
-      case RocPostgresValue(e) => e.as[Float]
+  implicit val floatInjection = new OneWayInjection[Float] {
+    override def invert(b: PostgresValue): Try[Float] = b match {
+      case RocPostgresValue(element) => Try(element.as[Float])
     }
   }
 
-  implicit val shortRead = new Read[Short] {
-    override def read(v: PostgresValue): Short = v match {
-      case RocPostgresValue(e) => e.as[Short]
+  implicit val shortInjection = new OneWayInjection[Short] {
+    override def invert(b: PostgresValue): Try[Short] = b match {
+      case RocPostgresValue(element) => Try(element.as[Short])
     }
   }
 
-  implicit val intRead = new Read[Int] {
-    override def read(v: PostgresValue): Int = v match {
-      case RocPostgresValue(e) => e.as[Int]
+  implicit val intInjection = new OneWayInjection[Int] {
+    override def invert(b: PostgresValue): Try[Int] = b match {
+      case RocPostgresValue(element) => Try(element.as[Int])
     }
   }
 
-  implicit val longRead = new Read[Long] {
-    override def read(v: PostgresValue): Long = v match {
-      case RocPostgresValue(e) => e.as[Long]
+  implicit val longInjection = new OneWayInjection[Long] {
+    override def invert(b: PostgresValue): Try[Long] = b match {
+      case RocPostgresValue(element) => Try(element.as[Long])
     }
   }
 
-  implicit val stringRead = new Read[String] {
-    override def read(v: PostgresValue) = v match {
-      case RocPostgresValue(e) => e.as[String]
+  implicit val stringInjection = new OneWayInjection[String] {
+    override def invert(b: PostgresValue): Try[String] = b match {
+      case RocPostgresValue(element) => Try(element.as[String])
     }
   }
 
-  implicit val byteaRead = new Read[Array[Byte]] {
+  implicit val byteaInjection = new OneWayInjection[Array[Byte]] {
 
     implicit val byteaElementDecoders: ElementDecoder[Array[Byte]] = new ElementDecoder[Array[Byte]] {
       // ROC returns bytea as string in format \x6fFF
@@ -70,46 +79,15 @@ package object postgres {
       def nullDecoder: Array[Byte] = throw new NullDecodedFailure("BYTEA")
     }
 
-    override def read(v: PostgresValue): Array[Byte] = v match {
-      case RocPostgresValue(e) => e.as[Array[Byte]]
+    override def invert(b: PostgresValue): Try[Array[Byte]] = b match {
+      case RocPostgresValue(element) => Try(element.as[Array[Byte]])
     }
   }
 
-  // Show instances
-  implicit val boolShow = new Show[Boolean] {
-    override def show(value: Boolean): String = value.toString
+  def toEscString(a: Any): String = a match {
+    case string: String => s"'$string'"
+    case array: Array[Byte] => s"E'\\\\x${array.map("%02X" format _).mkString}'"
+    case rest => rest.toString
   }
 
-  implicit val doubleShow = new Show[Double] {
-    override def show(value: Double): String = value.toString
-  }
-
-  implicit val floatShow = new Show[Float] {
-    override def show(value: Float): String = value.toString
-  }
-
-  implicit val shortShow = new Show[Short] {
-    override def show(value: Short): String = value.toString
-  }
-
-  implicit val intShow = new Show[Int] {
-    override def show(value: Int): String = value.toString
-  }
-
-  implicit val longShow = new Show[Long] {
-    override def show(value: Long): String = value.toString
-  }
-
-  implicit val stringShow = new Show[String] {
-    override def show(value: String) = s"'$value'"
-  }
-
-  implicit val byteaShow = new Show[Array[Byte]] {
-
-    // Convert Array[Byte] to HEX representation
-    private def toHex(buf: Array[Byte]): String = buf.map("%02X" format _).mkString
-
-    override def show(value: Array[Byte]) =
-      s"E'\\\\x${toHex(value)}'"
-  }
 }
