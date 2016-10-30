@@ -1,15 +1,16 @@
 package com.twitter.storehaus.postgres
 
+import com.twitter.finagle.postgres.Client
+import com.twitter.finagle.postgres.values.Value
 import com.twitter.storehaus.Store
 import com.twitter.util.{Future, Time}
-import roc.postgresql.{Client, Element, Request, Result}
 
 import scala.util.{Failure, Success}
 
 /**
   * Key value storage with PostgreSQL (>9.5) as backend
   *
-  * Created by ponkin on 9/24/16.
+  * @author Alexey Ponkin
   */
 object PostgresStore {
 
@@ -24,8 +25,6 @@ class PostgresStore[K, V]
 (implicit kInj: PostgresValueConverter[K], vInj: PostgresValueConverter[V])
   extends Store[K, V] {
 
-  implicit def toPostgresValue(e: Element): PostgresValue = RocPostgresValue(e)
-
   private val toV: PostgresValue => V = vInj.invert(_) match {
     case Success(v) => v
     case Failure(e) => throw IllegalConversionException(e.getMessage)
@@ -36,50 +35,52 @@ class PostgresStore[K, V]
     case Failure(e) => throw IllegalConversionException(e.getMessage)
   }
 
-  protected val EMPTY_STRING = ""
+  implicit def toPostgresValue(e: Value[Any]): PostgresValue = Column(e)
 
-  protected val SELECT_SQL_PREFIX =
+  private val EMPTY_STRING = ""
+
+  private val SELECT_SQL_PREFIX =
     s"SELECT $kCol, $vCol FROM $table WHERE $kCol"
 
-  protected val DELETE_SQL_PREFIX =
+  private val DELETE_SQL_PREFIX =
     s"DELETE FROM $table WHERE $kCol"
 
   override def get(key: K): Future[Option[V]] = {
-    val result = run(selectSQL(List(key)))
-    result.map {
-      _.headOption.map(col => toV(col.get(Symbol(vCol))))
-    }
+    val query = selectSQL(List(key))
+    client.prepareAndQuery(query)( row => toV(row.get(1)) ).map( v => v.headOption )
   }
 
   override def multiGet[K1 <: K](ks: Set[K1]): Map[K1, Future[Option[V]]] = {
-    if (ks.isEmpty) {
+    val result = doGet(ks)(client)
+    ks.iterator.map { key =>
+      (key, result.map(_.get(key)))
+    }.toMap
+  }
+
+  override def put(kv: (K, Option[V])): Future[Unit] = {
+    val query = kv match {
+      case (key, Some(value)) => doUpsert(List((key, value)))
+      case (key, None) => doDelete(List(key))
+    }
+    query(client).unit
+  }
+
+  override def multiPut[K1 <: K](kvs: Map[K1, Option[V]]): Map[K1, Future[Unit]] = {
+    if (kvs.isEmpty) {
       Map.empty
     } else {
-      val result = run(selectSQL(ks.toList))
-      val reqMap = result.map {
-        _.map(row => toK(row.get(Symbol(kCol))) -> toV(row.get(Symbol(vCol)))).toMap
-      }
-      ks.iterator.map { key =>
-        (key, reqMap.map(_.get(key)))
-      }.toMap
+      val result = doMultiput(kvs)(client)
+      kvs.mapValues(_ => result)
     }
   }
 
   private def selectSQL[K1 <: K](ks: List[K1]): String = ks match {
     case Nil => EMPTY_STRING
-    case x :: Nil => SELECT_SQL_PREFIX + s" = ${toEscString(x)} LIMIT 1"
+    case x :: Nil => SELECT_SQL_PREFIX + s" = ${toEscString(x)}"
     case res => SELECT_SQL_PREFIX + " IN " + res.map(toEscString).mkString("(", ", ", ")")
   }
 
-  override def put(kv: (K, Option[V])): Future[Unit] = {
-    val sql = kv match {
-      case (key, Some(value)) => upsertSQL(List((key, value)))
-      case (key, None) => deleteSQL(List(key))
-    }
-    run(sql).unit
-  }
-
-  protected def upsertSQL(values: List[(K, V)]): String = {
+  private def upsertSQL(values: List[(K, V)]): String = {
     // 'upsert' is available since PostgreSQL 9.5
     // https://wiki.postgresql.org/wiki/UPSERT
     val valueStmt = values.map {
@@ -102,32 +103,34 @@ class PostgresStore[K, V]
     }
   }
 
-  private def multiPutSQL(toSet: List[(K, V)], toDel: List[K]): String = // Do in transaction
-    s"""BEGIN;
-        |${upsertSQL(toSet)}
-        |${deleteSQL(toDel)}
-        |END;
-        |""".stripMargin
-
-  private def run(sql: String): Future[Result] = client.query(Request(sql))
-
-  override def multiPut[K1 <: K](kvs: Map[K1, Option[V]]): Map[K1, Future[Unit]] = {
-    if (kvs.isEmpty) {
-      Map.empty
+  protected[postgres] def doGet[K1 <: K](ks: Set[K1]): Client => Future[Map[K, V]] = {
+    if (ks.isEmpty) {
+      _ => Future(Map.empty)
     } else {
-      val sql = doMultiPut(kvs)
-      val result = run(sql).unit
-      kvs.mapValues(_ => result)
+      val query = selectSQL(ks.toList)
+      _.prepareAndQuery(query){ row =>
+        (toK(row.get(0)), toV(row.get(1)))
+      }.map( _.toMap )
     }
   }
 
-  private def doMultiPut[K1 <: K](kvs: Map[K1, Option[V]]): String = {
+  protected[postgres] def doUpsert[K1 <: K](values: List[(K1, V)]): Client => Future[Unit] =
+    _.query(upsertSQL(values)).unit
+
+  protected[postgres] def doDelete[K1 <: K](values: List[K1]): Client => Future[Unit] =
+    _.query(deleteSQL(values)).unit
+
+  protected[postgres] def doMultiput[K1 <: K](kvs: Map[K1, Option[V]]): Client => Future[Unit] = {
     val (keysToUpsert, toDelete) = kvs.keySet.partition(k => kvs.get(k).exists(_.isDefined))
     val toUpsert = kvs.filterKeys(keysToUpsert.contains).mapValues(_.get).toList
-    multiPutSQL(toUpsert, toDelete.toList)
+    _.inTransaction(
+      for{
+        _ <- doUpsert(toUpsert)
+        _ <- doDelete(toDelete.toList)
+      } yield () )
   }
 
-  override def close(t: Time): Future[Unit] = client.close(t)
+  override def close(t: Time): Future[Unit] = client.close()
 
 }
 

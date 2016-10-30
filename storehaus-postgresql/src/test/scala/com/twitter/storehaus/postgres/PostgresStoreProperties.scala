@@ -4,8 +4,7 @@ import com.twitter.storehaus.testing.generator.NonEmpty
 import com.twitter.util.{Await, Future}
 import org.scalacheck.Prop.forAll
 import org.scalacheck.{Gen, Prop, Properties}
-import roc.Postgresql
-import roc.postgresql.{Client, Request}
+import com.twitter.finagle.postgres.Client
 
 object PostgresStoreProperties extends Properties("PostgresStore") {
 
@@ -162,17 +161,18 @@ object PostgresStoreProperties extends Properties("PostgresStore") {
                                                          vColType: String,
                                                          multiGet: Boolean = false)
                              (implicit kInj: PostgresValueConverter[K], vInj: PostgresValueConverter[V]): Prop = {
-    val client = Postgresql.client
-      .withUserAndPasswd("test", "test")
-      .withDatabase("test")
-      .newRichClient("inet!localhost:5432")
+    val client = Client(
+      host = "localhost:5432",
+      username = "test",
+      password = Some("test"),
+      database = "test")
     val tableName = s"storehaus_postgres_${escapeName(kColType)}_${escapeName(vColType)}${if (multiGet) "_multiget" else ""}"
     val schema =
       s"""CREATE TEMPORARY TABLE IF NOT EXISTS $tableName (
           |key $kColType PRIMARY KEY,
           |value $vColType DEFAULT NULL
           |);""".stripMargin
-    Await.result(client.query(Request(schema)))
+    Await.result(client.query(schema))
     f(newStore(client, tableName))
   }
 
