@@ -4,13 +4,16 @@ import com.twitter.bijection.Injection
 
 
 import scala.util.Try
+import scalaz._
 
 /**
   * @author Alexey Ponkin
   */
 package object postgres {
 
+  import Scalaz._
   type PostgresValueConverter[A] = Injection[A, PostgresValue]
+  type DBRequest[A] = Kleisli[Future, Client, A]
 
   trait OneWayInjection[T] extends Injection[T, PostgresValue] {
     override def apply(t: T): PostgresValue =
