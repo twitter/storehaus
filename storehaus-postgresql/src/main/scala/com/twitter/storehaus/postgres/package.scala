@@ -1,19 +1,19 @@
 package com.twitter.storehaus
 
 import com.twitter.bijection.Injection
+import com.twitter.finagle.postgres.Client
+import com.twitter.util.Future
 
 
 import scala.util.Try
-import scalaz._
 
 /**
   * @author Alexey Ponkin
   */
 package object postgres {
 
-  import Scalaz._
   type PostgresValueConverter[A] = Injection[A, PostgresValue]
-  type DBRequest[A] = Kleisli[Future, Client, A]
+  type DBTxRequest[A] = Client => Future[A] // request in transaction
 
   trait OneWayInjection[T] extends Injection[T, PostgresValue] {
     override def apply(t: T): PostgresValue =
