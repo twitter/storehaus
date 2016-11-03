@@ -59,6 +59,7 @@ val ignoredABIProblems = {
     exclude[MissingMethodProblem]("com.twitter.storehaus.asynchbase.AsyncHBaseStringStore" +
       ".futurePool"),
     exclude[MissingMethodProblem]("com.twitter.storehaus.asynchbase.AsyncHBaseStore.futurePool")
+    exclude[MissingMethodProblem]("com.twitter.storehaus.ReadThroughStore.mutex")
   )
 }
 
