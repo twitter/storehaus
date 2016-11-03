@@ -31,14 +31,12 @@ import com.twitter.util.Future
  * are attempted to be removed from cache, rather than having the old value
  * still in cache.
  *
- * Thread-safety is achieved using a mutex.
- *
  * @author Ruban Monu
  */
 class WriteThroughStore[K, V](backingStore: Store[K, V], cache: Store[K, V], invalidate: Boolean = true)
   extends ReadThroughStore[K, V](backingStore, cache) with Store[K, V] {
 
-  override def put(kv: (K, Option[V])): Future[Unit] = mutex.acquire.flatMap { p =>
+  override def put(kv: (K, Option[V])): Future[Unit] = {
     // write key to backing store first
     backingStore.put(kv).flatMap { _ =>
       // now write key to cache, best effort
@@ -51,13 +49,11 @@ class WriteThroughStore[K, V](backingStore: Store[K, V], cache: Store[K, V], inv
       } else {
         Future.exception(x)
       }
-    } ensure {
-      p.release
     }
   }
 
   override def multiPut[K1 <: K](kvs: Map[K1, Option[V]]): Map[K1, Future[Unit]] = {
-    val f : Future[Map[K1, Either[Unit, Exception]]] = mutex.acquire.flatMap { p =>
+    val f : Future[Map[K1, Either[Unit, Exception]]] = {
       // write keys to backing store first
       val storeResults : Map[K1, Future[Either[Unit, Exception]]] =
         backingStore.multiPut(kvs).map { case (k, f) =>
@@ -80,8 +76,6 @@ class WriteThroughStore[K, V](backingStore: Store[K, V], cache: Store[K, V], inv
           .map { f => storeResult }
         // return original writes made to backing store
         // once cache operations are complete
-      } ensure {
-        p.release
       }
     }
 
