@@ -16,7 +16,6 @@
 
 package com.twitter.storehaus
 
-import com.twitter.concurrent.AsyncMutex
 import com.twitter.util.{ Future, Return }
 
 /**
@@ -30,25 +29,18 @@ import com.twitter.util.{ Future, Return }
  * On the other hand, any failure while reading from backing store
  * is propagated to the client.
  *
- * Thread-safety is achieved using a mutex.
- *
  * @author Ruban Monu
  */
 class ReadThroughStore[K, V](backingStore: ReadableStore[K, V], cache: Store[K, V])
   extends ReadableStore[K, V] {
 
-  protected [this] lazy val mutex = new AsyncMutex
-
   private [this] def getFromBackingStore(k: K) : Future[Option[V]] = {
     // attempt to fetch the key from backing store and
     // write the key to cache, best effort
     backingStore.get(k).flatMap { storeValue =>
-      mutex.acquire.flatMap { p =>
-        cache.put((k, storeValue))
-          .map { u : Unit => storeValue }
-          .rescue { case x: Exception => Future.value(storeValue) }
-          .ensure { p.release }
-      }
+      cache.put((k, storeValue))
+        .map { u : Unit => storeValue }
+        .rescue { case x: Exception => Future.value(storeValue) }
     }
   }
 
@@ -78,11 +70,8 @@ class ReadThroughStore[K, V](backingStore: ReadableStore[K, V], cache: Store[K, 
         } else {
           FutureOps.mapCollect(backingStore.multiGet(remaining)).flatMap { storeResult =>
             // write fetched keys to cache, best effort
-            mutex.acquire.flatMap { p =>
-              FutureOps.mapCollect(cache.multiPut(storeResult))(FutureCollector.bestEffort)
-                .map { u => hits ++ storeResult }
-                .ensure { p.release }
-            }
+            FutureOps.mapCollect(cache.multiPut(storeResult))(FutureCollector.bestEffort)
+              .map { u => hits ++ storeResult }
           }
         }
       }
