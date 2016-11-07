@@ -1,5 +1,7 @@
 ## Storehaus [![Build Status](https://secure.travis-ci.org/twitter/storehaus.png)](http://travis-ci.org/twitter/storehaus)
 
+[![Join the chat at https://gitter.im/twitter/storehaus](https://badges.gitter.im/twitter/storehaus.svg)](https://gitter.im/twitter/storehaus?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Storehaus is a library that makes it easy to work with asynchronous key value stores. Storehaus is built on top of Twitter's [Future](https://github.com/twitter/util/blob/master/util-core/src/main/scala/com/twitter/util/Future.scala).
 
 ### Storehaus-Core
