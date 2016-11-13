@@ -52,16 +52,6 @@ object PostgresStoreProperties extends Properties("PostgresStore") {
   implicit val alphaStrAndDoubleOptPairList = Gen.listOfN(10, alphaStrPosFloatPair)
   implicit val alphaStrAndBoolOptPairList = Gen.listOfN(10, alphaStrAndBoolOptPair)
 
-  def put[K, V](s: PostgresStore[K, V], pairs: List[(K, Option[V])]) {
-    pairs.foreach { case (k, v) =>
-      Await.result(s.put((k, v)))
-    }
-  }
-
-  def multiPut[K, V](s: PostgresStore[K, V], pairs: List[(K, Option[V])]) {
-    Await.result(Future.collect(s.multiPut(pairs.toMap).values.toSeq))
-  }
-
   def compareValues[K, V](
                            k: K, expectedOptV: Option[V], foundOptV: Option[V]): Boolean = {
     val isMatch = expectedOptV match {
@@ -81,9 +71,7 @@ object PostgresStoreProperties extends Properties("PostgresStore") {
         s"expected value ${expectedOptV.get}, but found ${foundOptV.get}")
   }
 
-  def putAndGetStoreTest[K, V](
-                                                          store: PostgresStore[K, V]
-                                                        )(implicit gen: Gen[List[(K, Option[V])]]): Prop =
+  def putAndGetStoreTest[K, V](store: PostgresStore[K, V])(implicit gen: Gen[List[(K, Option[V])]]): Prop =
     forAll(gen) { examples =>
       put(store, examples)
       examples.toMap.forall { case (k, optV) =>
@@ -178,9 +166,21 @@ object PostgresStoreProperties extends Properties("PostgresStore") {
 
   private def escapeName(name: String): String = name.replaceAll("\\s", "")
 
-  def newStore[K, V]
-  (client: Client, tableName: String)
-  (implicit kInj: PostgresValueConverter[K], vInj: PostgresValueConverter[V]): PostgresStore[K, V] =
+  def put[K, V](s: PostgresStore[K, V], pairs: List[(K, Option[V])]) {
+    pairs.foreach { case (k, v) =>
+      Await.result(s.put((k, v)))
+    }
+  }
+
+  def multiPut[K, V](s: PostgresStore[K, V], pairs: List[(K, Option[V])]) {
+    Await.result(Future.collect(s.multiPut(pairs.toMap).values.toSeq))
+  }
+
+  def newStore[K, V](
+                     client: Client,
+                     tableName: String)(
+                     implicit kInj: PostgresValueConverter[K],
+                     vInj: PostgresValueConverter[V]): PostgresStore[K, V] =
     PostgresStore[K, V](client, tableName, "key", "value")
 }
 
