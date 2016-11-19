@@ -13,18 +13,28 @@ import org.scalacheck.Prop._
 object MergeablePostgresStoreProperties extends Properties("MergeablePostgresStore") {
 
   /** Generator for pairings of numerics */
-  def numericPair[T : Numeric : Choose]: Gen[(String, T)] = for {
-    str <- Gen.listOfN(10, Gen.alphaChar)
+  def numericPair[T : Numeric : Choose]: Gen[(T, T)] = for {
+    str <- Gen.posNum[T]
     num <- Gen.posNum[T]
-  } yield (str.mkString, num)
+  } yield (str, num)
 
-  implicit val alphaStrAndIntOptPairList: Gen[List[(String, Int)]] = Gen.listOfN(10, numericPair[Int])
+  /** Generator for pairings of text*/
+  def textPair: Gen[(String, String)] = for {
+    str1 <- NonEmpty.alphaStr.suchThat(!_.isEmpty)
+    str2 <- NonEmpty.alphaStr
+  } yield (str1, str2)
 
-  property("MergeablePostgres text->integer") =
-    withStore(mergeTest[String, Int], "text", "integer")
+  implicit val alphaStrAndIntPairList: Gen[List[(Int, Int)]] = Gen.listOfN(10, numericPair[Int])
+  implicit val alphaStrAndtextPairList: Gen[List[(String, String)]] = Gen.listOfN(10, textPair)
 
-  def merge[K, V](s: MergeablePostgresStore[K, V], pairs: List[(K, V)]) = {
-    val result = s.multiMerge(pairs.toMap)
+  property("MergeablePostgres integer->integer") =
+    withStore(mergeTest[Int, Int], "integer", "integer")
+
+  property("MergeablePostgres text->text") =
+    withStore(mergeTest[String, String], "text", "text")
+
+  def merge[K, V](s: MergeablePostgresStore[K, V], kvs: Map[K, V]) = {
+    val result = s.multiMerge(kvs)
     Await.result(Future.collect(result.values.toList).unit)
   }
 
@@ -40,14 +50,16 @@ object MergeablePostgresStoreProperties extends Properties("MergeablePostgresSto
                       implicit gen: Gen[List[(K, V)]],
                       semigroup: Semigroup[V]): Prop =
     forAll(gen) { examples =>
-      val previousValues = multiGet(store, examples.map(_._1).toSet)
-      merge(store, examples)
-      examples.map { case (k, tv) =>
+      val examplesMap = examples.toMap
+      val previousValues = multiGet(store, examplesMap.keySet)
+      merge(store, examplesMap)
+      examplesMap.map { case (k, tv) =>
         val Some(v) = Await.result(store.get(k))
         val mustBeVal = previousValues.get(k) match {
           case Some(pv) => semigroup.plus(pv, tv)
           case None => tv
         }
+        if(mustBeVal != v) println(s"$mustBeVal -> $v")
         mustBeVal ==  v
       }.forall( _ == true )
     }

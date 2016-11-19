@@ -129,6 +129,10 @@ class PostgresStore[K, V]
     }
   }
 
+  private def updateSQL(values: List[(K, V)]): String = values.map{
+      case (key, value) => s"UPDATE $table SET $vCol = ${toEscString(value)} WHERE $kCol = ${toEscString(key)};"
+    }.mkString("\n")
+
   protected[postgres] def doGet[K1 <: K](k: K1)
                                (implicit cli: Client): Future[Option[V]] =
     doGet(Set(k)).map(_.values.headOption)
@@ -150,6 +154,9 @@ class PostgresStore[K, V]
 
   protected[postgres] def doUpsert[K1 <: K](values: List[(K1, V)])(implicit cli: Client): Future[Unit] =
     cli.query(upsertSQL(values)).unit
+
+  protected[postgres] def doUpdate[K1 <: K](values: List[(K1, V)])(implicit cli: Client): Future[Unit] =
+    cli.query(updateSQL(values)).unit
 
   protected[postgres] def doDelete[K1 <: K](values: List[K1])(implicit cli: Client): Future[Unit] =
     cli.query(deleteSQL(values)).unit

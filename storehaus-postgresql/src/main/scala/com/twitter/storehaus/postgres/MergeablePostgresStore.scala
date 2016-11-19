@@ -44,11 +44,10 @@ extends MergeableStore[K, V] {
       for{ existingKeys <- underlying.doGet(kvs.keySet, forUpdate = true) // lock selected rows
            toUpdate   = kvs.filterKeys( existingKeys.contains(_) ) // must be merged withSemigroup
            toInsert   = kvs.filterKeys( !existingKeys.contains(_) ) // must be inserted as is
-                      _ <- underlying.doUpsert(
-                                               mergeWithSemigroup(
-                                                                  existingKeys, 
-                                                                  toUpdate
-                                                                ).toList)
+                      _ <- underlying.doUpdate(
+                             mergeWithSemigroup(
+                                existingKeys, 
+                                toUpdate).toList)
                       _ <- underlying.doInsert(toInsert.toList)
       } yield existingKeys
     )
@@ -62,7 +61,7 @@ extends MergeableStore[K, V] {
   private def mergeWithSemigroup[K1 <: K](m1: Map[K, V], m2:  Map[K1, V]): Map[K1, V] = {
     m2.keySet.iterator.map{ k2 =>
       (k2, m1.get(k2) match {
-        case Some(v1) => semigroup.plus(m2(k2), v1)
+        case Some(v1) => semigroup.plus(v1, m2(k2))
         case None => m2(k2)
       })
     }.toMap
