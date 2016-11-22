@@ -151,8 +151,8 @@ object PostgresStoreProperties extends Properties("PostgresStore") {
                              (implicit kInj: PostgresValueConverter[K], vInj: PostgresValueConverter[V]): Prop = {
     val client = Client(
       host = "localhost:5432",
-      username = "test",
-      password = Some("test"),
+      username = "postgres",
+      password = Some(""),
       database = "test")
     val tableName = s"storehaus_postgres_${escapeName(kColType)}_${escapeName(vColType)}${if (multiGet) "_multiget" else ""}"
     val schema =

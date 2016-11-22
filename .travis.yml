@@ -11,6 +11,7 @@ services:
   - redis-server
   - memcache
   - mongodb
+  - postgresql
 script:
   - umask 0022 && sbt ++$TRAVIS_SCALA_VERSION test
   - umask 0022 && sbt ++$TRAVIS_SCALA_VERSION mimaReportBinaryIssues

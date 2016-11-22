@@ -74,8 +74,8 @@ object MergeablePostgresStoreProperties extends Properties("MergeablePostgresSto
                               semigroup: Semigroup[V]): Prop = {
     val client = Client(
       host = "localhost:5432",
-      username = "test",
-      password = Some("test"),
+      username = "postgres",
+      password = Some(""),
       database = "test")
     val tableName = s"storehaus_mergeable_postgres_${kColType}_${vColType}"
     val schema =
