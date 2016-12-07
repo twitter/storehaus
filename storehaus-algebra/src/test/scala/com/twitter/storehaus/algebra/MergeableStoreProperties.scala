@@ -190,26 +190,24 @@ object MergeableStoreProperties extends Properties("MergeableStore") {
     override def put(kv: (K, Option[V])): Future[Unit] = Future.Unit
   }
 
-  property("multiMergeFromMultiSet handles store failures correctly " +
-      "with bestEffort FutureCollector") = {
+  property("multiMergeFromMultiSet handles store failures correctly") = {
     val intSg = implicitly[Semigroup[Int]]
-    val storeExceptionFut = Future.exception[Option[Int]](new RuntimeException("Failure in store"))
+    val storeException = new RuntimeException("Failure in store")
+    val storeExceptionFut = Future.exception[Option[Int]](storeException)
     val missingException = new RuntimeException("Missing value")
     val missingExceptionFut = Future.exception[Option[Int]](missingException)
     val missingfn: Int => Future[Option[Int]] = _ => missingExceptionFut
 
     forAll { (ins: Map[Int, Int]) =>
       val result = MergeableStore.multiMergeFromMultiSet(
-        new MockStore[Int, Int](storeExceptionFut), ins, missingfn)(
-          FutureCollector.bestEffort, intSg)
+        new MockStore[Int, Int](storeExceptionFut), ins)(intSg)
       result.values.forall { v =>
-        Await.result(v.liftToTry).throwable == missingException
+        Await.result(v.liftToTry).throwable == storeException
       }
     }
   }
 
-  property("multiMergeFromMultiSet returns previously stored value correctly " +
-      "with bestEffort FutureCollector") = {
+  property("multiMergeFromMultiSet returns previously stored value correctly") = {
     val intSg = implicitly[Semigroup[Int]]
     forAll { (ins: Map[Int, Int]) =>
       val store = newStore[Int, Int]
@@ -218,11 +216,9 @@ object MergeableStoreProperties extends Properties("MergeableStore") {
        * We merge the entire input map twice into the store. It should return values
        * stored the first time in the second call as old values.
        */
-      MergeableStore.multiMergeFromMultiSet(store, ins)(FutureCollector.bestEffort, intSg)
-      val result = MergeableStore
-        .multiMergeFromMultiSet(store, ins)(FutureCollector.bestEffort, intSg)
+      MergeableStore.multiMergeFromMultiSet(store, ins)(intSg)
+      val result = MergeableStore.multiMergeFromMultiSet(store, ins)(intSg)
       ins.forall { case (k, v) => Await.result(result(k)) == Some(v) }
     }
-
   }
 }

@@ -16,12 +16,13 @@
 
 package com.twitter.storehaus.algebra
 
-import com.twitter.algebird.{Semigroup, Monoid}
+import com.twitter.algebird.{Monoid, Semigroup}
 import com.twitter.bijection.ImplicitBijection
-import com.twitter.storehaus.{FutureOps, FutureCollector, Store}
-import com.twitter.util.Future
-
+import com.twitter.storehaus.{FutureCollector, FutureOps, Store}
+import com.twitter.util.{Future, Promise, Return, Throw, Try}
+import java.util.concurrent.atomic.{AtomicInteger, AtomicReferenceArray}
 import scala.language.implicitConversions
+import scala.reflect.ClassTag
 
 /** Main trait to represent stores that are used for aggregation */
 trait MergeableStore[-K, V] extends Store[K, V] with Mergeable[K, V]
@@ -31,25 +32,29 @@ object MergeableStore {
   implicit def enrich[K, V](store: MergeableStore[K, V]): EnrichedMergeableStore[K, V] =
     new EnrichedMergeableStore(store)
 
+  private[this] def addOpt[V](init: Option[V], inc: V)(implicit sg: Semigroup[V]): Option[V] = init match {
+    case Some(i) => Some(sg.plus(i, inc))
+    case None => Some(inc)
+  }
+
   /**
   * Implements multiMerge functionality in terms of an underlying
   * store's multiGet and multiSet.
   */
-  def multiMergeFromMultiSet[K, V](store: Store[K, V], kvs: Map[K, V],
-    missingfn: (K) => Future[Option[V]] = FutureOps.missingValueFor _)
-    (implicit collect: FutureCollector, sg: Semigroup[V]): Map[K, Future[Option[V]]] = {
+  def multiMergeFromMultiSet[K, V](store: Store[K, V], kvs: Map[K, V])
+    (implicit sg: Semigroup[V]): Map[K, Future[Option[V]]] = {
     val keySet = kvs.keySet
-    val mGetResult: Seq[Future[(K, (Option[V], Option[V]))]] =
-      store.multiGet(keySet).iterator.map {
-        case (k, futureOptV) =>
-          futureOptV.map { init =>
-            val incV = kvs(k)
-            val resV = init.map(Semigroup.plus(_, incV)).orElse(Some(incV))
-            k -> ((init, resV))
-          }
-      }.toIndexedSeq
+    val mGetResult: Map[K, Future[(Option[V], Option[V])]] =
+      store.multiGet(keySet).map { case (k, futureOptV) =>
+        val newFOptV = futureOptV.map { oldV: Option[V] =>
+          val incV = kvs(k)
+          val newV = addOpt(oldV, incV)
+          (oldV, newV)
+        }
+        k -> newFOptV
+      }
 
-    val collectedMGetResult: Future[Seq[(K, (Option[V], Option[V]))]] = collect { mGetResult }
+    val (collectedMGetResult, getFailures) = collectWithFailures(mGetResult)
 
     val mPutResultFut: Future[Map[K, Future[Option[V]]]] =
       collectedMGetResult.map { pairs: Seq[(K, (Option[V], Option[V]))] =>
@@ -61,10 +66,58 @@ object MergeableStore {
       }
 
     /**
-     * Combine original keys with result after put. Some keys might have dropped,
-     * fill those using missingfn.
+     * Combine original keys with result after put.
      */
-    FutureOps.liftFutureValues(keySet, mPutResultFut, missingfn)
+    FutureOps.liftFutureValues(keySet, mPutResultFut, getFailures)
+  }
+
+  /**
+   * Collects keyed futures, partitioning out the failures.
+   */
+  private[algebra] def collectWithFailures[K, V](fs:Map[K, Future[V]]): (Future[Seq[(K, V)]], Map[K, Future[Nothing]]) = {
+    if (fs.isEmpty) {
+      (Future.value(Seq.empty[(K, V)]), Map.empty[K, Future[Nothing]])
+    } else {
+      val fsSize = fs.size
+      val results = new AtomicReferenceArray[Either[(K,Future[Nothing]), (K, V)]](fsSize)
+      val countdown = new AtomicInteger(fsSize)
+      val successCount = new AtomicInteger(0)
+      val pSuccess = new Promise[Seq[(K, V)]]
+      var failures = Map.empty[K, Future[Nothing]]
+
+      def collectResults() = {
+        if (countdown.decrementAndGet() == 0) {
+          val successArray = new Array[(K, V)](successCount.get())
+          var si = 0
+          var ri = 0
+          while (ri < fsSize) {
+            results.get(ri) match {
+              case Right(kv) =>
+                successArray(si) = kv
+                si += 1
+              case Left(kv) =>
+                failures = failures + kv
+            }
+            ri += 1
+          }
+          pSuccess.setValue(successArray)
+        }
+      }
+
+      for (((k, f), i) <- fs.iterator.zipWithIndex) {
+        f respond {
+          case Return(v) =>
+            results.set(i, Right(k -> v))
+            successCount.incrementAndGet()
+            collectResults()
+          case t@Throw(cause) =>
+            val failure = k -> Future.const(Throw(cause))
+            results.set(i, Left(failure))
+            collectResults()
+        }
+      }
+      (pSuccess, failures)
+    }
   }
 
   /** unpivot or uncurry this MergeableStore
