@@ -1,6 +1,9 @@
-## Storehaus [![Build Status](https://secure.travis-ci.org/twitter/storehaus.png)](http://travis-ci.org/twitter/storehaus)
+## Storehaus
 
-[![Join the chat at https://gitter.im/twitter/storehaus](https://badges.gitter.im/twitter/storehaus.svg)](https://gitter.im/twitter/storehaus?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Build Status](https://secure.travis-ci.org/twitter/storehaus.png)](http://travis-ci.org/twitter/storehaus)
+[![Codecov branch](https://img.shields.io/codecov/c/github/twitter/storehaus/develop.svg?maxAge=3600)](https://codecov.io/github/twitter/storehaus)
+[![Latest version](https://index.scala-lang.org/twitter/storehaus/storehaus-core/latest.svg?color=orange)](https://index.scala-lang.org/twitter/storehaus/storehaus-core)
+[![Chat](https://badges.gitter.im/twitter/storehaus.svg)](https://gitter.im/twitter/storehaus?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 Storehaus is a library that makes it easy to work with asynchronous key value stores. Storehaus is built on top of Twitter's [Future](https://github.com/twitter/util/blob/master/util-core/src/main/scala/com/twitter/util/Future.scala).
 
@@ -158,7 +161,7 @@ The suffix denotes the scala version.
 
 ## Testing notes
 
-We use travis-ci to set up any underlying stores (e.g. MySQL, Redis, Memcached) for the tests. In order for these tests to pass on your local machine, you may need additional setup.
+We use `travis-ci` to set up any underlying stores (e.g. MySQL, Redis, Memcached) for the tests. In order for these tests to pass on your local machine, you may need additional setup.
 
 ### MySQL tests
 

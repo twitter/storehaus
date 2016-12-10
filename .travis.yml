@@ -1,8 +1,14 @@
 language: scala
 sudo: false
-scala:
-  - 2.10.5
-  - 2.11.7
+matrix:
+  include:
+    - scala: 2.10.6
+      script: umask 0022 && ./sbt ++$TRAVIS_SCALA_VERSION clean test mimaReportBinaryIssues
+
+    - scala: 2.11.8
+      script: umask 0022 && ./sbt ++$TRAVIS_SCALA_VERSION clean coverage test coverageReport mimaReportBinaryIssues
+      after_success:
+        - bash <(curl -s https://codecov.io/bash)
 before_script:
   - mysql -u root -e "create database storehaus_test;"
   - mysql -u root -e "create user 'storehaususer'@'localhost' identified by 'test1234';"
@@ -11,6 +17,24 @@ services:
   - redis-server
   - memcache
   - mongodb
-script:
-  - umask 0022 && sbt ++$TRAVIS_SCALA_VERSION test
-  - umask 0022 && sbt ++$TRAVIS_SCALA_VERSION mimaReportBinaryIssues
+cache:
+  directories:
+  - $HOME/.sbt/0.13/dependency
+  - $HOME/.sbt/boot/scala*
+  - $HOME/.sbt/launchers
+  - $HOME/.ivy2/cache
+  - $HOME/.nvm
+
+before_cache:
+  - du -h -d 1 $HOME/.ivy2/cache
+  - du -h -d 2 $HOME/.sbt/
+  - find $HOME/.sbt -name "*.lock" -type f -delete
+  - find $HOME/.ivy2/cache -name "ivydata-*.properties" -type f -delete
+
+notifications:
+  webhooks:
+    urls:
+      - https://webhooks.gitter.im/e/4e859a6b499b2b68a647
+    on_success: change
+    on_failure: always
+    on_start: never
