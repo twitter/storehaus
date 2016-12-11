@@ -1,6 +1,7 @@
 import ReleaseTransformations._
 import com.typesafe.tools.mima.plugin.MimaKeys.binaryIssueFilters
 import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
+import pl.project13.scala.sbt.JmhPlugin
 import sbtassembly.Plugin._
 import spray.boilerplate.BoilerplatePlugin.Boilerplate
 
@@ -148,7 +149,7 @@ val sharedSettings = extraSettings ++ ciSettings ++ Seq(
   * This returns the youngest jar we released that is compatible with
   * the current.
   */
-val ignoredModules = Set[String]("caliper", "elasticsearch")
+val ignoredModules = Set[String]("benchmark", "elasticsearch")
 
 def youngestForwardCompatible(subProj: String) =
   Some(subProj)
@@ -189,7 +190,7 @@ lazy val storehaus = Project(
   storehausElastic,
   storehausHttp,
   storehausTesting,
-  storehausCaliper
+  storehausBenchmark
 )
 
 def module(name: String) = {
@@ -329,21 +330,16 @@ lazy val storehausTesting = Project(
   )
 )
 
-lazy val storehausCaliper = module("caliper").settings(
-  libraryDependencies ++= Seq("com.google.caliper" % "caliper" % "0.5-rc1",
-    "com.google.code.java-allocation-instrumenter" % "java-allocation-instrumenter" % "2.0",
-    "com.google.code.gson" % "gson" % "1.7.1",
-    "com.twitter" %% "bijection-core" % bijectionVersion,
-    "com.twitter" %% "algebird-core" % algebirdVersion
-  ),
-  javaOptions in run ++= Seq("-cp", sbt.Attributed.data((fullClasspath in Runtime).value).mkString(":"))
-).settings(
-  Seq(
-    publish := {},
-    publishLocal := {},
-    publishArtifact := false
-  )
-).dependsOn(storehausCore, storehausAlgebra, storehausCache)
+lazy val storehausBenchmark = module("benchmark")
+  .settings(JmhPlugin.projectSettings:_*)
+  .settings(noPublishSettings)
+  .settings(
+    libraryDependencies ++= Seq(
+        "com.twitter" %% "bijection-core" % bijectionVersion,
+        "com.twitter" %% "algebird-core" % algebirdVersion
+      ))
+  .settings(coverageExcludedPackages := "<empty>;.*\\.benchmark\\..*")
+  .dependsOn(storehausCore, storehausAlgebra, storehausCache).enablePlugins(JmhPlugin)
 
 lazy val storehausHttp = module("http").settings(
   libraryDependencies ++= Seq(
