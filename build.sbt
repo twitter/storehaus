@@ -1,8 +1,5 @@
 import ReleaseTransformations._
-import com.typesafe.tools.mima.plugin.MimaKeys.binaryIssueFilters
 import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
-import sbtassembly.Plugin._
-import spray.boilerplate.BoilerplatePlugin.Boilerplate
 
 def withCross(dep: ModuleID) =
   dep cross CrossVersion.binaryMapped {
