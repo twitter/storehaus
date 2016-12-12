@@ -1,9 +1,5 @@
 import ReleaseTransformations._
-import com.typesafe.tools.mima.plugin.MimaKeys.binaryIssueFilters
 import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
-import pl.project13.scala.sbt.JmhPlugin
-import sbtassembly.Plugin._
-import spray.boilerplate.BoilerplatePlugin.Boilerplate
 
 def withCross(dep: ModuleID) =
   dep cross CrossVersion.binaryMapped {
@@ -59,7 +55,9 @@ val ignoredABIProblems = {
     exclude[MissingMethodProblem]("com.twitter.storehaus.asynchbase.AsyncHBaseStringStore" +
       ".futurePool"),
     exclude[MissingMethodProblem]("com.twitter.storehaus.asynchbase.AsyncHBaseStore.futurePool"),
-    exclude[MissingMethodProblem]("com.twitter.storehaus.ReadThroughStore.mutex")
+    exclude[MissingMethodProblem]("com.twitter.storehaus.ReadThroughStore.mutex"),
+    exclude[MissingClassProblem]("com.twitter.storehaus.kafka.JavaFutureToTwitterFutureConverter$Closed$"),
+    exclude[DirectMissingMethodProblem]("com.twitter.storehaus.kafka.KafkaStore.<init>$default$3")
   )
 }
 
