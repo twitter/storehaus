@@ -16,13 +16,12 @@
 
 package com.twitter.storehaus.algebra
 
-import com.twitter.algebird.{ MapAlgebra, Semigroup, Monoid }
+import com.twitter.algebird.{MapAlgebra, Monoid, Semigroup}
 import com.twitter.bijection.Injection
 import com.twitter.storehaus._
-import com.twitter.util.{Await, Future}
-import org.scalacheck.{Prop, Arbitrary, Properties}
+import com.twitter.util.{Await, Duration, Future}
+import org.scalacheck.{Arbitrary, Prop, Properties}
 import org.scalacheck.Prop._
-
 import scala.collection.breakOut
 
 object MergeableStoreProperties extends Properties("MergeableStore") {
@@ -40,6 +39,8 @@ object MergeableStoreProperties extends Properties("MergeableStore") {
         case (None, Some(_)) => false
       }
     }
+
+  implicit val timer = new com.twitter.util.ScheduledThreadPoolTimer(makeDaemons = true)
 
   implicit def mapEquiv[K, V: Monoid: Equiv]: Equiv[Map[K, V]] = {
     Equiv.fromFunction { (m1, m2) =>
@@ -219,6 +220,27 @@ object MergeableStoreProperties extends Properties("MergeableStore") {
       MergeableStore.multiMergeFromMultiSet(store, ins)(intSg)
       val result = MergeableStore.multiMergeFromMultiSet(store, ins)(intSg)
       ins.forall { case (k, v) => Await.result(result(k)) == Some(v) }
+    }
+  }
+
+  property("collectWithFailures should collect successes correctly") = {
+    forAll { ins: Map[Int, Int] =>
+      val fSleep = Future.sleep(Duration.fromMilliseconds(10))
+      val futures = ins.mapValues(x => fSleep.map(_ => x))
+      val (fSuccess, _) = MergeableStore.collectWithFailures(futures)
+      val ss = Await.result(fSuccess)
+      ss.size == futures.size && ss.toSeq.sorted == ins.toSeq.sorted
+    }
+  }
+
+  property("collectWithFailures should collect failures correctly") = {
+    forAll { ins: Map[Int, Int] =>
+      val throwable = new RuntimeException
+      val fSleep = Future.sleep(Duration.fromMilliseconds(10))
+      val futures = ins.mapValues(_ => fSleep before Future.exception(throwable))
+      val (_, fFailures) = MergeableStore.collectWithFailures(futures)
+      val fails = Await.result(fFailures)
+      fails.size == futures.size && fails.map(_._2).forall(_ == throwable)
     }
   }
 }

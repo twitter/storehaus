@@ -18,11 +18,10 @@ package com.twitter.storehaus.algebra
 
 import com.twitter.algebird.{Monoid, Semigroup}
 import com.twitter.bijection.ImplicitBijection
-import com.twitter.storehaus.{FutureCollector, FutureOps, Store}
-import com.twitter.util.{Future, Promise, Return, Throw, Try}
+import com.twitter.storehaus.{CollectionOps, FutureCollector, FutureOps, MissingValueException, Store}
+import com.twitter.util.{Future, Promise, Return, Throw}
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReferenceArray}
 import scala.language.implicitConversions
-import scala.reflect.ClassTag
 
 /** Main trait to represent stores that are used for aggregation */
 trait MergeableStore[-K, V] extends Store[K, V] with Mergeable[K, V]
@@ -57,7 +56,7 @@ object MergeableStore {
     val (collectedMGetResult, getFailures) = collectWithFailures(mGetResult)
 
     val mPutResultFut: Future[Map[K, Future[Option[V]]]] =
-      collectedMGetResult.map { pairs: Seq[(K, (Option[V], Option[V]))] =>
+      collectedMGetResult.map { pairs: Array[(K, (Option[V], Option[V]))] =>
         val pairMap = pairs.toMap
         val mPutResult: Map[K, Future[Unit]] = store.multiPut(pairMap.mapValues(_._2))
         mPutResult.map { case (k, funit) =>
@@ -65,31 +64,38 @@ object MergeableStore {
         }
       }
 
+    val missingFn: K => Future[Option[V]] = { k =>
+      getFailures.flatMap { failures =>
+        Future.exception(failures.getOrElse(k, new MissingValueException[K](k)))
+      }
+    }
+
     /**
-     * Combine original keys with result after put.
+     * Combine original keys with result after put and errors with get.
      */
-    FutureOps.liftFutureValues(keySet, mPutResultFut, getFailures)
+    FutureOps.liftFutureValues(keySet, mPutResultFut, missingFn)
   }
 
   /**
    * Collects keyed futures, partitioning out the failures.
    */
-  private[algebra] def collectWithFailures[K, V](fs:Map[K, Future[V]]): (Future[Seq[(K, V)]], Map[K, Future[Nothing]]) = {
+  private[algebra] def collectWithFailures[K, V](fs: Map[K, Future[V]]): (Future[Array[(K, V)]], Future[Map[K, Throwable]]) = {
     if (fs.isEmpty) {
-      (Future.value(Seq.empty[(K, V)]), Map.empty[K, Future[Nothing]])
+      (Future.value(Array.empty[(K, V)]), Future.value(Map.empty[K, Throwable]))
     } else {
       val fsSize = fs.size
-      val results = new AtomicReferenceArray[Either[(K,Future[Nothing]), (K, V)]](fsSize)
+      val results = new AtomicReferenceArray[Either[(K, Throwable), (K, V)]](fsSize)
       val countdown = new AtomicInteger(fsSize)
       val successCount = new AtomicInteger(0)
-      val pSuccess = new Promise[Seq[(K, V)]]
-      var failures = Map.empty[K, Future[Nothing]]
+      val pSuccess = new Promise[Array[(K, V)]]
+      val pFailures = new Promise[Map[K, Throwable]]
 
       def collectResults() = {
         if (countdown.decrementAndGet() == 0) {
           val successArray = new Array[(K, V)](successCount.get())
           var si = 0
           var ri = 0
+          var failures = Map.empty[K, Throwable]
           while (ri < fsSize) {
             results.get(ri) match {
               case Right(kv) =>
@@ -101,6 +107,7 @@ object MergeableStore {
             ri += 1
           }
           pSuccess.setValue(successArray)
+          pFailures.setValue(failures)
         }
       }
 
@@ -111,12 +118,12 @@ object MergeableStore {
             successCount.incrementAndGet()
             collectResults()
           case t@Throw(cause) =>
-            val failure = k -> Future.const(Throw(cause))
+            val failure = k -> cause
             results.set(i, Left(failure))
             collectResults()
         }
       }
-      (pSuccess, failures)
+      (pSuccess, pFailures)
     }
   }
 
