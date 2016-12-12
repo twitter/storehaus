@@ -1,18 +1,14 @@
 import ReleaseTransformations._
-import com.typesafe.tools.mima.plugin.MimaKeys.previousArtifact
-import com.typesafe.tools.mima.plugin.MimaKeys.binaryIssueFilters
 import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
-import sbtassembly.Plugin._
-import spray.boilerplate.BoilerplatePlugin.Boilerplate
-import storehaus.DocGen
 
 def withCross(dep: ModuleID) =
   dep cross CrossVersion.binaryMapped {
     case ver if ver startsWith "2.10" => "2.10" // TODO: hack because sbt is broken
     case x => x
   }
+
 val extraSettings =
-  Project.defaultSettings ++ Boilerplate.settings ++ assemblySettings ++ mimaDefaultSettings
+  Boilerplate.settings ++ assemblySettings ++ mimaDefaultSettings
 
 def ciSettings: Seq[Def.Setting[_]] =
   if (sys.env.getOrElse("TRAVIS", "false").toBoolean) Seq(
@@ -59,7 +55,9 @@ val ignoredABIProblems = {
     exclude[MissingMethodProblem]("com.twitter.storehaus.asynchbase.AsyncHBaseStringStore" +
       ".futurePool"),
     exclude[MissingMethodProblem]("com.twitter.storehaus.asynchbase.AsyncHBaseStore.futurePool"),
-    exclude[MissingMethodProblem]("com.twitter.storehaus.ReadThroughStore.mutex")
+    exclude[MissingMethodProblem]("com.twitter.storehaus.ReadThroughStore.mutex"),
+    exclude[MissingClassProblem]("com.twitter.storehaus.kafka.JavaFutureToTwitterFutureConverter$Closed$"),
+    exclude[DirectMissingMethodProblem]("com.twitter.storehaus.kafka.KafkaStore.<init>$default$3")
   )
 }
 
@@ -112,10 +110,11 @@ val sharedSettings = extraSettings ++ ciSettings ++ Seq(
     ReleaseStep(action = Command.process("sonatypeReleaseAll", _)),
     pushChanges),
 
-  publishTo <<= version { v =>
-    Some(if (v.trim.toUpperCase.endsWith("SNAPSHOT")) Opts.resolver.sonatypeSnapshots
-         else Opts.resolver.sonatypeStaging)
-  },
+  publishTo := Some(
+      if (version.value.trim.toUpperCase.endsWith("SNAPSHOT"))
+        Opts.resolver.sonatypeSnapshots
+      else Opts.resolver.sonatypeStaging
+    ),
   pomExtra :=
     <url>https://github.com/twitter/storehaus</url>
     <licenses>
@@ -148,12 +147,19 @@ val sharedSettings = extraSettings ++ ciSettings ++ Seq(
   * This returns the youngest jar we released that is compatible with
   * the current.
   */
-val unreleasedModules = Set[String]("caliper")
+val ignoredModules = Set[String]("caliper", "elasticsearch")
 
 def youngestForwardCompatible(subProj: String) =
   Some(subProj)
-    .filterNot(unreleasedModules.contains)
+    .filterNot(ignoredModules.contains)
     .map { s => "com.twitter" %% s"storehaus-$s" % "0.15.0-RC1" }
+
+lazy val noPublishSettings = Seq(
+    publish := (),
+    publishLocal := (),
+    test := (),
+    publishArtifact := false
+  )
 
 val algebirdVersion = "0.12.0"
 val bijectionVersion = "0.9.1"
@@ -165,12 +171,9 @@ val scalatestVersion = "2.2.4"
 lazy val storehaus = Project(
   id = "storehaus",
   base = file("."),
-  settings = sharedSettings ++ DocGen.publishSettings
-).settings(
-  test := { },
-  publish := { }, // skip publishing for this root project.
-  publishLocal := { }
-).aggregate(
+  settings = sharedSettings)
+  .settings(noPublishSettings)
+  .aggregate(
   storehausCache,
   storehausCore,
   storehausAlgebra,
@@ -192,8 +195,8 @@ def module(name: String) = {
   val id = "storehaus-%s".format(name)
   Project(id = id, base = file(id), settings = sharedSettings ++ testCleanup ++ Seq(
     Keys.name := id,
-    previousArtifact := youngestForwardCompatible(name),
-    binaryIssueFilters ++= ignoredABIProblems
+    mimaPreviousArtifacts := youngestForwardCompatible(name).toSet,
+    mimaBinaryIssueFilters ++= ignoredABIProblems
   )
   ).dependsOn(storehausTesting % "test->test")
 }
@@ -304,7 +307,7 @@ lazy val storehausElastic = module("elasticsearch").settings(
   libraryDependencies ++= Seq (
     "org.elasticsearch" % "elasticsearch" % "0.90.9",
     "org.json4s" %% "json4s-native" % "3.2.10",
-    "com.google.code.findbugs" % "jsr305" % "1.3.+",
+    "com.google.code.findbugs" % "jsr305" % "1.3.9",
     "com.twitter" %% "bijection-json4s" % bijectionVersion,
     "org.slf4j" % "slf4j-api" % "1.7.21" % "test",
     "org.slf4j" % "slf4j-log4j12" % "1.7.21" % "test"
@@ -318,7 +321,6 @@ lazy val storehausTesting = Project(
   base = file("storehaus-testing"),
   settings = sharedSettings ++ Seq(
     name := "storehaus-testing",
-    previousArtifact := None,
     libraryDependencies ++= Seq(
       "org.scalacheck" %% "scalacheck" % "1.12.2" withSources(),
       withCross("com.twitter" %% "util-core" % utilVersion)
@@ -333,8 +335,7 @@ lazy val storehausCaliper = module("caliper").settings(
     "com.twitter" %% "bijection-core" % bijectionVersion,
     "com.twitter" %% "algebird-core" % algebirdVersion
   ),
-  javaOptions in run <++=
-    (fullClasspath in Runtime) map { cp => Seq("-cp", sbt.Attributed.data(cp).mkString(":")) }
+  javaOptions in run ++= Seq("-cp", sbt.Attributed.data((fullClasspath in Runtime).value).mkString(":"))
 ).settings(
   Seq(
     publish := {},
