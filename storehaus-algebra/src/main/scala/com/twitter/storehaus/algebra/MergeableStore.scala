@@ -31,6 +31,7 @@ object MergeableStore {
   implicit def enrich[K, V](store: MergeableStore[K, V]): EnrichedMergeableStore[K, V] =
     new EnrichedMergeableStore(store)
 
+  // todo(pankajg) After merging latest algebird replace this with Semigroup.maybePlus
   private[this] def addOpt[V](init: Option[V], inc: V)(implicit sg: Semigroup[V]): Option[V] = init match {
     case Some(i) => Some(sg.plus(i, inc))
     case None => Some(inc)
