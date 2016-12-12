@@ -336,7 +336,7 @@ lazy val storehausBenchmark = module("benchmark")
         "com.twitter" %% "bijection-core" % bijectionVersion,
         "com.twitter" %% "algebird-core" % algebirdVersion
       ))
-  .settings(coverageExcludedPackages := "<empty>;.*\\.benchmark\\..*")
+  .settings(coverageExcludedPackages := "com\\.twitter\\.storehaus\\.benchmark.*")
   .dependsOn(storehausCore, storehausAlgebra, storehausCache).enablePlugins(JmhPlugin)
 
 lazy val storehausHttp = module("http").settings(
