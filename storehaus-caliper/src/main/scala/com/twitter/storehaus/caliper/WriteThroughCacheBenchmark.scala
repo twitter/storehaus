@@ -75,3 +75,4 @@ class WriteThroughCacheBenchmark extends SimpleBenchmark {
     noCacheStore = delayedStore.toMergeable
   }
 }
+
