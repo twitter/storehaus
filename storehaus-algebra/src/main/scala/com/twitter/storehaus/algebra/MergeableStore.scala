@@ -18,7 +18,7 @@ package com.twitter.storehaus.algebra
 
 import com.twitter.algebird.{Monoid, Semigroup}
 import com.twitter.bijection.ImplicitBijection
-import com.twitter.storehaus.{CollectionOps, FutureCollector, FutureOps, MissingValueException, Store}
+import com.twitter.storehaus.{FutureCollector, FutureOps, MissingValueException, Store}
 import com.twitter.util.{Future, Promise, Return, Throw, Try}
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReferenceArray}
 import scala.language.implicitConversions
