@@ -19,7 +19,7 @@ package com.twitter.storehaus.algebra
 import com.twitter.algebird.{Monoid, Semigroup}
 import com.twitter.bijection.ImplicitBijection
 import com.twitter.storehaus.{FutureCollector, FutureOps, MissingValueException, Store}
-import com.twitter.util.{Future, Promise, Return, Throw}
+import com.twitter.util.{Future, Promise, Return, Throw, Try}
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReferenceArray}
 import scala.language.implicitConversions
 
@@ -85,7 +85,7 @@ object MergeableStore {
       (Future.value(Array.empty[(K, V)]), Future.value(Map.empty[K, Throwable]))
     } else {
       val fsSize = fs.size
-      val results = new AtomicReferenceArray[(K, Either[Throwable, V])](fsSize)
+      val results = new AtomicReferenceArray[(K, Try[V])](fsSize)
       val countdown = new AtomicInteger(fsSize)
       val successCount = new AtomicInteger(0)
       val pSuccess = new Promise[Array[(K, V)]]
@@ -99,10 +99,10 @@ object MergeableStore {
           var failures = Map.empty[K, Throwable]
           while (ri < fsSize) {
             results.get(ri) match {
-              case (k, Right(v)) =>
+              case (k, Return(v)) =>
                 successArray(si) = k -> v
                 si += 1
-              case (k, Left(t)) =>
+              case (k, Throw(t)) =>
                 failures = failures + (k -> t)
             }
             ri += 1
@@ -115,11 +115,11 @@ object MergeableStore {
       for (((k, f), i) <- fs.iterator.zipWithIndex) {
         f respond {
           case Return(v) =>
-            results.set(i, k -> Right(v))
+            results.set(i, k -> Return(v))
             successCount.incrementAndGet()
             collectResults()
           case t@Throw(cause) =>
-            results.set(i, k -> Left(cause))
+            results.set(i, k -> Throw(cause))
             collectResults()
         }
       }
