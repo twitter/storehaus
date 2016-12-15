@@ -31,7 +31,6 @@ object MergeableStore {
   implicit def enrich[K, V](store: MergeableStore[K, V]): EnrichedMergeableStore[K, V] =
     new EnrichedMergeableStore(store)
 
-  // todo(pankajg) After merging latest algebird replace this with Semigroup.maybePlus
   private[this] def addOpt[V](init: Option[V], inc: V)(implicit sg: Semigroup[V]): Option[V] = init match {
     case Some(i) => Some(sg.plus(i, inc))
     case None => Some(inc)
@@ -58,12 +57,13 @@ object MergeableStore {
     val getSuccesses = collectedMGetResult.map(_._1)
     val getFailures = collectedMGetResult.map(_._2)
 
-    val mPutResultsFut = getSuccesses.map { case ss: Map[K, (Option[V], Option[V])] =>
-      val mPutResult: Map[K, Future[Unit]] = store.multiPut(ss.mapValues(_._2))
-      mPutResult.map { case (k, funit) =>
-        (k, funit.map { _ => ss(k)._1 })
+    val mPutResultsFut: Future[Map[K, Future[Option[V]]]] =
+      getSuccesses.map { ss: Map[K, (Option[V], Option[V])] =>
+        val mPutResult: Map[K, Future[Unit]] = store.multiPut(ss.mapValues(_._2))
+        mPutResult.map { case (k, fUnit) =>
+          (k, fUnit.map { _ => ss(k)._1 })
+        }
       }
-    }
 
     val missingFn: K => Future[Option[V]] = { k =>
       getFailures.flatMap { failures =>
@@ -72,7 +72,7 @@ object MergeableStore {
     }
 
     /**
-     * Combine original keys with result after put and errors with get.
+     * Combine original keys with put results and get errors
      */
     FutureOps.liftFutureValues(keySet, mPutResultsFut, missingFn)
   }
