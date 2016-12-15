@@ -18,7 +18,7 @@ package com.twitter.storehaus.algebra
 
 import com.twitter.algebird.{Monoid, Semigroup}
 import com.twitter.bijection.ImplicitBijection
-import com.twitter.storehaus.{FutureCollector, FutureOps, MissingValueException, Store}
+import com.twitter.storehaus.{CollectionOps, FutureCollector, FutureOps, MissingValueException, Store}
 import com.twitter.util.{Future, Promise, Return, Throw, Try}
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReferenceArray}
 import scala.language.implicitConversions
@@ -54,76 +54,70 @@ object MergeableStore {
         k -> newFOptV
       }
 
-    val (collectedMGetResult, getFailures) = collectWithFailures(mGetResult)
+    val collectedMGetResult = collectWithFailures(mGetResult)
+    val getSuccesses = collectedMGetResult.map(_._1)
+    val getFailures = collectedMGetResult.map(_._2)
 
-    val mPutResultFut: Future[Map[K, Future[Option[V]]]] =
-      collectedMGetResult.map { pairs: Array[(K, (Option[V], Option[V]))] =>
-        val pairMap = pairs.toMap
-        val mPutResult: Map[K, Future[Unit]] = store.multiPut(pairMap.mapValues(_._2))
-        mPutResult.map { case (k, funit) =>
-          (k, funit.map { _ => pairMap(k)._1 })
-        }
-      }
-
-    val missingFn: K => Future[Option[V]] = { k =>
-      getFailures.flatMap { failures =>
-        Future.exception(failures.getOrElse(k, new MissingValueException[K](k)))
-      }
+    val putResults = getSuccesses.flatMap { case ss: Map[K, (Option[V], Option[V])] =>
+      val mPutResult: Map[K, Future[Unit]] = store.multiPut(ss.mapValues(_._2))
+      Future.collect(mPutResult.map { case (k, funit) =>
+        (k, funit.map { _ => ss(k)._1 })
+      })
     }
 
-    /**
-     * Combine original keys with result after put and errors with get.
-     */
-    FutureOps.liftFutureValues(keySet, mPutResultFut, missingFn)
+    val putResultsWithGetFailures = Future.join(putResults, getFailures)
+
+    CollectionOps.zipWith(keySet) { k =>
+      putResultsWithGetFailures.map { case (ss: Map[K, Option[V]], fs: Map[K, Throwable]) =>
+        ss.getOrElse(k, throw fs.getOrElse(k, new MissingValueException[K](k)))
+      }
+    }
   }
 
   /**
    * Collects keyed futures, partitioning out the failures.
    */
-  private[algebra] def collectWithFailures[K, V](fs: Map[K, Future[V]]): (Future[Array[(K, V)]], Future[Map[K, Throwable]]) = {
+  private[algebra] def collectWithFailures[K, V](fs: Map[K, Future[V]]): Future[(Map[K, V], Map[K, Throwable])] = {
     if (fs.isEmpty) {
-      (Future.value(Array.empty[(K, V)]), Future.value(Map.empty[K, Throwable]))
+      Future.value((Map.empty[K, V], Map.empty[K, Throwable]))
     } else {
       val fsSize = fs.size
       val results = new AtomicReferenceArray[(K, Try[V])](fsSize)
       val countdown = new AtomicInteger(fsSize)
-      val successCount = new AtomicInteger(0)
-      val pSuccess = new Promise[Array[(K, V)]]
-      val pFailures = new Promise[Map[K, Throwable]]
+      val pResult = new Promise[(Map[K, V], Map[K, Throwable])]
 
       def collectResults() = {
         if (countdown.decrementAndGet() == 0) {
-          val successArray = new Array[(K, V)](successCount.get())
-          var si = 0
-          var ri = 0
+          var successes = Map.empty[K, V]
           var failures = Map.empty[K, Throwable]
+          var ri = 0
           while (ri < fsSize) {
             results.get(ri) match {
-              case (k, Return(v)) =>
-                successArray(si) = k -> v
-                si += 1
-              case (k, Throw(t)) =>
-                failures = failures + (k -> t)
+              case (k, Return(v)) => successes = successes + (k -> v)
+              case (k, Throw(t)) =>  failures = failures + (k -> t)
             }
             ri += 1
           }
-          pSuccess.setValue(successArray)
-          pFailures.setValue(failures)
+          pResult.setValue((successes, failures))
         }
       }
 
-      for (((k, f), i) <- fs.iterator.zipWithIndex) {
-        f respond {
+      val mapIt = fs.iterator
+      var i = 0
+      while(mapIt.hasNext) {
+        val (k, fv) = mapIt.next
+        val j = i // Need to make sure we close over a copy of i and not i itself
+        fv respond {
           case Return(v) =>
-            results.set(i, k -> Return(v))
-            successCount.incrementAndGet()
+            results.set(j, k -> Return(v))
             collectResults()
-          case t@Throw(cause) =>
-            results.set(i, k -> Throw(cause))
+          case Throw(cause) =>
+            results.set(j, k -> Throw(cause))
             collectResults()
         }
+        i += 1
       }
-      (pSuccess, pFailures)
+      pResult
     }
   }
 

@@ -227,8 +227,8 @@ object MergeableStoreProperties extends Properties("MergeableStore") {
     forAll { ins: Map[Int, Int] =>
       val fSleep = Future.sleep(Duration.fromMilliseconds(10))
       val futures = ins.mapValues(x => fSleep.map(_ => x))
-      val (fSuccess, _) = MergeableStore.collectWithFailures(futures)
-      val ss = Await.result(fSuccess)
+      val fResult = MergeableStore.collectWithFailures(futures)
+      val (ss, _) = Await.result(fResult)
       ss.size == futures.size && ss.toSeq.sorted == ins.toSeq.sorted
     }
   }
@@ -238,8 +238,8 @@ object MergeableStoreProperties extends Properties("MergeableStore") {
       val throwable = new RuntimeException
       val fSleep = Future.sleep(Duration.fromMilliseconds(10))
       val futures = ins.mapValues(_ => fSleep before Future.exception(throwable))
-      val (_, fFailures) = MergeableStore.collectWithFailures(futures)
-      val fails = Await.result(fFailures)
+      val fResult = MergeableStore.collectWithFailures(futures)
+      val (_, fails) = Await.result(fResult)
       fails.size == futures.size && fails.map(_._2).forall(_ == throwable)
     }
   }
