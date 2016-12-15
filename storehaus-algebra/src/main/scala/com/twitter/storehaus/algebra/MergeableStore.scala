@@ -43,6 +43,8 @@ object MergeableStore {
   def multiMergeFromMultiSet[K, V](store: Store[K, V], kvs: Map[K, V])
     (implicit sg: Semigroup[V]): Map[K, Future[Option[V]]] = {
     val keySet = kvs.keySet
+
+    // Iterator to avoid creating an intermediate map
     val mGetResult: Iterator[(K, Future[(Option[V], Option[V])])] =
       store.multiGet(keySet).iterator.map { case (k, futureOptV) =>
         val newFOptV = futureOptV.map { oldV: Option[V] =>
@@ -62,11 +64,13 @@ object MergeableStore {
         store.multiPut(ss.mapValues(_._2))
       }
 
+    @inline
     def mapToOldValue(k: K, fUnit: Future[Unit]): Future[Option[V]] =
       fUnit.flatMap { _ =>
         getSuccesses.map { ss => ss(k)._1 }
       }
 
+    @inline
     def lookupGetFailure(k: K): Future[Option[V]] =
       getFailures.flatMap { failures =>
         Future.exception(failures.get(k).getOrElse(new MissingValueException[K](k)))
@@ -78,6 +82,7 @@ object MergeableStore {
      *  If not in put results then map to corresponding failure in getFailures.
      *  Ultimately we will have successful puts(mapped to old value), put failures and get failures.
      */
+    @inline
     def keyMapFn(k: K): Future[Option[V]] = mPutResultsFut.flatMap { mPutResults =>
       mPutResults.get(k) match {
         case Some(fUnit) => mapToOldValue(k, fUnit)
