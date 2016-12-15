@@ -43,8 +43,8 @@ object MergeableStore {
   def multiMergeFromMultiSet[K, V](store: Store[K, V], kvs: Map[K, V])
     (implicit sg: Semigroup[V]): Map[K, Future[Option[V]]] = {
     val keySet = kvs.keySet
-    val mGetResult: Map[K, Future[(Option[V], Option[V])]] =
-      store.multiGet(keySet).map { case (k, futureOptV) =>
+    val mGetResult: Iterator[(K, Future[(Option[V], Option[V])])] =
+      store.multiGet(keySet).iterator.map { case (k, futureOptV) =>
         val newFOptV = futureOptV.map { oldV: Option[V] =>
           val incV = kvs(k)
           val newV = addOpt(oldV, incV)
@@ -53,7 +53,7 @@ object MergeableStore {
         k -> newFOptV
       }
 
-    val collectedMGetResult = collectWithFailures(mGetResult)
+    val collectedMGetResult = collectWithFailures(mGetResult, kvs.size)
     val getSuccesses = collectedMGetResult.map(_._1)
     val getFailures = collectedMGetResult.map(_._2)
 
@@ -80,13 +80,14 @@ object MergeableStore {
   /**
    * Collects keyed futures, partitioning out the failures.
    */
-  private[algebra] def collectWithFailures[K, V](fs: Map[K, Future[V]]): Future[(Map[K, V], Map[K, Throwable])] = {
-    if (fs.isEmpty) {
+  private[algebra] def collectWithFailures[K, V](
+    fs: Iterator[(K, Future[V])], size: Int): Future[(Map[K, V], Map[K, Throwable])] = {
+
+    if (!fs.hasNext) {
       Future.value((Map.empty[K, V], Map.empty[K, Throwable]))
     } else {
-      val fsSize = fs.size
-      val results = new AtomicReferenceArray[(K, Try[V])](fsSize)
-      val countdown = new AtomicInteger(fsSize)
+      val results = new AtomicReferenceArray[(K, Try[V])](size)
+      val countdown = new AtomicInteger(size)
       val pResult = new Promise[(Map[K, V], Map[K, Throwable])]
 
       @inline
@@ -95,7 +96,7 @@ object MergeableStore {
           var successes = Map.empty[K, V]
           var failures = Map.empty[K, Throwable]
           var ri = 0
-          while (ri < fsSize) {
+          while (ri < size) {
             results.get(ri) match {
               case (k, Return(v)) => successes = successes + (k -> v)
               case (k, Throw(t)) =>  failures = failures + (k -> t)
@@ -106,10 +107,9 @@ object MergeableStore {
         }
       }
 
-      val mapIt = fs.iterator
       var i = 0
-      while(mapIt.hasNext) {
-        val (k, fv) = mapIt.next
+      while(fs.hasNext) {
+        val (k, fv) = fs.next
         val j = i // Need to make sure we close over a copy of i and not i itself
         fv respond {
           case Return(v) =>
