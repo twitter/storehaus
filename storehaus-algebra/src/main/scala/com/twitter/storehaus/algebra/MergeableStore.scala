@@ -18,7 +18,7 @@ package com.twitter.storehaus.algebra
 
 import com.twitter.algebird.{Monoid, Semigroup}
 import com.twitter.bijection.ImplicitBijection
-import com.twitter.storehaus.{FutureCollector, FutureOps, MissingValueException, Store}
+import com.twitter.storehaus.{CollectionOps, FutureCollector, FutureOps, MissingValueException, Store}
 import com.twitter.util.{Future, Promise, Return, Throw, Try}
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReferenceArray}
 import scala.language.implicitConversions
@@ -57,24 +57,35 @@ object MergeableStore {
     val getSuccesses = collectedMGetResult.map(_._1)
     val getFailures = collectedMGetResult.map(_._2)
 
-    val mPutResultsFut: Future[Map[K, Future[Option[V]]]] =
+    val mPutResultsFut: Future[Map[K, Future[Unit]]] =
       getSuccesses.map { ss: Map[K, (Option[V], Option[V])] =>
-        val mPutResult: Map[K, Future[Unit]] = store.multiPut(ss.mapValues(_._2))
-        mPutResult.map { case (k, fUnit) =>
-          (k, fUnit.map { _ => ss(k)._1 })
-        }
+        store.multiPut(ss.mapValues(_._2))
       }
 
-    val missingFn: K => Future[Option[V]] = { k =>
+    def mapToOldValue(k: K, fUnit: Future[Unit]): Future[Option[V]] =
+      fUnit.flatMap { _ =>
+        getSuccesses.map { ss => ss(k)._1 }
+      }
+
+    def lookupGetFailure(k: K): Future[Option[V]] =
       getFailures.flatMap { failures =>
-        Future.exception(failures.getOrElse(k, new MissingValueException[K](k)))
+        Future.exception(failures.get(k).getOrElse(new MissingValueException[K](k)))
+      }
+
+    /**
+     *  A bit complex but it saves us an intermediate map creation. Here's the logic:
+     *  If key is present in put results map successful ones to old value, failures remain.
+     *  If not in put results then map to corresponding failure in getFailures.
+     *  Ultimately we will have successful puts(mapped to old value), put failures and get failures.
+     */
+    def keyMapFn(k: K): Future[Option[V]] = mPutResultsFut.flatMap { mPutResults =>
+      mPutResults.get(k) match {
+        case Some(fUnit) => mapToOldValue(k, fUnit)
+        case None => lookupGetFailure(k)
       }
     }
 
-    /**
-     * Combine original keys with put results and get errors
-     */
-    FutureOps.liftFutureValues(keySet, mPutResultsFut, missingFn)
+    CollectionOps.zipWith(keySet)(keyMapFn)
   }
 
   /**
