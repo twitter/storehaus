@@ -89,6 +89,7 @@ object MergeableStore {
       val countdown = new AtomicInteger(fsSize)
       val pResult = new Promise[(Map[K, V], Map[K, Throwable])]
 
+      @inline
       def collectResults() = {
         if (countdown.decrementAndGet() == 0) {
           var successes = Map.empty[K, V]
