@@ -58,20 +58,23 @@ object MergeableStore {
     val getSuccesses = collectedMGetResult.map(_._1)
     val getFailures = collectedMGetResult.map(_._2)
 
-    val putResults = getSuccesses.flatMap { case ss: Map[K, (Option[V], Option[V])] =>
+    val mPutResultsFut = getSuccesses.map { case ss: Map[K, (Option[V], Option[V])] =>
       val mPutResult: Map[K, Future[Unit]] = store.multiPut(ss.mapValues(_._2))
-      Future.collect(mPutResult.map { case (k, funit) =>
+      mPutResult.map { case (k, funit) =>
         (k, funit.map { _ => ss(k)._1 })
-      })
-    }
-
-    val putResultsWithGetFailures = Future.join(putResults, getFailures)
-
-    CollectionOps.zipWith(keySet) { k =>
-      putResultsWithGetFailures.map { case (ss: Map[K, Option[V]], fs: Map[K, Throwable]) =>
-        ss.getOrElse(k, throw fs.getOrElse(k, new MissingValueException[K](k)))
       }
     }
+
+    val missingFn: K => Future[Option[V]] = { k =>
+      getFailures.flatMap { failures =>
+        Future.exception(failures.getOrElse(k, new MissingValueException[K](k)))
+      }
+    }
+
+    /**
+     * Combine original keys with result after put and errors with get.
+     */
+    FutureOps.liftFutureValues(keySet, mPutResultsFut, missingFn)
   }
 
   /**
