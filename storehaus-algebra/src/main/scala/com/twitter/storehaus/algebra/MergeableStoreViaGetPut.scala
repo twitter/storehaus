@@ -55,6 +55,6 @@ class MergeableStoreViaGetPut[-K, V: Semigroup](
     store.multiPut(kvs)
 
   override def multiMerge[K1 <: K](kvs: Map[K1, V]): Map[K1, Future[Option[V]]] = {
-    MergeableStore.multiMergeFromMultiSet(this, kvs)(fc, semigroup)
+    MergeableStore.multiMergeFromMultiSet(this, kvs)(semigroup)
   }
 }

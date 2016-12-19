@@ -16,13 +16,12 @@
 
 package com.twitter.storehaus.algebra
 
-import com.twitter.algebird.{ MapAlgebra, Semigroup, Monoid }
+import com.twitter.algebird.{MapAlgebra, Monoid, Semigroup}
 import com.twitter.bijection.Injection
 import com.twitter.storehaus._
-import com.twitter.util.{Await, Future}
-import org.scalacheck.{Prop, Arbitrary, Properties}
+import com.twitter.util.{Await, Duration, Future}
+import org.scalacheck.{Arbitrary, Prop, Properties}
 import org.scalacheck.Prop._
-
 import scala.collection.breakOut
 
 object MergeableStoreProperties extends Properties("MergeableStore") {
@@ -40,6 +39,8 @@ object MergeableStoreProperties extends Properties("MergeableStore") {
         case (None, Some(_)) => false
       }
     }
+
+  implicit val timer = new com.twitter.util.ScheduledThreadPoolTimer(makeDaemons = true)
 
   implicit def mapEquiv[K, V: Monoid: Equiv]: Equiv[Map[K, V]] = {
     Equiv.fromFunction { (m1, m2) =>
@@ -184,32 +185,78 @@ object MergeableStoreProperties extends Properties("MergeableStore") {
     }
   }
 
-  // Drops all puts, returns the specified result on get.
-  class MockStore[K, V](getResult: Future[Option[V]]) extends Store[K, V] {
-    override def get(k: K): Future[Option[V]] = getResult
-    override def put(kv: (K, Option[V])): Future[Unit] = Future.Unit
+  // Returns the specified get/put results
+  def mockGetPutStore[K, V](getResult: Future[Option[V]], putResult: Future[Unit] = Future.Unit): Store[K, V] =
+    new MockGetPutByKeyStore[K, V](_ => getResult, _ => putResult)
+
+  def mockGetPutByKeyStore[K, V](getResult: K => Future[Option[V]], putResult: K => Future[Unit]): Store[K, V] =
+    new MockGetPutByKeyStore[K, V](getResult, putResult)
+
+  // Returns the specified get/put results
+  class MockGetPutByKeyStore[K, V](getResult: K => Future[Option[V]], putResult: K => Future[Unit]) extends Store[K, V] {
+    override def get(k: K): Future[Option[V]] = getResult(k)
+    override def put(kv: (K, Option[V])): Future[Unit] = putResult(kv._1)
   }
 
-  property("multiMergeFromMultiSet handles store failures correctly " +
-      "with bestEffort FutureCollector") = {
+  property("multiMergeFromMultiSet handles store failures correctly") = {
     val intSg = implicitly[Semigroup[Int]]
-    val storeExceptionFut = Future.exception[Option[Int]](new RuntimeException("Failure in store"))
-    val missingException = new RuntimeException("Missing value")
-    val missingExceptionFut = Future.exception[Option[Int]](missingException)
-    val missingfn: Int => Future[Option[Int]] = _ => missingExceptionFut
+    val storeException = new RuntimeException("Failure in store")
+    val storeExceptionFut = Future.exception[Option[Int]](storeException)
 
     forAll { (ins: Map[Int, Int]) =>
       val result = MergeableStore.multiMergeFromMultiSet(
-        new MockStore[Int, Int](storeExceptionFut), ins, missingfn)(
-          FutureCollector.bestEffort, intSg)
+        mockGetPutStore[Int, Int](storeExceptionFut), ins)(intSg)
       result.values.forall { v =>
-        Await.result(v.liftToTry).throwable == missingException
+        Await.result(v.liftToTry).throwable == storeException
       }
     }
   }
 
-  property("multiMergeFromMultiSet returns previously stored value correctly " +
-      "with bestEffort FutureCollector") = {
+  property("multiMergeFromMultiSet handles put failures correctly") = {
+    val intSg = implicitly[Semigroup[Int]]
+    val storeException = new RuntimeException("Failure in store")
+    val getResultFut: Future[Option[Int]] = Future.value(None)
+    val putExceptionFut = Future.exception[Unit](storeException)
+
+    forAll { (ins: Map[Int, Int]) =>
+      val result = MergeableStore.multiMergeFromMultiSet(
+        mockGetPutStore[Int, Int](getResultFut, putExceptionFut), ins)(intSg)
+      result.values.forall { v =>
+        Await.result(v.liftToTry).throwable == storeException
+      }
+    }
+  }
+
+  def posMod(n: Int, d: Int): Int = ((n % d) + d) %d
+
+  property("multiMergeFromMultiSet handles partial failures correctly") = {
+    val intSg = implicitly[Semigroup[Int]]
+    val storeException = new RuntimeException("Failure in store")
+    val getExceptionFut = Future.exception[Option[Int]](storeException)
+    val putExceptionFut = Future.exception[Unit](storeException)
+
+    // Strategy: All keys divisible by 3 fail on get, with remainder 1 fail on put, rest should succeed
+    def part1(k: Int): Boolean = posMod(k, 3) == 0
+    def part2(k: Int): Boolean = posMod(k, 3) == 1
+    def part3(k: Int): Boolean = posMod(k, 3) == 2
+
+    val getResultFut: Int => Future[Option[Int]] = k => if (part1(k)) getExceptionFut else Future.value(Some(k))
+    val putResultFut: Int => Future[Unit] = k => if (part2(k)) putExceptionFut else Future.Unit
+
+    forAll { (ins: Map[Int, Int]) =>
+      val result = MergeableStore.multiMergeFromMultiSet(
+        mockGetPutByKeyStore[Int, Int](getResultFut, putResultFut), ins)(intSg)
+      val predSuccess = result.filterKeys(part3(_)).forall { case (k, v) =>
+        Await.result(v).get == k
+      }
+      val predFail = result.filterKeys(!part3(_)).values.forall { v =>
+        Await.result(v.liftToTry).throwable == storeException
+      }
+      predFail && predSuccess
+    }
+  }
+
+  property("multiMergeFromMultiSet returns previously stored value correctly") = {
     val intSg = implicitly[Semigroup[Int]]
     forAll { (ins: Map[Int, Int]) =>
       val store = newStore[Int, Int]
@@ -218,11 +265,45 @@ object MergeableStoreProperties extends Properties("MergeableStore") {
        * We merge the entire input map twice into the store. It should return values
        * stored the first time in the second call as old values.
        */
-      MergeableStore.multiMergeFromMultiSet(store, ins)(FutureCollector.bestEffort, intSg)
-      val result = MergeableStore
-        .multiMergeFromMultiSet(store, ins)(FutureCollector.bestEffort, intSg)
+      MergeableStore.multiMergeFromMultiSet(store, ins)(intSg)
+      val result = MergeableStore.multiMergeFromMultiSet(store, ins)(intSg)
       ins.forall { case (k, v) => Await.result(result(k)) == Some(v) }
     }
+  }
 
+  property("collectWithFailures should collect successes correctly") = {
+    forAll { ins: Map[Int, Int] =>
+      val fSleep = Future.sleep(Duration.fromMilliseconds(10))
+      val futures = ins.mapValues(x => fSleep.map(_ => x))
+      val fResult = MergeableStore.collectWithFailures(futures.iterator, futures.size)
+      val (ss, _) = Await.result(fResult)
+      ss.size == futures.size && ss.toSeq.sorted == ins.toSeq.sorted
+    }
+  }
+
+  property("collectWithFailures should collect failures correctly") = {
+    forAll { ins: Map[Int, Int] =>
+      val throwable = new RuntimeException
+      val fSleep = Future.sleep(Duration.fromMilliseconds(10))
+      val futures = ins.mapValues(_ => fSleep before Future.exception(throwable))
+      val fResult = MergeableStore.collectWithFailures(futures.iterator, futures.size)
+      val (_, fails) = Await.result(fResult)
+      fails.size == futures.size && fails.map(_._2).forall(_ == throwable)
+    }
+  }
+
+  property("collectWithFailures should collect mix of successes and failures correctly") = {
+    forAll { ins: Map[Int, Int] =>
+      val throwable = new RuntimeException
+      val fSleep = Future.sleep(Duration.fromMilliseconds(10))
+      val successes = ins.filterKeys(_ % 2 == 0).mapValues(x => fSleep.map(_ => x))
+      val failures = ins.filterKeys(_ %2 != 0).mapValues(_ => fSleep before Future.exception(throwable))
+      val futures = successes ++ failures
+      val fResult = MergeableStore.collectWithFailures(futures.iterator, futures.size)
+      val (ss, fails) = Await.result(fResult)
+      fails.size == failures.size && fails.map(_._2).forall(_ == throwable) &&
+        (fails.size + ss.size) == ins.size
+
+    }
   }
 }
