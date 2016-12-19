@@ -37,6 +37,16 @@ object MergeableStore {
   }
 
   /**
+   * Use the newer function with less params below. This function just
+   * calls that ignoring missingfn and collect.
+   */
+  @deprecated
+  def multiMergeFromMultiSet[K, V](store: Store[K, V], kvs: Map[K, V],
+    missingfn: (K) => Future[Option[V]] = FutureOps.missingValueFor _)
+    (implicit collect: FutureCollector, sg: Semigroup[V]): Map[K, Future[Option[V]]] =
+    multiMergeFromMultiSet(store, kvs)
+
+  /**
   * Implements multiMerge functionality in terms of an underlying
   * store's multiGet and multiSet.
   */
@@ -79,7 +89,7 @@ object MergeableStore {
     /**
      *  A bit complex but it saves us an intermediate map creation. Here's the logic:
      *  If key is present in put results map successful ones to old value, failures remain.
-     *  If not in put results then map to corresponding failure in getFailures.
+     *  If not in put results then map to corresponding get failure.
      *  Ultimately we will have successful puts(mapped to old value), put failures and get failures.
      */
     @inline
