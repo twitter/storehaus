@@ -162,9 +162,9 @@ lazy val noPublishSettings = Seq(
   )
 
 val algebirdVersion = "0.12.0"
-val bijectionVersion = "0.9.1"
+val bijectionVersion = "0.9.5"
 val utilVersion = "6.34.0"
-val scaldingVersion = "0.16.0-RC1"
+val scaldingVersion = "0.16.2-t1484751800000-d703e6dad1218ba7044ffa74423c0a512562692b"
 val finagleVersion = "6.35.0"
 val scalatestVersion = "2.2.4"
 
