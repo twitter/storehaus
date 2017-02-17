@@ -16,10 +16,10 @@
 
 package com.twitter.storehaus.redis
 
-import com.twitter.util.{ Duration, Future, Time }
+import com.twitter.util.{Duration, Future, Time}
 import com.twitter.finagle.redis.Client
-import com.twitter.storehaus.{ Store, UnpivotedStore }
-import org.jboss.netty.buffer.ChannelBuffer
+import com.twitter.io.Buf
+import com.twitter.storehaus.{Store, UnpivotedStore}
 
 /**
  *
@@ -41,23 +41,23 @@ object RedisHashStore {
  * by a redis hash
  */
 class RedisHashStore(val client: Client, ttl: Option[Duration])
-  extends Store[ChannelBuffer, Map[ChannelBuffer, ChannelBuffer]] {
+  extends Store[Buf, Map[Buf, Buf]] {
 
-  override def get(k: ChannelBuffer): Future[Option[Map[ChannelBuffer, ChannelBuffer]]] =
+  override def get(k: Buf): Future[Option[Map[Buf, Buf]]] =
     client.hGetAll(k).map {
       case e if e.isEmpty => None
       case xs => Some(Map(xs: _*))
     }
 
-  protected def set(k: ChannelBuffer, v: Map[ChannelBuffer, ChannelBuffer]) = {
-    ttl.map(exp => client.expire(k, exp.inSeconds))
+  protected def set(k: Buf, v: Map[Buf, Buf]) = {
+    ttl.map(exp => client.expire(k, exp.inSeconds.toLong))
     client.hMSet(k, v).unit
   }
 
-  override def put(kv: (ChannelBuffer, Option[Map[ChannelBuffer, ChannelBuffer]])): Future[Unit] =
+  override def put(kv: (Buf, Option[Map[Buf, Buf]])): Future[Unit] =
     kv match {
       case (key, Some(value)) => set(key, value)
-      case (key, None) => client.del(Seq(key)).unit
+      case (key, None) => client.dels(Seq(key)).unit
     }
 
   override def close(t: Time): Future[Unit] = client.quit.foreach { _ => client.close() }
@@ -68,5 +68,5 @@ class RedisHashStore(val client: Client, ttl: Option[Duration])
  *  the value of associated with FieldKey within the redis hash
  */
 class UnpivotedRedisHashStore(hstore: RedisHashStore)
-  extends UnpivotedStore[(ChannelBuffer, ChannelBuffer),
-    ChannelBuffer, ChannelBuffer, ChannelBuffer](hstore)(identity)
+  extends UnpivotedStore[(Buf, Buf),
+    Buf, Buf, Buf](hstore)(identity)

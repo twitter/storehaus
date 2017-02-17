@@ -18,14 +18,17 @@ package com.twitter.storehaus.redis
 
 import com.twitter.algebird.Semigroup
 import com.twitter.bijection.Injection
-import com.twitter.bijection.netty.Implicits._
+import com.twitter.bijection.twitter_util.UtilBijections.Shared.byteArrayBufBijection
 import com.twitter.finagle.redis.Client
+import com.twitter.io.Buf
 import com.twitter.storehaus.ConvertedStore
 import com.twitter.storehaus.algebra.MergeableStore
-import com.twitter.util.{ Duration, Future }
-import org.jboss.netty.buffer.ChannelBuffer
+import com.twitter.util.{Duration, Future}
 
 /**
+ * Uses a byte array to buf injection to convert from Store[Buf, Buf] to Store[Buf, Long].
+ *
+ * The injection: Shared.byteArrayBufBijection does a fully copy of the underlying Buf instance.
  *
  * @author Doug Tangren
  */
@@ -36,7 +39,7 @@ object RedisLongStore {
     *  http://redis.io/topics/data-types-intro
     */
   private [redis] implicit val LongInjection =
-    Injection.connect[Long, String, Array[Byte], ChannelBuffer]
+    Injection.connect[Long, String, Array[Byte], Buf]
 
   def apply(client: Client, ttl: Option[Duration] = RedisStore.Default.TTL): RedisLongStore =
     new RedisLongStore(RedisStore(client, ttl))
@@ -48,9 +51,9 @@ import RedisLongStore._
  * Values are merged with an incrBy operation.
  */
 class RedisLongStore(underlying: RedisStore)
-  extends ConvertedStore[ChannelBuffer, ChannelBuffer, ChannelBuffer, Long](underlying)(identity)
-     with MergeableStore[ChannelBuffer, Long] {
+  extends ConvertedStore[Buf, Buf, Buf, Long](underlying)(identity)
+     with MergeableStore[Buf, Long] {
   val semigroup = implicitly[Semigroup[Long]]
-  override def merge(kv: (ChannelBuffer, Long)): Future[Option[Long]] =
+  override def merge(kv: (Buf, Long)): Future[Option[Long]] =
     underlying.client.incrBy(kv._1, kv._2).map(v => Some(v - kv._2)) // redis returns the result
 }

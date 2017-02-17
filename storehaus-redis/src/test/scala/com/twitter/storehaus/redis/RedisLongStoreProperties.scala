@@ -16,12 +16,12 @@
 
 package com.twitter.storehaus.redis
 
-import com.twitter.finagle.redis.util.StringToChannelBuffer
+import com.twitter.finagle.redis.util.StringToBuf
 import com.twitter.storehaus.Store
-import com.twitter.storehaus.redis.RedisStoreProperties.{ putStoreTest, multiPutStoreTest }
+import com.twitter.storehaus.redis.RedisStoreProperties.{multiPutStoreTest, putStoreTest}
 import com.twitter.storehaus.testing.CloseableCleanup
 import com.twitter.storehaus.testing.generator.NonEmpty
-import org.scalacheck.{Prop, Gen, Properties}
+import org.scalacheck.{Gen, Prop, Properties}
 
 object RedisLongStoreProperties extends Properties("RedisLongStore")
   with CloseableCleanup[Store[String, Long]]
@@ -33,9 +33,8 @@ object RedisLongStoreProperties extends Properties("RedisLongStore")
   def storeTest(store: Store[String, Long]): Prop =
     putStoreTest(store, validPairs) && multiPutStoreTest(store, validPairs)
 
-  val closeable =
-    RedisLongStore(client).convert(StringToChannelBuffer(_: String))
+  val closeable : Store[String, Long] =
+    RedisLongStore(client).convert(StringToBuf(_: String))
 
-  property("RedisLongStore test") =
-    storeTest(closeable)
+  property("RedisLongStore test") = storeTest(closeable)
 }

@@ -18,7 +18,7 @@ package com.twitter.storehaus.mysql
 
 import com.twitter.algebird.Semigroup
 import com.twitter.bijection.Injection
-import com.twitter.finagle.exp.mysql.Client
+import com.twitter.finagle.mysql.Client
 
 /**
   * @author Ruban Monu

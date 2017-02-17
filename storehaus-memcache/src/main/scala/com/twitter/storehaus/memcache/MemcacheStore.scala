@@ -70,7 +70,6 @@ object MemcacheStore {
       .tcpConnectTimeout(timeout)
       .requestTimeout(timeout)
       .connectTimeout(timeout)
-      .readerIdleTimeout(timeout)
       .hostConnectionLimit(hostConnectionLimit)
       .codec(Memcached())
 

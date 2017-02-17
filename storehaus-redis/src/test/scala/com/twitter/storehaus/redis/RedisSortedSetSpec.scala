@@ -1,11 +1,11 @@
 package com.twitter.storehaus.redis
 
 import com.twitter.bijection.Bijection
-import com.twitter.finagle.redis.util.{ CBToString, StringToChannelBuffer }
+import com.twitter.finagle.redis.util.{StringToBuf,BufToString}
+import com.twitter.io.Buf
 import com.twitter.storehaus.algebra.MergeableStore
 import com.twitter.storehaus.testing.CloseableCleanup
-import com.twitter.util.{ Await, Future }
-import org.jboss.netty.buffer.ChannelBuffer
+import com.twitter.util.{Await, Future}
 import org.scalatest.{Matchers, WordSpec}
 
 class RedisSortedSetSpec extends WordSpec with Matchers
@@ -13,19 +13,19 @@ class RedisSortedSetSpec extends WordSpec with Matchers
   with DefaultRedisClient {
   import com.twitter.bijection.Bijection._
 
-  implicit def strToCb: Bijection[String, ChannelBuffer] =
-    Bijection.build(StringToChannelBuffer(_: String))(
-      CBToString(_: ChannelBuffer))
+  implicit def strToCb: Bijection[String, Buf] =
+    Bijection.build(StringToBuf(_: String))(
+      BufToString(_: Buf))
 
   val closeable: RedisSortedSetStore =
     RedisSortedSetStore(client)
 
   val sets: MergeableStore[String, Seq[(String, Double)]] =
-    closeable.convert(StringToChannelBuffer(_: String))
+    closeable.convert(StringToBuf(_: String))
 
   val members: MergeableStore[(String, String), Double] =
     closeable.members.convert {
-      case (s, m) => (StringToChannelBuffer(s), StringToChannelBuffer(m))
+      case (s, m) => (StringToBuf(s), StringToBuf(m))
     }
 
   val commits = Seq(("sritchie", 137.0), ("softprops", 73.0),
