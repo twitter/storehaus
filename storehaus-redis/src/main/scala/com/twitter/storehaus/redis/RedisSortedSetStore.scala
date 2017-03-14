@@ -20,6 +20,7 @@ import com.twitter.algebird.Semigroup
 import com.twitter.util.{Future, Time}
 import com.twitter.finagle.redis.Client
 import com.twitter.storehaus.algebra.MergeableStore
+import com.twitter.storehaus.redis.compat.RedisCompatClient
 import org.jboss.netty.buffer.ChannelBuffer
 
 object RedisSortedSetStore {
@@ -39,22 +40,21 @@ class RedisSortedSetStore(client: Client)
   /** Returns the whole set as a tuple of seq of (member, score).
    *  An empty set is represented as None. */
   override def get(k: ChannelBuffer): Future[Option[Seq[(ChannelBuffer, Double)]]] =
-    client.zRange(k, 0, -1, true).map(
-      _.left.toOption.map( _.asTuples).filter(_.nonEmpty)
-    )
+    RedisCompatClient.zRangeLeftAsTuples(client, k, 0, -1, true)
+    // FIXME XXX
 
   /** Replaces or deletes the whole set. Setting the set effectivly results
    *  in a delete of the previous sets key and multiple calls to zAdd for each member. */
   override def put(kv: (ChannelBuffer, Option[Seq[(ChannelBuffer, Double)]])): Future[Unit] =
     kv match {
       case (set, Some(scorings)) =>
-        client.del(Seq(set)).flatMap { _ =>
+        RedisCompatClient.del(client, Seq(set)).flatMap { _ =>
           Future.collect(members.multiPut(scorings.map {
             case (member, score) => ((set, member), Some(score))
           }.toMap).values.toSeq).unit
         }
       case (set, None) =>
-        client.del(Seq(set)).unit
+        RedisCompatClient.del(client, Seq(set)).unit
     }
 
   /** Performs a zIncrBy operation on a set for a seq of members */
@@ -63,7 +63,7 @@ class RedisSortedSetStore(client: Client)
   ): Future[Option[Seq[(ChannelBuffer, Double)]]] =
     Future.collect(kv._2.map {
       case (member, by) =>
-          client.zIncrBy(kv._1, by, member)
+          RedisCompatClient.zIncrBy(client, kv._1, by, member)
             .map {
               case Some(res) => member -> (res - by) // get the value before
               case None => member -> 0.0
@@ -121,7 +121,7 @@ class RedisSortedSetMembershipStore(client: Client)
 
   /** @return a member's score or None if the member is not in the set */
   override def get(k: (ChannelBuffer, ChannelBuffer)): Future[Option[Double]] =
-    client.zScore(k._1, k._2).map(_.map(_.doubleValue()))
+    RedisCompatClient.zScore(client, k._1, k._2).map(_.map(_.doubleValue()))
 
    /** Partitions a map of multiPut pivoted values into
     *  a two item tuple of deletes and sets, multimapped
@@ -159,21 +159,21 @@ class RedisSortedSetMembershipStore(client: Client)
       multiPutPartitioned[ChannelBuffer, ChannelBuffer, K1, Double, ChannelBuffer](kv)(_._1)
     del.flatMap {
       case (k, members) =>
-        val value = client.zRem(k, members.map(_._1._2))
+        val value = RedisCompatClient.zRem(client, k, members.map(_._1._2))
       members.map(_._1 -> value.unit)
     } ++ persist.flatMap {
       case (k, members) =>
         members.map {
           case (k1, score) =>
             // a per-InnerK operation
-            k1 -> client.zAdd(k, score.get, k1._2).unit
+            k1 -> RedisCompatClient.zAdd(client, k, score.get, k1._2).unit
         }
     }
   }
 
   /** Performs a zIncrBy operation on a set for a given member */
   override def merge(kv: ((ChannelBuffer, ChannelBuffer), Double)): Future[Option[Double]] =
-    client.zIncrBy(kv._1._1, kv._2, kv._1._2).map {
+    RedisCompatClient.zIncrBy(client, kv._1._1, kv._2, kv._1._2).map {
       _.map { res => res - kv._2 }
     }
 

@@ -18,6 +18,7 @@ package com.twitter.storehaus.redis
 
 import com.twitter.util.{ Duration, Future, Time }
 import com.twitter.finagle.redis.Client
+import com.twitter.storehaus.redis.compat.RedisCompatClient
 import com.twitter.storehaus.{ FutureOps, MissingValueException, Store, WithPutTtl }
 import org.jboss.netty.buffer.ChannelBuffer
 
@@ -43,7 +44,7 @@ class RedisStore(val client: Client, ttl: Option[Duration])
   override def withPutTtl(ttl: Duration): RedisStore = new RedisStore(client, Some(ttl))
 
   override def get(k: ChannelBuffer): Future[Option[ChannelBuffer]] =
-    client.get(k)
+    RedisCompatClient.get(client, k)
 
   override def multiGet[K1 <: ChannelBuffer](
       ks: Set[K1]): Map[K1, Future[Option[ChannelBuffer]]] = {
@@ -51,7 +52,7 @@ class RedisStore(val client: Client, ttl: Option[Duration])
       // results are expected in the same order as keys
       // keys w/o mapped results are considered exceptional
       val keys = ks.toIndexedSeq.view
-      client.mGet2(keys).map { result =>
+      RedisCompatClient.mGet2(client, keys).map { result =>
         val zipped = keys.zip(result).map {
           case (k, v) => k -> Future.value(v)
         }.toMap
@@ -65,13 +66,13 @@ class RedisStore(val client: Client, ttl: Option[Duration])
   }
 
   protected def set(k: ChannelBuffer, v: ChannelBuffer) =
-    ttl.map(exp => client.setEx(k, exp.inSeconds, v))
-       .getOrElse(client.set(k, v))
+    ttl.map(exp => RedisCompatClient.setEx(client, k, exp.inSeconds, v))
+       .getOrElse(RedisCompatClient.set(client, k, v))
 
   override def put(kv: (ChannelBuffer, Option[ChannelBuffer])): Future[Unit] =
     kv match {
       case (key, Some(value)) => set(key, value)
-      case (key, None) => client.del(Seq(key)).unit
+      case (key, None) => RedisCompatClient.del(client, Seq(key)).unit
     }
 
   override def close(t: Time): Future[Unit] = client.quit.foreach { _ => client.close() }

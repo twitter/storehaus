@@ -18,7 +18,8 @@ package com.twitter.storehaus.redis
 
 import com.twitter.util.{ Duration, Future, Time }
 import com.twitter.finagle.redis.Client
-import com.twitter.storehaus.{ Store, UnpivotedStore }
+import com.twitter.storehaus.redis.compat.RedisCompatClient
+import com.twitter.storehaus.{Store, UnpivotedStore }
 import org.jboss.netty.buffer.ChannelBuffer
 
 /**
@@ -44,20 +45,20 @@ class RedisHashStore(val client: Client, ttl: Option[Duration])
   extends Store[ChannelBuffer, Map[ChannelBuffer, ChannelBuffer]] {
 
   override def get(k: ChannelBuffer): Future[Option[Map[ChannelBuffer, ChannelBuffer]]] =
-    client.hGetAll(k).map {
+    RedisCompatClient.hGetAll(client, k).map {
       case e if e.isEmpty => None
       case xs => Some(Map(xs: _*))
     }
 
   protected def set(k: ChannelBuffer, v: Map[ChannelBuffer, ChannelBuffer]) = {
-    ttl.map(exp => client.expire(k, exp.inSeconds))
-    client.hMSet(k, v).unit
+    ttl.map(exp => RedisCompatClient.expire(client, k, exp.inSeconds))
+    RedisCompatClient.hMSet(client, k, v).unit
   }
 
   override def put(kv: (ChannelBuffer, Option[Map[ChannelBuffer, ChannelBuffer]])): Future[Unit] =
     kv match {
       case (key, Some(value)) => set(key, value)
-      case (key, None) => client.del(Seq(key)).unit
+      case (key, None) => RedisCompatClient.del(client, Seq(key)).unit
     }
 
   override def close(t: Time): Future[Unit] = client.quit.foreach { _ => client.close() }
