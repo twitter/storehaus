@@ -163,9 +163,9 @@ lazy val noPublishSettings = Seq(
 
 val algebirdVersion = "0.12.0"
 val bijectionVersion = "0.9.1"
-val utilVersion = "6.34.0"
+def utilVersion(scalaVersionValue: String) = if (scalaVersionValue.startsWith("2.10.")) "6.34.0" else "6.42.0"
 val scaldingVersion = "0.16.0-RC1"
-val finagleVersion = "6.35.0"
+def finagleVersion(scalaVersionValue: String) = if (scalaVersionValue.startsWith("2.10.")) "6.35.0" else "6.43.0"
 val scalatestVersion = "2.2.4"
 
 lazy val storehaus = Project(
@@ -203,12 +203,12 @@ def module(name: String) = {
 
 lazy val storehausCache = module("cache").settings(
   libraryDependencies += "com.twitter" %% "algebird-core" % algebirdVersion,
-  libraryDependencies += withCross("com.twitter" %% "util-core" % utilVersion)
+  libraryDependencies += withCross("com.twitter" %% "util-core" % utilVersion(scalaVersion.value))
 )
 
 lazy val storehausCore = module("core").settings(
   libraryDependencies ++= Seq(
-    withCross("com.twitter" %% "util-core" % utilVersion % "provided"),
+    withCross("com.twitter" %% "util-core" % utilVersion(scalaVersion.value) % "provided"),
     "com.twitter" %% "bijection-core" % bijectionVersion,
     "com.twitter" %% "bijection-util" % bijectionVersion
   )
@@ -226,7 +226,7 @@ lazy val storehausMemcache = module("memcache").settings(
     "com.twitter" %% "algebird-core" % algebirdVersion,
     "com.twitter" %% "bijection-core" % bijectionVersion,
     "com.twitter" %% "bijection-netty" % bijectionVersion,
-    "com.twitter" %% "finagle-memcached" % finagleVersion excludeAll(
+    "com.twitter" %% "finagle-memcached" % finagleVersion(scalaVersion.value) excludeAll(
       // we don't use this and its not on maven central.
       ExclusionRule("com.twitter.common.zookeeper"),
       ExclusionRule("com.twitter.common")
@@ -235,14 +235,14 @@ lazy val storehausMemcache = module("memcache").settings(
 ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
 lazy val storehausMySQL = module("mysql").settings(
-  libraryDependencies += "com.twitter" %% "finagle-mysql" % finagleVersion
+  libraryDependencies += "com.twitter" %% "finagle-mysql" % finagleVersion(scalaVersion.value)
 ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
 lazy val storehausRedis = module("redis").settings(
   libraryDependencies ++= Seq (
     "com.twitter" %% "bijection-core" % bijectionVersion,
     "com.twitter" %% "bijection-netty" % bijectionVersion,
-    "com.twitter" %% "finagle-redis" % finagleVersion
+    "com.twitter" %% "finagle-redis" % finagleVersion(scalaVersion.value)
   ),
   // we don't want various tests clobbering each others keys
   parallelExecution in Test := false
@@ -323,7 +323,7 @@ lazy val storehausTesting = Project(
     name := "storehaus-testing",
     libraryDependencies ++= Seq(
       "org.scalacheck" %% "scalacheck" % "1.12.2" withSources(),
-      withCross("com.twitter" %% "util-core" % utilVersion)
+      withCross("com.twitter" %% "util-core" % utilVersion(scalaVersion.value))
     )
   )
 )
@@ -341,8 +341,12 @@ lazy val storehausBenchmark = module("benchmark")
 
 lazy val storehausHttp = module("http").settings(
   libraryDependencies ++= Seq(
-    "com.twitter" %% "finagle-http" % finagleVersion,
-    "com.twitter" %% "finagle-http-compat" % finagleVersion,
+    "com.twitter" %% "finagle-http" % finagleVersion(scalaVersion.value),
     "com.twitter" %% "bijection-netty" % bijectionVersion
+  ) ++ (
+    if (scalaVersion.value.startsWith("2.10."))
+      Seq("com.twitter" %% "finagle-http-compat" % finagleVersion(scalaVersion.value))
+    else
+      Seq()
   )
 ).dependsOn(storehausCore)
