@@ -40,5 +40,6 @@ class MapCache[K, V](m: Map[K, V]) extends Cache[K, V] {
   override def toMap: Map[K, V] = m
   override def iterator: Iterator[(K, V)] = m.iterator
   override def empty: MapCache[K, V] = new MapCache(Map.empty[K, V])
+  override def occupancy: Int = m.size
   override def seed(newPairs: Map[K, V]): MapCache[K, V] = new MapCache(newPairs)
 }

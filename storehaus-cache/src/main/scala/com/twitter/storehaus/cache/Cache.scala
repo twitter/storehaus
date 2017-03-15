@@ -83,6 +83,9 @@ trait Cache[K, V] {
   /** Returns an empty version of this specific cache implementation. */
   def empty: Cache[K, V]
 
+  /** Returns the amount of elements in the cache (i.e. its occupancy)*/
+  def occupancy: Int
+
   /**
    * Returns true if the cache contains a value for the supplied key,
    * false otherwise.
