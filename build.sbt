@@ -57,7 +57,8 @@ val ignoredABIProblems = {
     exclude[MissingMethodProblem]("com.twitter.storehaus.asynchbase.AsyncHBaseStore.futurePool"),
     exclude[MissingMethodProblem]("com.twitter.storehaus.ReadThroughStore.mutex"),
     exclude[MissingClassProblem]("com.twitter.storehaus.kafka.JavaFutureToTwitterFutureConverter$Closed$"),
-    exclude[DirectMissingMethodProblem]("com.twitter.storehaus.kafka.KafkaStore.<init>$default$3")
+    exclude[DirectMissingMethodProblem]("com.twitter.storehaus.kafka.KafkaStore.<init>$default$3"),
+    exclude[MissingMethodProblem]("com.twitter.storehaus.cache.Cache.occupancy")
   )
 }
 
