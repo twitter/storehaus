@@ -89,6 +89,7 @@ class LRUCache[K, V](maxSize: Long, idx: Long, map: Map[K, (Long, V)], ord: Sort
   }
 
   override def empty: LRUCache[K, V] = new LRUCache(maxSize, 0, map.empty, ord.empty)
+  override def occupancy: Int = map.size
   override def iterator: Iterator[(K, V)] = map.iterator.map { case (k, (_, v)) => k -> v }
   override def toMap: Map[K, V] = map.mapValues { _._2 }
 }
