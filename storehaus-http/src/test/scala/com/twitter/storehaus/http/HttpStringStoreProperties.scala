@@ -18,12 +18,12 @@ package com.twitter.storehaus.http
 
 import java.util.concurrent.ConcurrentHashMap
 import java.nio.charset.Charset
-import com.twitter.finagle.http.compat.NettyAdaptor
 import org.jboss.netty.buffer.ChannelBuffers
-import org.jboss.netty.handler.codec.http.{ HttpRequest, HttpResponse, DefaultHttpResponse,
+import org.jboss.netty.handler.codec.http.{ DefaultHttpResponse,
   HttpResponseStatus, HttpMethod, HttpHeaders }
 import com.twitter.util.{ Await, Future }
 import com.twitter.finagle.{ Service, Http, ListeningServer }
+import com.twitter.storehaus.http.compat.{ HttpCompatClient, HttpRequest, HttpResponse, NettyAdaptor }
 import com.twitter.storehaus.{ FutureOps, Store }
 import com.twitter.storehaus.testing.CloseableCleanup
 import com.twitter.storehaus.testing.generator.NonEmpty
@@ -69,36 +69,33 @@ object HttpStringStoreProperties
     private val utf8 = Charset.forName("UTF-8")
 
     def apply(request: HttpRequest): Future[HttpResponse] = {
-      val response = request.getMethod match {
-        case HttpMethod.GET =>
-          Option(map.get(request.getUri)).map{ v =>
-            val resp = new DefaultHttpResponse(request.getProtocolVersion, HttpResponseStatus.OK)
+      val response = HttpCompatClient.getMethod(request) match {
+        case HttpCompatClient.GET =>
+          Option(map.get(HttpCompatClient.getUri(request))).map{ v =>
+            val resp = HttpCompatClient.getDefaultHttpResponseForRequest(request, HttpCompatClient.OK)
             val content = ChannelBuffers.wrappedBuffer(v.getBytes(utf8))
-            resp.setContent(content)
-            resp.headers.set(HttpHeaders.Names.CONTENT_LENGTH, content.readableBytes.toString)
+            HttpCompatClient.setContent(resp, content)
+            HttpCompatClient.setHeader(resp, HttpCompatClient.CONTENT_LENGTH, content.readableBytes.toString)
             resp
           }.getOrElse {
-            val resp =
-              new DefaultHttpResponse(request.getProtocolVersion, HttpResponseStatus.NOT_FOUND)
-            resp.headers.set(HttpHeaders.Names.CONTENT_LENGTH, "0")
+            val resp = HttpCompatClient.getDefaultHttpResponseForRequest(request, HttpCompatClient.NOT_FOUND)
+            HttpCompatClient.setHeader(resp, HttpCompatClient.CONTENT_LENGTH, "0")
             resp
           }
-        case HttpMethod.DELETE =>
-          map.remove(request.getUri)
-          val resp =
-            new DefaultHttpResponse(request.getProtocolVersion, HttpResponseStatus.NO_CONTENT)
-          resp.headers.set(HttpHeaders.Names.CONTENT_LENGTH, "0")
+        case HttpCompatClient.DELETE =>
+          map.remove(HttpCompatClient.getUri(request))
+          val resp = HttpCompatClient.getDefaultHttpResponseForRequest(request, HttpCompatClient.NO_CONTENT)
+          HttpCompatClient.setHeader(resp, HttpCompatClient.CONTENT_LENGTH, "0")
           resp
-        case HttpMethod.PUT =>
-          val maybeOldV = Option(map.put(request.getUri, request.getContent.toString(utf8)))
-          val resp = new DefaultHttpResponse(request.getProtocolVersion,
-            maybeOldV.map(_ => HttpResponseStatus.OK).getOrElse(HttpResponseStatus.CREATED))
-          resp.setContent(request.getContent)
-          resp.headers.set(HttpHeaders.Names.CONTENT_LENGTH,
-            request.getContent.readableBytes.toString)
+        case HttpCompatClient.PUT =>
+          val maybeOldV = Option(map.put(HttpCompatClient.getUri(request), HttpCompatClient.getContentString(request)))
+          val resp = HttpCompatClient.getDefaultHttpResponseForRequest(request,
+            maybeOldV.map(_ => HttpCompatClient.OK).getOrElse(HttpCompatClient.CREATED))
+          HttpCompatClient.setContent(resp, HttpCompatClient.getContent(request))
+          HttpCompatClient.setHeader(resp, HttpCompatClient.CONTENT_LENGTH, HttpCompatClient.getContentReadableBytes(request).toString)
           resp
         case _ =>
-          new DefaultHttpResponse(request.getProtocolVersion, HttpResponseStatus.METHOD_NOT_ALLOWED)
+          HttpCompatClient.getDefaultHttpResponseForRequest(request, HttpCompatClient.METHOD_NOT_ALLOWED)
       }
       Future.value(response)
     }
