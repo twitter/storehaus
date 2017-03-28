@@ -56,9 +56,9 @@ val ignoredABIProblems = {
       ".futurePool"),
     exclude[MissingMethodProblem]("com.twitter.storehaus.asynchbase.AsyncHBaseStore.futurePool"),
     exclude[MissingMethodProblem]("com.twitter.storehaus.ReadThroughStore.mutex"),
-    exclude[MissingClassProblem]("com.twitter.storehaus.kafka" +
-      ".JavaFutureToTwitterFutureConverter$Closed$"),
+    exclude[MissingClassProblem]("com.twitter.storehaus.kafka.JavaFutureToTwitterFutureConverter$Closed$"),
     exclude[DirectMissingMethodProblem]("com.twitter.storehaus.kafka.KafkaStore.<init>$default$3"),
+    exclude[MissingMethodProblem]("com.twitter.storehaus.cache.Cache.occupancy"),
     exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.http.HttpException.apply"),
     exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.mysql.MySqlStore.apply"),
     exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.mysql.MySqlLongStore.apply"),

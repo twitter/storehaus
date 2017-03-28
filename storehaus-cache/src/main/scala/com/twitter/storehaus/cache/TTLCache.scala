@@ -55,6 +55,7 @@ class TTLCache[K, V](val ttl: Duration, cache: Map[K, (Long, V)])(val clock: () 
     }.getOrElse((None, this))
 
   override def empty: TTLCache[K, V] = new TTLCache(ttl, cache.empty)(clock)
+  override def occupancy: Int = cache.size
   override def iterator: Iterator[(K, (Long, V))] = cache.iterator
   override def toMap: Map[K, (Long, V)] = cache
 

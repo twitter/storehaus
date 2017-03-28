@@ -166,6 +166,8 @@ class LIRSCache[K, V](lirsStacks: LIRSStacks[K], backingMap: Map[K, V]) extends 
 
   def empty: Cache[K, V] = new LIRSCache(lirsStacks.empty, backingMap.empty)
 
+  def occupancy: Int = backingMap.size
+
   override def toString: String = {
     val pairStrings = iterator.map { case (k, v) => k + " -> " + v }
     "LIRSCache(" + pairStrings.toList.mkString(", ") + ")"
