@@ -226,11 +226,7 @@ lazy val storehausMemcache = module("memcache").settings(
     "com.twitter" %% "algebird-core" % algebirdVersion,
     "com.twitter" %% "bijection-core" % bijectionVersion,
     "com.twitter" %% "bijection-netty" % bijectionVersion,
-    "com.twitter" %% "finagle-memcached" % finagleVersion(scalaVersion.value) excludeAll(
-      // we don't use this and its not on maven central.
-      ExclusionRule("com.twitter.common.zookeeper"),
-      ExclusionRule("com.twitter.common")
-      )
+    "com.twitter" %% "finagle-memcached" % finagleVersion(scalaVersion.value)
   )
 ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
