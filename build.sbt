@@ -56,17 +56,39 @@ val ignoredABIProblems = {
       ".futurePool"),
     exclude[MissingMethodProblem]("com.twitter.storehaus.asynchbase.AsyncHBaseStore.futurePool"),
     exclude[MissingMethodProblem]("com.twitter.storehaus.ReadThroughStore.mutex"),
-    exclude[MissingClassProblem]("com.twitter.storehaus.kafka.JavaFutureToTwitterFutureConverter$Closed$"),
-    exclude[DirectMissingMethodProblem]("com.twitter.storehaus.kafka.KafkaStore.<init>$default$3")
+    exclude[MissingClassProblem]("com.twitter.storehaus.kafka" +
+      ".JavaFutureToTwitterFutureConverter$Closed$"),
+    exclude[DirectMissingMethodProblem]("com.twitter.storehaus.kafka.KafkaStore.<init>$default$3"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.http.HttpException.apply"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.mysql.MySqlStore.apply"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.mysql.MySqlLongStore.apply"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.mysql.ValueMapper" +
+      ".toChannelBuffer"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.mysql.ValueMapper.toLong"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.mysql.ValueMapper.toString"),
+    exclude[IncompatibleResultTypeProblem]("com.twitter.storehaus.mysql.MySqlValue.v"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.mysql.MySqlValue.this"),
+    exclude[IncompatibleResultTypeProblem]("com.twitter.storehaus.mysql.MySqlStore.client"),
+    exclude[IncompatibleResultTypeProblem]("com.twitter.storehaus.mysql.MySqlStore.deleteStmt"),
+    exclude[IncompatibleResultTypeProblem]("com.twitter.storehaus.mysql.MySqlStore.updateStmt"),
+    exclude[IncompatibleResultTypeProblem]("com.twitter.storehaus.mysql.MySqlStore.selectStmt"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.mysql.MySqlStore.this"),
+    exclude[IncompatibleResultTypeProblem]("com.twitter.storehaus.mysql.MySqlStore.insertStmt")
   )
 }
 
 val sharedSettings = extraSettings ++ ciSettings ++ Seq(
   organization := "com.twitter",
   scalaVersion := "2.11.8",
-  crossScalaVersions := Seq("2.10.6", "2.11.8"),
-  javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
-  javacOptions in doc := Seq("-source", "1.6"),
+  crossScalaVersions := Seq("2.10.6", scalaVersion.value),
+  javacOptions ++= (
+    if (scalaVersion.value.startsWith("2.10.")) Seq("-source", "1.6", "-target", "1.6")
+    else Seq("-source", "1.8", "-target", "1.8")
+  ),
+  javacOptions in doc := (
+    if (scalaVersion.value.startsWith("2.10.")) Seq("-source", "1.6")
+    else Seq("-source", "1.8")
+  ),
   libraryDependencies += "org.scalatest" %% "scalatest" % scalatestVersion % "test",
   resolvers ++= Seq(
     Opts.resolver.sonatypeSnapshots,
