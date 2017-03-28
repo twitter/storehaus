@@ -63,10 +63,10 @@ val ignoredABIProblems = {
 
 val sharedSettings = extraSettings ++ ciSettings ++ Seq(
   organization := "com.twitter",
-  scalaVersion := "2.11.7",
-  crossScalaVersions := Seq("2.10.6", "2.11.7"),
-  javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
-  javacOptions in doc := Seq("-source", "1.8"),
+  scalaVersion := "2.11.8",
+  crossScalaVersions := Seq("2.10.6", "2.11.8"),
+  javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
+  javacOptions in doc := Seq("-source", "1.6"),
   libraryDependencies += "org.scalatest" %% "scalatest" % scalatestVersion % "test",
   resolvers ++= Seq(
     Opts.resolver.sonatypeSnapshots,
