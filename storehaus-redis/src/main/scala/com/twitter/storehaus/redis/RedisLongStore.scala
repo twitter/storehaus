@@ -22,6 +22,7 @@ import com.twitter.bijection.netty.Implicits._
 import com.twitter.finagle.redis.Client
 import com.twitter.storehaus.ConvertedStore
 import com.twitter.storehaus.algebra.MergeableStore
+import com.twitter.storehaus.redis.compat.RedisCompatClient
 import com.twitter.util.{ Duration, Future }
 import org.jboss.netty.buffer.ChannelBuffer
 
@@ -52,5 +53,5 @@ class RedisLongStore(underlying: RedisStore)
      with MergeableStore[ChannelBuffer, Long] {
   val semigroup = implicitly[Semigroup[Long]]
   override def merge(kv: (ChannelBuffer, Long)): Future[Option[Long]] =
-    underlying.client.incrBy(kv._1, kv._2).map(v => Some(v - kv._2)) // redis returns the result
+    RedisCompatClient.incrBy(underlying.client, kv._1, kv._2).map(v => Some(v - kv._2)) // redis returns the result
 }

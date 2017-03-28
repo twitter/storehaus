@@ -18,6 +18,7 @@ package com.twitter.storehaus.redis
 
 import com.twitter.util.{ Duration, Future, Time }
 import com.twitter.finagle.redis.Client
+import com.twitter.storehaus.redis.compat.RedisCompatClient
 import com.twitter.storehaus.Store
 import org.jboss.netty.buffer.ChannelBuffer
 
@@ -41,7 +42,7 @@ class RedisSetStore(val client: Client, ttl: Option[Duration])
   extends Store[ChannelBuffer, Set[ChannelBuffer]] {
 
   override def get(k: ChannelBuffer): Future[Option[Set[ChannelBuffer]]] =
-    client.sMembers(k).map {
+    RedisCompatClient.sMembers(client, k).map {
       case e if e.isEmpty => None
       case s => Some(s)
     }
@@ -49,11 +50,11 @@ class RedisSetStore(val client: Client, ttl: Option[Duration])
   override def put(kv: (ChannelBuffer, Option[Set[ChannelBuffer]])): Future[Unit] =
     kv match {
       case (k, Some(v)) =>
-        client.del(Seq(k)) // put, not merge, semantics
-        ttl.map(exp => client.expire(k, exp.inSeconds))
+        RedisCompatClient.del(client, Seq(k)) // put, not merge, semantics
+        ttl.map(exp => RedisCompatClient.expire(client, k, exp.inSeconds))
         set(k, v.toList)
       case (k, None) =>
-        client.del(Seq(k)).unit
+        RedisCompatClient.del(client, Seq(k)).unit
     }
 
   /** Provides a view of this store for set membership */
@@ -61,12 +62,12 @@ class RedisSetStore(val client: Client, ttl: Option[Duration])
     new RedisSetMembershipStore(this)
 
   protected [redis] def set(k: ChannelBuffer, v: List[ChannelBuffer]) = {
-    ttl.map(exp => client.expire(k, exp.inSeconds))
-    client.sAdd(k, v).unit
+    ttl.map(exp => RedisCompatClient.expire(client, k, exp.inSeconds))
+    RedisCompatClient.sAdd(client, k, v).unit
   }
 
   protected [redis] def delete(k: ChannelBuffer, v: List[ChannelBuffer]) =
-    client.sRem(k, v).unit
+    RedisCompatClient.sRem(client, k, v).unit
 
   override def close(t: Time): Future[Unit] = client.quit.foreach { _ => client.close() }
 }
@@ -83,7 +84,7 @@ class RedisSetMembershipStore(store: RedisSetStore)
   extends Store[(ChannelBuffer, ChannelBuffer), Unit] {
 
   override def get(k: (ChannelBuffer, ChannelBuffer)): Future[Option[Unit]] =
-    store.client.sIsMember(k._1, k._2).map {
+    RedisCompatClient.sIsMember(store.client, k._1, k._2).map {
       case java.lang.Boolean.TRUE => Some(())
       case _ => None
     }

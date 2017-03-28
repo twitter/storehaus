@@ -3,6 +3,7 @@
 
 *.jar
 *~
+.DS_Store
 
 #sbt
 /project/target/

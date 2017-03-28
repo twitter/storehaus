@@ -18,19 +18,17 @@ package com.twitter.storehaus.http
 
 import java.nio.charset.Charset
 import org.jboss.netty.buffer.ChannelBuffer
-import org.jboss.netty.handler.codec.http.{ HttpRequest, HttpResponse, DefaultHttpRequest,
-  HttpVersion, HttpMethod, HttpHeaders, HttpResponseStatus }
 import com.twitter.util.Future
 import com.twitter.bijection.StringCodec
 import com.twitter.bijection.netty.ChannelBufferBijection
 import com.twitter.finagle.{ Service, Http }
-import com.twitter.finagle.http.compat.NettyClientAdaptor
+import com.twitter.storehaus.http.compat.{ HttpCompatClient, HttpRequest, HttpResponse, NettyClientAdaptor }
 import com.twitter.storehaus.{ Store, ConvertedStore }
 
 object HttpException {
   def apply(response: HttpResponse): HttpException =
-    new HttpException(response.getStatus.getCode, response.getStatus.getReasonPhrase,
-      response.getContent.toString(Charset.forName("UTF-8")))
+    new HttpException(HttpCompatClient.getStatusCode(response), HttpCompatClient.getStatusReasonPhrase(response),
+      HttpCompatClient.getContentString(response))
 }
 
 case class HttpException(code: Int, reasonPhrase: String, content: String)
@@ -44,12 +42,12 @@ object HttpStore {
 class HttpStore(val client: Service[HttpRequest, HttpResponse])
     extends Store[String, ChannelBuffer] {
   override def get(k: String): Future[Option[ChannelBuffer]] = {
-    val request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, k)
-    request.headers.set(HttpHeaders.Names.CONTENT_LENGTH, "0")
+    val request = HttpCompatClient.getDefaultHttpGetRequestForUrl(k)
+    HttpCompatClient.setHeader(request, HttpCompatClient.CONTENT_LENGTH, "0")
     client(request).map{ response =>
-      response.getStatus match {
-        case HttpResponseStatus.OK => Some(response.getContent)
-        case HttpResponseStatus.NOT_FOUND => None
+      HttpCompatClient.getStatus(response) match {
+        case HttpCompatClient.OK => Some(HttpCompatClient.getContent(response))
+        case HttpCompatClient.NOT_FOUND => None
         case _ => throw HttpException(response)
       }
     }
@@ -58,20 +56,20 @@ class HttpStore(val client: Service[HttpRequest, HttpResponse])
   override def put(kv: (String, Option[ChannelBuffer])): Future[Unit] = {
     val request = kv match {
       case (k, Some(cb)) =>
-        val req = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.PUT, k)
-        req.setContent(cb)
-        req.headers.set(HttpHeaders.Names.CONTENT_LENGTH, cb.readableBytes.toString)
+        val req = HttpCompatClient.getDefaultHttpPutRequestForUrl(k)
+        HttpCompatClient.setContent(req, cb)
+        HttpCompatClient.setHeader(req, HttpCompatClient.CONTENT_LENGTH, cb.readableBytes.toString)
         req
       case (k, None) =>
-        val req = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.DELETE, k)
-        req.headers.set(HttpHeaders.Names.CONTENT_LENGTH, "0")
+        val req = HttpCompatClient.getDefaultHttpDeleteRequestForUrl(k)
+        HttpCompatClient.setHeader(req, HttpCompatClient.CONTENT_LENGTH, "0")
         req
     }
     client(request).map{ response =>
-      response.getStatus match {
-        case HttpResponseStatus.OK => ()
-        case HttpResponseStatus.CREATED => ()
-        case HttpResponseStatus.NO_CONTENT => ()
+      HttpCompatClient.getStatus(response) match {
+        case HttpCompatClient.OK => ()
+        case HttpCompatClient.CREATED => ()
+        case HttpCompatClient.NO_CONTENT => ()
         case _ => throw HttpException(response)
       }
     }

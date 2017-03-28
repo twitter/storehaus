@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus.mysql
 
-import com.twitter.finagle.exp.mysql.{ Client, Result, Parameter }
+import com.twitter.storehaus.mysql.compat.{Client, Result, Parameter}
 import com.twitter.storehaus.FutureOps
 import com.twitter.storehaus.Store
 import com.twitter.util.{Future, Time}
