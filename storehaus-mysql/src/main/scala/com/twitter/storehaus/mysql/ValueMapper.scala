@@ -17,7 +17,7 @@
 package com.twitter.storehaus.mysql
 
 import com.twitter.bijection.Injection
-import com.twitter.finagle.exp.mysql.{
+import com.twitter.finagle.mysql.{
   EmptyValue,
   IntValue,
   LongValue,

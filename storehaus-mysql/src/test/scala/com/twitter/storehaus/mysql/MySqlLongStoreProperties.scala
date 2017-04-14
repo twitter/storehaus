@@ -16,8 +16,8 @@
 
 package com.twitter.storehaus.mysql
 
-import com.twitter.finagle.exp.Mysql
-import com.twitter.finagle.exp.mysql.Client
+import com.twitter.finagle.Mysql
+import com.twitter.finagle.mysql.Client
 import com.twitter.storehaus.testing.SelfAggregatingCloseableCleanup
 import com.twitter.storehaus.testing.generator.NonEmpty
 import com.twitter.util.{Future, Await}

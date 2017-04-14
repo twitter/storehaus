@@ -17,14 +17,15 @@
 package com.twitter.storehaus.redis
 
 import com.twitter.bijection.Injection
-import com.twitter.finagle.redis.util.{ CBToString, StringToChannelBuffer }
-import com.twitter.storehaus.{ FutureOps, Store }
+import com.twitter.finagle.redis.util.{BufToString, StringToBuf}
+import com.twitter.io.Buf
+import com.twitter.storehaus.{FutureOps, Store}
 import com.twitter.storehaus.testing.CloseableCleanup
 import com.twitter.storehaus.testing.generator.NonEmpty
 import com.twitter.util.Await
-import org.jboss.netty.buffer.ChannelBuffer
-import org.scalacheck.{Prop, Arbitrary, Gen, Properties}
+import org.scalacheck.{Arbitrary, Gen, Prop, Properties}
 import org.scalacheck.Prop._
+
 import scala.util.Try
 
 object RedisStoreProperties extends Properties("RedisStore")
@@ -60,12 +61,12 @@ object RedisStoreProperties extends Properties("RedisStore")
   def storeTest(store: Store[String, String]): Prop =
     putStoreTest(store, validPairs) && multiPutStoreTest(store, validPairs)
 
-  implicit def strToCb: Injection[String, ChannelBuffer] =
-    Injection.build(StringToChannelBuffer(_: String))(
-      (b: ChannelBuffer) => Try(CBToString(b)))
+  implicit def strToCb: Injection[String, Buf] =
+    Injection.build(StringToBuf(_: String))(
+      (b: Buf) => Try(BufToString(b)))
 
   val closeable =
-    RedisStore(client).convert(StringToChannelBuffer(_: String))
+    RedisStore(client).convert(StringToBuf(_: String))
 
   property("RedisStore test") = storeTest(closeable)
 }
