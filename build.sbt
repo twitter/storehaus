@@ -58,7 +58,31 @@ val ignoredABIProblems = {
     exclude[MissingMethodProblem]("com.twitter.storehaus.ReadThroughStore.mutex"),
     exclude[MissingClassProblem]("com.twitter.storehaus.kafka.JavaFutureToTwitterFutureConverter$Closed$"),
     exclude[DirectMissingMethodProblem]("com.twitter.storehaus.kafka.KafkaStore.<init>$default$3"),
-    exclude[MissingMethodProblem]("com.twitter.storehaus.cache.Cache.occupancy")
+    exclude[MissingMethodProblem]("com.twitter.storehaus.cache.Cache.occupancy"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.mysql.MySqlStore.apply"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.mysql.MySqlLongStore.apply"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.mysql.ValueMapper.toChannelBuffer"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.mysql.ValueMapper.toLong"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.mysql.ValueMapper.toString"),
+    exclude[IncompatibleResultTypeProblem]("com.twitter.storehaus.mysql.MySqlValue.v"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.mysql.MySqlValue.this"),
+    exclude[IncompatibleResultTypeProblem]("com.twitter.storehaus.mysql.MySqlStore.client"),
+    exclude[IncompatibleResultTypeProblem]("com.twitter.storehaus.mysql.MySqlStore.deleteStmt"),
+    exclude[IncompatibleResultTypeProblem]("com.twitter.storehaus.mysql.MySqlStore.updateStmt"),
+    exclude[IncompatibleResultTypeProblem]("com.twitter.storehaus.mysql.MySqlStore.selectStmt"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.mysql.MySqlStore.this"),
+    exclude[IncompatibleResultTypeProblem]("com.twitter.storehaus.mysql.MySqlStore.insertStmt"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.redis.RedisStore.set"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.redis.RedisStore.get"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.redis.RedisSortedSetMembershipView.get"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.redis.RedisSortedSetMembershipView.this"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.redis.RedisHashStore.set"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.redis.RedisHashStore.get"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.redis.RedisSetStore.set"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.redis.RedisSetStore.get"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.redis.RedisSetStore.delete"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.redis.RedisSortedSetStore.get"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.redis.RedisSortedSetStore.members")
   )
 }
 
