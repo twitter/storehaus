@@ -39,7 +39,7 @@ class RedisSortedSetStore(client: Client)
   /** Returns the whole set as a tuple of seq of (member, score).
    *  An empty set is represented as None. */
   override def get(k: Buf): Future[Option[Seq[(Buf, Double)]]] =
-    client.zRange(k, 0.toLong, -1.toLong, true).map(
+    client.zRange(k, 0L, -1L, true).map(
       _.left.toOption.map( _.asTuples).filter(_.nonEmpty)
     )
 

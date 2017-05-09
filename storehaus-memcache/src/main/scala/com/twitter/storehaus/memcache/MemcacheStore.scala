@@ -17,20 +17,20 @@
 package com.twitter.storehaus.memcache
 
 import com.twitter.algebird.Semigroup
-import com.twitter.bijection.{ Codec, Injection }
+import com.twitter.bijection.{Codec, Injection}
 import com.twitter.bijection.netty.Implicits._
 import com.twitter.conversions.time._
 import com.twitter.finagle.builder.ClientBuilder
 import com.twitter.finagle.memcached.KetamaClientBuilder
 import com.twitter.finagle.memcached.protocol.text.Memcached
 import com.twitter.finagle.netty3.{BufChannelBuffer, ChannelBufferBuf}
-import com.twitter.util.{ Duration, Future, Time }
+import com.twitter.util.{Duration, Future, Time}
 import com.twitter.finagle.memcached.Client
-import com.twitter.storehaus.{ FutureOps, Store, WithPutTtl }
+import com.twitter.storehaus.{FutureOps, Store, WithPutTtl}
 import com.twitter.storehaus.algebra.MergeableStore
 import org.jboss.netty.buffer.ChannelBuffer
-
 import Store.enrich
+import com.twitter.finagle.transport.Transport
 
 /**
  *  @author Oscar Boykin
@@ -73,8 +73,11 @@ object MemcacheStore {
       .hostConnectionLimit(hostConnectionLimit)
       .codec(Memcached())
 
+    val liveness = builder.params[Transport.Liveness].copy(readTimeout = timeout)
+    val liveBuilder = builder.configured(liveness)
+
     KetamaClientBuilder()
-      .clientBuilder(builder)
+      .clientBuilder(liveBuilder)
       .nodes(nodeString)
       .build()
   }

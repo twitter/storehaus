@@ -49,9 +49,11 @@ class RedisSetStore(val client: Client, ttl: Option[Duration])
   override def put(kv: (Buf, Option[Set[Buf]])): Future[Unit] =
     kv match {
       case (k, Some(v)) =>
-        client.dels(Seq(k)) // put, not merge, semantics
-        ttl.map(exp => client.expire(k, exp.inSeconds.toLong))
-        set(k, v.toList)
+        for {
+          _ <- client.dels(Seq(k))
+          _ <- ttl.fold(Future.Unit) { exp => client.expire(k, exp.inSeconds.toLong).unit }
+          _ <- set(k, v.toList)
+        } yield ()
       case (k, None) =>
         client.dels(Seq(k)).unit
     }

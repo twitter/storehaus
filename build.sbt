@@ -64,8 +64,8 @@ val ignoredABIProblems = {
 
 val sharedSettings = extraSettings ++ ciSettings ++ Seq(
   organization := "com.twitter",
-  scalaVersion := "2.11.7",
-  crossScalaVersions := Seq("2.11.7", "2.12.1"),
+  scalaVersion := "2.11.11",
+  crossScalaVersions := Seq("2.11.11", "2.12.2"),
   javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
   javacOptions in doc := Seq("-source", "1.8"),
   libraryDependencies += "org.scalatest" %% "scalatest" % scalatestVersion % "test",
@@ -164,10 +164,10 @@ lazy val noPublishSettings = Seq(
 
 val algebirdVersion = "0.13.0"
 val bijectionVersion = "0.9.5"
-val utilVersion = "6.43.0"
+val utilVersion = "6.41.0"
 
 val scaldingVersion = "0.17.0"
-val finagleVersion = "6.43.0"
+val finagleVersion = "6.41.0"
 val scalatestVersion = "3.0.1"
 val scalaCheckVersion = "1.13.4"
 

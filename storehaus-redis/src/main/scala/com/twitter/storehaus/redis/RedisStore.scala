@@ -16,14 +16,13 @@
 
 package com.twitter.storehaus.redis
 
-import com.twitter.bijection.Injection
+import com.twitter.bijection.Bijection
 import com.twitter.finagle.netty3.ChannelBufferBuf
 import com.twitter.util.{Duration, Future, Time}
 import com.twitter.finagle.redis.Client
 import com.twitter.io.Buf
 import com.twitter.storehaus.{FutureOps, MissingValueException, Store, WithPutTtl}
 import org.jboss.netty.buffer.ChannelBuffer
-
 import scala.util.{Success, Try}
 
 /**
@@ -42,13 +41,14 @@ object RedisStore {
     new RedisStore(client, ttl)
 
   def toChannelBufferStore(store: Store[Buf, Buf]) : Store[ChannelBuffer, ChannelBuffer] = {
-    store.convert(ChannelBuffer2BufInjection.apply)(ChannelBuffer2BufInjection)
+    implicit val bij = ChannelBuffer2BufInjection
+    store.convert(ChannelBuffer2BufInjection.apply)
   }
 }
 
-object ChannelBuffer2BufInjection extends Injection[ChannelBuffer, Buf] {
+object ChannelBuffer2BufInjection extends Bijection[ChannelBuffer, Buf] {
   def apply(c: ChannelBuffer): Buf = ChannelBufferBuf.newOwned(c)
-  override def invert(m: Buf): Try[ChannelBuffer] = Success(ChannelBufferBuf.Owned.extract(m))
+  override def invert(m: Buf): ChannelBuffer = ChannelBufferBuf.Owned.extract(m)
 }
 
 class RedisStore(val client: Client, ttl: Option[Duration])
