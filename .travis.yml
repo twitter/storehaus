@@ -2,18 +2,24 @@ language: scala
 sudo: false
 matrix:
   include:
-    - scala: 2.10.6
-      script: umask 0022 && ./sbt ++$TRAVIS_SCALA_VERSION clean test mimaReportBinaryIssues
-
-    - scala: 2.11.8
+    - scala: 2.11.11
+      jdk: oraclejdk8
       script: umask 0022 && ./sbt ++$TRAVIS_SCALA_VERSION clean coverage test coverageReport mimaReportBinaryIssues
       after_success:
         - bash <(curl -s https://codecov.io/bash)
+    - scala: 2.12.2 
+      jdk: oraclejdk8
+      script: umask 0022 && ./sbt ++$TRAVIS_SCALA_VERSION clean coverage test coverageReport
+      after_success:
+        - bash <(curl -s https://codecov.io/bash)
 before_script:
+  - sleep 15 # https://docs.travis-ci.com/user/database-setup/#MongoDB
+  - mongo mydb_test --eval 'db.addUser("travis", "test");'
   - mysql -u root -e "create database storehaus_test;"
   - mysql -u root -e "create user 'storehaususer'@'localhost' identified by 'test1234';"
   - mysql -u root -e "grant all on storehaus_test.* to 'storehaususer'@'localhost';"
 services:
+  - mysql
   - redis-server
   - memcache
   - mongodb

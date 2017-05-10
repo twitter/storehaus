@@ -16,10 +16,10 @@
 
 package com.twitter.storehaus.redis
 
-import com.twitter.util.{ Duration, Future, Time }
+import com.twitter.util.{Duration, Future, Time}
 import com.twitter.finagle.redis.Client
+import com.twitter.io.Buf
 import com.twitter.storehaus.Store
-import org.jboss.netty.buffer.ChannelBuffer
 
 /**
  *
@@ -38,34 +38,36 @@ object RedisSetStore {
  * A Store for sets of values backed by a Redis set.
  */
 class RedisSetStore(val client: Client, ttl: Option[Duration])
-  extends Store[ChannelBuffer, Set[ChannelBuffer]] {
+  extends Store[Buf, Set[Buf]] {
 
-  override def get(k: ChannelBuffer): Future[Option[Set[ChannelBuffer]]] =
+  override def get(k: Buf): Future[Option[Set[Buf]]] =
     client.sMembers(k).map {
       case e if e.isEmpty => None
       case s => Some(s)
     }
 
-  override def put(kv: (ChannelBuffer, Option[Set[ChannelBuffer]])): Future[Unit] =
+  override def put(kv: (Buf, Option[Set[Buf]])): Future[Unit] =
     kv match {
       case (k, Some(v)) =>
-        client.del(Seq(k)) // put, not merge, semantics
-        ttl.map(exp => client.expire(k, exp.inSeconds))
-        set(k, v.toList)
+        for {
+          _ <- client.dels(Seq(k))
+          _ <- ttl.fold(Future.Unit) { exp => client.expire(k, exp.inSeconds.toLong).unit }
+          _ <- set(k, v.toList)
+        } yield ()
       case (k, None) =>
-        client.del(Seq(k)).unit
+        client.dels(Seq(k)).unit
     }
 
   /** Provides a view of this store for set membership */
   def members: RedisSetMembershipStore =
     new RedisSetMembershipStore(this)
 
-  protected [redis] def set(k: ChannelBuffer, v: List[ChannelBuffer]) = {
-    ttl.map(exp => client.expire(k, exp.inSeconds))
+  protected [redis] def set(k: Buf, v: List[Buf]) = {
+    ttl.map(exp => client.expire(k, exp.inSeconds.toLong))
     client.sAdd(k, v).unit
   }
 
-  protected [redis] def delete(k: ChannelBuffer, v: List[ChannelBuffer]) =
+  protected [redis] def delete(k: Buf, v: List[Buf]) =
     client.sRem(k, v).unit
 
   override def close(t: Time): Future[Unit] = client.quit.foreach { _ => client.close() }
@@ -80,26 +82,26 @@ class RedisSetStore(val client: Client, ttl: Option[Duration])
  * within the Store.
  */
 class RedisSetMembershipStore(store: RedisSetStore)
-  extends Store[(ChannelBuffer, ChannelBuffer), Unit] {
+  extends Store[(Buf, Buf), Unit] {
 
-  override def get(k: (ChannelBuffer, ChannelBuffer)): Future[Option[Unit]] =
+  override def get(k: (Buf, Buf)): Future[Option[Unit]] =
     store.client.sIsMember(k._1, k._2).map {
       case java.lang.Boolean.TRUE => Some(())
       case _ => None
     }
 
-  override def put(kv: ((ChannelBuffer, ChannelBuffer), Option[Unit])): Future[Unit] =
+  override def put(kv: ((Buf, Buf), Option[Unit])): Future[Unit] =
     kv match {
       case (key, Some(_)) => store.set(key._1, List(key._2))
       case (key, None) => store.delete(key._1, List(key._2))
     }
 
-  override def multiPut[K1 <: (ChannelBuffer, ChannelBuffer)](
+  override def multiPut[K1 <: (Buf, Buf)](
       kv: Map[K1, Option[Unit]]): Map[K1, Future[Unit]] = {
     // we are exploiting redis's built-in support for bulk updates and removals
     // by partioning deletions and updates into 2 maps indexed by the first
     // component of the composite key, the key of the set
-    def emptyMap = Map.empty[ChannelBuffer, List[K1]].withDefaultValue(Nil)
+    def emptyMap = Map.empty[Buf, List[K1]].withDefaultValue(Nil)
     val (del, persist) = ((emptyMap, emptyMap) /: kv) {
       case ((deleting, storing), (key, Some(_))) =>
         (deleting, storing.updated(key._1, key :: storing(key._1)))

@@ -58,16 +58,40 @@ val ignoredABIProblems = {
     exclude[MissingMethodProblem]("com.twitter.storehaus.ReadThroughStore.mutex"),
     exclude[MissingClassProblem]("com.twitter.storehaus.kafka.JavaFutureToTwitterFutureConverter$Closed$"),
     exclude[DirectMissingMethodProblem]("com.twitter.storehaus.kafka.KafkaStore.<init>$default$3"),
-    exclude[MissingMethodProblem]("com.twitter.storehaus.cache.Cache.occupancy")
+    exclude[MissingMethodProblem]("com.twitter.storehaus.cache.Cache.occupancy"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.mysql.MySqlStore.apply"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.mysql.MySqlLongStore.apply"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.mysql.ValueMapper.toChannelBuffer"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.mysql.ValueMapper.toLong"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.mysql.ValueMapper.toString"),
+    exclude[IncompatibleResultTypeProblem]("com.twitter.storehaus.mysql.MySqlValue.v"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.mysql.MySqlValue.this"),
+    exclude[IncompatibleResultTypeProblem]("com.twitter.storehaus.mysql.MySqlStore.client"),
+    exclude[IncompatibleResultTypeProblem]("com.twitter.storehaus.mysql.MySqlStore.deleteStmt"),
+    exclude[IncompatibleResultTypeProblem]("com.twitter.storehaus.mysql.MySqlStore.updateStmt"),
+    exclude[IncompatibleResultTypeProblem]("com.twitter.storehaus.mysql.MySqlStore.selectStmt"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.mysql.MySqlStore.this"),
+    exclude[IncompatibleResultTypeProblem]("com.twitter.storehaus.mysql.MySqlStore.insertStmt"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.redis.RedisStore.set"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.redis.RedisStore.get"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.redis.RedisSortedSetMembershipView.get"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.redis.RedisSortedSetMembershipView.this"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.redis.RedisHashStore.set"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.redis.RedisHashStore.get"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.redis.RedisSetStore.set"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.redis.RedisSetStore.get"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.redis.RedisSetStore.delete"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.redis.RedisSortedSetStore.get"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.redis.RedisSortedSetStore.members")
   )
 }
 
 val sharedSettings = extraSettings ++ ciSettings ++ Seq(
   organization := "com.twitter",
-  scalaVersion := "2.11.7",
-  crossScalaVersions := Seq("2.10.6", "2.11.7"),
-  javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
-  javacOptions in doc := Seq("-source", "1.6"),
+  scalaVersion := "2.11.11",
+  crossScalaVersions := Seq("2.11.11", "2.12.2"),
+  javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
+  javacOptions in doc := Seq("-source", "1.8"),
   libraryDependencies += "org.scalatest" %% "scalatest" % scalatestVersion % "test",
   resolvers ++= Seq(
     Opts.resolver.sonatypeSnapshots,
@@ -86,7 +110,7 @@ val sharedSettings = extraSettings ++ ciSettings ++ Seq(
   ),
 
   // add linter for common scala issues: https://github.com/HairyFotr/linter
-  addCompilerPlugin("org.psywerx.hairyfotr" %% "linter" % "0.1.14"),
+  addCompilerPlugin("org.psywerx.hairyfotr" %% "linter" % "0.1.17"),
 
   // Publishing options:
 
@@ -162,12 +186,14 @@ lazy val noPublishSettings = Seq(
     publishArtifact := false
   )
 
-val algebirdVersion = "0.12.0"
-val bijectionVersion = "0.9.1"
-val utilVersion = "6.34.0"
-val scaldingVersion = "0.16.0-RC1"
-val finagleVersion = "6.35.0"
-val scalatestVersion = "2.2.4"
+val algebirdVersion = "0.13.0"
+val bijectionVersion = "0.9.5"
+val utilVersion = "6.41.0"
+
+val scaldingVersion = "0.17.0"
+val finagleVersion = "6.41.0"
+val scalatestVersion = "3.0.1"
+val scalaCheckVersion = "1.13.4"
 
 lazy val storehaus = Project(
   id = "storehaus",
@@ -228,9 +254,8 @@ lazy val storehausMemcache = module("memcache").settings(
     "com.twitter" %% "bijection-core" % bijectionVersion,
     "com.twitter" %% "bijection-netty" % bijectionVersion,
     "com.twitter" %% "finagle-memcached" % finagleVersion excludeAll(
-      // we don't use this and its not on maven central.
-      ExclusionRule("com.twitter.common.zookeeper"),
-      ExclusionRule("com.twitter.common")
+      // we don't use this
+      ExclusionRule("com.twitter.common.zookeeper")
       )
   )
 ).dependsOn(storehausAlgebra % "test->test;compile->compile")
@@ -290,7 +315,7 @@ lazy val storehausKafka = module("kafka").settings(
     "com.twitter" %% "bijection-avro" % bijectionVersion,
     "org.apache.kafka" % "kafka-clients" % "0.9.0.1",
     "org.apache.zookeeper" % "zookeeper" % "3.4.8" % "test",
-    "org.apache.kafka" %% "kafka" % "0.9.0.1" % "test"
+    "org.apache.kafka" %% "kafka" % "0.10.1.1" % "test"
   ),
   // we don't want various tests clobbering each others keys
   parallelExecution in Test := false
@@ -299,7 +324,7 @@ lazy val storehausKafka = module("kafka").settings(
 lazy val storehausMongoDB = module("mongodb").settings(
   libraryDependencies ++= Seq(
     "com.twitter" %% "bijection-core" % bijectionVersion,
-    "org.mongodb" %% "casbah" % "2.8.2"
+    "org.mongodb" %% "casbah" % "3.1.1"
   ),
   parallelExecution in Test := false
 ).dependsOn(storehausAlgebra % "test->test;compile->compile")
@@ -307,7 +332,7 @@ lazy val storehausMongoDB = module("mongodb").settings(
 lazy val storehausElastic = module("elasticsearch").settings(
   libraryDependencies ++= Seq (
     "org.elasticsearch" % "elasticsearch" % "0.90.9",
-    "org.json4s" %% "json4s-native" % "3.2.10",
+    "org.json4s" %% "json4s-native" % "3.5.0",
     "com.google.code.findbugs" % "jsr305" % "1.3.9",
     "com.twitter" %% "bijection-json4s" % bijectionVersion,
     "org.slf4j" % "slf4j-api" % "1.7.21" % "test",
@@ -323,7 +348,7 @@ lazy val storehausTesting = Project(
   settings = sharedSettings ++ Seq(
     name := "storehaus-testing",
     libraryDependencies ++= Seq(
-      "org.scalacheck" %% "scalacheck" % "1.12.2" withSources(),
+      "org.scalacheck" %% "scalacheck" % scalaCheckVersion withSources(),
       withCross("com.twitter" %% "util-core" % utilVersion)
     )
   )

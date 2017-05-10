@@ -16,8 +16,8 @@
 
 package com.twitter.storehaus.mysql
 
-import com.twitter.finagle.exp.Mysql
-import com.twitter.finagle.exp.mysql.Client
+import com.twitter.finagle.Mysql
+import com.twitter.finagle.mysql.Client
 import com.twitter.storehaus.testing.SelfAggregatingCloseableCleanup
 import com.twitter.storehaus.testing.generator.NonEmpty
 import com.twitter.util.{Await, Future}
@@ -27,6 +27,18 @@ import org.scalacheck.Prop.forAll
 
 object MySqlStoreProperties extends Properties("MySqlStore")
   with SelfAggregatingCloseableCleanup[MySqlStore] {
+
+  private[this] class PropertyCached(ps: PropertySpecifier) {
+    def update(propName: String, p: Prop) = {
+      ps(propName) = p
+    }
+  }
+
+  /**
+   * Property specification is used by name since scalacheck 1.13.4, which breaks
+   * tests here. This simulates the old behavior.
+   */
+  private[this] val propertyCached = new PropertyCached(property)
 
   def put(s: MySqlStore, pairs: List[(MySqlValue, Option[MySqlValue])]) {
     pairs.foreach { case (k, v) =>
@@ -99,42 +111,42 @@ object MySqlStoreProperties extends Properties("MySqlStore")
       s"expected value $expected, but found $found")
   }
 
-  property("MySqlStore text->text") =
+  propertyCached("MySqlStore text->text") =
     withStore(putAndGetStoreTest(_), "text", "text")
 
-  property("MySqlStore blob->blob") =
+  propertyCached("MySqlStore blob->blob") =
     withStore(putAndGetStoreTest(_), "blob", "blob")
 
-  property("MySqlStore text->blob") =
+  propertyCached("MySqlStore text->blob") =
     withStore(putAndGetStoreTest(_), "text", "blob")
 
-  property("MySqlStore text->text multiget") =
+  propertyCached("MySqlStore text->text multiget") =
     withStore(multiPutAndMultiGetStoreTest(_), "text", "text", multiGet = true)
 
-  property("MySqlStore blob->blob multiget") =
+  propertyCached("MySqlStore blob->blob multiget") =
     withStore(multiPutAndMultiGetStoreTest(_), "blob", "blob", multiGet = true)
 
-  property("MySqlStore text->blob multiget") =
+  propertyCached("MySqlStore text->blob multiget") =
     withStore(multiPutAndMultiGetStoreTest(_), "text", "blob", multiGet = true)
 
-  property("MySqlStore int->int") =
+  propertyCached("MySqlStore int->int") =
     withStore(putAndGetStoreTest(_, NonEmpty.Pairing.numerics[Int]()), "int", "int")
 
-  property("MySqlStore int->int multiget") =
+  propertyCached("MySqlStore int->int multiget") =
     withStore(multiPutAndMultiGetStoreTest(_, NonEmpty.Pairing.numerics[Int]()),
       "int", "int", multiGet = true)
 
-  property("MySqlStore bigint->bigint") =
+  propertyCached("MySqlStore bigint->bigint") =
     withStore(putAndGetStoreTest(_, NonEmpty.Pairing.numerics[Long]()), "bigint", "bigint")
 
-  property("MySqlStore bigint->bigint multiget") =
+  propertyCached("MySqlStore bigint->bigint multiget") =
     withStore(multiPutAndMultiGetStoreTest(_, NonEmpty.Pairing.numerics[Long]()),
       "bigint", "bigint", multiGet = true)
 
-  property("MySqlStore smallint->smallint") =
+  propertyCached("MySqlStore smallint->smallint") =
     withStore(putAndGetStoreTest(_, NonEmpty.Pairing.numerics[Short]()), "smallint", "smallint")
 
-  property("MySqlStore smallint->smallint multiget") =
+  propertyCached("MySqlStore smallint->smallint multiget") =
     withStore(multiPutAndMultiGetStoreTest(_, NonEmpty.Pairing.numerics[Short]()),
       "smallint", "smallint", multiGet = true)
 

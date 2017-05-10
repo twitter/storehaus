@@ -16,17 +16,30 @@
 
 package com.twitter.storehaus.mysql
 
-import com.twitter.finagle.exp.Mysql
-import com.twitter.finagle.exp.mysql.Client
+import com.twitter.finagle.Mysql
+import com.twitter.finagle.mysql.Client
 import com.twitter.storehaus.testing.SelfAggregatingCloseableCleanup
 import com.twitter.storehaus.testing.generator.NonEmpty
-import com.twitter.util.{Future, Await}
-
-import org.scalacheck.{Prop, Gen, Properties}
+import com.twitter.util.{Await, Future}
+import org.scalacheck.{Gen, Prop, Properties}
 import org.scalacheck.Prop.forAll
+
+
 
 object MySqlLongStoreProperties extends Properties("MySqlLongStore")
   with SelfAggregatingCloseableCleanup[MySqlLongStore] {
+
+  private[this] class PropertyCached(ps: PropertySpecifier) {
+    def update(propName: String, p: Prop) = {
+      ps(propName) = p
+    }
+  }
+
+  /**
+   * Property specification is used by name since scalacheck 1.13.4, which breaks
+   * tests here. This simulates the old behavior.
+   */
+  private[this] val propertyCached = new PropertyCached(property)
 
   def put(s: MySqlLongStore, pairs: List[(MySqlValue, Option[Long])]): Unit = {
     pairs.foreach { case (k, v) =>
@@ -89,10 +102,11 @@ object MySqlLongStoreProperties extends Properties("MySqlLongStore")
     isMatch
   }
 
-  property("MySqlLongStore put and get") =
+
+  propertyCached("MySqlLongStore put and get") =
     withStore(putAndGetStoreTest(_), "text", "bigint")
 
-  property("MySqlLongStore multiMerge") =
+  propertyCached("MySqlLongStore multiMerge") =
     withStore(multiMergeStoreTest(_), "text", "bigint", merge = true)
 
   private def withStore[T](f: MySqlLongStore => T, kColType: String, vColType: String,
