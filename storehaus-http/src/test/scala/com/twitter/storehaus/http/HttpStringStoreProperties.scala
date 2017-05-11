@@ -16,19 +16,17 @@
 
 package com.twitter.storehaus.http
 
-import java.util.concurrent.ConcurrentHashMap
 import java.nio.charset.Charset
-import com.twitter.finagle.http.compat.NettyAdaptor
-import org.jboss.netty.buffer.ChannelBuffers
-import org.jboss.netty.handler.codec.http.{ HttpRequest, HttpResponse, DefaultHttpResponse,
-  HttpResponseStatus, HttpMethod, HttpHeaders }
-import com.twitter.util.{ Await, Future }
-import com.twitter.finagle.{ Service, Http, ListeningServer }
-import com.twitter.storehaus.{ FutureOps, Store }
+import java.util.concurrent.ConcurrentHashMap
+
+import com.twitter.finagle.http.{Method, Request, Response, Status}
+import com.twitter.finagle.{Http, ListeningServer, Service}
 import com.twitter.storehaus.testing.CloseableCleanup
 import com.twitter.storehaus.testing.generator.NonEmpty
-import org.scalacheck.{Prop, Arbitrary, Gen, Properties}
+import com.twitter.storehaus.{FutureOps, Store}
+import com.twitter.util.{Await, Future}
 import org.scalacheck.Prop._
+import org.scalacheck.{Arbitrary, Gen, Prop, Properties}
 
 object HttpStringStoreProperties
     extends Properties("HttpStringStore") with CloseableCleanup[ListeningServer] {
@@ -64,47 +62,43 @@ object HttpStringStoreProperties
   def storeTest(store: Store[String, String]): Prop =
     putStoreTest(store, validPairs) && multiPutStoreTest(store, validPairs)
 
-  val service = new Service[HttpRequest, HttpResponse] {
+  val service = new Service[Request, Response] {
     private val map = new ConcurrentHashMap[String, String]()
     private val utf8 = Charset.forName("UTF-8")
 
-    def apply(request: HttpRequest): Future[HttpResponse] = {
-      val response = request.getMethod match {
-        case HttpMethod.GET =>
-          Option(map.get(request.getUri)).map{ v =>
-            val resp = new DefaultHttpResponse(request.getProtocolVersion, HttpResponseStatus.OK)
-            val content = ChannelBuffers.wrappedBuffer(v.getBytes(utf8))
-            resp.setContent(content)
-            resp.headers.set(HttpHeaders.Names.CONTENT_LENGTH, content.readableBytes.toString)
+    def apply(request: Request): Future[Response] = {
+      val response = request.method match {
+        case Method.Get =>
+          Option(map.get(request.uri)).map{ v =>
+            val resp = Response(request.version, Status.Ok)
+            resp.contentString = v
+            resp.contentLength = v.getBytes.size
             resp
           }.getOrElse {
-            val resp =
-              new DefaultHttpResponse(request.getProtocolVersion, HttpResponseStatus.NOT_FOUND)
-            resp.headers.set(HttpHeaders.Names.CONTENT_LENGTH, "0")
+            val resp = Response(request.version, Status.NotFound)
+            resp.contentLength = 0
             resp
           }
-        case HttpMethod.DELETE =>
-          map.remove(request.getUri)
-          val resp =
-            new DefaultHttpResponse(request.getProtocolVersion, HttpResponseStatus.NO_CONTENT)
-          resp.headers.set(HttpHeaders.Names.CONTENT_LENGTH, "0")
+        case Method.Delete =>
+          map.remove(request.uri)
+          val resp = Response(request.version, Status.NoContent)
+          resp.contentLength = 0
           resp
-        case HttpMethod.PUT =>
-          val maybeOldV = Option(map.put(request.getUri, request.getContent.toString(utf8)))
-          val resp = new DefaultHttpResponse(request.getProtocolVersion,
-            maybeOldV.map(_ => HttpResponseStatus.OK).getOrElse(HttpResponseStatus.CREATED))
-          resp.setContent(request.getContent)
-          resp.headers.set(HttpHeaders.Names.CONTENT_LENGTH,
-            request.getContent.readableBytes.toString)
+        case Method.Put =>
+          val maybeOldV = Option(map.put(request.uri, request.contentString))
+          val resp = Response(request.version,
+            maybeOldV.map(_ => Status.Ok).getOrElse(Status.Created))
+          resp.content = request.content
+          resp.contentLength = request.content.length
           resp
         case _ =>
-          new DefaultHttpResponse(request.getProtocolVersion, HttpResponseStatus.METHOD_NOT_ALLOWED)
+          Response(request.version, Status.MethodNotAllowed)
       }
       Future.value(response)
     }
   }
 
-  val server = Http.serve("localhost:0", NettyAdaptor andThen service)
+  val server = Http.serve("localhost:0", service)
 
   // i dont know how else to convert boundAddress into something usable
   val store = HttpStringStore(server.boundAddress.toString.substring(1))

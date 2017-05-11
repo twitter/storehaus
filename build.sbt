@@ -188,10 +188,10 @@ lazy val noPublishSettings = Seq(
 
 val algebirdVersion = "0.13.0"
 val bijectionVersion = "0.9.5"
-val utilVersion = "6.41.0"
+val utilVersion = "6.43.0"
 
 val scaldingVersion = "0.17.0"
-val finagleVersion = "6.41.0"
+val finagleVersion = "6.43.0"
 val scalatestVersion = "3.0.1"
 val scalaCheckVersion = "1.13.4"
 
@@ -368,7 +368,6 @@ lazy val storehausBenchmark = module("benchmark")
 lazy val storehausHttp = module("http").settings(
   libraryDependencies ++= Seq(
     "com.twitter" %% "finagle-http" % finagleVersion,
-    "com.twitter" %% "finagle-http-compat" % finagleVersion,
     "com.twitter" %% "bijection-netty" % bijectionVersion
   )
 ).dependsOn(storehausCore)
