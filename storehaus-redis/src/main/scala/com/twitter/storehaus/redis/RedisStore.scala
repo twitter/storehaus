@@ -40,7 +40,7 @@ object RedisStore {
   def apply(client: Client, ttl: Option[Duration] = Default.TTL): RedisStore =
     new RedisStore(client, ttl)
 
-  def toChannelBufferStore(store: Store[Buf, Buf]) : Store[ChannelBuffer, ChannelBuffer] = {
+  def toChannelBufferStore(store: Store[Buf, Buf]): Store[ChannelBuffer, ChannelBuffer] = {
     implicit val bij = ChannelBuffer2BufBijection
     store.convert(ChannelBuffer2BufBijection.apply)
   }

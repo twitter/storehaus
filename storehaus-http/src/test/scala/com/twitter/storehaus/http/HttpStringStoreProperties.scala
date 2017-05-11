@@ -72,7 +72,7 @@ object HttpStringStoreProperties
           Option(map.get(request.uri)).map{ v =>
             val resp = Response(request.version, Status.Ok)
             resp.contentString = v
-            resp.contentLength = v.getBytes.size
+            resp.contentLength = v.getBytes(utf8).size
             resp
           }.getOrElse {
             val resp = Response(request.version, Status.NotFound)

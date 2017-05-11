@@ -40,9 +40,10 @@ case class HttpException(code: Int, reasonPhrase: String, content: String)
 object HttpStore {
   def apply(dest: String): HttpStore = new HttpStore(Http.newService(dest))
 
-  def toChannelBufferStore(store: Store[Buf, Buf]) : Store[ChannelBuffer, ChannelBuffer] = {
+  // Here for backward compatibility, you probably don't want to use it in new code
+  def toChannelBufferStore(store: Store[Buf, Buf]): Store[String, ChannelBuffer] = {
     implicit val bij = ChannelBuffer2BufBijection
-    store.convert(ChannelBuffer2BufBijection.apply)
+    store.convert(Buf.Utf8(_))
   }
 }
 
