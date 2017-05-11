@@ -192,7 +192,7 @@ val bijectionVersion = "0.9.5"
 val utilVersion = "6.43.0"
 
 val scaldingVersion = "0.17.0"
-val finagleVersion = "6.44.0"
+val finagleVersion = "6.43.0"
 val scalatestVersion = "3.0.1"
 val scalaCheckVersion = "1.13.4"
 
