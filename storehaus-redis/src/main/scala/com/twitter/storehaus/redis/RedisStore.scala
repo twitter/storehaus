@@ -40,13 +40,14 @@ object RedisStore {
   def apply(client: Client, ttl: Option[Duration] = Default.TTL): RedisStore =
     new RedisStore(client, ttl)
 
-  def toChannelBufferStore(store: Store[Buf, Buf]) : Store[ChannelBuffer, ChannelBuffer] = {
-    implicit val bij = ChannelBuffer2BufInjection
-    store.convert(ChannelBuffer2BufInjection.apply)
+  def toChannelBufferStore(store: Store[Buf, Buf]): Store[ChannelBuffer, ChannelBuffer] = {
+    implicit val bij = ChannelBuffer2BufBijection
+    store.convert(ChannelBuffer2BufBijection.apply)
   }
 }
 
-object ChannelBuffer2BufInjection extends Bijection[ChannelBuffer, Buf] {
+// todo: This also exists in storehaus-http, remove duplication
+object ChannelBuffer2BufBijection extends Bijection[ChannelBuffer, Buf] {
   def apply(c: ChannelBuffer): Buf = ChannelBufferBuf.newOwned(c)
   override def invert(m: Buf): ChannelBuffer = ChannelBufferBuf.Owned.extract(m)
 }
