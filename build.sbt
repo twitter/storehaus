@@ -82,7 +82,8 @@ val ignoredABIProblems = {
     exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.redis.RedisSetStore.get"),
     exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.redis.RedisSetStore.delete"),
     exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.redis.RedisSortedSetStore.get"),
-    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.redis.RedisSortedSetStore.members")
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.redis.RedisSortedSetStore.members"),
+    exclude[IncompatibleMethTypeProblem]("com.twitter.storehaus.http.HttpException.apply")
   )
 }
 
