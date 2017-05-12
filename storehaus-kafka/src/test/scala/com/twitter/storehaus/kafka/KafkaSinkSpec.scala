@@ -29,6 +29,9 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
   private var consumer: KafkaConsumer[String, String] = _
   private val pollTimeoutMs = 60000
 
+  private val KafkaDelay = 1000
+  private def block(duration: Long): Unit = Thread.sleep(duration)
+
   override protected def beforeAll(): Unit = {
     ktu = new KafkaTestUtils
     ktu.setup()
@@ -76,6 +79,7 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
       val futures = (1 to 10).map(i => sink.write()(("key", i.toString)))
 
       Await.result(Future.collect(futures))
+      block(KafkaDelay)
       val records = consumer.poll(pollTimeoutMs).asScala
       records should have size 10
       records.zip(1 to 10).foreach { case (record, expectedValue) =>
@@ -94,6 +98,7 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
       val futures = (1 to 10).map(i => sink.write()(("key", i.toString)))
 
       Await.result(Future.collect(futures))
+      block(KafkaDelay)
       val records = consumer.poll(pollTimeoutMs).asScala
       records.size shouldBe 5
       records.zip((1 to 10).filter(i => i % 2 == 0)).foreach { case (record, expectedValue) =>
