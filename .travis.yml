@@ -4,12 +4,12 @@ matrix:
   include:
     - scala: 2.11.11
       jdk: oraclejdk8
-      script: umask 0022 && ./sbt ++$TRAVIS_SCALA_VERSION clean coverage test coverageReport mimaReportBinaryIssues
+      script: umask 0022 && ./sbt ++$TRAVIS_SCALA_VERSION clean coverage storehaus-kafka/test coverageReport mimaReportBinaryIssues
       after_success:
         - bash <(curl -s https://codecov.io/bash)
     - scala: 2.12.2 
       jdk: oraclejdk8
-      script: umask 0022 && ./sbt ++$TRAVIS_SCALA_VERSION clean coverage test coverageReport mimaReportBinaryIssues
+      script: umask 0022 && ./sbt ++$TRAVIS_SCALA_VERSION clean coverage storehaus-kafka/test coverageReport mimaReportBinaryIssues
       after_success:
         - bash <(curl -s https://codecov.io/bash)
 before_script:
