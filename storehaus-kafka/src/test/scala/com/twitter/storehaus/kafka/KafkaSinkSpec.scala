@@ -52,7 +52,7 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
     var allRecords = Array.empty[ConsumerRecord[String, String]]
     for (i <- 1 to pollTries) {
       val records = consumer.poll(pollTimeoutMs).asScala
-      allRecords = allRecords ++ records.toList
+      allRecords = allRecords ++ records
       if (allRecords.size >= n) {
         return allRecords
       }
