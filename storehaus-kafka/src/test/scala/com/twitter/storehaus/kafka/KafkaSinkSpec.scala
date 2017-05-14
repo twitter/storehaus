@@ -17,7 +17,7 @@
 package com.twitter.storehaus.kafka
 
 import com.twitter.util.{Await, Future}
-import org.apache.kafka.clients.consumer.KafkaConsumer
+import org.apache.kafka.clients.consumer.{ConsumerRecord, KafkaConsumer}
 import org.apache.kafka.common.serialization.{ByteArraySerializer, StringSerializer}
 import org.scalatest.{Matchers, WordSpec, BeforeAndAfterAll}
 
@@ -27,7 +27,9 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
 
   private var ktu: KafkaTestUtils = _
   private var consumer: KafkaConsumer[String, String] = _
-  private val pollTimeoutMs = 60000
+  private val pollTimeoutMs = 1000
+  private val pollTries = 10
+
 
   override protected def beforeAll(): Unit = {
     ktu = new KafkaTestUtils
@@ -46,6 +48,18 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
     }
   }
 
+  private def tryReadAtLeastNRecords(n: Int): Array[ConsumerRecord[String, String]] = {
+    var allRecords = Array.empty[ConsumerRecord[String, String]]
+    for (_ <- 1 to pollTries) {
+      val records = consumer.poll(pollTimeoutMs).asScala
+      allRecords = allRecords ++ records
+      if (allRecords.size >= n) {
+        return allRecords
+      }
+    }
+    allRecords
+  }
+
   "KafkaSink" should {
     "write messages to a kafka topic" in {
       val topic = "topic-" + ktu.random
@@ -57,12 +71,13 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
       val futures = (1 to 10).map(i => sink.write()(("key", i.toString)))
 
       Await.result(Future.collect(futures))
-      val records = consumer.poll(pollTimeoutMs).asScala
+      val records = tryReadAtLeastNRecords(10)
       records.size shouldBe 10
       records.zip(1 to 10).foreach { case (record, expectedValue) =>
         record.key() shouldBe "key"
         record.value() shouldBe expectedValue.toString
       }
+      consumer.unsubscribe()
     }
     "write messages to a kafka topic after having been converted" in {
       val topic = "topic-" + ktu.random
@@ -76,12 +91,13 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
       val futures = (1 to 10).map(i => sink.write()(("key", i.toString)))
 
       Await.result(Future.collect(futures))
-      val records = consumer.poll(pollTimeoutMs).asScala
+      val records = tryReadAtLeastNRecords(10)
       records should have size 10
       records.zip(1 to 10).foreach { case (record, expectedValue) =>
         record.key() shouldBe "key"
         record.value() shouldBe expectedValue.toString
       }
+      consumer.unsubscribe()
     }
     "write messages to a kafka topic after having been filtered" in {
       val topic = "topic-" + ktu.random
@@ -94,12 +110,13 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
       val futures = (1 to 10).map(i => sink.write()(("key", i.toString)))
 
       Await.result(Future.collect(futures))
-      val records = consumer.poll(pollTimeoutMs).asScala
+      val records = tryReadAtLeastNRecords(5)
       records.size shouldBe 5
       records.zip((1 to 10).filter(i => i % 2 == 0)).foreach { case (record, expectedValue) =>
         record.key() shouldBe "key"
         record.value() shouldBe expectedValue.toString
       }
+      consumer.unsubscribe()
     }
   }
 }
