@@ -67,6 +67,7 @@ class KafkaAvroSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
         record.key() shouldBe "key"
         record.value().getValue shouldBe expectedValue
       }
+      consumer.unsubscribe()
     }
   }
 }

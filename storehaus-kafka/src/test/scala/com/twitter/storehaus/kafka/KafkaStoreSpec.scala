@@ -58,6 +58,7 @@ class KafkaStoreSpec extends WordSpec with Matchers with BeforeAndAfterAll {
       val records = consumer.poll(pollTimeoutMs).asScala
       records should have size 1
       records.head.value() shouldBe "testValue"
+      consumer.unsubscribe()
     }
 
     "put a value in a topic and retrieve its metadata" in {
@@ -74,6 +75,7 @@ class KafkaStoreSpec extends WordSpec with Matchers with BeforeAndAfterAll {
       recordMetadata.topic() shouldBe topic
       recordMetadata.offset() shouldBe 0L
       recordMetadata.partition() shouldBe 0
+      consumer.unsubscribe()
     }
 
     "put multiple values in a topic" in {
@@ -93,6 +95,7 @@ class KafkaStoreSpec extends WordSpec with Matchers with BeforeAndAfterAll {
       val records = consumer.poll(pollTimeoutMs).asScala
       records should have size 3
       records.map(_.value()) shouldBe map.values.toSeq
+      consumer.unsubscribe()
     }
 
     "set the ex in the future if a problem occurred" in {
@@ -106,6 +109,7 @@ class KafkaStoreSpec extends WordSpec with Matchers with BeforeAndAfterAll {
       intercept[Exception] {
         Await.result(store.put(("testKey", "testValue")))
       }
+      consumer.unsubscribe()
     }
   }
 }

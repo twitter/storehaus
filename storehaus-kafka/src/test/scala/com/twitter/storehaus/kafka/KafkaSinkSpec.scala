@@ -50,7 +50,7 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
 
   private def tryReadAtLeastNRecords(n: Int): Array[ConsumerRecord[String, String]] = {
     var allRecords = Array.empty[ConsumerRecord[String, String]]
-    for (i <- 1 to pollTries) {
+    for (_ <- 1 to pollTries) {
       val records = consumer.poll(pollTimeoutMs).asScala
       allRecords = allRecords ++ records
       if (allRecords.size >= n) {
@@ -77,6 +77,7 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
         record.key() shouldBe "key"
         record.value() shouldBe expectedValue.toString
       }
+      consumer.unsubscribe()
     }
     "write messages to a kafka topic after having been converted" in {
       val topic = "topic-" + ktu.random
@@ -96,6 +97,7 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
         record.key() shouldBe "key"
         record.value() shouldBe expectedValue.toString
       }
+      consumer.unsubscribe()
     }
     "write messages to a kafka topic after having been filtered" in {
       val topic = "topic-" + ktu.random
@@ -114,6 +116,7 @@ class KafkaSinkSpec extends WordSpec with Matchers with BeforeAndAfterAll {
         record.key() shouldBe "key"
         record.value() shouldBe expectedValue.toString
       }
+      consumer.unsubscribe()
     }
   }
 }
