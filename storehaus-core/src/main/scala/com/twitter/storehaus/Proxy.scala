@@ -53,7 +53,7 @@ import com.twitter.util.{ Future, Time }
  *
  *  @author Doug Tangren
  */
-trait Proxied[T] {
+trait Proxied[+T] {
   protected def self: T
 }
 
