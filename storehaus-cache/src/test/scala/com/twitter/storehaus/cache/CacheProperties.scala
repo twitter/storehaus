@@ -18,7 +18,7 @@ package com.twitter.storehaus.cache
 
 import org.scalacheck.{Prop, Arbitrary, Properties}
 import org.scalacheck.Prop._
-import com.twitter.conversions.time._
+import com.twitter.util.Duration
 
 object CacheProperties extends Properties("Cache") {
   /**
@@ -62,5 +62,5 @@ object CacheProperties extends Properties("Cache") {
 
   property("LRUCache obeys the cache laws") = cacheLaws(LRUCache[String, Int](10))
   property("LIRSCache obeys the cache laws") = cacheLaws(LIRSCache[String, Int](10, .8))
-  property("TTLCache obeys the cache laws") = cacheLaws(TTLCache[String, Int](10.milliseconds))
+  property("TTLCache obeys the cache laws") = cacheLaws(TTLCache[String, Int](Duration.fromMilliseconds(10)))
 }

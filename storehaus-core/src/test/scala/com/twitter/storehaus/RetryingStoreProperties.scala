@@ -16,8 +16,7 @@
 
 package com.twitter.storehaus
 
-import com.twitter.conversions.time._
-import com.twitter.util.{JavaTimer, Timer}
+import com.twitter.util.{Duration, JavaTimer, Timer}
 
 import org.scalacheck.Properties
 
@@ -31,7 +30,7 @@ object RetryingStoreProperties extends Properties("RetryingStore") {
     storeTest[String, Int] {
       Store.withRetry[String, Int](
         store = new ConcurrentHashMapStore[String, Int](),
-        backoffs = for (i <- 0 until 3) yield 1.milliseconds
+        backoffs = for (i <- 0 until 3) yield Duration.fromMilliseconds(1)
       )(_ => true)
     }
 }

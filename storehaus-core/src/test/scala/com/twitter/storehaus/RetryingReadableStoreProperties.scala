@@ -16,7 +16,6 @@
 
 package com.twitter.storehaus
 
-import com.twitter.conversions.time._
 import com.twitter.util.{JavaTimer, Timer}
 import java.util.Random
 import org.scalacheck.Properties
@@ -39,7 +38,7 @@ object RetryingReadableStoreProperties extends Properties("RetryingStore") {
     readableStoreLaws[Int, String] { m =>
       ReadableStore.withRetry(
         store = ReadableStore.fromFn(fromMapWithRandomLatency(2)(m)),
-        backoffs = for (i <- 0 until 3) yield 1.milliseconds
+        backoffs = for (i <- 0 until 3) yield Duration.fromMilliseconds(1)
       )(_ => true)
     }
 }
