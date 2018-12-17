@@ -14,7 +14,7 @@ matrix:
         - bash <(curl -s https://codecov.io/bash)
 before_script:
   - sleep 15 # https://docs.travis-ci.com/user/database-setup/#MongoDB
-  - mongo mydb_test --eval 'db.addUser("travis", "test");'
+  - mongo mydb_test --eval 'db.createUser({user:"travis",pwd:"test",roles:["readWrite"]});'
   - mysql -u root -e "create database storehaus_test;"
   - mysql -u root -e "create user 'storehaususer'@'localhost' identified by 'test1234';"
   - mysql -u root -e "grant all on storehaus_test.* to 'storehaususer'@'localhost';"
