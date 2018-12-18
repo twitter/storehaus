@@ -13,6 +13,7 @@ matrix:
       after_success:
         - bash <(curl -s https://codecov.io/bash)
 before_install:
+  - sudo cat /etc/hosts 
   - sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
   - sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1
 before_script:
