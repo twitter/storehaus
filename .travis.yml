@@ -12,6 +12,8 @@ matrix:
       script: umask 0022 && ./sbt ++$TRAVIS_SCALA_VERSION clean coverage test coverageReport mimaReportBinaryIssues
       after_success:
         - bash <(curl -s https://codecov.io/bash)
+before_install:
+  - sudo sed -i 's/127.0.1.1/127.0.0.1/' /etc/hosts
 before_script:
   - sleep 15 # https://docs.travis-ci.com/user/database-setup/#MongoDB
   - mongo mydb_test --eval 'db.createUser({user:"travis",pwd:"test",roles:["readWrite"]});'
