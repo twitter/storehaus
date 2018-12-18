@@ -16,7 +16,7 @@
 
 package com.twitter.storehaus
 
-import com.twitter.util.{JavaTimer, Timer}
+import com.twitter.util.{Duration, JavaTimer, Timer}
 import java.util.Random
 import org.scalacheck.Properties
 
