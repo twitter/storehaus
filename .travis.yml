@@ -4,7 +4,7 @@ matrix:
   include:
     - scala: 2.11.11
       jdk: oraclejdk8
-      script: umask 0022 && ./sbt ++$TRAVIS_SCALA_VERSION "; project storehaus-hbase; test"
+      script: umask 0022 && ./sbt ++$TRAVIS_SCALA_VERSION -J-Djava.net.preferIPv4Stack=true "; project storehaus-hbase; test"
       after_success:
         - bash <(curl -s https://codecov.io/bash)
     - scala: 2.12.2 
