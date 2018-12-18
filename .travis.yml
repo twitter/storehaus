@@ -1,5 +1,5 @@
 language: scala
-sudo: false
+sudo: true
 matrix:
   include:
     - scala: 2.11.11
@@ -12,6 +12,9 @@ matrix:
       script: umask 0022 && ./sbt ++$TRAVIS_SCALA_VERSION clean coverage test coverageReport mimaReportBinaryIssues
       after_success:
         - bash <(curl -s https://codecov.io/bash)
+before_install:
+  - sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
+  - sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1
 before_script:
   - sleep 15 # https://docs.travis-ci.com/user/database-setup/#MongoDB
   - mongo mydb_test --eval 'db.createUser({user:"travis",pwd:"test",roles:["readWrite"]});'
