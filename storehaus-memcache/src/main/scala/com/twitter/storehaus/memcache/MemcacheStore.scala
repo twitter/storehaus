@@ -19,7 +19,6 @@ package com.twitter.storehaus.memcache
 import com.twitter.algebird.Semigroup
 import com.twitter.bijection.{Codec, Injection}
 import com.twitter.bijection.netty.Implicits._
-import com.twitter.conversions.time._
 import com.twitter.finagle.builder.ClientBuilder
 import com.twitter.finagle.memcached.KetamaClientBuilder
 import com.twitter.finagle.memcached.protocol.text.Memcached
@@ -31,6 +30,7 @@ import com.twitter.storehaus.algebra.MergeableStore
 import org.jboss.netty.buffer.ChannelBuffer
 import Store.enrich
 import com.twitter.finagle.transport.Transport
+import java.util.concurrent.TimeUnit
 
 /**
  *  @author Oscar Boykin
@@ -43,7 +43,7 @@ object MemcacheStore {
   // Default Memcached TTL is one day.
   // For more details of setting expiration time for items in Memcached, please refer to
   // https://github.com/memcached/memcached/blob/master/doc/protocol.txt#L79
-  val DEFAULT_TTL = 1.day
+  val DEFAULT_TTL = Duration(1, TimeUnit.DAYS)
 
   // This flag used on "set" operations. Search this page for "flag"
   // for more info on the following variable:
@@ -51,7 +51,7 @@ object MemcacheStore {
   val DEFAULT_FLAG = 0
 
   val DEFAULT_CONNECTION_LIMIT = 1
-  val DEFAULT_TIMEOUT = 1.seconds
+  val DEFAULT_TIMEOUT = Duration(1, TimeUnit.SECONDS)
   val DEFAULT_RETRIES = 2
 
   def apply(

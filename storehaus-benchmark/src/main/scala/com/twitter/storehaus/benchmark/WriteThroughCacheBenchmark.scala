@@ -3,7 +3,6 @@ package benchmark
 
 
 import com.twitter.bijection._
-import com.twitter.conversions.time._
 import com.twitter.algebird._
 import com.twitter.storehaus.cache.{
   RollOverFrequencyMS, WriteOperationUpdateFrequency,
@@ -16,21 +15,21 @@ import org.openjdk.jmh.annotations._
 
 class DelayedStore[K, V](val self: Store[K, V])(implicit timer: Timer) extends StoreProxy[K, V] {
   override def put(kv: (K, Option[V])): Future[Unit] = {
-    self.put(kv).delayed(10.milliseconds)
+    self.put(kv).delayed(Duration.fromMilliseconds(10))
   }
 
   override def get(kv: K): Future[Option[V]] = {
-    self.get(kv).delayed(10.milliseconds)
+    self.get(kv).delayed(Duration.fromMilliseconds(10))
   }
 
   override def multiGet[K1 <: K](ks: Set[K1]): Map[K1, Future[Option[V]]] =
     self.multiGet(ks).map { case (k, v) =>
-      (k, v.delayed(10.milliseconds))
+      (k, v.delayed(Duration.fromMilliseconds(10)))
     }
 
   override def multiPut[K1 <: K](kvs: Map[K1, Option[V]]): Map[K1, Future[Unit]] =
     self.multiPut(kvs).map { case (k, v) =>
-      (k, v.delayed(10.milliseconds))
+      (k, v.delayed(Duration.fromMilliseconds(10)))
     }
 }
 

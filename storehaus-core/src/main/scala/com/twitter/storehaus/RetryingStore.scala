@@ -16,7 +16,6 @@
 
 package com.twitter.storehaus
 
-import com.twitter.conversions.time._
 import com.twitter.util._
 
 /**
@@ -57,7 +56,7 @@ class RetryingStore[-K, V](
   (implicit timer: Timer)
   extends RetryingReadableStore[K, V](store, backoffs)(pred) with Store[K, V] {
 
-  private val paddedBackoffs = backoffs ++ Seq(0.second)
+  private val paddedBackoffs = backoffs ++ Seq(Duration.Zero)
 
   private def find[T](futures: Iterator[(Future[T], Duration)])(pred: T => Boolean): Future[T] = {
     if (!futures.hasNext) {
