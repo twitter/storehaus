@@ -20,8 +20,6 @@ import com.twitter.algebird.Semigroup
 import com.twitter.bijection.{Codec, Injection}
 import com.twitter.bijection.netty.Implicits._
 import com.twitter.finagle.builder.ClientBuilder
-import com.twitter.finagle.memcached.KetamaClientBuilder
-import com.twitter.finagle.memcached.protocol.text.Memcached
 import com.twitter.finagle.netty3.{BufChannelBuffer, ChannelBufferBuf}
 import com.twitter.util.{Duration, Future, Time}
 import com.twitter.finagle.memcached.Client
@@ -58,29 +56,6 @@ object MemcacheStore {
       client: Client, ttl: Duration = DEFAULT_TTL, flag: Int = DEFAULT_FLAG): MemcacheStore =
     new MemcacheStore(client, ttl, flag)
 
-  def defaultClient(
-    name: String,
-    nodeString: String,
-    retries: Int = DEFAULT_RETRIES,
-    timeout: Duration = DEFAULT_TIMEOUT,
-    hostConnectionLimit: Int = DEFAULT_CONNECTION_LIMIT): Client = {
-    val builder = ClientBuilder()
-      .name(name)
-      .retries(retries)
-      .tcpConnectTimeout(timeout)
-      .requestTimeout(timeout)
-      .connectTimeout(timeout)
-      .hostConnectionLimit(hostConnectionLimit)
-      .codec(Memcached())
-
-    val liveness = builder.params[Transport.Liveness].copy(readTimeout = timeout)
-    val liveBuilder = builder.configured(liveness)
-
-    KetamaClientBuilder()
-      .clientBuilder(liveBuilder)
-      .nodes(nodeString)
-      .build()
-  }
 
   /**
     * Returns a Memcache-backed Store[K, V] that uses
@@ -150,5 +125,5 @@ class MemcacheStore(val client: Client, val ttl: Duration, val flag: Int)
       case (key, None) => client.delete(key).unit
     }
 
-  override def close(t: Time): Future[Unit] = Future(client.release())
+  override def close(t: Time): Future[Unit] = Future(client.close())
 }
