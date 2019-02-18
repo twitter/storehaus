@@ -19,7 +19,7 @@ package com.twitter.storehaus.memcache
 import com.twitter.algebird.Semigroup
 import com.twitter.bijection.Injection
 import com.twitter.bijection.netty.ChannelBufferBijection
-import com.twitter.finagle.memcached.Client
+import com.twitter.finagle.Memcached
 import com.twitter.storehaus.testing.SelfAggregatingCloseableCleanup
 import com.twitter.storehaus.testing.generator.NonEmpty
 import com.twitter.util.{Future, Await}
@@ -87,7 +87,7 @@ object MergeableMemcacheStoreProperties extends Properties("MergeableMemcacheSto
 
   property("MergeableMemcacheStore put, get and merge") = {
     implicit val cb2ary = ChannelBufferBijection
-    val client = Client("localhost:11211")
+    val client = Memcached.client.newRichClient("localhost:11211")
     val injection = Injection.connect[Long, String, Array[Byte], ChannelBuffer]
     val semigroup = implicitly[Semigroup[Long]]
     val store = MergeableMemcacheStore[String, Long](client)(identity)(injection, semigroup)
