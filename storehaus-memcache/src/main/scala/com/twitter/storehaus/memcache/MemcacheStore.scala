@@ -19,9 +19,6 @@ package com.twitter.storehaus.memcache
 import com.twitter.algebird.Semigroup
 import com.twitter.bijection.{Codec, Injection}
 import com.twitter.bijection.netty.Implicits._
-import com.twitter.finagle.builder.ClientBuilder
-import com.twitter.finagle.memcached.KetamaClientBuilder
-import com.twitter.finagle.memcached.protocol.text.Memcached
 import com.twitter.finagle.netty3.{BufChannelBuffer, ChannelBufferBuf}
 import com.twitter.util.{Duration, Future, Time}
 import com.twitter.finagle.memcached.Client
@@ -29,6 +26,10 @@ import com.twitter.storehaus.{FutureOps, Store, WithPutTtl}
 import com.twitter.storehaus.algebra.MergeableStore
 import org.jboss.netty.buffer.ChannelBuffer
 import Store.enrich
+import com.twitter.finagle.client.DefaultPool
+import com.twitter.finagle.Memcached
+import com.twitter.finagle.factory.TimeoutFactory
+import com.twitter.finagle.service.{Retries, RetryPolicy, TimeoutFilter}
 import com.twitter.finagle.transport.Transport
 import java.util.concurrent.TimeUnit
 
@@ -64,22 +65,18 @@ object MemcacheStore {
     retries: Int = DEFAULT_RETRIES,
     timeout: Duration = DEFAULT_TIMEOUT,
     hostConnectionLimit: Int = DEFAULT_CONNECTION_LIMIT): Client = {
-    val builder = ClientBuilder()
-      .name(name)
-      .retries(retries)
-      .tcpConnectTimeout(timeout)
-      .requestTimeout(timeout)
+
+    Memcached.client
+      .withLabel(name)
+      .withRequestTimeout(timeout)
+      .withTransport
       .connectTimeout(timeout)
-      .hostConnectionLimit(hostConnectionLimit)
-      .codec(Memcached())
-
-    val liveness = builder.params[Transport.Liveness].copy(readTimeout = timeout)
-    val liveBuilder = builder.configured(liveness)
-
-    KetamaClientBuilder()
-      .clientBuilder(liveBuilder)
-      .nodes(nodeString)
-      .build()
+      .configured(Retries.Policy(RetryPolicy.tries(retries)))
+      .configured(TimeoutFilter.Param(timeout))
+      .configured(TimeoutFactory.Param(timeout))
+      .configured(Transport.Liveness.param.default.copy(readTimeout = timeout))
+      .configured(DefaultPool.Param.param.default.copy(high = hostConnectionLimit))
+      .newTwemcacheClient(nodeString)
   }
 
   /**
@@ -150,5 +147,5 @@ class MemcacheStore(val client: Client, val ttl: Duration, val flag: Int)
       case (key, None) => client.delete(key).unit
     }
 
-  override def close(t: Time): Future[Unit] = Future(client.release())
+  override def close(t: Time): Future[Unit] = Future(client.close())
 }

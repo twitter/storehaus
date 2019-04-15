@@ -44,7 +44,7 @@ val sharedSettings = extraSettings ++ ciSettings ++ Seq(
     "Conjars Repository" at "http://conjars.org/repo",
     // this repo is needed to retrieve the excluded dependencies from storehaus-memcache
     // during mima checks
-    "Twitter Maven" at "http://maven.twttr.com"
+    "Twitter Maven" at "https://maven.twttr.com"
   ),
   parallelExecution in Test := true,
   scalacOptions ++= Seq(
@@ -133,10 +133,10 @@ lazy val noPublishSettings = Seq(
 
 val algebirdVersion = "0.13.0"
 val bijectionVersion = "0.9.5"
-val utilVersion = "6.43.0"
+val utilVersion = "7.0.0"
 
 val scaldingVersion = "0.17.0"
-val finagleVersion = "6.43.0"
+val finagleVersion = "7.0.0"
 val scalatestVersion = "3.0.1"
 val scalaCheckVersion = "1.13.4"
 
@@ -206,14 +206,18 @@ lazy val storehausMemcache = module("memcache").settings(
 ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
 lazy val storehausMySQL = module("mysql").settings(
-  libraryDependencies += "com.twitter" %% "finagle-mysql" % finagleVersion
+  libraryDependencies ++= Seq(
+    "com.twitter" %% "finagle-mysql" % finagleVersion,
+    "com.twitter" %% "finagle-netty3" % finagleVersion
+  )
 ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
 lazy val storehausRedis = module("redis").settings(
   libraryDependencies ++= Seq (
     "com.twitter" %% "bijection-core" % bijectionVersion,
     "com.twitter" %% "bijection-netty" % bijectionVersion,
-    "com.twitter" %% "finagle-redis" % finagleVersion
+    "com.twitter" %% "finagle-redis" % finagleVersion,
+    "com.twitter" %% "finagle-netty3" % finagleVersion
   ),
   // we don't want various tests clobbering each others keys
   parallelExecution in Test := false
