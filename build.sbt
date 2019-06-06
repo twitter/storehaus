@@ -41,7 +41,7 @@ val sharedSettings = extraSettings ++ ciSettings ++ Seq(
   resolvers ++= Seq(
     Opts.resolver.sonatypeSnapshots,
     Opts.resolver.sonatypeReleases,
-    "Conjars Repository" at "http://conjars.org/repo",
+    "Conjars Repository" at "https://conjars.org/repo",
     // this repo is needed to retrieve the excluded dependencies from storehaus-memcache
     // during mima checks
     "Twitter Maven" at "https://maven.twttr.com"
