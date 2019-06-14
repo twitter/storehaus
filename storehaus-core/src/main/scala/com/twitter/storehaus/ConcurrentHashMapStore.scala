@@ -16,6 +16,7 @@
 
 package com.twitter.storehaus
 
+import com.twitter.util.Future
 import java.util.concurrent.{ ConcurrentHashMap => JConcurrentHashMap }
 
 /** A simple JMapStore whose underlying store is a Java ConcurrentHashMap
@@ -26,6 +27,26 @@ import java.util.concurrent.{ ConcurrentHashMap => JConcurrentHashMap }
  *  @author Oscar Boykin
  *  @author Sam Ritchie
  */
+
+class ConcurrentUpdateException[K](val key: K) extends RuntimeException("Concurrent modification of " + key)
+
 class ConcurrentHashMapStore[K, V] extends JMapStore[K, V] {
   protected override val jstore = new JConcurrentHashMap[K, Option[V]]
+
+  override def update(k : K)(fn : Option[V] => Option[V]) = {
+    val original = storeGet(k)
+    val updated = fn(original)
+    val success =
+      (original, updated) match {
+        case (Some(_), Some(_)) => jstore.replace(k, original, updated)
+        case (Some(_), None) => jstore.remove(k, original)
+        case (None, Some(_)) => jstore.putIfAbsent(k, updated) == null
+        case (None, None) => !jstore.containsKey(k)
+      }
+
+    if(success)
+      Future.Unit
+    else
+      Future.exception(new ConcurrentUpdateException(k))
+  }
 }

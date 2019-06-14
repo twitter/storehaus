@@ -25,7 +25,7 @@ import java.util.{ Map => JMap, HashMap => JHashMap }
  *  @author Oscar Boykin
  *  @author Sam Ritchie
  */
-class JMapStore[K, V] extends Store[K, V] {
+class JMapStore[K, V] extends UpdatableStore[K, V] {
   protected val jstore: JMap[K, Option[V]] = new JHashMap[K, Option[V]]()
   protected def storeGet(k: K): Option[V] = {
     val stored = jstore.get(k)
@@ -37,4 +37,6 @@ class JMapStore[K, V] extends Store[K, V] {
     if (kv._2.isEmpty) jstore.remove(kv._1) else jstore.put(kv._1, kv._2)
     Future.Unit
   }
+
+  def update(k : K)(fn : Option[V] => Option[V]) = put((k, fn(storeGet(k))))
 }
