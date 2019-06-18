@@ -62,9 +62,10 @@ trait Cache[K, V] {
    */
   def get(k: K): Option[V]
 
-  /* Returns a pair of Option[K] (representing a key possibly evicted by
-   * new key-value pair) and a new cache containing the supplied
-   * key-value pair. */
+  /* Returns a pair of Set[K] (representing a set of keys possibly
+   * evicted by a new key-value pair) and a new cache containing the
+   * supplied key-value pair. The set of evicted keys will contain
+   * only one element unless the cache is a TTLCache. */
   def put(kv: (K, V)): (Set[K], Cache[K, V])
 
   /* Returns a new cache with the supplied Promotes the supplied key
