@@ -19,14 +19,12 @@ package com.twitter.storehaus.memcache
 import com.twitter.algebird.Semigroup
 import com.twitter.bijection.Injection
 import com.twitter.finagle.memcached.{CasResult, Client}
-import com.twitter.finagle.netty3.{BufChannelBuffer, ChannelBufferBuf}
+import com.twitter.io.Buf
 import com.twitter.storehaus.ConvertedStore
 import com.twitter.storehaus.algebra.MergeableStore
 import com.twitter.util.{Duration, Future}
 
-import org.jboss.netty.buffer.ChannelBuffer
-
-import scala.util.{ Failure, Success }
+import scala.util.{Failure, Success}
 
 /** Factory for [[com.twitter.storehaus.memcache.MergeableMemcacheStore]] instances. */
 object MergeableMemcacheStore {
@@ -47,7 +45,7 @@ object MergeableMemcacheStore {
     flag: Int = MemcacheStore.DEFAULT_FLAG,
     maxRetries: Int = MAX_RETRIES)
     (kfn: K => String)(
-    implicit inj: Injection[V, ChannelBuffer], semigroup: Semigroup[V]
+    implicit inj: Injection[V, Buf], semigroup: Semigroup[V]
   ): MergeableMemcacheStore[K, V] =
     new MergeableMemcacheStore[K, V](
       MemcacheStore(client, ttl, flag), maxRetries)(kfn)(inj, semigroup)
@@ -65,9 +63,9 @@ class MergeFailedException(val key: String)
  * The solution is to group by a hot key, and use only a single (or few) writers to that key.
  */
 class MergeableMemcacheStore[K, V](underlying: MemcacheStore, maxRetries: Int)(kfn: K => String)
-    (implicit inj: Injection[V, ChannelBuffer],
+    (implicit inj: Injection[V, Buf],
     override val semigroup: Semigroup[V])
-  extends ConvertedStore[String, K, ChannelBuffer, V](underlying)(kfn)(inj)
+  extends ConvertedStore[String, K, Buf, V](underlying)(kfn)(inj)
   with MergeableStore[K, V] {
 
   // NOTE: we might want exponential backoff if there are a lot of retries.
@@ -81,10 +79,10 @@ class MergeableMemcacheStore[K, V](underlying: MemcacheStore, maxRetries: Int)(k
       case false => // use 'gets' api to obtain casunique token
         underlying.client.gets(key).flatMap {
           case Some((cbValue, casunique)) =>
-            inj.invert(BufChannelBuffer(cbValue)) match {
+            inj.invert(cbValue) match {
               case Success(v) => // attempt cas
                 val resV = semigroup.plus(v, kv._2)
-                val buf = ChannelBufferBuf.Owned(inj.apply(resV))
+                val buf = inj.apply(resV)
                 underlying.client.checkAndSet(
                   key,
                   underlying.flag,
@@ -99,7 +97,7 @@ class MergeableMemcacheStore[K, V](underlying: MemcacheStore, maxRetries: Int)(k
             }
           // no pre-existing value, try to 'add' it
           case None =>
-            val buf = ChannelBufferBuf.Owned(inj.apply(kv._2))
+            val buf = inj.apply(kv._2)
             underlying.client.add(
               key,
               underlying.flag,

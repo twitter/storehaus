@@ -17,15 +17,15 @@
 package com.twitter.storehaus.memcache
 
 import com.twitter.algebird.Semigroup
-import com.twitter.bijection.Injection
+import com.twitter.bijection.{Bijection, Injection}
 import com.twitter.bijection.netty.ChannelBufferBijection
 import com.twitter.finagle.Memcached
+import com.twitter.io.Buf
 import com.twitter.storehaus.testing.SelfAggregatingCloseableCleanup
 import com.twitter.storehaus.testing.generator.NonEmpty
-import com.twitter.util.{Future, Await}
-
+import com.twitter.util.{Await, Future}
 import org.jboss.netty.buffer.ChannelBuffer
-import org.scalacheck.{Prop, Gen, Properties}
+import org.scalacheck.{Gen, Prop, Properties}
 import org.scalacheck.Prop.forAll
 
 /** Unit test using Long values */
@@ -88,7 +88,12 @@ object MergeableMemcacheStoreProperties extends Properties("MergeableMemcacheSto
   property("MergeableMemcacheStore put, get and merge") = {
     implicit val cb2ary = ChannelBufferBijection
     val client = Memcached.client.newRichClient("localhost:11211")
-    val injection = Injection.connect[Long, String, Array[Byte], ChannelBuffer]
+    implicit val arrayToBuf = Bijection.build[Array[Byte], Buf] {
+      a => Buf.ByteArray.Owned(a)
+    } {
+      b => Buf.ByteArray.Owned.extract(b)
+    }
+    val injection = Injection.connect[Long, String, Array[Byte], Buf]
     val semigroup = implicitly[Semigroup[Long]]
     val store = MergeableMemcacheStore[String, Long](client)(identity)(injection, semigroup)
 

@@ -53,7 +53,7 @@ import MemcacheLongStore._
 
 /** A MergeableStore for Long values backed by memcache */
 class MemcacheLongStore(underlying: MemcacheStore)
-  extends ConvertedStore[String, String, ChannelBuffer, Long](underlying)(identity)
+  extends ConvertedStore[String, String, Buf, Long](underlying)(identity)
   with MergeableStore[String, Long] {
 
   def semigroup: Semigroup[Long] = implicitly[Semigroup[Long]]

@@ -16,14 +16,10 @@
 
 package com.twitter.storehaus.redis
 
-import com.twitter.bijection.Bijection
-import com.twitter.finagle.netty3.ChannelBufferBuf
 import com.twitter.util.{Duration, Future, Time}
 import com.twitter.finagle.redis.Client
 import com.twitter.io.Buf
 import com.twitter.storehaus.{FutureOps, MissingValueException, Store, WithPutTtl}
-import org.jboss.netty.buffer.ChannelBuffer
-import scala.util.{Success, Try}
 
 /**
  *  @author Doug Tangren
@@ -39,17 +35,6 @@ object RedisStore {
 
   def apply(client: Client, ttl: Option[Duration] = Default.TTL): RedisStore =
     new RedisStore(client, ttl)
-
-  def toChannelBufferStore(store: Store[Buf, Buf]): Store[ChannelBuffer, ChannelBuffer] = {
-    implicit val bij = ChannelBuffer2BufBijection
-    store.convert(ChannelBuffer2BufBijection.apply)
-  }
-}
-
-// todo: This also exists in storehaus-http, remove duplication
-object ChannelBuffer2BufBijection extends Bijection[ChannelBuffer, Buf] {
-  def apply(c: ChannelBuffer): Buf = ChannelBufferBuf.newOwned(c)
-  override def invert(m: Buf): ChannelBuffer = ChannelBufferBuf.Owned.extract(m)
 }
 
 class RedisStore(val client: Client, ttl: Option[Duration])

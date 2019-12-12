@@ -33,8 +33,8 @@ val ignoredABIProblems = {
 
 val sharedSettings = extraSettings ++ ciSettings ++ Seq(
   organization := "com.twitter",
-  scalaVersion := "2.11.11",
-  crossScalaVersions := Seq("2.11.11", "2.12.2"),
+  scalaVersion := "2.11.12",
+  crossScalaVersions := Seq("2.11.12", "2.12.10"),
   javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
   javacOptions in doc := Seq("-source", "1.8"),
   libraryDependencies += "org.scalatest" %% "scalatest" % scalatestVersion % "test",
@@ -132,11 +132,11 @@ lazy val noPublishSettings = Seq(
   )
 
 val algebirdVersion = "0.13.0"
-val bijectionVersion = "0.9.5"
-val utilVersion = "7.0.0"
+val bijectionVersion = "0.9.6"
+val utilVersion = "19.8.0"
 
 val scaldingVersion = "0.17.0"
-val finagleVersion = "7.0.0"
+val finagleVersion = "19.8.0"
 val scalatestVersion = "3.0.1"
 val scalaCheckVersion = "1.13.4"
 
@@ -208,7 +208,7 @@ lazy val storehausMemcache = module("memcache").settings(
 lazy val storehausMySQL = module("mysql").settings(
   libraryDependencies ++= Seq(
     "com.twitter" %% "finagle-mysql" % finagleVersion,
-    "com.twitter" %% "finagle-netty3" % finagleVersion
+    "com.twitter" %% "finagle-netty4" % finagleVersion
   )
 ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
@@ -217,7 +217,7 @@ lazy val storehausRedis = module("redis").settings(
     "com.twitter" %% "bijection-core" % bijectionVersion,
     "com.twitter" %% "bijection-netty" % bijectionVersion,
     "com.twitter" %% "finagle-redis" % finagleVersion,
-    "com.twitter" %% "finagle-netty3" % finagleVersion
+    "com.twitter" %% "finagle-netty4" % finagleVersion
   ),
   // we don't want various tests clobbering each others keys
   parallelExecution in Test := false
