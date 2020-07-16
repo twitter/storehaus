@@ -116,7 +116,7 @@ val ignoredModules = Set[String]("benchmark", "elasticsearch")
 def youngestForwardCompatible(subProj: String) =
   Some(subProj)
     .filterNot(ignoredModules.contains)
-    .map { s => "com.twitter" %% s"storehaus-$s" % "0.15.0" }
+    .map { s => "com.twitter" %% s"storehaus-$s" % "0.16.0" }
 
 lazy val noPublishSettings = Seq(
     publish := {},

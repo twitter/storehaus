@@ -30,8 +30,8 @@ import com.twitter.finagle.mysql.ServerError
 object MySqlLongStoreProperties extends Properties("MySqlLongStore")
   with SelfAggregatingCloseableCleanup[MySqlLongStore] {
 
-    // these should match mysql setup used in .travis.yml
-  val client = Mysql.client
+  // these should match mysql setup used in .travis.yml
+  private val client = Mysql.client
     .withCredentials("storehaususer", "test1234")
     .withDatabase("storehaus_test")
     .newRichClient("127.0.0.1:3306")
@@ -124,8 +124,15 @@ object MySqlLongStoreProperties extends Properties("MySqlLongStore")
       s"NULL, `value` $vColType DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8;"
 
     Await.result(client.query(schema))
-
+    Await.result(waitForTable(tableName))
     f(newStore(client, tableName))
+  }
+
+  // it can take a moment for the table to be avilable for use, wait for it
+  private def waitForTable(tableName: String, retries: Int = 10): Future[Unit] = {
+    client.query(s"DESCRIBE `$tableName`;").rescue {
+      case err: ServerError if retries > 0 => waitForTable(tableName, retries - 1)
+    }.map(_ => ())
   }
 
   def newStore(client: Client, tableName: String): MySqlLongStore =
