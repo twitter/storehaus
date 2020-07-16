@@ -48,6 +48,9 @@ val sharedSettings = ciSettings ++ Seq(
   // add linter for common scala issues: https://github.com/HairyFotr/linter
   addCompilerPlugin("org.psywerx.hairyfotr" %% "linter" % "0.1.17"),
 
+  // disable auto formatting on compile
+  scalariformAutoformat := false,
+
   // Publishing options:
 
   releaseCrossBuild := true,
