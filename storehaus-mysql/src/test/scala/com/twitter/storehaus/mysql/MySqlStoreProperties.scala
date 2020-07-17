@@ -158,19 +158,11 @@ object MySqlStoreProperties extends Properties("MySqlStore")
   private def withStore[T](f: MySqlStore => T, kColType: String, vColType: String,
       multiGet: Boolean = false): T = {
     val tableName = s"storehaus-mysql-$kColType-$vColType${if (multiGet) "-multiget" else ""}"
-    val schema = s"CREATE TEMPORARY TABLE IF NOT EXISTS `$tableName` (`key` $kColType " +
+    val schema = s"CREATE TABLE IF NOT EXISTS `$tableName` (`key` $kColType " +
       s"DEFAULT NULL, `value` $vColType DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8;"
 
     Await.result(client.query(schema))
-    Await.result(waitForTable(tableName))
     f(newStore(client, tableName))
-  }
-
-    // it can take a moment for the table to be avilable for use, wait for it
-  private def waitForTable(tableName: String, retries: Int = 10): Future[Unit] = {
-    client.query(s"DESCRIBE `$tableName`;").rescue {
-      case err: ServerError if retries > 0 => waitForTable(tableName, retries - 1)
-    }.map(_ => ())
   }
 
   def newStore(client: Client, tableName: String): MySqlStore =
