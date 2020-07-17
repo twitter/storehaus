@@ -1,5 +1,5 @@
 import ReleaseTransformations._
-import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
+import com.typesafe.tools.mima.plugin.MimaPlugin.{mimaDefaultSettings}
 
 val extraSettings =
   Boilerplate.settings ++ assemblySettings ++ mimaDefaultSettings
@@ -112,10 +112,10 @@ val sharedSettings = extraSettings ++ ciSettings ++ Seq(
   */
 val ignoredModules = Set[String]("benchmark", "elasticsearch")
 
-def youngestForwardCompatible(subProj: String) =
-  Some(subProj)
-    .filterNot(ignoredModules.contains)
-    .map { s => "com.twitter" %% s"storehaus-$s" % "0.16.0" }
+def youngestForwardCompatible(subProj: String) = Seq.empty
+  // Some(subProj)
+  //   .filterNot(ignoredModules.contains)
+  //   .map { s => "com.twitter" %% s"storehaus-$s" % "0.16.0" }
 
 lazy val noPublishSettings = Seq(
     publish := (),
