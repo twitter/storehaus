@@ -1,5 +1,8 @@
-import sbt._
 import ReleaseTransformations._
+import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
+
+val extraSettings =
+  Boilerplate.settings ++ assemblySettings ++ mimaDefaultSettings
 
 def ciSettings: Seq[Def.Setting[_]] =
   if (sys.env.getOrElse("TRAVIS", "false").toBoolean) Seq(
@@ -22,7 +25,7 @@ val ignoredABIProblems = {
   Seq()
 }
 
-val sharedSettings = ciSettings ++ Seq(
+val sharedSettings = extraSettings ++ ciSettings ++ Seq(
   organization := "com.twitter",
   scalaVersion := "2.11.12",
   crossScalaVersions := Seq("2.11.12", "2.12.10"),
@@ -48,11 +51,7 @@ val sharedSettings = ciSettings ++ Seq(
   // add linter for common scala issues: https://github.com/HairyFotr/linter
   addCompilerPlugin("org.psywerx.hairyfotr" %% "linter" % "0.1.17"),
 
-  // disable auto formatting on compile
-  scalariformAutoformat := false,
-
   // Publishing options:
-
   releaseCrossBuild := true,
   releasePublishArtifactsAction := PgpKeys.publishSigned.value,
   releaseVersionBump := sbtrelease.Version.Bump.Minor, // need to tweak based on mima results
@@ -119,9 +118,9 @@ def youngestForwardCompatible(subProj: String) =
     .map { s => "com.twitter" %% s"storehaus-$s" % "0.16.0" }
 
 lazy val noPublishSettings = Seq(
-    publish := {},
-    publishLocal := {},
-    test := {},
+    publish := (),
+    publishLocal := (),
+    test := (),
     publishArtifact := false
   )
 
@@ -136,9 +135,8 @@ val scalaCheckVersion = "1.13.4"
 
 lazy val storehaus = Project(
   id = "storehaus",
-  base = file(".")
-  )
-  .settings(sharedSettings)
+  base = file("."),
+  settings = sharedSettings)
   .settings(noPublishSettings)
   .aggregate(
   storehausCache,
@@ -160,15 +158,12 @@ lazy val storehaus = Project(
 
 def module(name: String) = {
   val id = "storehaus-%s".format(name)
-  Project(id = id, base = file(id)).settings(
-    sharedSettings ++ testCleanup ++ Seq(
+  Project(id = id, base = file(id), settings = sharedSettings ++ testCleanup ++ Seq(
     Keys.name := id,
     mimaPreviousArtifacts := youngestForwardCompatible(name).toSet,
     mimaBinaryIssueFilters ++= ignoredABIProblems
   )
   ).dependsOn(storehausTesting % "test->test")
-  .enablePlugins(spray.boilerplate.BoilerplatePlugin)
-  .enablePlugins(MimaPlugin)
 }
 
 lazy val storehausCache = module("cache").settings(
@@ -291,9 +286,8 @@ lazy val storehausElastic = module("elasticsearch").settings(
 
 lazy val storehausTesting = Project(
   id = "storehaus-testing",
-  base = file("storehaus-testing")
-).settings(
-  sharedSettings ++ Seq(
+  base = file("storehaus-testing"),
+  settings = sharedSettings ++ Seq(
     name := "storehaus-testing",
     libraryDependencies ++= Seq(
       "org.scalacheck" %% "scalacheck" % scalaCheckVersion withSources(),
