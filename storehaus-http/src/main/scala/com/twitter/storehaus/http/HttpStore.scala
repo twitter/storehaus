@@ -20,7 +20,6 @@ import java.nio.charset.Charset
 
 import com.twitter.bijection.{Bijection, StringCodec}
 import com.twitter.finagle.http._
-import com.twitter.finagle.netty3.ChannelBufferBuf
 import com.twitter.finagle.{Http, Service}
 import com.twitter.io.Buf
 import com.twitter.storehaus.{ConvertedStore, Store}
@@ -39,17 +38,6 @@ case class HttpException(code: Int, reasonPhrase: String, content: String)
 
 object HttpStore {
   def apply(dest: String): HttpStore = new HttpStore(Http.newService(dest))
-
-  // Here for backward compatibility, you probably don't want to use it in new code
-  def toChannelBufferStore(store: Store[Buf, Buf]): Store[String, ChannelBuffer] = {
-    implicit val bij = ChannelBuffer2BufBijection
-    store.convert(Buf.Utf8(_))
-  }
-}
-
-object ChannelBuffer2BufBijection extends Bijection[ChannelBuffer, Buf] {
-  def apply(c: ChannelBuffer): Buf = ChannelBufferBuf.newOwned(c)
-  override def invert(m: Buf): ChannelBuffer = ChannelBufferBuf.Owned.extract(m)
 }
 
 class HttpStore(val client: Service[Request, Response])

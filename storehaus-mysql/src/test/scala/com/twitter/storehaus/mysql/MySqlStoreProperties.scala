@@ -17,16 +17,24 @@
 package com.twitter.storehaus.mysql
 
 import com.twitter.finagle.Mysql
-import com.twitter.finagle.mysql.Client
+import com.twitter.finagle.mysql.{Client, Error}
 import com.twitter.storehaus.testing.SelfAggregatingCloseableCleanup
 import com.twitter.storehaus.testing.generator.NonEmpty
 import com.twitter.util.{Await, Future}
 
 import org.scalacheck.{Prop, Gen, Properties}
 import org.scalacheck.Prop.forAll
+import com.twitter.finagle.mysql.Result
+import com.twitter.finagle.mysql.ServerError
 
 object MySqlStoreProperties extends Properties("MySqlStore")
   with SelfAggregatingCloseableCleanup[MySqlStore] {
+
+  // these should match mysql setup used in .travis.yml
+  private val client = Mysql.client
+    .withCredentials("storehaususer", "test1234")
+    .withDatabase("storehaus_test")
+    .newRichClient("127.0.0.1:3306")
 
   private[this] class PropertyCached(ps: PropertySpecifier) {
     def update(propName: String, p: Prop) = {
@@ -82,10 +90,7 @@ object MySqlStoreProperties extends Properties("MySqlStore")
       val result = store.multiGet(data.keySet)
       data.forall { case (k, optV) =>
         // result.get(k) returns Option[Future[Option[MySqlValue]]]
-        val foundOptV = result.get(k) match {
-          case Some(v) => Await.result(v)
-          case None => None
-        }
+        val foundOptV = result.get(k).flatMap(Await.result(_))
         compareValues(k, optV, foundOptV)
       }
     }
@@ -152,15 +157,10 @@ object MySqlStoreProperties extends Properties("MySqlStore")
 
   private def withStore[T](f: MySqlStore => T, kColType: String, vColType: String,
       multiGet: Boolean = false): T = {
-    val client = Mysql.client
-      .withCredentials("storehaususer", "test1234")
-      .withDatabase("storehaus_test")
-      .newRichClient("127.0.0.1:3306")
-    // these should match mysql setup used in .travis.yml
-
     val tableName = s"storehaus-mysql-$kColType-$vColType${if (multiGet) "-multiget" else ""}"
-    val schema = s"CREATE TEMPORARY TABLE IF NOT EXISTS `$tableName` (`key` $kColType " +
+    val schema = s"CREATE TABLE IF NOT EXISTS `$tableName` (`key` $kColType " +
       s"DEFAULT NULL, `value` $vColType DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8;"
+
     Await.result(client.query(schema))
     f(newStore(client, tableName))
   }

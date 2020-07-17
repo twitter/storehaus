@@ -17,14 +17,12 @@
 package com.twitter.storehaus.memcache
 
 import com.twitter.algebird.Semigroup
-import com.twitter.bijection.{Codec, Injection}
+import com.twitter.bijection.{Bijection, Codec, Injection}
 import com.twitter.bijection.netty.Implicits._
-import com.twitter.finagle.netty3.{BufChannelBuffer, ChannelBufferBuf}
 import com.twitter.util.{Duration, Future, Time}
 import com.twitter.finagle.memcached.Client
 import com.twitter.storehaus.{FutureOps, Store, WithPutTtl}
 import com.twitter.storehaus.algebra.MergeableStore
-import org.jboss.netty.buffer.ChannelBuffer
 import Store.enrich
 import com.twitter.finagle.client.DefaultPool
 import com.twitter.finagle.Memcached
@@ -32,6 +30,9 @@ import com.twitter.finagle.factory.TimeoutFactory
 import com.twitter.finagle.service.{Retries, RetryPolicy, TimeoutFilter}
 import com.twitter.finagle.transport.Transport
 import java.util.concurrent.TimeUnit
+
+import com.twitter.io.Buf
+import com.twitter.io.Buf.ByteBuffer
 
 /**
  *  @author Oscar Boykin
@@ -86,7 +87,12 @@ object MemcacheStore {
     */
   def typed[K: Codec, V: Codec](client: Client, keyPrefix: String,
     ttl: Duration = DEFAULT_TTL, flag: Int = DEFAULT_FLAG): Store[K, V] = {
-    implicit val valueToBuf = Injection.connect[V, Array[Byte], ChannelBuffer]
+    implicit val arrayToBuf = Bijection.build[Array[Byte], Buf] {
+      a => Buf.ByteArray.Owned(a)
+    } {
+      b => Buf.ByteArray.Owned.extract(b)
+    }
+    implicit val valueToBuf = Injection.connect[V, Array[Byte], Buf]
     MemcacheStore(client, ttl, flag).convert(keyEncoder[K](keyPrefix))
   }
 
@@ -110,40 +116,36 @@ object MemcacheStore {
    */
   def mergeableWithCAS[K, V: Semigroup](client: Client, retries: Int,
     ttl: Duration = DEFAULT_TTL, flag: Int = DEFAULT_FLAG)(kfn: K => String)
-      (implicit inj: Injection[V, ChannelBuffer]): MergeableStore[K, V] =
+      (implicit inj: Injection[V, Buf]): MergeableStore[K, V] =
     MergeableMemcacheStore[K, V](client, ttl, flag, retries)(kfn)(inj, implicitly[Semigroup[V]])
 }
 
 class MemcacheStore(val client: Client, val ttl: Duration, val flag: Int)
-  extends Store[String, ChannelBuffer]
-  with WithPutTtl[String, ChannelBuffer, MemcacheStore] {
+  extends Store[String, Buf]
+  with WithPutTtl[String, Buf, MemcacheStore] {
 
   override def withPutTtl(ttl: Duration): MemcacheStore = new MemcacheStore(client, ttl, flag)
 
-  override def get(k: String): Future[Option[ChannelBuffer]] =
-    client.get(k).flatMap {
-      case None => Future.None
-      case Some(buf) => Future.value(Some(ChannelBufferBuf.Owned.extract(buf)))
-    }
+  override def get(k: String): Future[Option[Buf]] = client.get(k)
 
-  override def multiGet[K1 <: String](ks: Set[K1]): Map[K1, Future[Option[ChannelBuffer]]] = {
-    val memcacheResult: Future[Map[String, Future[Option[ChannelBuffer]]]] =
+  override def multiGet[K1 <: String](ks: Set[K1]): Map[K1, Future[Option[Buf]]] = {
+    val memcacheResult: Future[Map[String, Future[Option[Buf]]]] =
       client.getResult(ks).map { result =>
         result.hits.mapValues { v =>
-          Future.value(Some(BufChannelBuffer(v.value)))
+          Future.value(Some(v.value))
         } ++ result.failures.mapValues(Future.exception)
       }
     FutureOps.liftValues(ks, memcacheResult, { (k: K1) => Future.value(Future.None) })
       .mapValues { _.flatten }
   }
 
-  protected def set(k: String, v: ChannelBuffer) =
-    client.set(k, flag, ttl.fromNow, ChannelBufferBuf.Owned(v))
+  protected def set(k: String, v: Buf) =
+    client.set(k, flag, ttl.fromNow, v)
 
-  override def put(kv: (String, Option[ChannelBuffer])): Future[Unit] =
+  override def put(kv: (String, Option[Buf])): Future[Unit] =
     kv match {
       case (key, Some(value)) =>
-        client.set(key, flag, ttl.fromNow, ChannelBufferBuf.Owned(value))
+        client.set(key, flag, ttl.fromNow, value)
       case (key, None) => client.delete(key).unit
     }
 

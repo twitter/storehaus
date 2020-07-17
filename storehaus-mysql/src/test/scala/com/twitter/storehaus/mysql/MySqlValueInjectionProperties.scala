@@ -16,45 +16,14 @@
 
 package com.twitter.storehaus.mysql
 
-import java.util
-
-import org.jboss.netty.buffer.{ChannelBuffers, ChannelBuffer}
-import org.scalacheck.{Gen, Arbitrary, Properties}
 import org.scalacheck.Prop.forAll
+import org.scalacheck.Properties
 
 object MySqlValueInjectionProperties extends Properties("MySqlValue Injections") {
-
-  val channelBufferGenerator = for {
-    b <- Gen.containerOf[Array, Byte](Arbitrary.arbitrary[Byte])
-  } yield ChannelBuffers.wrappedBuffer(b)
-
-  implicit val gen = Arbitrary(channelBufferGenerator)
-
   property("String2MySqlValue apply and invert") = {
     val injection = String2MySqlValueInjection
     forAll { (s: String) =>
       injection.invert(injection(s)).toOption == Some(s)
     }
-  }
-
-  property("ChannelBuffer2MySqlValue apply and invert") = {
-    val injection = ChannelBuffer2MySqlValueInjection
-
-    forAll { (c: ChannelBuffer) =>
-      val bytes = bytesFromChannelBuffer(c)
-      val inverted = injection.invert(injection(c)).toOption
-      inverted.exists { invertedBuf =>
-        val invertedBytes = bytesFromChannelBuffer(invertedBuf)
-        util.Arrays.equals(invertedBytes, bytes)
-      }
-    }
-  }
-
-  def bytesFromChannelBuffer(c: ChannelBuffer): Array[Byte] = {
-    val arr = Array.ofDim[Byte](c.readableBytes)
-    c.markReaderIndex()
-    c.readBytes(arr)
-    c.resetReaderIndex()
-    arr
   }
 }

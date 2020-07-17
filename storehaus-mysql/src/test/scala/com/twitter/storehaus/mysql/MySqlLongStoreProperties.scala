@@ -17,17 +17,24 @@
 package com.twitter.storehaus.mysql
 
 import com.twitter.finagle.Mysql
-import com.twitter.finagle.mysql.Client
+import com.twitter.finagle.mysql.{Client, Error}
 import com.twitter.storehaus.testing.SelfAggregatingCloseableCleanup
 import com.twitter.storehaus.testing.generator.NonEmpty
 import com.twitter.util.{Await, Future}
 import org.scalacheck.{Gen, Prop, Properties}
 import org.scalacheck.Prop.forAll
-
+import com.twitter.finagle.mysql.OK
+import com.twitter.finagle.mysql.ServerError
 
 
 object MySqlLongStoreProperties extends Properties("MySqlLongStore")
   with SelfAggregatingCloseableCleanup[MySqlLongStore] {
+
+  // these should match mysql setup used in .travis.yml
+  private val client = Mysql.client
+    .withCredentials("storehaususer", "test1234")
+    .withDatabase("storehaus_test")
+    .newRichClient("127.0.0.1:3306")
 
   private[this] class PropertyCached(ps: PropertySpecifier) {
     def update(propName: String, p: Prop) = {
@@ -111,17 +118,12 @@ object MySqlLongStoreProperties extends Properties("MySqlLongStore")
 
   private def withStore[T](f: MySqlLongStore => T, kColType: String, vColType: String,
       merge: Boolean = false): T = {
-    val client = Mysql.client
-      .withCredentials("storehaususer", "test1234")
-      .withDatabase("storehaus_test")
-      .newRichClient("127.0.0.1:3306")
-    // these should match mysql setup used in .travis.yml
 
     val tableName = s"storehaus-mysql-long-$kColType-$vColType${if (merge) "-merge" else ""}"
-    val schema = s"CREATE TEMPORARY TABLE IF NOT EXISTS `$tableName` (`key` $kColType DEFAULT " +
+    val schema = s"CREATE TABLE IF NOT EXISTS `$tableName` (`key` $kColType DEFAULT " +
       s"NULL, `value` $vColType DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8;"
-    Await.result(client.query(schema))
 
+    Await.result(client.query(schema))
     f(newStore(client, tableName))
   }
 

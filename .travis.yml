@@ -1,5 +1,6 @@
 language: scala
 sudo: false
+dist: trusty
 matrix:
   include:
     - scala: 2.11.11
@@ -7,7 +8,7 @@ matrix:
       script: umask 0022 && ./sbt ++$TRAVIS_SCALA_VERSION clean coverage test coverageReport mimaReportBinaryIssues
       after_success:
         - bash <(curl -s https://codecov.io/bash)
-    - scala: 2.12.2 
+    - scala: 2.12.2
       jdk: oraclejdk8
       script: umask 0022 && ./sbt ++$TRAVIS_SCALA_VERSION clean coverage test coverageReport mimaReportBinaryIssues
       after_success:
@@ -27,11 +28,11 @@ services:
   - mongodb
 cache:
   directories:
-  - $HOME/.sbt/0.13/dependency
-  - $HOME/.sbt/boot/scala*
-  - $HOME/.sbt/launchers
-  - $HOME/.ivy2/cache
-  - $HOME/.nvm
+    - $HOME/.sbt/0.13/dependency
+    - $HOME/.sbt/boot/scala*
+    - $HOME/.sbt/launchers
+    - $HOME/.ivy2/cache
+    - $HOME/.nvm
 
 before_cache:
   - du -h -d 1 $HOME/.ivy2/cache

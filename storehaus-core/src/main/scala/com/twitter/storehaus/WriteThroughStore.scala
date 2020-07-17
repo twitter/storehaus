@@ -82,7 +82,7 @@ class WriteThroughStore[K, V](
 
     // throw original exception for any writes that failed
     FutureOps.liftValues(kvs.keySet, f, { (k: K1) => Future.None })
-      .map { case kv: (K1, Future[Either[Unit, Exception]]) =>
+      .map { case kv: (K1, Future[Either[Unit, Exception]]) @unchecked =>
         val transform = kv._2.map {
           case Left(optv) => optv
           case Right(x) => throw x

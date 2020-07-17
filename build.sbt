@@ -1,11 +1,5 @@
 import ReleaseTransformations._
-import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
-
-def withCross(dep: ModuleID) =
-  dep cross CrossVersion.binaryMapped {
-    case ver if ver startsWith "2.10" => "2.10" // TODO: hack because sbt is broken
-    case x => x
-  }
+import com.typesafe.tools.mima.plugin.MimaPlugin.{mimaDefaultSettings}
 
 val extraSettings =
   Boilerplate.settings ++ assemblySettings ++ mimaDefaultSettings
@@ -33,8 +27,8 @@ val ignoredABIProblems = {
 
 val sharedSettings = extraSettings ++ ciSettings ++ Seq(
   organization := "com.twitter",
-  scalaVersion := "2.11.11",
-  crossScalaVersions := Seq("2.11.11", "2.12.2"),
+  scalaVersion := "2.11.12",
+  crossScalaVersions := Seq("2.11.12", "2.12.10"),
   javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
   javacOptions in doc := Seq("-source", "1.8"),
   libraryDependencies += "org.scalatest" %% "scalatest" % scalatestVersion % "test",
@@ -58,7 +52,6 @@ val sharedSettings = extraSettings ++ ciSettings ++ Seq(
   addCompilerPlugin("org.psywerx.hairyfotr" %% "linter" % "0.1.17"),
 
   // Publishing options:
-
   releaseCrossBuild := true,
   releasePublishArtifactsAction := PgpKeys.publishSigned.value,
   releaseVersionBump := sbtrelease.Version.Bump.Minor, // need to tweak based on mima results
@@ -119,10 +112,10 @@ val sharedSettings = extraSettings ++ ciSettings ++ Seq(
   */
 val ignoredModules = Set[String]("benchmark", "elasticsearch")
 
-def youngestForwardCompatible(subProj: String) =
-  Some(subProj)
-    .filterNot(ignoredModules.contains)
-    .map { s => "com.twitter" %% s"storehaus-$s" % "0.15.0" }
+def youngestForwardCompatible(subProj: String) = Seq.empty
+  // Some(subProj)
+  //   .filterNot(ignoredModules.contains)
+  //   .map { s => "com.twitter" %% s"storehaus-$s" % "0.16.0" }
 
 lazy val noPublishSettings = Seq(
     publish := (),
@@ -132,11 +125,11 @@ lazy val noPublishSettings = Seq(
   )
 
 val algebirdVersion = "0.13.0"
-val bijectionVersion = "0.9.5"
-val utilVersion = "7.0.0"
+val bijectionVersion = "0.9.6"
+val utilVersion = "19.8.0"
 
 val scaldingVersion = "0.17.0"
-val finagleVersion = "7.0.0"
+val finagleVersion = "19.8.0"
 val scalatestVersion = "3.0.1"
 val scalaCheckVersion = "1.13.4"
 
@@ -175,12 +168,12 @@ def module(name: String) = {
 
 lazy val storehausCache = module("cache").settings(
   libraryDependencies += "com.twitter" %% "algebird-core" % algebirdVersion,
-  libraryDependencies += withCross("com.twitter" %% "util-core" % utilVersion)
+  libraryDependencies += "com.twitter" %% "util-core" % utilVersion
 )
 
 lazy val storehausCore = module("core").settings(
   libraryDependencies ++= Seq(
-    withCross("com.twitter" %% "util-core" % utilVersion % "provided"),
+    "com.twitter" %% "util-core" % utilVersion % "provided",
     "com.twitter" %% "bijection-core" % bijectionVersion,
     "com.twitter" %% "bijection-util" % bijectionVersion
   )
@@ -208,7 +201,7 @@ lazy val storehausMemcache = module("memcache").settings(
 lazy val storehausMySQL = module("mysql").settings(
   libraryDependencies ++= Seq(
     "com.twitter" %% "finagle-mysql" % finagleVersion,
-    "com.twitter" %% "finagle-netty3" % finagleVersion
+    "com.twitter" %% "finagle-netty4" % finagleVersion
   )
 ).dependsOn(storehausAlgebra % "test->test;compile->compile")
 
@@ -217,7 +210,7 @@ lazy val storehausRedis = module("redis").settings(
     "com.twitter" %% "bijection-core" % bijectionVersion,
     "com.twitter" %% "bijection-netty" % bijectionVersion,
     "com.twitter" %% "finagle-redis" % finagleVersion,
-    "com.twitter" %% "finagle-netty3" % finagleVersion
+    "com.twitter" %% "finagle-netty4" % finagleVersion
   ),
   // we don't want various tests clobbering each others keys
   parallelExecution in Test := false
@@ -298,7 +291,7 @@ lazy val storehausTesting = Project(
     name := "storehaus-testing",
     libraryDependencies ++= Seq(
       "org.scalacheck" %% "scalacheck" % scalaCheckVersion withSources(),
-      withCross("com.twitter" %% "util-core" % utilVersion)
+      "com.twitter" %% "util-core" % utilVersion
     )
   )
 )
